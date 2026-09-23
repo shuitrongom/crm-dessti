@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guia de actualizacion (redeploy) + servicio nssm — CRM Dess-TI</title>
+<style>
+  :root{--azul:#0b3d6b;--azul2:#12578f;--acento:#1f8a70;--gris:#5b6672;--gris-cl:#eef1f5;--gris-bd:#d7dde5;--texto:#1c2733;--alta:#b3261e;--aviso:#8a4b00;--code-bg:#0f2233;--code-fg:#e6edf3;}
+  *{box-sizing:border-box}html{scroll-behavior:smooth}
+  body{margin:0;font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--texto);background:#f4f6f9;line-height:1.55;font-size:15.5px}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+  header.banda{background:linear-gradient(120deg,var(--azul),var(--azul2));color:#fff;padding:34px 0 28px;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+  .eyebrow{font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;opacity:.85;margin:0 0 8px}
+  header.banda h1{margin:0;font-size:1.85rem;line-height:1.2}
+  header.banda .sub{margin:12px 0 0;font-size:1rem;opacity:.95;max-width:820px}
+  header.banda .url{display:inline-block;margin-top:14px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);padding:8px 14px;border-radius:8px;font-size:.95rem}
+  header.banda .url a{color:#fff;font-weight:600}
+  main{padding:30px 0 60px}
+  h2{color:var(--azul);font-size:1.4rem;margin:30px 0 6px;border-bottom:2px solid var(--gris-bd);padding-bottom:8px}
+  h3{color:var(--azul2);font-size:1.12rem;margin:18px 0 6px}
+  p{margin:8px 0}a{color:var(--azul2)}
+  .card{background:#fff;border:1px solid var(--gris-bd);border-radius:10px;padding:20px 22px;margin:0 0 22px;box-shadow:0 1px 3px rgba(16,42,67,.06)}
+  .step{background:#fff;border:1px solid var(--gris-bd);border-left:4px solid var(--azul2);border-radius:0 8px 8px 0;padding:6px 18px 14px;margin:16px 0}
+  .badge{display:inline-block;background:var(--azul);color:#fff;font-size:.72rem;font-weight:700;border-radius:999px;padding:2px 10px;letter-spacing:.03em}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:.9rem}
+  th,td{border:1px solid var(--gris-bd);padding:8px 10px;text-align:left;vertical-align:top}
+  thead th{background:var(--azul);color:#fff;font-weight:600}
+  tbody tr:nth-child(even){background:var(--gris-cl)}
+  td.k{font-weight:700;color:var(--azul);font-family:Consolas,monospace;font-size:.85rem;white-space:nowrap}
+  pre{background:var(--code-bg);color:var(--code-fg);padding:14px 16px;border-radius:8px;overflow:auto;font-family:Consolas,"Courier New",monospace;font-size:.85rem;line-height:1.45;margin:12px 0}
+  pre .cm{color:#8fb3c9}
+  code{background:#eef1f5;padding:1px 5px;border-radius:4px;font-size:.86em;font-family:Consolas,monospace}
+  pre code{background:transparent;padding:0;color:inherit}
+  .callout{border-left:4px solid var(--acento);background:#eef7f4;padding:12px 16px;border-radius:0 8px 8px 0;margin:14px 0}
+  .callout.warn{border-left-color:var(--aviso);background:#fdf4e7}
+  .callout.danger{border-left-color:var(--alta);background:#fdeceb}
+  .callout .t{font-weight:700;display:block;margin-bottom:4px}
+  ul.clean{margin:8px 0;padding-left:22px}ul.clean li{margin:5px 0}
+  .chk{list-style:none;margin:8px 0;padding-left:0}
+  .chk li{margin:7px 0;padding-left:30px;position:relative}
+  .chk li::before{content:"";position:absolute;left:0;top:1px;width:18px;height:18px;border:2px solid var(--azul2);border-radius:4px;background:#fff}
+  footer{border-top:1px solid var(--gris-bd);padding:22px 0;color:var(--gris);font-size:.85rem;text-align:center}
+  @media print{body{background:#fff;font-size:11px}header.banda{box-shadow:none;background:none;color:#000;border-bottom:2px solid #000}header.banda h1,header.banda .sub,header.banda .eyebrow{color:#000}header.banda .url{background:none;border:1px solid #000}header.banda .url a{color:#000}.card,.step{box-shadow:none;break-inside:avoid}pre{background:#f2f2f2;color:#000;border:1px solid #ccc}a{color:#000;text-decoration:none}}
+</style>
+</head>
+<body>
+<header class="banda">
+  <div class="wrap">
+    <p class="eyebrow">CRM Dess-TI / plataforma-multigiro · Operaciones</p>
+    <h1>Actualizacion (redeploy) + backend como servicio (nssm)</h1>
+    <p class="sub">Como actualizar el CRM en el servidor con una version nueva de backend (jar) y frontend, y dejar el backend como servicio de Windows para que sea estable.</p>
+    <span class="url">Acceso: <a href="https://dessti-aplicaciones.ddns.net:8056">https://dessti-aplicaciones.ddns.net:8056</a></span>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="card">
+    <h2>Resumen de esta actualizacion</h2>
+    <ul class="clean">
+      <li><strong>Cambian backend Y frontend</strong> (integracion de bloques, lead social, indicadores comerciales, favicon).</li>
+      <li><strong>NO hay migraciones nuevas de base de datos.</strong> La ultima sigue siendo la V63 (ya aplicada). Flyway solo validara el esquema al arrancar; no ejecutara SQL. <strong>No debes correr ningun SQL.</strong></li>
+      <li>El super_admin <code>admin@dessti.com</code> creado antes <strong>sigue existiendo</strong>; no se recrea.</li>
+      <li>Se aprovecha para dejar el backend como <strong>servicio de Windows (nssm)</strong>: arranque automatico y reinicio ante fallos.</li>
+    </ul>
+    <div class="callout warn">
+      <span class="t">Artefactos a copiar (desde tu equipo de build)</span>
+      <table>
+        <thead><tr><th>#</th><th>Origen</th><th>Destino en el servidor</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td class="k">backend\target\crm-0.0.1-SNAPSHOT.jar</td><td class="k">C:\apps\crm\backend\</td></tr>
+          <tr><td>2</td><td class="k">frontend\dist\frontend\browser\*  (el CONTENIDO)</td><td class="k">C:\inetpub\wwwroot\crm\</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Instalar nssm (una sola vez)</h2>
+    <p>nssm convierte el backend Java en un servicio de Windows robusto. Es un unico ejecutable.</p>
+    <pre><span class="cm"># Descargar y colocar nssm.exe en C:\tools</span>
+Invoke-WebRequest -Uri "https://nssm.cc/release/nssm-2.24.zip" -OutFile "$env:USERPROFILE\Downloads\nssm.zip"
+Expand-Archive "$env:USERPROFILE\Downloads\nssm.zip" -DestinationPath "$env:USERPROFILE\Downloads\nssm" -Force
+New-Item -ItemType Directory -Force -Path C:\tools | Out-Null
+Copy-Item "$env:USERPROFILE\Downloads\nssm\nssm-2.24\win64\nssm.exe" "C:\tools\nssm.exe" -Force
+"nssm listo en C:\tools\nssm.exe"</pre>
+    <div class="callout"><span class="t">Si ya tienes nssm</span> Omite este bloque y usa la ruta donde lo tengas.</div>
+  </section>
+
+  <section class="card">
+    <h2>Pasos del redeploy</h2>
+
+    <div class="step">
+      <h3><span class="badge">Paso 1</span> Detener el backend actual</h3>
+      <p>Si el backend corre arrancado a mano (proceso java):</p>
+      <pre>Get-CimInstance Win32_Process -Filter "Name='java.exe'" |
+  Where-Object CommandLine -like '*crm-0.0.1-SNAPSHOT.jar*' |
+  ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
+"Backend detenido"</pre>
+      <p>Si ya existiera el servicio <code>CRM-Backend</code> (de una vez anterior): <code>Stop-Service CRM-Backend</code>.</p>
+    </div>
+
+    <div class="step">
+      <h3><span class="badge">Paso 2</span> Reemplazar el jar del backend</h3>
+      <p>Copia por RDP el nuevo <code>crm-0.0.1-SNAPSHOT.jar</code> a <code>C:\apps\crm\backend\</code> (sobrescribe). Verifica:</p>
+      <pre>(Get-Item C:\apps\crm\backend\crm-0.0.1-SNAPSHOT.jar).LastWriteTime  <span class="cm"># debe ser de hoy</span></pre>
+    </div>
+
+    <div class="step">
+      <h3><span class="badge">Paso 3</span> Reemplazar el frontend</h3>
+      <p>Copia el <strong>CONTENIDO</strong> de <code>frontend\dist\frontend\browser\*</code> a <code>C:\inetpub\wwwroot\crm\</code> (sobrescribe).</p>
+      <div class="callout danger">
+        <span class="t">NO sobrescribas el web.config del servidor</span>
+        En el servidor el <code>web.config</code> tiene una correccion (se le quito el bloque &lt;caching&gt;). Al copiar, si Windows pregunta por <code>web.config</code>, <strong>conserva el del servidor</strong> (omite ese archivo).
+      </div>
+      <pre>(Get-Item C:\inetpub\wwwroot\crm\index.html).LastWriteTime   <span class="cm"># de hoy</span>
+Test-Path C:\inetpub\wwwroot\crm\web.config                  <span class="cm"># True</span>
+Test-Path C:\inetpub\wwwroot\crm\favicon.svg                 <span class="cm"># True</span></pre>
+    </div>
+
+    <div class="step">
+      <h3><span class="badge">Paso 4</span> Instalar/actualizar el backend como servicio (nssm)</h3>
+      <p>En lugar de arrancarlo a mano, lo dejamos como servicio. El script lee <code>parametros.ps1</code> (ya configurado con las claves de produccion).</p>
+      <pre>cd C:\apps\crm\deploy
+Unblock-File .\instalar-servicio-backend.ps1
+Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
+.\instalar-servicio-backend.ps1 -Metodo nssm -NssmPath C:\tools\nssm.exe</pre>
+      <p>El script (idempotente) detiene/recrea el servicio <code>CRM-Backend</code>, lo pone en arranque automatico con reinicio ante fallos, y lo inicia.</p>
+    </div>
+
+    <div class="step">
+      <h3><span class="badge">Paso 5</span> Verificar</h3>
+      <pre>Get-Service CRM-Backend                     <span class="cm"># Status = Running</span>
+Start-Sleep -Seconds 50
+Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:8080/api/v1/actuator/health" -TimeoutSec 15</pre>
+      <p>Debe responder <code>200</code> con <code>{"status":"UP"}</code>. Revisa el arranque en <code>C:\apps\crm\logs\backend-stdout.log</code>.</p>
+    </div>
+
+    <div class="step">
+      <h3><span class="badge">Paso 6</span> Prueba de extremo a extremo</h3>
+      <p>Abre <a href="https://dessti-aplicaciones.ddns.net:8056">https://dessti-aplicaciones.ddns.net:8056</a> (Ctrl+F5). Inicia sesion como super_admin y verifica que carga y que las pantallas conectadas funcionan (ficha 360 del cliente, canal en oportunidades, vincular conversacion, indicadores en estrategia/inicio).</p>
+    </div>
+
+    <h3>Checklist</h3>
+    <ul class="chk">
+      <li>Backend anterior detenido.</li>
+      <li>Jar nuevo en C:\apps\crm\backend (fecha de hoy).</li>
+      <li>Frontend nuevo en C:\inetpub\wwwroot\crm (index.html de hoy; web.config conservado).</li>
+      <li>Servicio CRM-Backend en estado Running (arranque automatico).</li>
+      <li>Health http://127.0.0.1:8080/api/v1/actuator/health = 200.</li>
+      <li>La app carga en https://dessti-aplicaciones.ddns.net:8056 y el login funciona.</li>
+      <li>NINGUN SQL ejecutado (no hay migraciones nuevas).</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>Actualizaciones futuras (resumen rapido)</h2>
+    <p>Con el servicio ya instalado, actualizar es aun mas simple:</p>
+    <pre>Stop-Service CRM-Backend
+<span class="cm"># reemplazar el jar en C:\apps\crm\backend\</span>
+<span class="cm"># reemplazar el contenido del frontend en C:\inetpub\wwwroot\crm\ (conservar web.config)</span>
+Start-Service CRM-Backend
+Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:8080/api/v1/actuator/health"</pre>
+    <div class="callout"><span class="t">Respaldo</span> Solo cuando una actualizacion incluya migraciones nuevas conviene respaldar la BD con <code>pg_dump</code> antes. Esta actualizacion NO trae migraciones.</div>
+  </section>
+
+</main>
+<footer><div class="wrap">CRM Dess-TI / plataforma-multigiro · Guia de redeploy + servicio nssm · es-MX</div></footer>
+</body>
+</html>

@@ -1,0 +1,21 @@
+# Build output
+/target/
+
+# jqwik
+.jqwik-database
+
+# IDE
+/.idea/
+*.iml
+/.vscode/
+/.settings/
+.classpath
+.project
+
+# Maven wrapper downloaded distributions (kept: wrapper scripts + .mvn config)
+!/.mvn/wrapper/maven-wrapper.properties
+
+# Logs / OS
+*.log
+Thumbs.db
+.DS_Store

@@ -1,0 +1,110 @@
+<app-page-header titulo="Permisos de instalación" subtitulo="Administra los permisos de instalación: trámites municipales y autorizaciones del arrendador.">
+  <div acciones>
+    @if (puedeCrear) {
+      <button matButton="filled" type="button" (click)="alternarFormulario()">
+        <mat-icon aria-hidden="true">add</mat-icon>
+        Nuevo permiso
+      </button>
+    }
+  </div>
+</app-page-header>
+
+@if (formularioAbierto()) {
+  <mat-card appearance="outlined" class="operacion-form">
+    <mat-card-header>
+      <mat-card-title>Nuevo permiso</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form class="ds-dialog-form" [formGroup]="form" (ngSubmit)="crear()" novalidate>
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo</mat-label>
+          <mat-select formControlName="tipo" required>
+            @for (opcion of tipos; track opcion) {
+              <mat-option [value]="opcion">{{ etiquetaTipo(opcion) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha de vencimiento</mat-label>
+          <input matInput [matDatepicker]="pickerFechaVencimiento" formControlName="fechaVencimiento" required />
+          <mat-datepicker-toggle matSuffix [for]="pickerFechaVencimiento" />
+          <mat-datepicker #pickerFechaVencimiento />
+          @if (form.controls.fechaVencimiento.hasError('required') && form.controls.fechaVencimiento.touched) {
+            <mat-error>La fecha de vencimiento es obligatoria.</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Sitio (identificador)</mat-label>
+          <input matInput type="text" formControlName="sitioId" required />
+          @if (form.controls.sitioId.hasError('required') && form.controls.sitioId.touched) {
+            <mat-error>El sitio es obligatorio.</mat-error>
+          }
+        </mat-form-field>
+        <div class="operacion-form__acciones">
+          <button matButton type="button" (click)="alternarFormulario()" [disabled]="guardando()">
+            Cancelar
+          </button>
+          <button matButton="filled" type="submit" [disabled]="guardando()">Registrar</button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+<div class="operacion-filtros">
+  <mat-form-field appearance="outline">
+    <mat-label>Tipo</mat-label>
+    <mat-select [value]="tipoFiltro()" (valueChange)="cambiarTipo($event)">
+      <mat-option value="">Todos</mat-option>
+      @for (opcion of tipos; track opcion) {
+        <mat-option [value]="opcion">{{ etiquetaTipo(opcion) }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>Estado</mat-label>
+    <mat-select [value]="estadoFiltro()" (valueChange)="cambiarEstadoFiltro($event)">
+      <mat-option value="">Todos</mat-option>
+      @for (opcion of estadosFiltro; track opcion) {
+        <mat-option [value]="opcion">{{ etiquetaEstado(opcion) }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+</div>
+
+<app-state-container
+  [fase]="fase()"
+  [mensajeError]="mensajeError()"
+  mensajeVacio="No hay permisos para los filtros seleccionados."
+  (reintentar)="cargar()"
+>
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="permisos()"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="onPagina($event)"
+  >
+    <ng-template appCelda="tipo" let-fila>{{ etiquetaTipo($any(fila).tipo) }}</ng-template>
+    <ng-template appCelda="fechaVencimiento" let-fila>{{ fila.fechaVencimiento }}</ng-template>
+    <ng-template appCelda="estado" let-fila>
+      <app-chip-estado
+        [variante]="varianteEstado($any(fila).estado)"
+        [etiqueta]="etiquetaEstado($any(fila).estado)"
+      />
+    </ng-template>
+    <ng-template appCelda="acciones" let-fila>
+      @if (puedeDecidir && fila.estado === 'solicitado') {
+        <div class="operacion-acciones-fila">
+          <button matButton="tonal" type="button" (click)="decidir(fila, 'aprobar')">Aprobar</button>
+          <button matButton type="button" class="ds-boton-destructivo" (click)="decidir(fila, 'rechazar')">
+            Rechazar
+          </button>
+        </div>
+      } @else {
+        <span class="operacion-sin-acciones">—</span>
+      }
+    </ng-template>
+  </app-data-table>
+</app-state-container>

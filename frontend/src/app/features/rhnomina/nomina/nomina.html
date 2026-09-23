@@ -1,0 +1,95 @@
+<app-page-header
+  titulo="Nómina"
+  subtitulo="Procesa la nómina por periodo: cálculo, autorización, timbrado y pago."
+>
+  @if (puedeCrear) {
+    <button acciones matButton="filled" type="button" (click)="alternarAlta()">
+      <mat-icon>{{ mostrarAlta() ? 'close' : 'add' }}</mat-icon>
+      {{ mostrarAlta() ? 'Cerrar' : 'Nueva nomina' }}
+    </button>
+  }
+</app-page-header>
+
+@if (mostrarAlta() && puedeCrear) {
+  <mat-card appearance="outlined" class="rh-alta">
+    <mat-card-content>
+      <form class="ds-dialog-form" [formGroup]="formAlta" (ngSubmit)="crear()" novalidate>
+        <h2 class="rh-alta__titulo">Nueva nomina</h2>
+        <mat-form-field appearance="outline">
+          <mat-label>Periodo (AAAA-MM)</mat-label>
+          <input matInput formControlName="periodoNomina" placeholder="2026-01" autocomplete="off" />
+          <mat-error>Indica el periodo de nomina.</mat-error>
+        </mat-form-field>
+        <button matButton="filled" type="submit" [disabled]="guardando()">Crear nomina</button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+@if (seleccionada(); as nom) {
+  <mat-card appearance="outlined" class="rh-alta">
+    <mat-card-content>
+      <div class="rh-filtros" style="justify-content: space-between">
+        <h2 class="rh-alta__titulo">Recibos · periodo {{ nom.periodoNomina }}</h2>
+        <button matIconButton type="button" aria-label="Cerrar recibos" (click)="cerrarRecibos()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      @if (recibos().length > 0) {
+        <app-data-table [columnas]="recibosColumnas" [filas]="recibos()" [total]="recibos().length">
+          <ng-template appCelda="empleado" let-r><span class="rh-mono">{{ r.empleadoId.slice(0, 8) }}</span></ng-template>
+          <ng-template appCelda="percepciones" let-r>{{ r.percepciones | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</ng-template>
+          <ng-template appCelda="deducciones" let-r>{{ r.deducciones | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</ng-template>
+          <ng-template appCelda="neto" let-r>{{ r.neto | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</ng-template>
+          <ng-template appCelda="estado" let-r><app-estado-chip [etiqueta]="humanizar(r.estado)" [tono]="tono(r.estado)" /></ng-template>
+          <ng-template appCelda="folio" let-r><span class="rh-mono">{{ r.folioFiscal ?? '-' }}</span></ng-template>
+        </app-data-table>
+      } @else {
+        <p class="rh-ayuda">Sin recibos: calcula la nomina para generarlos.</p>
+      }
+    </mat-card-content>
+  </mat-card>
+}
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="No hay nominas registradas."
+  (reintentar)="cargar()"
+>
+  <div class="rh-filtros">
+    <mat-form-field appearance="outline">
+      <mat-label>Estado</mat-label>
+      <mat-select [value]="filtroEstado()" (valueChange)="aplicarFiltro($event)">
+        @for (opcion of estadosFiltro; track opcion.valor) {
+          <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="periodo" let-n>{{ n.periodoNomina }}</ng-template>
+    <ng-template appCelda="estado" let-n><app-estado-chip [etiqueta]="humanizar(n.estado)" [tono]="tono(n.estado)" /></ng-template>
+    <ng-template appCelda="percepciones" let-n>{{ n.totalPercepciones | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</ng-template>
+    <ng-template appCelda="deducciones" let-n>{{ n.totalDeducciones | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</ng-template>
+    <ng-template appCelda="neto" let-n>{{ n.totalNeto | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</ng-template>
+    <ng-template appCelda="acciones" let-n>
+      <button matIconButton type="button" aria-label="Ver recibos" (click)="verRecibos(n)">
+        <mat-icon>receipt_long</mat-icon>
+      </button>
+      @if (puedeCambiarEstado && accionDe(n.estado); as accion) {
+        <button matButton type="button" (click)="ejecutarAccion(n, accion)">
+          <mat-icon>{{ accion.icono }}</mat-icon> {{ accion.etiqueta }}
+        </button>
+      }
+    </ng-template>
+  </app-data-table>
+</app-state-container>

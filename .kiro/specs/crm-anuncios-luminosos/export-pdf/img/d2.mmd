@@ -1,0 +1,74 @@
+erDiagram
+    EMPRESA ||--o{ CLIENTE : contiene
+    CLIENTE ||--o{ CONTACTO : tiene
+    CLIENTE ||--o{ OPORTUNIDAD : genera
+    OPORTUNIDAD ||--o| COTIZACION : "convierte (ganado)"
+    CLIENTE ||--o{ COTIZACION : recibe
+    COTIZACION ||--|{ PARTIDA_COTIZACION : detalla
+    COTIZACION ||--o{ PRUEBA_DISENO : versiona
+    COTIZACION ||--o| ORDEN_FABRICACION : "genera (aprobada)"
+    COTIZACION ||--o{ FACTURA : factura
+    ORDEN_FABRICACION ||--o{ FACTURA : factura
+    FACTURA ||--o| CUENTA_POR_COBRAR : origina
+    FACTURA ||--o{ NOTA_CREDITO : corrige
+    CLIENTE ||--o{ PAGO_CLIENTE : realiza
+    PAGO_CLIENTE ||--|{ APLICACION_PAGO : aplica
+    APLICACION_PAGO }o--|| FACTURA : liquida
+    PAGO_CLIENTE ||--o| COMPLEMENTO_PAGO : documenta
+    FACTURA ||--o{ POLIZA_CONTABLE : "asienta"
+    POLIZA_CONTABLE ||--|{ MOVIMIENTO_POLIZA : contiene
+    MOVIMIENTO_POLIZA }o--|| CUENTA_CONTABLE : usa
+
+    EMPRESA {
+        uuid id PK
+        string nombre
+        string rfc
+        string estado
+    }
+    CLIENTE {
+        uuid id PK
+        uuid tenant_id FK
+        string nombre
+        string rfc
+        boolean activo
+        bigint version
+    }
+    COTIZACION {
+        uuid id PK
+        uuid tenant_id FK
+        uuid cliente_id FK
+        string estado
+        numeric total
+        bigint version
+    }
+    PARTIDA_COTIZACION {
+        uuid id PK
+        uuid cotizacion_id FK
+        int cantidad
+        numeric precio_unitario
+        numeric subtotal
+    }
+    FACTURA {
+        uuid id PK
+        uuid tenant_id FK
+        uuid cliente_id FK
+        numeric subtotal
+        numeric iva
+        numeric retenciones
+        numeric total
+        string estado
+        uuid folio_fiscal
+    }
+    POLIZA_CONTABLE {
+        uuid id PK
+        uuid tenant_id FK
+        string tipo
+        boolean inmutable
+    }
+    MOVIMIENTO_POLIZA {
+        uuid id PK
+        uuid poliza_id FK
+        uuid cuenta_id FK
+        numeric cargo
+        numeric abono
+    }

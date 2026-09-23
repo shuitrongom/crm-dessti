@@ -1,0 +1,92 @@
+<app-page-header titulo="Cotizaciones" subtitulo="Consulta y da seguimiento a tus cotizaciones, con sus partidas y el precio sugerido de venta.">
+  <div acciones>
+    @if (puedeCrear) {
+      <a matButton="filled" routerLink="nueva">
+        <mat-icon aria-hidden="true">add</mat-icon>
+        Nueva cotización
+      </a>
+    }
+  </div>
+</app-page-header>
+
+<!-- Tira de indicadores (patron enterprise: outcome-first). Solo cuando el
+     listado cargo correctamente para no distraer en vacio. -->
+@if (fase() === "ok") {
+  <section class="comercial-kpis" aria-label="Indicadores de cotizaciones">
+    <article class="comercial-kpi comercial-kpi--valor">
+      <span class="comercial-kpi__icono" aria-hidden="true"><mat-icon>payments</mat-icon></span>
+      <span class="comercial-kpi__cuerpo">
+        <span class="comercial-kpi__valor">{{ valorPagina() | currency: monedaPorDefecto : "symbol-narrow" : "1.0-0" : "es-MX" }}</span>
+        <span class="comercial-kpi__etiqueta">Valor en esta página</span>
+      </span>
+    </article>
+    <article class="comercial-kpi">
+      <span class="comercial-kpi__icono" aria-hidden="true"><mat-icon>request_quote</mat-icon></span>
+      <span class="comercial-kpi__cuerpo">
+        <span class="comercial-kpi__valor">{{ total() }}</span>
+        <span class="comercial-kpi__etiqueta">Cotizaciones</span>
+      </span>
+    </article>
+    <article class="comercial-kpi">
+      <span class="comercial-kpi__icono" aria-hidden="true"><mat-icon>edit_note</mat-icon></span>
+      <span class="comercial-kpi__cuerpo">
+        <span class="comercial-kpi__valor">{{ cotizacionesBorrador() }}</span>
+        <span class="comercial-kpi__etiqueta">En borrador</span>
+      </span>
+    </article>
+    <article class="comercial-kpi comercial-kpi--exito">
+      <span class="comercial-kpi__icono" aria-hidden="true"><mat-icon>send</mat-icon></span>
+      <span class="comercial-kpi__cuerpo">
+        <span class="comercial-kpi__valor">{{ cotizacionesEnviadas() }}</span>
+        <span class="comercial-kpi__etiqueta">Enviadas</span>
+      </span>
+    </article>
+  </section>
+}
+
+<mat-form-field appearance="outline" class="comercial-filtro">
+  <mat-label>Filtrar por estado</mat-label>
+  <mat-select [value]="estado()" (valueChange)="cambiarEstado($event)">
+    <mat-option value="">Todos</mat-option>
+    @for (opcion of estados; track opcion) {
+      <mat-option [value]="opcion">{{ etiquetaEstado(opcion) }}</mat-option>
+    }
+  </mat-select>
+</mat-form-field>
+
+<app-state-container
+  [fase]="fase()"
+  [mensajeError]="mensajeError()"
+  mensajeVacio="No hay cotizaciones para el filtro seleccionado."
+  (reintentar)="cargar()"
+>
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="cotizaciones()"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="onPagina($event)"
+  >
+    <ng-template appCelda="folio" let-fila>
+      <a [routerLink]="[fila.id]" class="comercial-enlace">{{ fila.folio ?? (fila.id.slice(0, 8) + '…') }}</a>
+    </ng-template>
+    <ng-template appCelda="cliente" let-fila>
+      {{ fila.clienteNombre ?? '—' }}
+    </ng-template>
+    <ng-template appCelda="estado" let-fila>
+      <app-estado-chip [etiqueta]="etiquetaEstado($any(fila).estado)" [tono]="tonoEstado($any(fila).estado)" />
+    </ng-template>
+    <ng-template appCelda="fecha" let-fila>
+      {{ fila.fechaEmision ? (fila.fechaEmision | date: 'dd/MM/yyyy') : '—' }}
+    </ng-template>
+    <ng-template appCelda="total" let-fila>
+      {{ fila.total | currency: (fila.moneda || monedaPorDefecto) : 'symbol-narrow' : '1.2-2' : 'es-MX' }}
+    </ng-template>
+    <ng-template appCelda="acciones" let-fila>
+      <a matIconButton [routerLink]="[fila.id]" aria-label="Ver detalle de la cotización">
+        <mat-icon aria-hidden="true">visibility</mat-icon>
+      </a>
+    </ng-template>
+  </app-data-table>
+</app-state-container>

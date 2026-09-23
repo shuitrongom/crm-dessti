@@ -1,0 +1,130 @@
+<app-page-header
+  titulo="Organización de personal"
+  subtitulo="Define la estructura de tu empresa: puestos, organigrama y evaluaciones de desempeño."
+/>
+
+<mat-tab-group>
+  <!-- Puestos -->
+  <mat-tab label="Puestos">
+    @if (puedeCrearPuesto) {
+      <mat-card appearance="outlined" class="rh-alta">
+        <mat-card-content>
+          <form [formGroup]="formPuesto" (ngSubmit)="crearPuesto()" novalidate>
+            <h2 class="rh-alta__titulo">Nuevo puesto</h2>
+            <div class="rh-form-grid">
+              <mat-form-field appearance="outline">
+                <mat-label>Nombre</mat-label>
+                <input matInput formControlName="nombre" autocomplete="off" />
+                <mat-error>El nombre es obligatorio.</mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Descripcion</mat-label>
+                <input matInput formControlName="descripcion" autocomplete="off" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Puesto superior (identificador)</mat-label>
+                <input matInput formControlName="puestoSuperiorId" autocomplete="off" />
+              </mat-form-field>
+            </div>
+            <button matButton="filled" type="submit" [disabled]="guardandoPuesto()">Crear puesto</button>
+          </form>
+        </mat-card-content>
+      </mat-card>
+    }
+
+    <app-state-container
+      [fase]="puestos().fase"
+      [mensajeError]="puestos().mensajeError"
+      mensajeVacio="No hay puestos registrados."
+      (reintentar)="cargarPuestos()"
+    >
+      <app-data-table
+        [columnas]="puestosColumnas"
+        [filas]="puestos().datos ?? []"
+        [total]="puestosTotal()"
+        [page]="puestosPage()"
+        [size]="puestosSize()"
+        (cambioPagina)="cambiarPaginaPuestos($event)"
+      >
+        <ng-template appCelda="nombre" let-p>{{ p.nombre }}</ng-template>
+        <ng-template appCelda="descripcion" let-p>{{ p.descripcion ?? '-' }}</ng-template>
+        <ng-template appCelda="superior" let-p>
+          <span class="rh-mono">{{ p.puestoSuperiorId ? p.puestoSuperiorId.slice(0, 8) : 'Raiz' }}</span>
+        </ng-template>
+        <ng-template appCelda="estado" let-p>
+          <app-estado-chip [etiqueta]="p.activo ? 'Activo' : 'Inactivo'" [tono]="p.activo ? 'exito' : 'neutro'" />
+        </ng-template>
+      </app-data-table>
+    </app-state-container>
+  </mat-tab>
+
+  <!-- Organigrama -->
+  @if (puedeVerOrganigrama) {
+    <mat-tab label="Organigrama">
+      <app-state-container
+        [fase]="organigramaFase()"
+        [mensajeError]="organigramaError()"
+        mensajeVacio="No hay puestos para formar el organigrama."
+        (reintentar)="cargarOrganigrama()"
+      >
+        <app-organigrama-arbol [nodos]="organigrama()" />
+      </app-state-container>
+    </mat-tab>
+  }
+
+  <!-- Evaluaciones -->
+  @if (puedeVerEvaluaciones) {
+    <mat-tab label="Evaluaciones">
+      @if (puedeCrearEvaluacion) {
+        <mat-card appearance="outlined" class="rh-alta">
+          <mat-card-content>
+            <form [formGroup]="formEval" (ngSubmit)="registrarEvaluacion()" novalidate>
+              <h2 class="rh-alta__titulo">Registrar evaluacion</h2>
+              <div class="rh-form-grid">
+                <mat-form-field appearance="outline">
+                  <mat-label>Empleado (identificador)</mat-label>
+                  <input matInput formControlName="empleadoId" autocomplete="off" />
+                  <mat-error>Indica el empleado evaluado.</mat-error>
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Periodo (AAAA-MM)</mat-label>
+                  <input matInput formControlName="periodo" placeholder="2026-01" autocomplete="off" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Calificacion (1 a 5)</mat-label>
+                  <input matInput type="number" min="1" max="5" step="0.01" formControlName="calificacion" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Comentarios</mat-label>
+                  <input matInput formControlName="comentarios" autocomplete="off" />
+                </mat-form-field>
+              </div>
+              <button matButton="filled" type="submit" [disabled]="guardandoEval()">Registrar evaluacion</button>
+            </form>
+          </mat-card-content>
+        </mat-card>
+      }
+
+      <app-state-container
+        [fase]="evaluaciones().fase"
+        [mensajeError]="evaluaciones().mensajeError"
+        mensajeVacio="No hay evaluaciones registradas."
+        (reintentar)="cargarEvaluaciones()"
+      >
+        <app-data-table
+          [columnas]="evalColumnas"
+          [filas]="evaluaciones().datos ?? []"
+          [total]="evalTotal()"
+          [page]="evalPage()"
+          [size]="evalSize()"
+          (cambioPagina)="cambiarPaginaEval($event)"
+        >
+          <ng-template appCelda="empleado" let-e><span class="rh-mono">{{ e.empleadoId.slice(0, 8) }}</span></ng-template>
+          <ng-template appCelda="periodo" let-e>{{ e.periodo }}</ng-template>
+          <ng-template appCelda="calificacion" let-e><span class="rh-num">{{ e.calificacion | number: '1.2-2' }}</span></ng-template>
+          <ng-template appCelda="evaluada" let-e>{{ e.evaluadaEn | date: 'dd/MM/yyyy' }}</ng-template>
+        </app-data-table>
+      </app-state-container>
+    </mat-tab>
+  }
+</mat-tab-group>

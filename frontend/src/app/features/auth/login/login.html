@@ -1,0 +1,100 @@
+<main id="main-content" class="login">
+  <!-- Panel de marca corporativa (Dess-TI). Oculto en pantallas pequenas. -->
+  <aside class="login__marca" aria-hidden="true">
+    <div class="login__marca-contenido">
+      <div class="login__logo">
+        <span class="login__logo-marca">Dess</span><span class="login__logo-acento">-TI</span>
+      </div>
+      <h1 class="login__marca-titulo">Plataforma de gestion empresarial</h1>
+      <p class="login__marca-descripcion">
+        Un solo lugar para operar tu negocio: comercial, operaciones, finanzas,
+        talento y mas, adaptado al giro de cada empresa.
+      </p>
+      <ul class="login__marca-lista">
+        <li><mat-icon aria-hidden="true">verified_user</mat-icon> Seguridad multi-empresa de nivel enterprise</li>
+        <li><mat-icon aria-hidden="true">hub</mat-icon> Modulos por giro, activables a la medida</li>
+        <li><mat-icon aria-hidden="true">insights</mat-icon> Informacion accionable en tiempo real</li>
+      </ul>
+    </div>
+    <p class="login__marca-pie">&copy; {{ anio }} Dess-TI. Todos los derechos reservados.</p>
+  </aside>
+
+  <!-- Panel del formulario de acceso. -->
+  <section class="login__panel">
+    <div class="login__caja">
+      <header class="login__cabecera">
+        <div class="login__logo login__logo--compacto">
+          <span class="login__logo-marca">Dess</span><span class="login__logo-acento">-TI</span>
+        </div>
+        <h2 class="login__titulo">Bienvenido de nuevo</h2>
+        <p class="login__subtitulo">Inicia sesion para continuar</p>
+      </header>
+
+      <form class="login__form" [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
+        @if (error()) {
+          <p class="login__error" role="alert">
+            <mat-icon aria-hidden="true">error_outline</mat-icon>
+            <span>{{ error() }}</span>
+          </p>
+        }
+
+        <mat-form-field appearance="outline">
+          <mat-label>Identificador</mat-label>
+          <mat-icon matPrefix aria-hidden="true">person_outline</mat-icon>
+          <input
+            matInput
+            type="text"
+            formControlName="identificador"
+            autocomplete="username"
+            autocapitalize="none"
+            spellcheck="false"
+            required
+          />
+          @if (formulario.controls.identificador.hasError('required') && formulario.controls.identificador.touched) {
+            <mat-error>El identificador es obligatorio.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Contraseña</mat-label>
+          <mat-icon matPrefix aria-hidden="true">lock_outline</mat-icon>
+          <input
+            matInput
+            [type]="mostrarPassword() ? 'text' : 'password'"
+            formControlName="password"
+            autocomplete="current-password"
+            required
+          />
+          <button
+            matIconButton
+            matSuffix
+            type="button"
+            [attr.aria-label]="etiquetaPassword()"
+            [attr.aria-pressed]="mostrarPassword()"
+            (click)="mostrarPassword.set(!mostrarPassword())"
+          >
+            <mat-icon aria-hidden="true">{{ mostrarPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          @if (formulario.controls.password.hasError('required') && formulario.controls.password.touched) {
+            <mat-error>La contraseña es obligatoria.</mat-error>
+          }
+        </mat-form-field>
+
+        <button matButton="filled" type="submit" class="login__enviar" [disabled]="enviando()">
+          @if (enviando()) {
+            <mat-spinner [diameter]="20" aria-label="Iniciando sesion" />
+          } @else {
+            Iniciar sesion
+          }
+        </button>
+      </form>
+
+      <div class="login__acciones">
+        <button matButton type="button" (click)="theme.toggle()">
+          <mat-icon aria-hidden="true">{{ theme.mode() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
+          Cambiar tema
+        </button>
+      </div>
+    </div>
+  </section>
+</main>

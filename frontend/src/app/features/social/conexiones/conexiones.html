@@ -1,0 +1,102 @@
+<app-page-header
+  titulo="Conexiones"
+  subtitulo="Conecta y administra las cuentas de redes sociales de tu empresa."
+>
+  @if (puedeCrear) {
+    <button acciones matButton="filled" type="button" (click)="alternarAlta()">
+      <mat-icon>{{ mostrarAlta() ? 'close' : 'add' }}</mat-icon>
+      {{ mostrarAlta() ? 'Cerrar' : 'Conectar cuenta' }}
+    </button>
+  }
+</app-page-header>
+
+@if (mostrarAlta() && puedeCrear) {
+  <mat-card appearance="outlined" class="social-alta">
+    <mat-card-content>
+      <form [formGroup]="formAlta" (ngSubmit)="crear()" novalidate>
+        <h2 class="social-alta__titulo">Conectar una cuenta</h2>
+
+        @if (mensajeConflicto()) {
+          <p class="conexiones-conflicto" role="alert">{{ mensajeConflicto() }}</p>
+        }
+
+        <div class="social-form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Canal</mat-label>
+            <mat-select formControlName="canal">
+              @for (opcion of canales; track opcion.valor) {
+                <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>
+              }
+            </mat-select>
+            <mat-error>Selecciona el canal.</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre</mat-label>
+            <input matInput formControlName="nombre" autocomplete="off" />
+            <mat-error>El nombre es obligatorio.</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Identificador externo</mat-label>
+            <input matInput formControlName="identificadorExterno" autocomplete="off" />
+            <mat-hint>{{ ayudaIdentificador() }}</mat-hint>
+            <mat-error>El identificador externo es obligatorio.</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Referencia de credencial</mat-label>
+            <input matInput formControlName="credencialesRef" autocomplete="off" />
+            <mat-hint>
+              Nombre del secreto/credencial configurado por tu administrador. NO escribas la
+              credencial aqui.
+            </mat-hint>
+            <mat-error>La referencia de credencial es obligatoria.</mat-error>
+          </mat-form-field>
+        </div>
+
+        <button matButton="filled" type="submit" [disabled]="guardando()">Conectar</button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+@if (estado().fase === 'vacio') {
+  <div class="conexiones-vacio" role="status">
+    <mat-icon class="conexiones-vacio__icono" aria-hidden="true">hub</mat-icon>
+    <p class="conexiones-vacio__texto">Aun no has conectado ninguna cuenta.</p>
+    @if (puedeCrear && !mostrarAlta()) {
+      <button matButton="filled" type="button" (click)="alternarAlta()">
+        <mat-icon>add</mat-icon>
+        Conectar cuenta
+      </button>
+    }
+  </div>
+} @else {
+  <app-state-container
+    [fase]="estado().fase"
+    [mensajeError]="estado().mensajeError"
+    mensajeVacio="Aun no has conectado ninguna cuenta."
+    (reintentar)="cargar()"
+  >
+    <app-data-table [columnas]="columnas" [filas]="estado().datos ?? []" [total]="total()">
+      <ng-template appCelda="canal" let-c>
+        <span class="conexiones-canal">
+          <mat-icon aria-hidden="true">{{ iconoCanal(c.canal) }}</mat-icon>
+          {{ etiquetaCanal(c.canal) }}
+        </span>
+      </ng-template>
+      <ng-template appCelda="nombre" let-c>{{ c.nombre }}</ng-template>
+      <ng-template appCelda="identificador" let-c>{{ c.identificadorExterno }}</ng-template>
+      <ng-template appCelda="estado" let-c>
+        <span
+          class="conexiones-estado"
+          [class.conexiones-estado--activa]="c.activa"
+          [class.conexiones-estado--inactiva]="!c.activa"
+        >
+          {{ c.activa ? 'Activa' : 'Inactiva' }}
+        </span>
+      </ng-template>
+    </app-data-table>
+  </app-state-container>
+}

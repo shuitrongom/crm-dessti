@@ -1,0 +1,28 @@
+# ==== Artefactos de build ====
+backend/target/
+frontend/dist/
+frontend/.angular/
+**/node_modules/
+*.jar
+*.war
+
+# ==== Logs / temporales ====
+*.log
+tmp/
+out-tsc/
+coverage/
+
+# ==== Secretos (nunca versionar) ====
+*.env
+.env
+parametros.ps1
+*.pem
+*.key
+*.pfx
+*.jks
+
+# ==== IDE / OS ====
+.idea/
+*.iml
+.DS_Store
+Thumbs.db

@@ -1,0 +1,107 @@
+// =============================================================================
+// Estilos de DataTable (Req 12, 52, 57)
+// -----------------------------------------------------------------------------
+// Tabla generica reutilizada por multiples vistas. El contenedor permite el
+// desplazamiento horizontal en pantallas estrechas con una barra sutil y siempre
+// perceptible (affordance). La clase opcional `data-table__col--movil-oculta`
+// oculta una columna no esencial por debajo del breakpoint `md`: es la que
+// activan las vistas al declarar `ocultarEnMovil: true` en su columna, para que
+// las columnas clave quepan sin scroll. Solo tokens del Sistema de Diseno.
+// =============================================================================
+
+@use '../../../../styles/breakpoints' as bp;
+
+.data-table {
+  background: var(--ds-color-surface);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  overflow: hidden;
+
+  &__scroll {
+    // Desplazamiento horizontal en pantallas pequenas (mobile-first, Req 52),
+    // con una barra sutil pero perceptible como affordance.
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ds-color-border) transparent;
+
+    &::-webkit-scrollbar {
+      block-size: 0.5rem;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: var(--ds-color-border);
+      border-radius: var(--ds-radius-pill);
+    }
+  }
+
+  &__tabla {
+    width: 100%;
+    background: transparent;
+
+    // Look enterprise sobre las clases MDC que emite Angular Material. Solo
+    // tokens del Sistema de Diseno; correcto en tema claro y oscuro.
+    // -------------------------------------------------------------------------
+    // Encabezado: fondo sutil distinto, etiqueta atenuada y borde inferior.
+    ::ng-deep .mat-mdc-header-cell {
+      background: var(--ds-color-surface-variant);
+      color: var(--ds-color-text-muted);
+      font-weight: var(--ds-font-weight-medium);
+      font-size: var(--ds-font-size-xs);
+      letter-spacing: 0.04em;
+      border-bottom: 1px solid var(--ds-color-border);
+    }
+
+    // Densidad y respiro: mismo padding comodo para encabezado y celdas.
+    ::ng-deep .mat-mdc-cell,
+    ::ng-deep .mat-mdc-header-cell {
+      padding-block: var(--ds-space-3);
+      padding-inline: var(--ds-space-4);
+      vertical-align: middle;
+    }
+
+    // Cuerpo: tipografia legible con el color de texto principal.
+    ::ng-deep .mat-mdc-cell {
+      color: var(--ds-color-text);
+      font-size: var(--ds-font-size-sm);
+    }
+
+    // Separadores sutiles entre filas y estado hover accesible (tono del
+    // primario mezclado con transparente, valido en claro y oscuro).
+    ::ng-deep .mat-mdc-row .mat-mdc-cell {
+      border-bottom: 1px solid
+        color-mix(in srgb, var(--ds-color-border) 70%, transparent);
+    }
+
+    ::ng-deep .mat-mdc-row:last-of-type .mat-mdc-cell {
+      border-bottom: 0;
+    }
+
+    ::ng-deep .mat-mdc-row:hover {
+      background: color-mix(in srgb, var(--ds-color-primary) 5%, transparent);
+    }
+  }
+
+  &__celda--centro {
+    text-align: center;
+  }
+
+  &__celda--fin {
+    text-align: end;
+  }
+
+  // Columna de acciones (alineada al fin): ancho minimo para que el menu de
+  // 3 puntos nunca quede recortado en pantallas estrechas.
+  th.data-table__celda--fin,
+  td.data-table__celda--fin {
+    min-inline-size: 4rem;
+  }
+
+  // Columna marcada como no esencial: se oculta por debajo de `md` para que las
+  // columnas clave quepan sin desplazamiento horizontal. Por omision no aplica,
+  // preservando el comportamiento de las demas tablas.
+  &__col--movil-oculta {
+    @include bp.until('md') {
+      display: none;
+    }
+  }
+}

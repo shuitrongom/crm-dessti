@@ -1,0 +1,233 @@
+@use '../../../../styles/breakpoints' as bp;
+
+.cotizacion-detalle {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-4);
+
+  &__spacer {
+    flex: 1 1 auto;
+  }
+
+  // Aviso informativo no intrusivo de datos fiscales incompletos (Req 3). Sigue
+  // el patron de banners "info" del sistema de diseno (tokens, WCAG AA).
+  &__aviso-fiscal {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ds-space-2);
+    padding: var(--ds-space-3);
+    border: 1px solid color-mix(in srgb, var(--ds-color-info) 32%, transparent);
+    border-radius: var(--ds-radius-md);
+    background: color-mix(in srgb, var(--ds-color-info) 10%, transparent);
+    color: var(--ds-color-text);
+    font-size: var(--ds-font-size-sm);
+
+    .mat-icon {
+      flex: 0 0 auto;
+      inline-size: 20px;
+      block-size: 20px;
+      color: var(--ds-color-info);
+    }
+
+    p {
+      margin: 0;
+    }
+  }
+
+  &__cabecera {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--ds-space-3);
+  }
+
+  &__titulo {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--ds-space-2);
+  }
+
+  &__folio {
+    margin: 0;
+    font-size: var(--ds-font-size-xl, var(--ds-font-size-lg));
+    font-weight: var(--ds-font-weight-bold, 700);
+  }
+
+  &__meta,
+  &__cliente {
+    display: grid;
+    gap: var(--ds-space-2) var(--ds-space-4);
+    margin: 0;
+
+    @include bp.from('sm') {
+      grid-template-columns: repeat(2, minmax(0, auto));
+    }
+
+    dt {
+      margin: 0;
+      color: var(--ds-color-text-muted);
+      font-size: var(--ds-font-size-sm);
+    }
+
+    dd {
+      margin: 0;
+      font-weight: var(--ds-font-weight-medium);
+    }
+  }
+
+  &__acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ds-space-2);
+    margin-top: var(--ds-space-3);
+    padding-top: var(--ds-space-3);
+    border-top: 1px solid var(--ds-color-border);
+  }
+
+  // Fila "Generada desde una oportunidad" (enlace al pipeline de origen, Req 3.1).
+  &__origen {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-2);
+    margin: var(--ds-space-3) 0 0;
+    font-size: var(--ds-font-size-sm);
+    color: var(--ds-color-text-muted);
+
+    .mat-icon {
+      flex: 0 0 auto;
+      inline-size: 20px;
+      block-size: 20px;
+      color: var(--ds-color-primary);
+    }
+  }
+
+  // Canal de venta actual + accion de asignacion (Req 3.3).
+  &__canal {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ds-space-2);
+    margin-top: var(--ds-space-3);
+    padding-top: var(--ds-space-3);
+    border-top: 1px solid var(--ds-color-border);
+  }
+
+  &__canal-actual {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-2);
+    margin: 0;
+    font-weight: var(--ds-font-weight-medium);
+
+    .mat-icon {
+      flex: 0 0 auto;
+      inline-size: 20px;
+      block-size: 20px;
+      color: var(--ds-color-text-muted);
+    }
+  }
+
+  &__num {
+    text-align: right;
+  }
+
+  &__totales {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--ds-space-1);
+    margin: var(--ds-space-3) 0 0;
+
+    div {
+      display: flex;
+      gap: var(--ds-space-3);
+      align-items: baseline;
+    }
+
+    dt {
+      margin: 0;
+      color: var(--ds-color-text-muted);
+    }
+
+    dd {
+      margin: 0;
+      min-width: 8rem;
+      text-align: right;
+    }
+  }
+
+  &__total {
+    font-size: var(--ds-font-size-md);
+    font-weight: var(--ds-font-weight-bold, 700);
+
+    dt {
+      color: var(--ds-color-text);
+    }
+  }
+
+  &__textos {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-3);
+  }
+
+  &__subtitulo {
+    margin: 0 0 var(--ds-space-1);
+    font-size: var(--ds-font-size-md);
+  }
+
+  &__parrafo {
+    margin: 0;
+    white-space: pre-line;
+    color: var(--ds-color-text);
+  }
+
+  &__tabla {
+    width: 100%;
+  }
+
+  &__form-acciones {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--ds-space-2);
+    margin-bottom: var(--ds-space-3);
+  }
+
+  &__pruebas {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-2);
+  }
+
+  &__prueba {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ds-space-2);
+    padding: var(--ds-space-2) var(--ds-space-3);
+    border: 1px solid var(--ds-color-border);
+    border-radius: var(--ds-radius-sm, var(--ds-radius-md));
+  }
+
+  &__prueba-estado {
+    margin-left: var(--ds-space-2);
+    color: var(--ds-color-text-muted);
+    font-size: var(--ds-font-size-sm);
+  }
+
+  &__prueba-acciones {
+    display: flex;
+    gap: var(--ds-space-1);
+  }
+
+  &__vacio {
+    margin: 0;
+    color: var(--ds-color-text-muted);
+  }
+}

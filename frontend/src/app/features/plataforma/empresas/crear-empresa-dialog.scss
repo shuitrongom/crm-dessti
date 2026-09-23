@@ -1,0 +1,362 @@
+﻿// =============================================================================
+// Estilos del dialogo de alta de Empresa (super_admin) (Req 24.2, 25.4, 52, 53)
+// -----------------------------------------------------------------------------
+// Formulario enterprise organizado en secciones tipo "tarjeta" con encabezado,
+// rejilla responsive (1 col en movil, 2 en escritorio) y utilidad de campo a
+// ancho completo. Sin desbordamiento horizontal; scroll solo vertical dentro de
+// mat-dialog-content. Solo tokens del Sistema de Diseno (tema claro y oscuro).
+// =============================================================================
+
+@use '../../../../styles/breakpoints' as bp;
+
+.crear-empresa__form {
+  display: flex;
+  flex-direction: column;
+  // Mayor separacion entre secciones para dar aire al formulario (enterprise).
+  gap: var(--ds-space-6);
+  min-inline-size: 0;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  box-sizing: border-box;
+  // Solo scroll vertical dentro de mat-dialog-content; nunca horizontal.
+  overflow-x: hidden;
+  padding-block-start: var(--ds-space-3);
+}
+
+// -----------------------------------------------------------------------------
+// Mensajes
+// -----------------------------------------------------------------------------
+.crear-empresa__error {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  margin: 0;
+  padding: var(--ds-space-3);
+  border: 1px solid color-mix(in srgb, var(--ds-color-error) 32%, transparent);
+  border-radius: var(--ds-radius-sm);
+  background: color-mix(in srgb, var(--ds-color-error) 12%, transparent);
+  color: var(--ds-color-error);
+  font-size: var(--ds-font-size-sm);
+
+  mat-icon {
+    flex: 0 0 auto;
+    font-size: 20px;
+    inline-size: 20px;
+    block-size: 20px;
+  }
+
+  &--inline {
+    padding: var(--ds-space-2) var(--ds-space-3);
+  }
+}
+
+.crear-empresa__aviso {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  color: var(--ds-color-text-muted);
+}
+
+.crear-empresa__credencial {
+  padding: var(--ds-space-3);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-surface-variant);
+  line-height: var(--ds-line-height-base);
+
+  code {
+    padding: var(--ds-space-1) var(--ds-space-2);
+    border-radius: var(--ds-radius-sm);
+    background: var(--ds-color-surface);
+    border: 1px solid var(--ds-color-border);
+  }
+}
+
+.crear-empresa__aviso-giros {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  margin: 0;
+  padding: var(--ds-space-3);
+  border: 1px solid color-mix(in srgb, var(--ds-color-warning) 40%, transparent);
+  border-radius: var(--ds-radius-md);
+  background: color-mix(in srgb, var(--ds-color-warning) 12%, transparent);
+  color: var(--ds-color-warning);
+  min-inline-size: 0;
+}
+
+// Aviso (no bloqueante) cuando el Plan incluye modulos especificos de un Giro
+// distinto al elegido para la Empresa: alerta al super_admin de una posible
+// incongruencia sin impedir el alta.
+.crear-empresa__aviso-giro-ajeno {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ds-space-2);
+  margin: var(--ds-space-3) 0 0;
+  padding: var(--ds-space-3);
+  border: 1px solid color-mix(in srgb, var(--ds-color-warning) 40%, transparent);
+  border-radius: var(--ds-radius-md);
+  background: color-mix(in srgb, var(--ds-color-warning) 12%, transparent);
+  color: var(--ds-color-text);
+  font-size: var(--ds-font-size-sm);
+  line-height: var(--ds-line-height-base);
+  min-inline-size: 0;
+
+  mat-icon {
+    flex: 0 0 auto;
+    margin-block-start: 1px;
+    font-size: 20px;
+    inline-size: 20px;
+    block-size: 20px;
+    color: var(--ds-color-warning);
+  }
+}
+
+// Nota informativa (no bloqueante) al elegir un giro "Base" en el alta: informa
+// que solo incluye los modulos base, sin reglas de negocio especificas todavia.
+.crear-empresa__nota-giro-base {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ds-space-2);
+  margin: var(--ds-space-3) 0 0;
+  padding: var(--ds-space-3);
+  border: 1px solid color-mix(in srgb, var(--ds-color-info) 32%, transparent);
+  border-radius: var(--ds-radius-md);
+  background: color-mix(in srgb, var(--ds-color-info) 10%, transparent);
+  color: var(--ds-color-text);
+  font-size: var(--ds-font-size-sm);
+  line-height: var(--ds-line-height-base);
+  min-inline-size: 0;
+
+  mat-icon {
+    flex: 0 0 auto;
+    margin-block-start: 1px;
+    font-size: 20px;
+    inline-size: 20px;
+    block-size: 20px;
+    color: var(--ds-color-info);
+  }
+}
+
+// Contenedor de una casilla de modulo con su posible motivo de bloqueo debajo.
+.crear-empresa__modulo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-1);
+  min-inline-size: 0;
+}
+
+// Motivo del bloqueo de deseleccion de un modulo requerido por dependencia.
+.crear-empresa__nota-bloqueado {
+  margin: 0;
+  padding: var(--ds-space-2) var(--ds-space-3);
+  border-color: color-mix(in srgb, var(--ds-color-warning) 36%, transparent);
+  background: color-mix(in srgb, var(--ds-color-warning) 10%, transparent);
+
+  mat-icon {
+    color: var(--ds-color-warning);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Secciones del formulario (tarjeta con encabezado, sin fieldset tosco)
+// -----------------------------------------------------------------------------
+.crear-empresa__seccion {
+  margin: 0;
+  // Interior mas holgado para separar el encabezado de los campos.
+  padding: var(--ds-space-5);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-surface);
+  min-inline-size: 0;
+}
+
+.crear-empresa__seccion-titulo {
+  // Mayor separacion bajo el encabezado de seccion para un ritmo mas claro.
+  margin: 0 0 var(--ds-space-4);
+  padding-block-end: var(--ds-space-3);
+  border-block-end: 1px solid var(--ds-color-border);
+  font-size: var(--ds-font-size-xs);
+  font-weight: var(--ds-font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ds-color-text-muted);
+}
+
+// Rejilla responsive de campos: 1 columna en movil, 2 en escritorio. Columnas de
+// igual ancho (minmax(0,1fr)) para que pares como RFC + Giro queden alineados y
+// con un column-gap holgado que evita que se vean apretados.
+.crear-empresa__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-space-4) var(--ds-space-5);
+
+  @include bp.from('sm') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  mat-form-field {
+    min-inline-size: 0;
+    inline-size: 100%;
+  }
+}
+
+// Rejilla mas densa para casillas de modulos.
+.crear-empresa__grid--checks {
+  gap: var(--ds-space-2) var(--ds-space-4);
+}
+
+// Campo que ocupa las dos columnas (evita huerfanos en filas impares).
+.crear-empresa__campo--ancho {
+  @include bp.from('sm') {
+    grid-column: 1 / -1;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Carga de logo con vista previa (tarjeta interna)
+// -----------------------------------------------------------------------------
+.crear-empresa__logo {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-4);
+  // Separacion clara de los campos de la seccion Identidad.
+  margin-block-start: var(--ds-space-5);
+  padding: var(--ds-space-4);
+  border: 1px dashed var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-surface-variant);
+}
+
+.crear-empresa__logo-preview,
+.crear-empresa__logo-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  inline-size: 64px;
+  block-size: 64px;
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-surface);
+  object-fit: contain;
+  color: var(--ds-color-text-muted);
+
+  mat-icon {
+    font-size: 28px;
+    inline-size: 28px;
+    block-size: 28px;
+  }
+}
+
+.crear-empresa__logo-controles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-1);
+  min-inline-size: 0;
+}
+
+.crear-empresa__logo-titulo {
+  font-size: var(--ds-font-size-sm);
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-text);
+}
+
+.crear-empresa__logo-ayuda {
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-xs);
+}
+
+.crear-empresa__logo-botones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-2);
+  margin-block-start: var(--ds-space-1);
+}
+
+// El input de archivo se oculta pero permanece accesible: la etiqueta que lo
+// envuelve actua como boton disparador.
+.crear-empresa__logo-boton {
+  position: relative;
+  display: inline-flex;
+  cursor: pointer;
+}
+
+.crear-empresa__logo-input {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+// -----------------------------------------------------------------------------
+// Selector excluyente del instrumento comercial (Plan | Suscripcion)
+// -----------------------------------------------------------------------------
+.crear-empresa__tipo-instrumento {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-4);
+  margin-block-end: var(--ds-space-3);
+}
+
+// Casilla y ayuda del periodo de prueba (solo con Paquete que admite prueba).
+.crear-empresa__prueba {
+  margin-block-start: var(--ds-space-3);
+  padding: var(--ds-space-3);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-surface-variant);
+  min-inline-size: 0;
+}
+
+.crear-empresa__prueba-ayuda {
+  margin: var(--ds-space-1) 0 0;
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-sm);
+  line-height: var(--ds-line-height-base);
+}
+
+// -----------------------------------------------------------------------------
+// Selector de subconjunto de modulos
+// -----------------------------------------------------------------------------
+.crear-empresa__modulos {
+  // Separacion clara del selector de instrumento y sus avisos.
+  margin-block-start: var(--ds-space-5);
+  padding: var(--ds-space-4);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-surface-variant);
+  min-inline-size: 0;
+}
+
+.crear-empresa__modulos-titulo {
+  margin: 0 0 var(--ds-space-1);
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-text);
+}
+
+.crear-empresa__modulos-ayuda {
+  margin: 0 0 var(--ds-space-3);
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-sm);
+}
+
+.crear-empresa__grupos {
+  max-block-size: 32vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-4);
+}
+
+.crear-empresa__grupo-titulo {
+  margin: 0 0 var(--ds-space-2);
+  font-size: var(--ds-font-size-xs);
+  font-weight: var(--ds-font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ds-color-text-muted);
+}

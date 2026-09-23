@@ -1,0 +1,58 @@
+@use '../../../../styles/breakpoints' as bp;
+
+.of-detalle {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-4);
+
+  &__datos {
+    display: grid;
+    gap: var(--ds-space-3);
+    margin: 0;
+
+    @include bp.from('md') {
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+  }
+
+  &__dato {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-1);
+
+    dt {
+      margin: 0;
+      color: var(--ds-color-text-muted);
+      font-size: var(--ds-font-size-sm, 0.875rem);
+    }
+
+    dd {
+      margin: 0;
+      color: var(--ds-color-text);
+    }
+  }
+
+  &__estado {
+    display: inline-block;
+    padding: var(--ds-space-1) var(--ds-space-2);
+    border-radius: var(--ds-radius-pill);
+    border: 1px solid var(--ds-color-border);
+    background: var(--ds-color-surface-variant);
+    color: var(--ds-color-text);
+    font-size: var(--ds-font-size-sm, 0.875rem);
+  }
+
+  &__tabla {
+    width: 100%;
+    background: transparent;
+  }
+
+  &__col-cantidad {
+    text-align: right;
+  }
+
+  &__vacio {
+    margin: 0;
+    color: var(--ds-color-text-muted);
+  }
+}

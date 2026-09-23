@@ -1,0 +1,871 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Crear `V64__contratacion_plan_vs_suscripcion.sql` con estructura y clasificación idempotentes": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770530170
+      },
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770540356
+      },
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789771427310
+      }
+    ],
+    "1.2 Añadir en la misma migración el saneo del override inconsistente (Demo Factura)": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770530288
+      },
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770541281
+      },
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789771428189
+      }
+    ],
+    "2.1 Ampliar `EstadoSuscripcion` con `EN_PRUEBA` y `VENCIDA`": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770530366
+      },
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789771441329
+      },
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789771880585
+      }
+    ],
+    "2.2 Añadir `duracionDias` a `Plan` con validación de dominio": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770530438
+      },
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789771442820
+      },
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789771881934
+      }
+    ],
+    "2.3 Crear entidad de dominio `PaqueteSuscripcion`": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770530543
+      },
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789771443812
+      },
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789771882882
+      }
+    ],
+    "2.4 Ampliar `Suscripcion` (Contrato) con instrumento, facturación y transiciones": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770530619
+      },
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789771896571
+      },
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789772628678
+      }
+    ],
+    "3.1 Crear `PaqueteSuscripcionRepository`": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770530687
+      },
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789771897878
+      },
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789772629457
+      }
+    ],
+    "3.2 Ampliar `SuscripcionRepository` con selección por conjunto de estados": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770530758
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789774974986
+      }
+    ],
+    "3.3 Extraer helper `CatalogoModulosGiroValidacion`": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770530829
+      },
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789771899319
+      },
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789772630834
+      }
+    ],
+    "4.1 Crear DTO y commands de Paquete de Suscripción": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770530915
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789772812419
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789772955738
+      }
+    ],
+    "4.2 Ampliar `PlanDto` y sus commands con `duracionDias`": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770531386
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789772957044
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789773190578
+      }
+    ],
+    "4.3 Ampliar `SuscripcionDto` y `EmpresaDto.PlanVigenteDto`": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770531596
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789773191564
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789773710146
+      }
+    ],
+    "5.1 Crear `ContratacionProperties` y registrar `application.yml`": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770531704
+      },
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789771900644
+      },
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789772632236
+      }
+    ],
+    "6.1 Crear `ServicioPaquetesSuscripcion`": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770531825
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789773732712
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789773949168
+      }
+    ],
+    "6.2 Ampliar `ServicioPlanes` con duración y helper": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770531970
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789773950292
+      }
+    ],
+    "6.3 Ampliar `ServicioSuscripciones` con acciones de contrato": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770532077
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789773957492
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789774252242
+      }
+    ],
+    "6.4 Ampliar `ServicioEmpresas.crearEmpresa` con elección excluyente": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770532175
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789774253612
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789774710433
+      }
+    ],
+    "6.5 Ampliar enriquecimiento `planVigente` en `ServicioEmpresas`": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770532268
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789774254837
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789774711326
+      }
+    ],
+    "7.1 Ajustar selección y corte por fecha del gating": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770532367
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789774726460
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789774976140
+      }
+    ],
+    "8.1 Crear `PaqueteSuscripcionController`": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770532468
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789774986887
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789775245124
+      }
+    ],
+    "8.2 Añadir acciones de contrato en `SuscripcionController`": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770532647
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789775246309
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789775409253
+      }
+    ],
+    "8.3 Ajustar `CrearEmpresaRequest` y `EmpresaController`": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770532801
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789775410383
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789775741069
+      }
+    ],
+    "11.1 Ampliar `plataforma.models.ts`": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770532963
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789787922622
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789788167153
+      }
+    ],
+    "12.1 Crear `PaquetesSuscripcionService`": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770533073
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789788190894
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789788404828
+      }
+    ],
+    "12.2 Ampliar `SuscripcionesService` con acciones de contrato": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770533163
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789788191987
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789788404991
+      }
+    ],
+    "13.1 Reestructurar `planes.ts`/`planes.html` en dos secciones": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770533249
+      },
+      {
+        "executionId": "011754d8-a0dd-4555-a518-6eeefbfb0819",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789790589960
+      },
+      {
+        "executionId": "011754d8-a0dd-4555-a518-6eeefbfb0819",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789790859590
+      }
+    ],
+    "13.2 Ampliar `plan-dialog` con `duracionDias`": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770533333
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789788565197
+      }
+    ],
+    "13.3 Crear `paquete-suscripcion-dialog`": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770533425
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789788566642
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789788831127
+      }
+    ],
+    "14.1 Mostrar tipo, estado derivado, días restantes y acciones": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770533505
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789788832027
+      },
+      {
+        "executionId": "011754d8-a0dd-4555-a518-6eeefbfb0819",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789790308665
+      }
+    ],
+    "15.1 Selector excluyente Plan | Suscripción + otorgar prueba": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770533605
+      },
+      {
+        "executionId": "011754d8-a0dd-4555-a518-6eeefbfb0819",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789790858410
+      },
+      {
+        "executionId": "011754d8-a0dd-4555-a518-6eeefbfb0819",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789791284560
+      }
+    ],
+    "16.1 Reflejar instrumento vigente en la columna del listado": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789770533709
+      },
+      {
+        "executionId": "011754d8-a0dd-4555-a518-6eeefbfb0819",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789790309790
+      },
+      {
+        "executionId": "011754d8-a0dd-4555-a518-6eeefbfb0819",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789790588193
+      }
+    ],
+    "1. Migración de base de datos (Flyway V64)": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789771428373
+      }
+    ],
+    "2. Dominio: estados, Plan y nueva entidad de catálogo": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789772628952
+      }
+    ],
+    "5. Configuración del umbral de aviso": [
+      {
+        "executionId": "9409c46d-4280-4425-9783-f5d62a872dc8",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789772632356
+      }
+    ],
+    "4. DTOs y commands": [
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789773710322
+      }
+    ],
+    "6. Servicios de aplicación": [
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789774711461
+      }
+    ],
+    "3. Persistencia y helper compartido de validación por giro": [
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789774975151
+      }
+    ],
+    "7. Gating por vencimiento en `PlanModulosPlanAdapter`": [
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789774976250
+      }
+    ],
+    "8. Endpoints REST": [
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789775741346
+      }
+    ],
+    "9.1 Actualizar tests existentes por firmas ampliadas": [
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789775745607
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789776341123
+      }
+    ],
+    "9. Actualizar tests backend existentes afectados": [
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789776341316
+      }
+    ],
+    "10.1 Verificar build y suite backend (`mvn -o test`) sin regresión (1177+)": [
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789776348164
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789776574915
+      }
+    ],
+    "10. Checkpoint backend": [
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789776575054
+      }
+    ],
+    "1.3 Prueba de integración de arranque de la migración V64": [
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789776581607
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789785866341
+      }
+    ],
+    "1.4 Prueba de integración del saneo del override": [
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789776583026
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789785867313
+      }
+    ],
+    "2.5 Property tests jqwik de invariantes y estados de dominio": [
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789776584375
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789776821929
+      }
+    ],
+    "2.6 Unit tests de transiciones de estado": [
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789776585784
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789777010630
+      }
+    ],
+    "3.4 Unit tests del helper `CatalogoModulosGiroValidacion`": [
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789776587046
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789777142490
+      }
+    ],
+    "6.6 Property test de override subconjunto (servicios)": [
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789785876916
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789786059508
+      }
+    ],
+    "7.2 Property tests jqwik del gating": [
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789786060402
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789786374001
+      }
+    ],
+    "8.4 Tests de controladores (`@WebMvcTest`/integración)": [
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789786399691
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789787012903
+      }
+    ],
+    "6.7 Tests de integración de alta excluyente y acciones de contrato": [
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789787022769
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789787912908
+      }
+    ],
+    "7.3 Tests de integración del gating por vencimiento": [
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789787023872
+      },
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789787913998
+      }
+    ],
+    "11. Modelos del frontend": [
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789788167308
+      }
+    ],
+    "12. Servicios del frontend": [
+      {
+        "executionId": "128630e0-7144-41e2-993a-b7b8a306f650",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789788405432
+      }
+    ],
+    "14. Panel de contrato `plan-suscripcion-dialog`": [
+      {
+        "executionId": "011754d8-a0dd-4555-a518-6eeefbfb0819",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789790309106
+      }
+    ],
+    "16. Listado de empresas `empresas.ts`": [
+      {
+        "executionId": "011754d8-a0dd-4555-a518-6eeefbfb0819",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789790588650
+      }
+    ],
+    "13. Pantalla \"Planes y suscripciones\" y formularios de catálogo": [
+      {
+        "executionId": "011754d8-a0dd-4555-a518-6eeefbfb0819",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789790859823
+      }
+    ],
+    "15. Alta de empresa `crear-empresa-dialog`": [
+      {
+        "executionId": "011754d8-a0dd-4555-a518-6eeefbfb0819",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789791285029
+      }
+    ],
+    "17.1 Corregir specs que rompan por nuevos campos": [
+      {
+        "executionId": "011754d8-a0dd-4555-a518-6eeefbfb0819",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789791297292
+      },
+      {
+        "executionId": "011754d8-a0dd-4555-a518-6eeefbfb0819",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789792372375
+      }
+    ],
+    "17. Actualizar specs frontend existentes afectadas": [
+      {
+        "executionId": "011754d8-a0dd-4555-a518-6eeefbfb0819",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789792373057
+      }
+    ],
+    "12.3 Specs one-shot de `PaquetesSuscripcionService` y `SuscripcionesService`": [
+      {
+        "executionId": "011754d8-a0dd-4555-a518-6eeefbfb0819",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789792373449
+      },
+      {
+        "executionId": "011754d8-a0dd-4555-a518-6eeefbfb0819",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789792580645
+      }
+    ],
+    "13.4 Specs one-shot + axe de `planes` y `paquete-suscripcion-dialog`": [
+      {
+        "executionId": "011754d8-a0dd-4555-a518-6eeefbfb0819",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789792579696
+      },
+      {
+        "executionId": "011754d8-a0dd-4555-a518-6eeefbfb0819",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789793023397
+      }
+    ],
+    "14.2 Specs one-shot + axe de `plan-suscripcion-dialog`": [
+      {
+        "executionId": "011754d8-a0dd-4555-a518-6eeefbfb0819",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789793022670
+      },
+      {
+        "executionId": "011754d8-a0dd-4555-a518-6eeefbfb0819",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789793272952
+      }
+    ],
+    "15.2 Specs one-shot + axe de `crear-empresa-dialog`": [
+      {
+        "executionId": "011754d8-a0dd-4555-a518-6eeefbfb0819",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789793273287
+      },
+      {
+        "executionId": "011754d8-a0dd-4555-a518-6eeefbfb0819",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789794252439
+      }
+    ],
+    "16.2 Specs one-shot + axe de `empresas`": [
+      {
+        "executionId": "011754d8-a0dd-4555-a518-6eeefbfb0819",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789794251786
+      },
+      {
+        "executionId": "011754d8-a0dd-4555-a518-6eeefbfb0819",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789794667424
+      }
+    ],
+    "18.1 Verificar build de producción y specs tocadas (one-shot)": [
+      {
+        "executionId": "011754d8-a0dd-4555-a518-6eeefbfb0819",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789794666876
+      },
+      {
+        "executionId": "011754d8-a0dd-4555-a518-6eeefbfb0819",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789795213590
+      }
+    ],
+    "18. Checkpoint frontend": [
+      {
+        "executionId": "011754d8-a0dd-4555-a518-6eeefbfb0819",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789795214503
+      }
+    ]
+  }
+}

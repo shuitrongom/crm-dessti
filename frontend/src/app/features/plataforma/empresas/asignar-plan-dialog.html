@@ -1,0 +1,88 @@
+<h2 mat-dialog-title>Asignar o cambiar plan</h2>
+<mat-dialog-content>
+  <p class="asignar-plan__intro">
+    Empresa: <strong>{{ data.empresa.nombre }}</strong>
+  </p>
+
+  <form
+    class="asignar-plan__form"
+    [formGroup]="formulario"
+    (ngSubmit)="guardar()"
+    [attr.aria-busy]="guardando()"
+    novalidate
+  >
+    @if (error()) {
+      <p class="asignar-plan__error" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </p>
+    }
+
+    <mat-form-field appearance="outline">
+      <mat-label>Plan</mat-label>
+      <mat-select formControlName="planId" required>
+        @for (plan of planes; track plan.id) {
+          <mat-option [value]="plan.id">{{ plan.nombre }}</mat-option>
+        }
+      </mat-select>
+      <mat-hint>Selecciona el plan a asignar a la empresa.</mat-hint>
+      @if (formulario.controls.planId.hasError('required') && formulario.controls.planId.touched) {
+        <mat-error>Selecciona un plan.</mat-error>
+      }
+    </mat-form-field>
+
+    @if (planSeleccionado(); as plan) {
+      <dl class="asignar-plan__detalle">
+        <div class="asignar-plan__detalle-fila">
+          <dt>Moneda</dt>
+          <dd>{{ plan.monedaCodigo ?? 'Sin asignar' }}</dd>
+        </div>
+        <div class="asignar-plan__detalle-fila">
+          <dt>Máximo de usuarios</dt>
+          <dd>{{ plan.maxUsuarios }}</dd>
+        </div>
+        <div class="asignar-plan__detalle-fila">
+          <dt>Total</dt>
+          <dd>{{ plan.total }}</dd>
+        </div>
+      </dl>
+    }
+
+    <div class="asignar-plan__fechas">
+      <mat-form-field appearance="outline">
+        <mat-label>Inicio de vigencia</mat-label>
+        <input
+          matInput
+          formControlName="vigenciaInicio"
+          [matDatepicker]="pickerInicio"
+        />
+        <mat-datepicker-toggle matIconSuffix [for]="pickerInicio" />
+        <mat-datepicker #pickerInicio />
+        <mat-hint>Opcional.</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fin de vigencia</mat-label>
+        <input
+          matInput
+          formControlName="vigenciaFin"
+          [matDatepicker]="pickerFin"
+        />
+        <mat-datepicker-toggle matIconSuffix [for]="pickerFin" />
+        <mat-datepicker #pickerFin />
+        <mat-hint>Opcional. Déjalo vacío para una suscripción sin fecha de fin.</mat-hint>
+      </mat-form-field>
+    </div>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancelar()">Cancelar</button>
+  <button
+    matButton="filled"
+    type="button"
+    (click)="guardar()"
+    [disabled]="guardando()"
+  >
+    Asignar plan
+  </button>
+</mat-dialog-actions>

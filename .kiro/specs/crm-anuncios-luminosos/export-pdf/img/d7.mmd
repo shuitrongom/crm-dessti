@@ -1,0 +1,9 @@
+stateDiagram-v2
+    [*] --> abierta
+    abierta --> recibida_parcial
+    abierta --> cancelada
+    recibida_parcial --> recibida_total
+    recibida_parcial --> cancelada
+    recibida_total --> cerrada
+    cerrada --> [*]
+    cancelada --> [*]

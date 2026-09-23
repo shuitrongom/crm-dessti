@@ -1,0 +1,31 @@
+<app-page-header
+  titulo="Mis facturas"
+  subtitulo="Consulta tus facturas CFDI y revisa su estado de timbrado."
+/>
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="Aun no tienes facturas."
+  (reintentar)="cargar()"
+>
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="folio" let-f>{{ f.folioFiscal ?? 'Sin timbrar' }}</ng-template>
+    <ng-template appCelda="total" let-f>
+      <span class="portal-num">{{ f.total | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span>
+    </ng-template>
+    <ng-template appCelda="estado" let-f>
+      <app-estado-chip [etiqueta]="humanizar(f.estado)" [tono]="tono(f.estado)" />
+    </ng-template>
+    <ng-template appCelda="timbrado" let-f>
+      {{ f.fechaTimbrado ? (f.fechaTimbrado | date: 'dd/MM/yyyy') : '-' }}
+    </ng-template>
+  </app-data-table>
+</app-state-container>

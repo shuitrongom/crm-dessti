@@ -1,0 +1,108 @@
+<app-page-header
+  titulo="Campañas publicitarias"
+  subtitulo="Consulta tus campañas por canal con su presupuesto y periodo; el estado operativo se sincroniza desde Meta (solo lectura)."
+>
+  @if (puedeCrear) {
+    <button acciones matButton="filled" type="button" (click)="alternarAlta()">
+      <mat-icon>{{ mostrarAlta() ? 'close' : 'add' }}</mat-icon>
+      {{ mostrarAlta() ? 'Cerrar' : 'Nueva campana' }}
+    </button>
+  }
+</app-page-header>
+
+@if (mostrarAlta() && puedeCrear) {
+  <mat-card appearance="outlined" class="social-alta">
+    <mat-card-content>
+      <form [formGroup]="formAlta" (ngSubmit)="crear()" novalidate>
+        <h2 class="social-alta__titulo">Nueva campana</h2>
+        <div class="social-form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre</mat-label>
+            <input matInput formControlName="nombre" autocomplete="off" />
+            <mat-error>El nombre es obligatorio.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Canal</mat-label>
+            <mat-select formControlName="canal">
+              @for (opcion of canalesAlta; track opcion.valor) {
+                <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Presupuesto (MXN)</mat-label>
+            <input matInput type="number" min="0.01" step="0.01" formControlName="presupuesto" />
+            <mat-error>Ingresa un presupuesto valido.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha de inicio</mat-label>
+            <input matInput [matDatepicker]="pickerFechaInicio" formControlName="fechaInicio" />
+            <mat-datepicker-toggle matSuffix [for]="pickerFechaInicio" />
+            <mat-datepicker #pickerFechaInicio />
+            <mat-error>La fecha de inicio es obligatoria.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha de fin</mat-label>
+            <input matInput [matDatepicker]="pickerFechaFin" formControlName="fechaFin" />
+            <mat-datepicker-toggle matSuffix [for]="pickerFechaFin" />
+            <mat-datepicker #pickerFechaFin />
+            <mat-error>La fecha de fin es obligatoria.</mat-error>
+          </mat-form-field>
+        </div>
+        <button matButton="filled" type="submit" [disabled]="guardando()">Crear campana</button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="No hay campanas. Conecta una cuenta en Conexiones para empezar a crear campanas."
+  (reintentar)="cargar()"
+>
+  <div class="social-filtros">
+    <mat-form-field appearance="outline">
+      <mat-label>Canal</mat-label>
+      <mat-select [value]="filtroCanal()" (valueChange)="aplicarCanal($event)">
+        @for (opcion of canales; track opcion.valor) {
+          <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="nombre" let-c>{{ c.nombre }}</ng-template>
+    <ng-template appCelda="canal" let-c>{{ etiquetaCanal(c.canal) }}</ng-template>
+    <ng-template appCelda="presupuesto" let-c>
+      <span class="social-num">{{ c.presupuesto | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span>
+    </ng-template>
+    <ng-template appCelda="periodo" let-c>
+      {{ c.fechaInicio | date: 'dd/MM/yyyy' }} - {{ c.fechaFin | date: 'dd/MM/yyyy' }}
+    </ng-template>
+    <ng-template appCelda="estadoExterno" let-c>
+      @if (estadoExternoDe(c.id); as externo) {
+        <span>{{ externo.estado ?? 'Sin estado' }}</span>
+      } @else {
+        <span class="social-ayuda">{{ c.estadoExterno ?? 'No consultado' }}</span>
+      }
+    </ng-template>
+    <ng-template appCelda="acciones" let-c>
+      @if (puedeLeer) {
+        <button matButton type="button" (click)="consultarEstadoExterno(c)">
+          <mat-icon>sync</mat-icon> Estado Meta
+        </button>
+      } @else {
+        <span class="social-ayuda">-</span>
+      }
+    </ng-template>
+  </app-data-table>
+</app-state-container>

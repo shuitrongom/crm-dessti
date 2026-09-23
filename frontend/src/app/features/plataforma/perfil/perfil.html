@@ -1,0 +1,286 @@
+<app-page-header
+  titulo="Mi perfil"
+  subtitulo="Consulta los datos de tu cuenta y actualiza tu contraseña."
+/>
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  etiquetaCarga="Cargando tu perfil"
+  (reintentar)="cargar()"
+>
+  @if (estado().datos; as perfil) {
+    <div class="perfil__grid">
+      <!-- Tarjeta: datos de la cuenta (solo lectura) -->
+      <mat-card appearance="outlined" class="perfil__card">
+        <mat-card-header>
+          <mat-card-title>Datos de la cuenta</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <dl class="perfil__datos">
+            <div class="perfil__dato">
+              <dt class="perfil__etiqueta">Identificador</dt>
+              <dd class="perfil__valor">{{ perfil.identificador }}</dd>
+            </div>
+            <div class="perfil__dato">
+              <dt class="perfil__etiqueta">Ámbito</dt>
+              <dd class="perfil__valor">{{ ambitoLegible() }}</dd>
+            </div>
+            <div class="perfil__dato">
+              <dt class="perfil__etiqueta">Roles</dt>
+              <dd class="perfil__valor">
+                @if (perfil.roles.length) {
+                  <mat-chip-set aria-label="Roles de la cuenta">
+                    @for (rol of perfil.roles; track rol) {
+                      <mat-chip class="perfil__rol">{{ etiquetaRol(rol) }}</mat-chip>
+                    }
+                  </mat-chip-set>
+                } @else {
+                  <span class="perfil__vacio">Sin roles asignados</span>
+                }
+              </dd>
+            </div>
+          </dl>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Tarjeta: cambio de contraseña -->
+      <mat-card appearance="outlined" class="perfil__card">
+        <mat-card-header>
+          <mat-card-title>Cambiar contraseña</mat-card-title>
+          <mat-card-subtitle>Usa una contraseña de al menos 8 caracteres.</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <form
+            class="perfil__form"
+            [formGroup]="formulario"
+            (ngSubmit)="cambiarPassword()"
+            [attr.aria-busy]="enviando()"
+            novalidate
+          >
+            @if (errorPassword()) {
+              <p class="perfil__error" role="alert">
+                <mat-icon aria-hidden="true">error_outline</mat-icon>
+                <span>{{ errorPassword() }}</span>
+              </p>
+            }
+
+            <mat-form-field appearance="outline">
+              <mat-label>Contraseña actual</mat-label>
+              <input
+                matInput
+                type="password"
+                formControlName="passwordActual"
+                autocomplete="current-password"
+                required
+              />
+              @if (formulario.controls.passwordActual.hasError('required') && formulario.controls.passwordActual.touched) {
+                <mat-error>La contraseña actual es obligatoria.</mat-error>
+              } @else if (formulario.controls.passwordActual.hasError('incorrecta')) {
+                <mat-error>La contraseña actual no es correcta.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Nueva contraseña</mat-label>
+              <input
+                matInput
+                type="password"
+                formControlName="passwordNueva"
+                autocomplete="new-password"
+                required
+              />
+              <mat-hint>Mínimo 8 caracteres.</mat-hint>
+              @if (formulario.controls.passwordNueva.hasError('required') && formulario.controls.passwordNueva.touched) {
+                <mat-error>La nueva contraseña es obligatoria.</mat-error>
+              } @else if (formulario.controls.passwordNueva.hasError('minlength') && formulario.controls.passwordNueva.touched) {
+                <mat-error>La nueva contraseña debe tener al menos 8 caracteres.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Confirmar contraseña</mat-label>
+              <input
+                matInput
+                type="password"
+                formControlName="confirmarPassword"
+                autocomplete="new-password"
+                required
+              />
+              @if (formulario.controls.confirmarPassword.hasError('required') && formulario.controls.confirmarPassword.touched) {
+                <mat-error>Confirma la nueva contraseña.</mat-error>
+              } @else if (formulario.controls.confirmarPassword.hasError('noCoincide') && formulario.controls.confirmarPassword.touched) {
+                <mat-error>Las contraseñas no coinciden.</mat-error>
+              }
+            </mat-form-field>
+
+            <div class="perfil__acciones">
+              <button matButton="filled" type="submit" [disabled]="enviando()">
+                @if (enviando()) {
+                  <mat-progress-spinner
+                    class="perfil__spinner"
+                    diameter="18"
+                    mode="indeterminate"
+                    aria-hidden="true"
+                  />
+                }
+                Cambiar contraseña
+              </button>
+            </div>
+          </form>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Tarjeta: datos de mi empresa (solo admin_empresa) -->
+    @if (esAdminEmpresa) {
+      <mat-card appearance="outlined" class="perfil__card perfil__card--empresa">
+        <mat-card-header>
+          <mat-card-title>Datos de mi empresa</mat-card-title>
+          <mat-card-subtitle>Actualiza la información de contacto y dirección de tu empresa.</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <app-state-container
+            [fase]="estadoEmpresa().fase"
+            [mensajeError]="estadoEmpresa().mensajeError"
+            etiquetaCarga="Cargando los datos de tu empresa"
+            (reintentar)="cargarEmpresa()"
+          >
+            @if (estadoEmpresa().datos !== undefined) {
+              <form
+                class="perfil__form-empresa"
+                [formGroup]="formularioEmpresa"
+                (ngSubmit)="guardarEmpresa()"
+                [attr.aria-busy]="guardandoEmpresa()"
+                novalidate
+              >
+                <div class="perfil__grid-empresa">
+                  <mat-form-field appearance="outline" class="perfil__campo--ancho">
+                    <mat-label>Nombre de la empresa</mat-label>
+                    <input matInput type="text" formControlName="nombre" required />
+                    @if (formularioEmpresa.controls.nombre.hasError('required') && formularioEmpresa.controls.nombre.touched) {
+                      <mat-error>El nombre de la empresa es obligatorio.</mat-error>
+                    }
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Correo de contacto</mat-label>
+                    <input matInput type="email" formControlName="emailContacto" autocomplete="off" required />
+                    @if (formularioEmpresa.controls.emailContacto.hasError('required') && formularioEmpresa.controls.emailContacto.touched) {
+                      <mat-error>El correo de contacto es obligatorio.</mat-error>
+                    } @else if (formularioEmpresa.controls.emailContacto.hasError('email') && formularioEmpresa.controls.emailContacto.touched) {
+                      <mat-error>Correo no válido.</mat-error>
+                    }
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Teléfono</mat-label>
+                    <input
+                      matInput
+                      type="tel"
+                      formControlName="telefono"
+                      autocomplete="off"
+                      inputmode="numeric"
+                      maxlength="10"
+                      (input)="soloDigitos($event)"
+                    />
+                    <mat-hint>10 dígitos</mat-hint>
+                    @if (formularioEmpresa.controls.telefono.hasError('telefono') && formularioEmpresa.controls.telefono.touched) {
+                      <mat-error>El teléfono debe tener 10 dígitos.</mat-error>
+                    }
+                  </mat-form-field>
+
+                  <div class="perfil__campo--ancho">
+                    <app-address-autocomplete (direccionSeleccionada)="onDireccionEmpresa($event)" />
+                  </div>
+
+                  <mat-form-field appearance="outline" class="perfil__campo--ancho">
+                    <mat-label>Calle y número</mat-label>
+                    <input matInput type="text" formControlName="direccionCalle" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Ciudad</mat-label>
+                    <input matInput type="text" formControlName="direccionCiudad" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Estado</mat-label>
+                    <input matInput type="text" formControlName="direccionEstado" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Código postal</mat-label>
+                    <input matInput type="text" formControlName="direccionCp" inputmode="numeric" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>País</mat-label>
+                    <input matInput type="text" formControlName="direccionPais" />
+                  </mat-form-field>
+                </div>
+
+                <!-- Carga de logo de la empresa -->
+                <div class="perfil__logo">
+                  @if (logoEmpresa(); as src) {
+                    <img
+                      class="perfil__logo-preview"
+                      [src]="src"
+                      [alt]="'Vista previa del logo ' + (logoEmpresaNombre() ?? '')"
+                    />
+                  } @else {
+                    <span class="perfil__logo-placeholder" aria-hidden="true">
+                      <mat-icon>add_photo_alternate</mat-icon>
+                    </span>
+                  }
+                  <div class="perfil__logo-controles">
+                    <span class="perfil__logo-titulo">Logotipo de la empresa</span>
+                    <span class="perfil__logo-ayuda">PNG, JPG, SVG o WebP. Máximo 256 KB.</span>
+                    <div class="perfil__logo-botones">
+                      <label class="perfil__logo-boton">
+                        <input
+                          type="file"
+                          class="perfil__logo-input"
+                          accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                          aria-label="Cargar logo de la empresa"
+                          (change)="seleccionarLogoEmpresa($event)"
+                        />
+                        <span matButton="outlined">
+                          <mat-icon aria-hidden="true">upload</mat-icon>
+                          {{ logoEmpresa() ? 'Cambiar' : 'Cargar logo' }}
+                        </span>
+                      </label>
+                      @if (logoEmpresa()) {
+                        <button matButton type="button" (click)="quitarLogoEmpresa()">Quitar</button>
+                      }
+                    </div>
+                    @if (logoEmpresaError()) {
+                      <p class="perfil__error perfil__error--inline" role="alert">
+                        <mat-icon aria-hidden="true">error_outline</mat-icon>
+                        <span>{{ logoEmpresaError() }}</span>
+                      </p>
+                    }
+                  </div>
+                </div>
+
+                <div class="perfil__acciones">
+                  <button matButton="filled" type="submit" [disabled]="guardandoEmpresa()">
+                    @if (guardandoEmpresa()) {
+                      <mat-progress-spinner
+                        class="perfil__spinner"
+                        diameter="18"
+                        mode="indeterminate"
+                        aria-hidden="true"
+                      />
+                    }
+                    Guardar cambios
+                  </button>
+                </div>
+              </form>
+            }
+          </app-state-container>
+        </mat-card-content>
+      </mat-card>
+    }
+  }
+</app-state-container>

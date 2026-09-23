@@ -1,0 +1,27 @@
+@switch (fase()) {
+  @case ('cargando') {
+    <div class="state-container__estado" role="status" aria-live="polite">
+      <mat-spinner [diameter]="40" [attr.aria-label]="etiquetaCarga()" />
+      <p class="state-container__texto">{{ etiquetaCarga() }}...</p>
+    </div>
+  }
+  @case ('vacio') {
+    <div class="state-container__estado" role="status">
+      <mat-icon class="state-container__icono" aria-hidden="true">inbox</mat-icon>
+      <p class="state-container__texto">{{ mensajeVacio() }}</p>
+    </div>
+  }
+  @case ('error') {
+    <div class="state-container__estado state-container__estado--error" role="alert">
+      <mat-icon class="state-container__icono" aria-hidden="true">error_outline</mat-icon>
+      <p class="state-container__texto">{{ mensajeError() ?? 'Ocurrio un problema.' }}</p>
+      <button matButton="tonal" type="button" (click)="reintentar.emit()">
+        <mat-icon aria-hidden="true">refresh</mat-icon>
+        Reintentar
+      </button>
+    </div>
+  }
+  @default {
+    <ng-content />
+  }
+}

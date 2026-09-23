@@ -1,0 +1,17 @@
+/* Configuracion TypeScript AISLADA para las pruebas e2e de Playwright.
+ * No forma parte de la compilacion de la app (`ng build`) ni de las pruebas
+ * unitarias (`ng test`): esas usan tsconfig.app.json / tsconfig.spec.json, que
+ * excluyen ./e2e. Playwright transpila estos archivos con su propio pipeline. */
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "types": ["node", "@playwright/test"],
+    "outDir": "../out-tsc/e2e"
+  },
+  "include": ["**/*.ts"]
+}

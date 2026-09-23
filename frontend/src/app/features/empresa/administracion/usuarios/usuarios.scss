@@ -1,0 +1,122 @@
+// =============================================================================
+// Estilos de la vista de Usuarios (admin_empresa) (Req 4, 52, 53, 57)
+// -----------------------------------------------------------------------------
+// Tablero enterprise: barra de acciones (busqueda + alta), celda de persona con
+// avatar de inicial + nombre, chips de roles, chip de estado con punto semantico
+// y acciones servidas por un menu de desbordamiento. El significado no se
+// transmite solo por color: cada accion lleva icono + texto y el chip su
+// etiqueta. Solo tokens del Sistema de Diseno; correcto en tema claro y oscuro.
+// =============================================================================
+
+@use '../../../../../styles/breakpoints' as bp;
+
+// -----------------------------------------------------------------------------
+// Acciones del encabezado: busqueda + boton de alta.
+// -----------------------------------------------------------------------------
+.usuarios__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-2) var(--ds-space-3);
+
+  @include bp.until('sm') {
+    flex-direction: column;
+    align-items: stretch;
+
+    button[matButton='filled'] {
+      inline-size: 100%;
+    }
+  }
+
+  @include bp.from('md') {
+    inline-size: 100%;
+    justify-content: flex-end;
+  }
+
+  button[matButton='filled'] {
+    block-size: 40px;
+  }
+}
+
+.usuarios__busqueda {
+  inline-size: 100%;
+
+  ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+    display: none;
+  }
+
+  @include bp.from('sm') {
+    inline-size: 20rem;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Celda de persona: avatar de inicial + nombre.
+// -----------------------------------------------------------------------------
+.usuarios__persona {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  min-width: 0;
+}
+
+.usuarios__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  inline-size: 40px;
+  block-size: 40px;
+  border-radius: var(--ds-radius-pill);
+  background: var(--ds-color-primary-container);
+  color: var(--ds-color-primary);
+  font-size: var(--ds-font-size-sm);
+  font-weight: var(--ds-font-weight-medium);
+  text-transform: uppercase;
+}
+
+.usuarios__nombre {
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.usuarios__identificador {
+  color: var(--ds-color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.usuarios__sin-roles {
+  color: var(--ds-color-text-muted);
+}
+
+// -----------------------------------------------------------------------------
+// Chip de estado con punto semantico.
+// -----------------------------------------------------------------------------
+.usuarios__estado-dot {
+  display: inline-block;
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  border-radius: var(--ds-radius-pill);
+  margin-inline-end: var(--ds-space-2);
+  background: var(--ds-color-text-muted);
+  flex: 0 0 auto;
+}
+
+.usuarios__estado {
+  &--activa .usuarios__estado-dot {
+    background: var(--ds-color-success);
+  }
+  &--inactiva .usuarios__estado-dot {
+    background: var(--ds-color-text-muted);
+  }
+}
+
+// Accion destructiva del menu: color semantico accesible (icono + texto).
+.usuarios__accion--desactivar .mat-icon {
+  color: var(--ds-color-error);
+}

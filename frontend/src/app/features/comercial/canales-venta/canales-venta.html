@@ -1,0 +1,103 @@
+<app-page-header titulo="Canales de venta" subtitulo="Administra los canales por los que tu empresa vende: define, activa o desactiva cada canal de venta.">
+  <div acciones>
+    @if (puedeCrear) {
+      <button matButton="filled" type="button" (click)="nuevo()">
+        <mat-icon aria-hidden="true">add</mat-icon>
+        Nuevo canal
+      </button>
+    }
+  </div>
+</app-page-header>
+
+@if (formularioAbierto()) {
+  <mat-card appearance="outlined" class="comercial-form">
+    <mat-card-header>
+      <mat-card-title>{{ tituloFormulario() }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form class="ds-dialog-form" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre</mat-label>
+          <input matInput type="text" formControlName="nombre" required />
+          @if (form.controls.nombre.hasError('required') && form.controls.nombre.touched) {
+            <mat-error>El nombre es obligatorio.</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Descripción (opcional)</mat-label>
+          <textarea matInput rows="2" formControlName="descripcion"></textarea>
+        </mat-form-field>
+        <div class="comercial-form__acciones">
+          <button matButton type="button" (click)="cancelar()" [disabled]="guardando()">Cancelar</button>
+          <button matButton="filled" type="submit" [disabled]="guardando()">Guardar</button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+<!-- Tira de indicadores (patron enterprise: outcome-first). Solo cuando el
+     listado cargo correctamente para no distraer en vacio. -->
+@if (fase() === "ok") {
+  <section class="comercial-kpis" aria-label="Indicadores de canales de venta">
+    <article class="comercial-kpi comercial-kpi--valor">
+      <span class="comercial-kpi__icono" aria-hidden="true"><mat-icon>hub</mat-icon></span>
+      <span class="comercial-kpi__cuerpo">
+        <span class="comercial-kpi__valor">{{ total() }}</span>
+        <span class="comercial-kpi__etiqueta">Canales de venta</span>
+      </span>
+    </article>
+    <article class="comercial-kpi comercial-kpi--exito">
+      <span class="comercial-kpi__icono" aria-hidden="true"><mat-icon>check_circle</mat-icon></span>
+      <span class="comercial-kpi__cuerpo">
+        <span class="comercial-kpi__valor">{{ canalesActivos() }}</span>
+        <span class="comercial-kpi__etiqueta">Activos en esta página</span>
+      </span>
+    </article>
+  </section>
+}
+
+<mat-form-field appearance="outline" class="comercial-filtro">
+  <mat-label>Buscar por nombre</mat-label>
+  <input matInput type="search" [value]="filtro()" (change)="aplicarFiltro($any($event.target).value)" />
+  <mat-icon matSuffix aria-hidden="true">search</mat-icon>
+</mat-form-field>
+
+<app-state-container
+  [fase]="fase()"
+  [mensajeError]="mensajeError()"
+  mensajeVacio="No hay canales de venta que coincidan."
+  (reintentar)="cargar()"
+>
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="canales()"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="onPagina($event)"
+  >
+    <ng-template appCelda="nombre" let-fila>{{ fila.nombre }}</ng-template>
+    <ng-template appCelda="descripcion" let-fila>{{ fila.descripcion || '—' }}</ng-template>
+    <ng-template appCelda="acciones" let-fila>
+      <div class="comercial-acciones-fila">
+        @if (puedeActualizar) {
+          <button matIconButton type="button" (click)="editar(fila)" aria-label="Editar canal">
+            <mat-icon aria-hidden="true">edit</mat-icon>
+          </button>
+        }
+        @if (puedeEliminar) {
+          <button
+            matIconButton
+            type="button"
+            class="ds-boton-destructivo"
+            (click)="eliminar(fila)"
+            aria-label="Dar de baja canal"
+          >
+            <mat-icon aria-hidden="true">delete</mat-icon>
+          </button>
+        }
+      </div>
+    </ng-template>
+  </app-data-table>
+</app-state-container>

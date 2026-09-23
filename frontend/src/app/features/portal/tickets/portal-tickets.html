@@ -1,0 +1,30 @@
+<app-page-header
+  titulo="Mis tickets"
+  subtitulo="Consulta y da seguimiento a las solicitudes y tickets de servicio de tus proyectos."
+/>
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="Aun no tienes tickets de servicio."
+  (reintentar)="cargar()"
+>
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="ticket" let-t>{{ t.id }}</ng-template>
+    <ng-template appCelda="origen" let-t>{{ humanizar(t.origen) }}</ng-template>
+    <ng-template appCelda="estado" let-t>
+      <app-estado-chip [etiqueta]="humanizar(t.estado)" [tono]="tono(t.estado)" />
+    </ng-template>
+    <ng-template appCelda="abierto" let-t>{{ t.abiertoEn | date: 'dd/MM/yyyy HH:mm' }}</ng-template>
+    <ng-template appCelda="resuelto" let-t>
+      {{ t.resueltoEn ? (t.resueltoEn | date: 'dd/MM/yyyy HH:mm') : '-' }}
+    </ng-template>
+  </app-data-table>
+</app-state-container>

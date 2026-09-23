@@ -1,0 +1,34 @@
+@use '../../../../styles/breakpoints' as bp;
+
+.operacion-form {
+  margin-bottom: var(--ds-space-4);
+
+  &__acciones {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--ds-space-2);
+    margin-top: var(--ds-space-2);
+  }
+}
+
+.operacion-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-3);
+  margin-bottom: var(--ds-space-3);
+
+  mat-form-field {
+    width: 100%;
+    max-width: 240px;
+  }
+}
+
+.operacion-acciones-fila {
+  display: flex;
+  gap: var(--ds-space-1);
+  justify-content: flex-end;
+}
+
+.operacion-sin-acciones {
+  color: var(--ds-color-text-muted);
+}

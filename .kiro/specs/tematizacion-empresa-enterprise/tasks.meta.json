@@ -1,0 +1,619 @@
+{
+  "pbtResults": {
+    "1.3 Property test: contraste AA texto-sobre-primario": {
+      "status": "passed",
+      "lastRunTimestamp": 1790025294438
+    },
+    "1.4 Property test: AA de todos los pares texto/superficie derivados": {
+      "status": "passed",
+      "lastRunTimestamp": 1790025295940
+    },
+    "1.5 Property test: completitud estructural de la paleta": {
+      "status": "passed",
+      "lastRunTimestamp": 1790025297041
+    },
+    "1.6 Property test: determinismo de la derivación": {
+      "status": "passed",
+      "lastRunTimestamp": 1790025298411
+    },
+    "1.7 Property test: validación de formato hexadecimal (frontend)": {
+      "status": "passed",
+      "lastRunTimestamp": 1790025307295
+    }
+  },
+  "executionHistory": {
+    "1.1 Implementar utilidades de color puras": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790023470488
+      },
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790023487972
+      },
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790023685004
+      }
+    ],
+    "1.2 Implementar `derivarPaleta` y el tipo `PaletaDerivada`": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790023470860
+      },
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790023695219
+      },
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790024090916
+      }
+    ],
+    "2.1 Implementar `TematizacionService`": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790023471215
+      },
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790024107338
+      },
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790024535406
+      }
+    ],
+    "3. Checkpoint — Lógica de color y tematización": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790023471448
+      },
+      {
+        "executionId": "b6c120e8-6e99-48c2-8993-6b222d93d0c0",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790026258486
+      }
+    ],
+    "4.1 Migración Flyway V67": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790023471697
+      },
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790023489160
+      },
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790023684127
+      }
+    ],
+    "4.2 Extender entidad `Empresa`": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790023471843
+      },
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790023696752
+      },
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790024091785
+      }
+    ],
+    "4.3 Extender contratos: DTO, command y request": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790023471997
+      },
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790024108218
+      },
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790024536739
+      }
+    ],
+    "5.1 Extender `ServicioBranding`": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790023472231
+      },
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790024547348
+      },
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790025068668
+      }
+    ],
+    "6. Checkpoint — Backend de color persistido": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790023472689
+      },
+      {
+        "executionId": "b6c120e8-6e99-48c2-8993-6b222d93d0c0",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790026259990
+      }
+    ],
+    "7.1 Extender modelo y `BrandingService`": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790023473174
+      },
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790024548286
+      },
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790025069726
+      }
+    ],
+    "7.2 Cargar color al entrar al ámbito empresa": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790023473411
+      },
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790026427758
+      },
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790027331083
+      }
+    ],
+    "8.1 Selector de color y presets con previsualización": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790023473646
+      },
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790027344724
+      },
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790028586013
+      }
+    ],
+    "9. Checkpoint — Tematización por empresa de extremo a extremo": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790023473749
+      },
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790029224013
+      }
+    ],
+    "10.1 Patrón/componente `ChipEstado`": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790023473977
+      },
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790024109693
+      },
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790024537915
+      }
+    ],
+    "10.3 Acento de marca en `PageHeader` y refinamiento de tarjetas": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790023474239
+      },
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790024549627
+      },
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790025070839
+      }
+    ],
+    "10.4 Refinar tokens corporativos sin romper AA": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790023474500
+      },
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790024110931
+      },
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790024538710
+      }
+    ],
+    "11.1 Vistas de Orden de Fabricación (detalle + lista)": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790023474682
+      },
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790026429232
+      },
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790027332161
+      }
+    ],
+    "11.2 Vistas de Levantamiento de Sitio (detalle + lista)": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790023474943
+      },
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790026431318
+      },
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790027333169
+      }
+    ],
+    "11.3 Vistas de Permiso de Instalación (detalle + lista)": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790023475193
+      },
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790026433342
+      },
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790027335264
+      }
+    ],
+    "11.4 Vistas de Orden de Trabajo de Instalación (detalle + lista)": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790023475462
+      },
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790026434195
+      },
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790027335949
+      }
+    ],
+    "12.1 Verificación de no-regresión y build completo": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790023475700
+      },
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790029231103
+      },
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790029689464
+      }
+    ],
+    "13. Checkpoint final": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790023475885
+      },
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790029690407
+      }
+    ],
+    "1. Núcleo de derivación de paleta (lógica pura, frontend)": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790024091238
+      }
+    ],
+    "2. Servicio de tematización en runtime (frontend)": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790024536452
+      }
+    ],
+    "4. Persistencia backend del color de marca": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790024537136
+      }
+    ],
+    "5. Servicio y endpoint de branding con color": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790025069236
+      }
+    ],
+    "10. Rediseño enterprise: componentes compartidos": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790025070990
+      }
+    ],
+    "1.3 Property test: contraste AA texto-sobre-primario": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790025083831
+      },
+      {
+        "executionId": "b6c120e8-6e99-48c2-8993-6b222d93d0c0",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790026232393
+      }
+    ],
+    "2.2 Property test: aplicación de tokens (round-trip paleta → CSS)": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790025085063
+      },
+      {
+        "executionId": "b6c120e8-6e99-48c2-8993-6b222d93d0c0",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790026243380
+      }
+    ],
+    "10.2 Property test: mapeo semántico del Chip_Estado": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790025086281
+      },
+      {
+        "executionId": "b6c120e8-6e99-48c2-8993-6b222d93d0c0",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790026252155
+      }
+    ],
+    "4.4 Property test: validación de formato hexadecimal (backend)": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790025087802
+      },
+      {
+        "executionId": "b6c120e8-6e99-48c2-8993-6b222d93d0c0",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790026247139
+      }
+    ],
+    "5.2 Property test: aislamiento multi-tenant del color": [
+      {
+        "executionId": "c2e8c77f-ba74-4152-bad3-420de1c1223a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790025088853
+      },
+      {
+        "executionId": "b6c120e8-6e99-48c2-8993-6b222d93d0c0",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790026249824
+      }
+    ],
+    "1.4 Property test: AA de todos los pares texto/superficie derivados": [
+      {
+        "executionId": "b6c120e8-6e99-48c2-8993-6b222d93d0c0",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790026233347
+      }
+    ],
+    "1.5 Property test: completitud estructural de la paleta": [
+      {
+        "executionId": "b6c120e8-6e99-48c2-8993-6b222d93d0c0",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790026234411
+      }
+    ],
+    "1.6 Property test: determinismo de la derivación": [
+      {
+        "executionId": "b6c120e8-6e99-48c2-8993-6b222d93d0c0",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790026235680
+      }
+    ],
+    "1.7 Property test: validación de formato hexadecimal (frontend)": [
+      {
+        "executionId": "b6c120e8-6e99-48c2-8993-6b222d93d0c0",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790026237003
+      }
+    ],
+    "2.3 Property test: idempotencia de aplicar/limpiar": [
+      {
+        "executionId": "b6c120e8-6e99-48c2-8993-6b222d93d0c0",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790026244278
+      }
+    ],
+    "2.4 Unit tests de modo y no-color": [
+      {
+        "executionId": "b6c120e8-6e99-48c2-8993-6b222d93d0c0",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790026245744
+      }
+    ],
+    "4.5 Schema/smoke test de V67": [
+      {
+        "executionId": "b6c120e8-6e99-48c2-8993-6b222d93d0c0",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790026248062
+      }
+    ],
+    "5.3 Integration tests del endpoint": [
+      {
+        "executionId": "b6c120e8-6e99-48c2-8993-6b222d93d0c0",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790026250854
+      }
+    ],
+    "7. Integración frontend: modelo, servicio y carga por tenant": [
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790027331431
+      }
+    ],
+    "11. Aplicar rediseño a las vistas de Operación": [
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790027336356
+      }
+    ],
+    "11.5 Tests de render y accesibilidad de las vistas de Operación": [
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790027345731
+      },
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790028586890
+      }
+    ],
+    "10.5 Property test: contraste AA de tokens corporativos": [
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790027347073
+      },
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790028588624
+      }
+    ],
+    "8. Vista de administración de branding (selección de color)": [
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790028587694
+      }
+    ],
+    "8.2 Unit tests de la vista": [
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790028603813
+      },
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790029222057
+      }
+    ],
+    "7.3 Tests de carga y fallback": [
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790028604502
+      },
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790029223104
+      }
+    ],
+    "8.3 Accesibilidad de la vista (axe one-shot)": [
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790028605573
+      },
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790028614422
+      }
+    ],
+    "12. Verificación integral final": [
+      {
+        "executionId": "7c3fce3f-7dce-42a7-b564-bf43c0ebdea3",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790029689935
+      }
+    ]
+  }
+}

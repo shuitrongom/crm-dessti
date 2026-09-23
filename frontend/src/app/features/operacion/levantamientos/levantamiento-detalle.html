@@ -1,0 +1,132 @@
+<app-page-header
+  titulo="Detalle de levantamiento"
+  subtitulo="Consulta el detalle del levantamiento de sitio con sus mediciones y su galería de fotos."
+>
+  <div acciones>
+    <a matButton routerLink=".." aria-label="Volver al listado de levantamientos">
+      <mat-icon aria-hidden="true">arrow_back</mat-icon>
+      Volver
+    </a>
+  </div>
+</app-page-header>
+
+<app-state-container [fase]="fase()" [mensajeError]="mensajeError()" (reintentar)="cargar()">
+  @if (levantamiento(); as l) {
+    <div class="lev-detalle">
+      <mat-card appearance="outlined" class="ds-card-enterprise">
+        <mat-card-header>
+          <mat-card-title>Levantamiento de {{ nombres.nombreSitio(l.sitioId) }}</mat-card-title>
+          <mat-card-subtitle>{{ etiquetaEstado(l.estado) }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <dl class="lev-detalle__datos">
+            <div class="lev-detalle__dato">
+              <dt>Sitio</dt>
+              <dd>{{ nombres.nombreSitio(l.sitioId) }}</dd>
+            </div>
+            <div class="lev-detalle__dato">
+              <dt>Cotizacion</dt>
+              <dd>{{ nombres.nombreCotizacion(l.cotizacionId) }}</dd>
+            </div>
+            <div class="lev-detalle__dato">
+              <dt>Orden de fabricacion</dt>
+              <dd>{{ nombres.nombreOrdenFabricacion(l.ordenFabricacionId) }}</dd>
+            </div>
+            <div class="lev-detalle__dato">
+              <dt>Estado</dt>
+              <dd>
+                <app-chip-estado
+                  [variante]="varianteEstado(l.estado)"
+                  [etiqueta]="etiquetaEstado(l.estado)"
+                />
+              </dd>
+            </div>
+            <div class="lev-detalle__dato">
+              <dt>Tipo de superficie</dt>
+              <dd>{{ l.tipoSuperficie }}</dd>
+            </div>
+            <div class="lev-detalle__dato">
+              <dt>Mediciones</dt>
+              <dd>{{ l.mediciones }}</dd>
+            </div>
+            <div class="lev-detalle__dato">
+              <dt>Condiciones electricas</dt>
+              <dd>{{ l.condicionesElectricas }}</dd>
+            </div>
+          </dl>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card appearance="outlined">
+        <mat-card-header>
+          <mat-card-title>Fotos</mat-card-title>
+          <mat-card-subtitle>Fotografias vinculadas al levantamiento.</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          @if (fotos().length > 0) {
+            <ul class="lev-detalle__galeria">
+              @for (foto of fotos(); track foto.id) {
+                <li class="lev-detalle__foto">
+                  <img
+                    class="lev-detalle__imagen"
+                    [src]="foto.referencia"
+                    alt="Foto del levantamiento de {{ nombres.nombreSitio(l.sitioId) }}"
+                    loading="lazy"
+                  />
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="lev-detalle__vacio">Este levantamiento no tiene fotos registradas.</p>
+          }
+
+          @if (puedeAgregarFotos) {
+            <form class="lev-detalle__form" [formGroup]="fotosForm" (ngSubmit)="agregarFotos()">
+              <fieldset class="lev-detalle__fieldset">
+                <legend class="lev-detalle__legend">Adjuntar fotos</legend>
+                <div formArrayName="referencias" class="lev-detalle__refs">
+                  @for (ref of referencias.controls; track $index) {
+                    <div class="lev-detalle__ref">
+                      <mat-form-field appearance="outline" class="lev-detalle__campo">
+                        <mat-label>Referencia de foto {{ $index + 1 }}</mat-label>
+                        <input
+                          matInput
+                          [formControlName]="$index"
+                          placeholder="URL o clave del objeto"
+                        />
+                        @if (ref.hasError('required') && ref.touched) {
+                          <mat-error>La referencia es obligatoria.</mat-error>
+                        }
+                        @if (ref.hasError('maxlength')) {
+                          <mat-error>Maximo 500 caracteres.</mat-error>
+                        }
+                      </mat-form-field>
+                      <button
+                        matIconButton
+                        type="button"
+                        aria-label="Quitar referencia de foto"
+                        [disabled]="referencias.length <= 1"
+                        (click)="quitarCampoReferencia($index)"
+                      >
+                        <mat-icon aria-hidden="true">remove_circle_outline</mat-icon>
+                      </button>
+                    </div>
+                  }
+                </div>
+                <div class="lev-detalle__form-acciones">
+                  <button matButton type="button" (click)="agregarCampoReferencia()">
+                    <mat-icon aria-hidden="true">add</mat-icon>
+                    Agregar otra
+                  </button>
+                  <button matButton="tonal" type="submit" [disabled]="adjuntando()">
+                    Adjuntar fotos
+                  </button>
+                </div>
+              </fieldset>
+            </form>
+          }
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+</app-state-container>

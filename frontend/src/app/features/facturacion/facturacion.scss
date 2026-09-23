@@ -1,0 +1,47 @@
+// =============================================================================
+// Estilos compartidos del modulo Facturacion CFDI (Req 52) — mobile-first
+// -----------------------------------------------------------------------------
+// Reutiliza los tokens del sistema de diseno (--ds-*); no redefine tema.
+// =============================================================================
+
+.fact-alta {
+  margin-block-end: var(--ds-space-5);
+}
+
+.fact-alta__titulo {
+  margin: 0 0 var(--ds-space-3);
+  font-size: var(--ds-font-size-lg);
+  font-weight: var(--ds-font-weight-medium);
+}
+
+.fact-mono {
+  font-family: var(--ds-font-mono, ui-monospace, monospace);
+  font-size: var(--ds-font-size-sm);
+  word-break: break-all;
+}
+
+.fact-ayuda {
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-sm);
+}
+
+.fact-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-3);
+  margin-block-end: var(--ds-space-4);
+
+  mat-form-field {
+    min-width: 12rem;
+  }
+}
+
+.fact-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-space-2);
+
+  @media (min-width: 40rem) {
+    grid-template-columns: 1fr 1fr;
+  }
+}

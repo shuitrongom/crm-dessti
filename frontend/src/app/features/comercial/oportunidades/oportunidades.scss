@@ -1,0 +1,309 @@
+@use '../../../../styles/breakpoints' as bp;
+
+.comercial-form {
+  margin-bottom: var(--ds-space-4);
+
+  &__acciones {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--ds-space-2);
+    margin-top: var(--ds-space-2);
+  }
+}
+
+.pipeline-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-3);
+  margin-bottom: var(--ds-space-3);
+
+  &__canal {
+    width: 100%;
+    max-width: 320px;
+  }
+}
+
+.pipeline {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-space-3);
+
+  @include bp.from('md') {
+    grid-auto-flow: column;
+    // Ancho consistente por columna (no 1fr): asi el embudo mantiene columnas
+    // legibles y se desplaza horizontalmente en pantallas/zoom reducidos en vez
+    // de comprimir el contenido hasta desbordarlo (bugfix zoom del pipeline).
+    grid-auto-columns: minmax(260px, 288px);
+    overflow-x: auto;
+    // Desplazamiento tactil suave y aislamiento del scroll al contenedor.
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    padding-bottom: var(--ds-space-2);
+  }
+
+  &__columna {
+    background: var(--ds-color-surface-variant, var(--ds-color-surface));
+    border: 1px solid var(--ds-color-border);
+    border-radius: var(--ds-radius-md);
+    padding: var(--ds-space-3);
+    min-width: 0;
+  }
+
+  &__cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--ds-space-2);
+  }
+
+  &__titulo {
+    margin: 0;
+    font-size: var(--ds-font-size-md);
+    font-weight: var(--ds-font-weight-medium);
+  }
+
+  &__contador {
+    background: var(--ds-color-primary);
+    color: var(--ds-color-on-primary, #fff);
+    border-radius: var(--ds-radius-full, 999px);
+    padding: 0 var(--ds-space-2);
+    font-size: var(--ds-font-size-sm);
+    min-width: 24px;
+    text-align: center;
+  }
+
+  &__tarjetas {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-2);
+  }
+
+  &__tarjeta {
+    background: var(--ds-color-surface);
+    border: 1px solid var(--ds-color-border);
+    border-radius: var(--ds-radius-sm, var(--ds-radius-md));
+    padding: var(--ds-space-3);
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  &__tarjeta-titulo {
+    margin: 0 0 var(--ds-space-1);
+    font-size: var(--ds-font-size-md);
+    overflow-wrap: anywhere;
+  }
+
+  &__tarjeta-valor {
+    margin: 0 0 var(--ds-space-2);
+    color: var(--ds-color-text-muted);
+    font-size: var(--ds-font-size-sm);
+  }
+
+  &__tarjeta-cliente {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ds-space-1);
+    margin: 0 0 var(--ds-space-1);
+    color: var(--ds-color-primary);
+    font-size: var(--ds-font-size-sm);
+    text-decoration: none;
+
+    mat-icon {
+      font-size: 18px;
+      inline-size: 18px;
+      block-size: 18px;
+    }
+
+    &:hover,
+    &:focus-visible {
+      text-decoration: underline;
+    }
+  }
+
+  &__tarjeta-canal {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ds-space-1);
+    margin: 0 0 var(--ds-space-2);
+    color: var(--ds-color-text-muted);
+    font-size: var(--ds-font-size-sm);
+
+    mat-icon {
+      font-size: 18px;
+      inline-size: 18px;
+      block-size: 18px;
+    }
+  }
+
+  &__tarjeta-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ds-space-1);
+    align-items: center;
+  }
+
+  &__badge {
+    font-size: var(--ds-font-size-sm);
+    color: var(--ds-color-primary);
+  }
+
+  &__vacio {
+    margin: 0;
+    color: var(--ds-color-text-muted);
+    font-size: var(--ds-font-size-sm);
+  }
+}
+
+// =============================================================================
+// Bloque premium/enterprise del Pipeline de ventas
+// -----------------------------------------------------------------------------
+// Tira de KPIs (outcome-first), encabezados de columna con valor agregado y
+// acento de color por etapa, y tarjetas de oportunidad elevadas con hover.
+// Todo se apoya en los tokens del Sistema de Diseno (--ds-*) para respetar el
+// branding por empresa (el color primario ya se inyecta en runtime).
+// =============================================================================
+
+.pipeline-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--ds-space-3);
+  margin-bottom: var(--ds-space-4);
+}
+
+.pipeline-kpi {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-3) var(--ds-space-4);
+  background: var(--ds-color-surface);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  box-shadow: var(--ds-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.06));
+
+  &__icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 44px;
+    block-size: 44px;
+    border-radius: var(--ds-radius-md);
+    background: var(--ds-color-primary-container, color-mix(in srgb, var(--ds-color-primary) 14%, transparent));
+    color: var(--ds-color-text-on-primary-container, var(--ds-color-primary));
+    flex: 0 0 auto;
+
+    mat-icon {
+      font-size: 24px;
+      inline-size: 24px;
+      block-size: 24px;
+    }
+  }
+
+  &__cuerpo {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  &__valor {
+    font-size: var(--ds-font-size-xl, 1.5rem);
+    font-weight: var(--ds-font-weight-bold, 700);
+    line-height: 1.15;
+    color: var(--ds-color-text);
+  }
+
+  &__etiqueta {
+    font-size: var(--ds-font-size-sm);
+    color: var(--ds-color-text-muted);
+    margin-top: 2px;
+  }
+
+  // El KPI de valor total resalta con el color de marca (borde e icono).
+  &--valor {
+    border-color: color-mix(in srgb, var(--ds-color-primary) 40%, var(--ds-color-border));
+
+    .pipeline-kpi__icono {
+      background: var(--ds-color-primary);
+      color: var(--ds-color-text-on-primary, #fff);
+    }
+  }
+
+  &--exito {
+    .pipeline-kpi__icono {
+      background: color-mix(in srgb, var(--ds-color-success, #2e7d4f) 16%, transparent);
+      color: var(--ds-color-success, #2e7d4f);
+    }
+  }
+}
+
+// --- Encabezado de columna enriquecido -------------------------------------
+.pipeline {
+  &__cabecera {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+  }
+
+  &__cabecera-titulo {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-2);
+  }
+
+  &__cabecera-valor {
+    margin: 0;
+    font-size: var(--ds-font-size-sm);
+    font-weight: var(--ds-font-weight-medium);
+    color: var(--ds-color-text-muted);
+  }
+
+  &__punto {
+    inline-size: 10px;
+    block-size: 10px;
+    border-radius: 999px;
+    background: var(--ds-color-border);
+    flex: 0 0 auto;
+  }
+
+  // Acento de color por etapa: barra superior + color del punto. Comunica el
+  // avance del embudo de un vistazo (frio -> calido -> exito/fracaso).
+  &__columna {
+    border-top: 3px solid var(--ds-color-border);
+    transition: box-shadow 0.15s ease;
+  }
+
+  &__columna--nuevo { border-top-color: #64748b; .pipeline__punto { background: #64748b; } }
+  &__columna--calificado { border-top-color: #0e7490; .pipeline__punto { background: #0e7490; } }
+  &__columna--propuesta { border-top-color: #7c3aed; .pipeline__punto { background: #7c3aed; } }
+  &__columna--negociacion { border-top-color: #b45309; .pipeline__punto { background: #b45309; } }
+  &__columna--ganado { border-top-color: #2e7d4f; .pipeline__punto { background: #2e7d4f; } }
+  &__columna--perdido { border-top-color: #b91c1c; .pipeline__punto { background: #b91c1c; } }
+
+  // --- Tarjeta de oportunidad elevada ---------------------------------------
+  &__tarjeta {
+    box-shadow: var(--ds-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.06));
+    transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+
+    &:hover {
+      box-shadow: var(--ds-shadow-md, 0 4px 12px rgba(0, 0, 0, 0.1));
+      border-color: color-mix(in srgb, var(--ds-color-primary) 35%, var(--ds-color-border));
+      transform: translateY(-1px);
+    }
+  }
+
+  // El valor de la oportunidad pasa a ser el dato mas prominente de la tarjeta.
+  &__tarjeta-valor {
+    color: var(--ds-color-text);
+    font-size: var(--ds-font-size-lg, 1.125rem);
+    font-weight: var(--ds-font-weight-bold, 700);
+  }
+
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px var(--ds-space-2);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ds-color-primary) 12%, transparent);
+    color: var(--ds-color-primary);
+    font-weight: var(--ds-font-weight-medium);
+  }
+}

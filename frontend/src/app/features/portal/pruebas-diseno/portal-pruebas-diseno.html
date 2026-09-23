@@ -1,0 +1,40 @@
+<app-page-header
+  titulo="Mis pruebas de diseño"
+  subtitulo="Revisa, aprueba o rechaza las propuestas de diseño de tus proyectos."
+/>
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="Aun no tienes pruebas de diseno."
+  (reintentar)="cargar()"
+>
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="version" let-p>v{{ p.numeroVersion }}</ng-template>
+    <ng-template appCelda="estado" let-p>
+      <app-estado-chip [etiqueta]="humanizar(p.estado)" [tono]="tono(p.estado)" />
+    </ng-template>
+    <ng-template appCelda="decidida" let-p>
+      {{ p.decididaEn ? (p.decididaEn | date: 'dd/MM/yyyy HH:mm') : '-' }}
+    </ng-template>
+    <ng-template appCelda="acciones" let-p>
+      @if (p.estado === 'pendiente') {
+        <button matButton type="button" [disabled]="procesando()" (click)="aprobar(p)">
+          <mat-icon>check</mat-icon> Aprobar
+        </button>
+        <button matButton type="button" [disabled]="procesando()" (click)="rechazar(p)">
+          <mat-icon>close</mat-icon> Rechazar
+        </button>
+      } @else {
+        <span class="portal-ayuda">-</span>
+      }
+    </ng-template>
+  </app-data-table>
+</app-state-container>

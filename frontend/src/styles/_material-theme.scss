@@ -1,0 +1,28 @@
+// =============================================================================
+// Sistema de Diseño — Tema de Angular Material (Requisito 53)
+// -----------------------------------------------------------------------------
+// Configura Angular Material (M3) de forma coherente con los tokens del
+// Sistema de Diseño y con soporte de modo claro/oscuro (Req 53.5). Se emplea
+// una paleta sobria y una tipografía consistente con los tokens.
+//
+// El esquema de color (claro/oscuro) se conmuta con `color-scheme`, que ya se
+// establece en `_tokens.scss` según `[data-theme]` y la preferencia del
+// sistema; `mat.theme()` con `color-scheme: light dark` responde a ese ajuste.
+// =============================================================================
+
+@use '@angular/material' as mat;
+
+html {
+  // Tema base de Material coherente con el Sistema de Diseño.
+  // Se usan paletas predefinidas sobrias; los componentes propios usan los
+  // tokens CSS de `_tokens.scss`.
+  @include mat.theme((
+    color: (
+      primary: mat.$azure-palette,
+      tertiary: mat.$blue-palette,
+      theme-type: color-scheme,
+    ),
+    typography: Roboto,
+    density: 0,
+  ));
+}

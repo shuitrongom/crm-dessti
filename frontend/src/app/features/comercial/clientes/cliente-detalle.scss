@@ -1,0 +1,126 @@
+// =============================================================================
+// Estilos de la Ficha 360 del Cliente (Req 1, 57)
+// -----------------------------------------------------------------------------
+// Composicion de secciones apiladas: fila de indicadores (KPI) responsive, datos
+// del cliente en rejilla de definiciones y listas resumidas de actividad. Solo
+// tokens del Sistema de Diseno (tema claro y oscuro), sin desbordamiento.
+// =============================================================================
+
+@use '../../../../styles/breakpoints' as bp;
+
+.ficha-seccion {
+  margin-bottom: var(--ds-space-4);
+}
+
+// Fila de indicadores: se adapta de 1 a 4 columnas segun el ancho.
+.ficha-indicadores {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-space-3);
+
+  @include bp.from('sm') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include bp.from('lg') {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+// Datos del cliente: lista de definiciones en rejilla responsive.
+.ficha-datos {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-space-3) var(--ds-space-4);
+  margin: 0;
+
+  @include bp.from('sm') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.ficha-dato {
+  min-inline-size: 0;
+
+  dt {
+    margin: 0 0 var(--ds-space-1);
+    font-size: var(--ds-font-size-xs);
+    font-weight: var(--ds-font-weight-medium);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ds-color-text-muted);
+  }
+
+  dd {
+    margin: 0;
+    color: var(--ds-color-text);
+    overflow-wrap: anywhere;
+  }
+}
+
+.ficha-dato--ancho {
+  @include bp.from('sm') {
+    grid-column: 1 / -1;
+  }
+}
+
+.ficha-nota {
+  margin: 0;
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-sm);
+}
+
+// Listas resumidas de actividad (oportunidades / cotizaciones).
+.ficha-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ficha-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-2) var(--ds-space-3);
+  padding: var(--ds-space-3);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-surface);
+}
+
+.ficha-item__enlace {
+  min-inline-size: 0;
+  color: var(--ds-color-primary);
+  font-weight: var(--ds-font-weight-medium);
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration: underline;
+  }
+}
+
+.ficha-item__titulo {
+  overflow-wrap: anywhere;
+}
+
+.ficha-item__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  flex-wrap: wrap;
+}
+
+.ficha-item__valor {
+  font-variant-numeric: tabular-nums;
+  color: var(--ds-color-text);
+}
+
+.ficha-item__fecha {
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-text-muted);
+}

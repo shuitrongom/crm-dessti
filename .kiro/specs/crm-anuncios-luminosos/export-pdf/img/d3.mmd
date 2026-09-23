@@ -1,0 +1,47 @@
+erDiagram
+    OBJETIVO_ESTRATEGICO ||--o{ RESULTADO_CLAVE : pondera
+    OBJETIVO_ESTRATEGICO ||--o{ HISTORIAL_AVANCE : registra
+    PRODUCTO ||--o{ PRECIO_PRODUCTO : "tiene precio en"
+    LISTA_PRECIOS ||--o{ PRECIO_PRODUCTO : agrupa
+    ALMACEN ||--o{ EXISTENCIA : mantiene
+    MATERIAL ||--o{ EXISTENCIA : "se stockea como"
+    ALMACEN ||--o{ MOVIMIENTO_INVENTARIO : afecta
+    PUESTO ||--o{ PUESTO : "superior de"
+    PUESTO ||--o{ ASIGNACION_PUESTO : ocupa
+
+    OBJETIVO_ESTRATEGICO {
+        uuid id PK
+        uuid tenant_id FK
+        numeric avance
+        string estado_derivado
+    }
+    RESULTADO_CLAVE {
+        uuid id PK
+        numeric valor_objetivo
+        numeric valor_actual
+        numeric peso
+    }
+    PRODUCTO {
+        uuid id PK
+        uuid tenant_id FK
+        boolean activo
+    }
+    PRECIO_PRODUCTO {
+        uuid id PK
+        numeric precio
+    }
+    EXISTENCIA {
+        uuid id PK
+        numeric cantidad
+        numeric costo_unitario_promedio
+    }
+    MOVIMIENTO_INVENTARIO {
+        uuid id PK
+        numeric cantidad
+        numeric costo_unitario
+        numeric saldo_resultante
+    }
+    PUESTO {
+        uuid id PK
+        uuid superior_id FK
+    }

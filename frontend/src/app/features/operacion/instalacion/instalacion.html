@@ -1,0 +1,170 @@
+<app-page-header titulo="Instalación (OTIs)" subtitulo="Gestiona las órdenes de trabajo de instalación (OTIs) y su avance en campo.">
+  <div acciones>
+    @if (puedeCrear) {
+      <button matButton="filled" type="button" (click)="alternarFormulario()">
+        <mat-icon aria-hidden="true">add</mat-icon>
+        Programar OTI
+      </button>
+    }
+  </div>
+</app-page-header>
+
+@if (formularioAbierto()) {
+  <mat-card appearance="outlined" class="operacion-form">
+    <mat-card-header>
+      <mat-card-title>Programar orden de trabajo</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form class="ds-dialog-form" [formGroup]="form" (ngSubmit)="programar()" novalidate>
+        <mat-form-field appearance="outline">
+          <mat-label>Orden de fabricacion terminada (identificador)</mat-label>
+          <input matInput type="text" formControlName="ordenFabricacionId" required />
+          @if (form.controls.ordenFabricacionId.hasError('required') && form.controls.ordenFabricacionId.touched) {
+            <mat-error>La orden de fabricacion es obligatoria.</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Sitio (identificador)</mat-label>
+          <input matInput type="text" formControlName="sitioId" required />
+          @if (form.controls.sitioId.hasError('required') && form.controls.sitioId.touched) {
+            <mat-error>El sitio es obligatorio.</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Cuadrilla (identificador)</mat-label>
+          <input matInput type="text" formControlName="cuadrillaId" required />
+          @if (form.controls.cuadrillaId.hasError('required') && form.controls.cuadrillaId.touched) {
+            <mat-error>La cuadrilla es obligatoria.</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha programada</mat-label>
+          <input matInput [matDatepicker]="pickerFechaProgramada" formControlName="fechaProgramada" required />
+          <mat-datepicker-toggle matSuffix [for]="pickerFechaProgramada" />
+          <mat-datepicker #pickerFechaProgramada />
+          @if (form.controls.fechaProgramada.hasError('required') && form.controls.fechaProgramada.touched) {
+            <mat-error>La fecha programada es obligatoria.</mat-error>
+          }
+        </mat-form-field>
+        <div class="operacion-form__acciones">
+          <button matButton type="button" (click)="alternarFormulario()" [disabled]="guardando()">
+            Cancelar
+          </button>
+          <button matButton="filled" type="submit" [disabled]="guardando()">Programar</button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+@if (avanceDe(); as oti) {
+  <mat-card appearance="outlined" class="operacion-form">
+    <mat-card-header>
+      <mat-card-title>Registrar avance de la OTI de {{ nombreCliente(oti.clienteId) }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form class="ds-dialog-form" [formGroup]="formAvance" (ngSubmit)="registrarAvance()" novalidate>
+        <mat-form-field appearance="outline">
+          <mat-label>Nuevos pendientes</mat-label>
+          <textarea matInput rows="2" formControlName="nuevosPendientes"></textarea>
+          <mat-hint>Uno por linea o separados por comas.</mat-hint>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Evidencias (referencias)</mat-label>
+          <textarea matInput rows="2" formControlName="evidencias"></textarea>
+          <mat-hint>URLs o claves; una por linea o separadas por comas.</mat-hint>
+        </mat-form-field>
+        <div class="operacion-form__acciones">
+          <button matButton type="button" (click)="cerrarAvance()" [disabled]="guardando()">Cancelar</button>
+          <button matButton="filled" type="submit" [disabled]="guardando()">Registrar avance</button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+<div class="operacion-filtros" [formGroup]="formFiltro">
+  <mat-form-field appearance="outline" class="operacion-filtro">
+    <mat-label>Filtrar por estado</mat-label>
+    <mat-select [value]="estado()" (valueChange)="cambiarFiltro($event)">
+      <mat-option value="">Todos</mat-option>
+      @for (opcion of estados; track opcion) {
+        <mat-option [value]="opcion">{{ etiquetaEstado(opcion) }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <app-entity-select
+    class="operacion-filtro"
+    formControlName="clienteId"
+    etiqueta="Filtrar por cliente"
+    placeholder="Busca por nombre…"
+    ayuda="Selecciona un cliente por nombre para filtrar."
+    [buscador]="buscarCliente"
+    [etiquetaDe]="etiquetaCliente"
+  />
+
+  <!--
+    Filtro de Cuadrilla por identificador con seleccion asistida: el backend no
+    expone un catalogo de Cuadrillas (referencia debil, sin endpoint), por lo que
+    no puede ofrecerse un selector por nombre. Ver la nota de cabecera de la vista.
+  -->
+  <mat-form-field appearance="outline" class="operacion-filtro">
+    <mat-label>Filtrar por cuadrilla</mat-label>
+    <input
+      matInput
+      type="text"
+      formControlName="cuadrillaId"
+      (blur)="aplicarFiltroCuadrilla()"
+      (keyup.enter)="aplicarFiltroCuadrilla()"
+    />
+    <mat-hint>Aun sin catalogo de cuadrillas: se filtra por identificador.</mat-hint>
+  </mat-form-field>
+</div>
+
+<app-state-container
+  [fase]="fase()"
+  [mensajeError]="mensajeError()"
+  mensajeVacio="No hay ordenes de trabajo para el filtro seleccionado."
+  (reintentar)="cargar()"
+>
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="otis()"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="onPagina($event)"
+  >
+    <ng-template appCelda="cliente" let-fila>{{ nombreCliente(fila.clienteId) }}</ng-template>
+    <ng-template appCelda="fechaProgramada" let-fila>{{ fila.fechaProgramada }}</ng-template>
+    <ng-template appCelda="estado" let-fila>
+      <app-chip-estado
+        [variante]="varianteEstado($any(fila).estado)"
+        [etiqueta]="etiquetaEstado($any(fila).estado)"
+      />
+    </ng-template>
+    <ng-template appCelda="acciones" let-fila>
+      <div class="operacion-acciones-fila">
+        @if (puedeGestionar && (fila.estado === 'programada' || fila.estado === 'en_curso')) {
+          <button matIconButton type="button" (click)="abrirAvance(fila)" aria-label="Registrar avance">
+            <mat-icon aria-hidden="true">playlist_add_check</mat-icon>
+          </button>
+        }
+        @if (puedeGestionar && transicionesDe(fila).length > 0) {
+          <button matButton="tonal" type="button" [matMenuTriggerFor]="menu">
+            Estado
+            <mat-icon aria-hidden="true">arrow_drop_down</mat-icon>
+          </button>
+          <mat-menu #menu="matMenu">
+            @for (destino of transicionesDe(fila); track destino) {
+              <button mat-menu-item type="button" (click)="cambiarEstado(fila, destino)">
+                {{ etiquetaEstado(destino) }}
+              </button>
+            }
+          </mat-menu>
+        }
+      </div>
+    </ng-template>
+  </app-data-table>
+</app-state-container>

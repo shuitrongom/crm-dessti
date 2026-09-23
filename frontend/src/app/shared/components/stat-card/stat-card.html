@@ -1,0 +1,13 @@
+<article class="stat-card" [class]="claseTono()" role="group" [attr.aria-label]="etiquetaAccesible()">
+  <span class="stat-card__chip" aria-hidden="true">
+    <mat-icon class="stat-card__icono">{{ icono() }}</mat-icon>
+  </span>
+
+  <div class="stat-card__cuerpo">
+    <p class="stat-card__valor">{{ valor() }}</p>
+    <p class="stat-card__etiqueta">{{ etiqueta() }}</p>
+    @if (ayuda()) {
+      <p class="stat-card__ayuda">{{ ayuda() }}</p>
+    }
+  </div>
+</article>

@@ -1,0 +1,28 @@
+.operacion-form {
+  margin-bottom: var(--ds-space-4);
+
+  &__acciones {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--ds-space-2);
+    margin-top: var(--ds-space-2);
+  }
+}
+
+.operacion-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--ds-space-3);
+  margin-bottom: var(--ds-space-3);
+}
+
+.operacion-filtro {
+  width: 100%;
+  max-width: 320px;
+  margin-bottom: 0;
+}
+
+.operacion-sin-acciones {
+  color: var(--ds-color-text-muted);
+}

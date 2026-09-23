@@ -1,0 +1,161 @@
+﻿@let brandingData = branding().datos;
+
+<app-page-header [titulo]="nombreEmpresa()" [subtitulo]="saludo()">
+  @if (brandingData?.logo) {
+    <img acciones class="empresa-home__logo" [src]="brandingData?.logo" alt="Logotipo de la empresa" />
+  }
+</app-page-header>
+
+<!-- Bloque de estrategia (esencia + objetivos): solo si el Modulo 'estrategia'
+     esta contratado y el Usuario tiene permiso; en caso contrario se oculta. -->
+@if (mostrarEstrategia()) {
+  <!-- Mision / Vision / Valores (Req 58.1) -->
+  <section class="empresa-home__seccion" aria-labelledby="titulo-esencia">
+    <div class="empresa-home__seccion-cabecera">
+      <h2 id="titulo-esencia" class="empresa-home__titulo-seccion">Misión, visión y valores</h2>
+      <a matButton routerLink="/empresa/estrategia-vistas">
+        <mat-icon aria-hidden="true">arrow_forward</mat-icon>
+        Ver estrategia
+      </a>
+    </div>
+    <app-state-container
+      [fase]="esencia().fase"
+      [mensajeError]="esencia().mensajeError"
+      mensajeVacio="Aún no se ha registrado la misión, visión y valores."
+      (reintentar)="cargarEsencia()"
+    >
+      @let esenciaData = esencia().datos;
+      <div class="empresa-home__esencia">
+        <article class="empresa-home__esencia-item">
+          <h3><mat-icon aria-hidden="true">explore</mat-icon>Misión</h3>
+          @if (esenciaData?.mision) {
+            <p>{{ esenciaData?.mision }}</p>
+          } @else {
+            <p class="empresa-home__esencia-vacio">No definida.</p>
+          }
+        </article>
+        <article class="empresa-home__esencia-item">
+          <h3><mat-icon aria-hidden="true">visibility</mat-icon>Visión</h3>
+          @if (esenciaData?.vision) {
+            <p>{{ esenciaData?.vision }}</p>
+          } @else {
+            <p class="empresa-home__esencia-vacio">No definida.</p>
+          }
+        </article>
+        <article class="empresa-home__esencia-item">
+          <h3><mat-icon aria-hidden="true">favorite</mat-icon>Valores</h3>
+          @if (esenciaData?.valores) {
+            <p>{{ esenciaData?.valores }}</p>
+          } @else {
+            <p class="empresa-home__esencia-vacio">No definidos.</p>
+          }
+        </article>
+      </div>
+    </app-state-container>
+  </section>
+
+  <!-- Objetivos estrategicos (Req 58.10) -->
+  <section class="empresa-home__seccion" aria-labelledby="titulo-objetivos">
+    <h2 id="titulo-objetivos" class="empresa-home__titulo-seccion">Objetivos estratégicos</h2>
+    <app-state-container
+      [fase]="objetivos().fase"
+      [mensajeError]="objetivos().mensajeError"
+      mensajeVacio="Aún no hay objetivos estratégicos. Define tu primer OKR desde la vista de estrategia."
+      (reintentar)="cargarObjetivos()"
+    >
+      <ul class="empresa-home__objetivos">
+        @for (objetivo of objetivos().datos; track objetivo.id) {
+          <li class="empresa-home__objetivo">
+            <div class="empresa-home__objetivo-info">
+              <p class="empresa-home__objetivo-nombre">{{ objetivo.nombre }}</p>
+              <p class="empresa-home__objetivo-meta">
+                <mat-icon aria-hidden="true">person</mat-icon>{{ objetivo.responsable }}
+                <span aria-hidden="true">·</span>
+                <mat-icon aria-hidden="true">target</mat-icon>{{ objetivo.meta }}
+              </p>
+            </div>
+            <app-progress-badge [avance]="objetivo.avance" [estado]="objetivo.estadoDerivado" />
+          </li>
+        }
+      </ul>
+    </app-state-container>
+  </section>
+}
+
+<!-- Resumen comercial (Req 6.3): solo si el Modulo 'comercial' esta contratado
+     y el Usuario tiene permiso; en caso contrario se oculta por completo. Los
+     indicadores se CALCULAN en el cliente a partir de las listas (mismo enfoque
+     que la Ficha 360); no se exponen UUIDs. -->
+@if (mostrarComercial()) {
+  <section class="empresa-home__seccion" aria-labelledby="titulo-resumen-comercial">
+    <div class="empresa-home__seccion-cabecera">
+      <h2 id="titulo-resumen-comercial" class="empresa-home__titulo-seccion">Resumen comercial</h2>
+      <a matButton routerLink="/empresa/comercial/oportunidades">
+        <mat-icon aria-hidden="true">arrow_forward</mat-icon>
+        Ver comercial
+      </a>
+    </div>
+    <app-state-container
+      [fase]="resumenComercial().fase"
+      [mensajeError]="resumenComercial().mensajeError"
+      mensajeVacio="Aún no hay actividad comercial registrada."
+      (reintentar)="cargarResumenComercial()"
+    >
+      <div class="empresa-home__resumen-comercial">
+        @if (puedeVerPipeline()) {
+          <app-stat-card
+            icono="payments"
+            tono="exito"
+            etiqueta="Valor en pipeline"
+            [valor]="valorPipelineTexto()"
+            ayuda="Suma de oportunidades abiertas"
+          />
+          <app-stat-card
+            icono="trending_up"
+            tono="info"
+            etiqueta="Oportunidades abiertas"
+            [valor]="resumenComercial().datos?.oportunidadesAbiertas ?? 0"
+            ayuda="En etapas activas del pipeline"
+          />
+        }
+        @if (puedeVerCotizaciones()) {
+          <app-stat-card
+            icono="request_quote"
+            tono="neutro"
+            etiqueta="Cotizaciones"
+            [valor]="resumenComercial().datos?.cotizaciones ?? 0"
+            ayuda="Cotizaciones registradas"
+          />
+        }
+      </div>
+    </app-state-container>
+  </section>
+}
+
+<!-- Tablero de indicadores por area (Req 22): solo si el Modulo 'reportes-bi'
+     esta contratado y el Usuario tiene permiso; en caso contrario se oculta. -->
+@if (mostrarTablero()) {
+  <section class="empresa-home__seccion" aria-labelledby="titulo-tablero">
+    <h2 id="titulo-tablero" class="empresa-home__titulo-seccion">Tablero de indicadores</h2>
+    <app-state-container
+      [fase]="tablero().fase"
+      [mensajeError]="tablero().mensajeError"
+      mensajeVacio="Aun no hay indicadores disponibles para mostrar."
+      (reintentar)="cargarTablero()"
+    >
+      @for (area of tablero().datos?.areas; track area.area) {
+        @if (area.indicadores.length > 0) {
+          <div class="empresa-home__area">
+            <h3 class="empresa-home__area-titulo">{{ area.area }}</h3>
+            <div class="empresa-home__indicadores">
+              @for (indicador of area.indicadores; track indicador.clave) {
+                <app-indicator-card [indicador]="indicador" />
+              }
+            </div>
+          </div>
+        }
+      }
+    </app-state-container>
+  </section>
+}
+

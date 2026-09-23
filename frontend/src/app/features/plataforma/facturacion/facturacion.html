@@ -1,0 +1,236 @@
+<app-page-header
+  titulo="Facturación"
+  subtitulo="Gestiona la renta mensual de módulos por empresa: consulta, emisión y descarga del comprobante en PDF."
+/>
+
+<mat-card appearance="outlined" class="facturacion__selector">
+  <mat-card-content>
+    <!-- Aviso: el comprobante es interno (renta de modulos), no un CFDI fiscal. -->
+    <p class="facturacion__aviso">
+      <mat-icon aria-hidden="true">info</mat-icon>
+      <span>
+        El comprobante generado es interno (renta de modulos) y no es un CFDI con validez fiscal
+        por el momento.
+      </span>
+    </p>
+
+    <!-- Buscador de empresa por nombre o RFC; el UUID nunca se teclea. -->
+    <mat-form-field appearance="outline" class="facturacion__busqueda">
+      <mat-label>Empresa</mat-label>
+      <mat-icon matPrefix aria-hidden="true">search</mat-icon>
+      <input
+        matInput
+        type="text"
+        placeholder="Busca por nombre o RFC…"
+        autocomplete="off"
+        [value]="busqueda()"
+        (input)="alEscribir($any($event.target).value)"
+        [matAutocomplete]="auto"
+      />
+      <mat-hint>Escribe al menos 2 caracteres para buscar.</mat-hint>
+    </mat-form-field>
+
+    <mat-autocomplete #auto="matAutocomplete" (optionSelected)="alSeleccionar($event)">
+      @for (empresa of resultados(); track empresa.id) {
+        <mat-option [value]="empresa">
+          <span class="facturacion__opcion">
+            <span class="facturacion__opcion-nombre">{{ empresa.nombre }}</span>
+            <span class="facturacion__opcion-rfc">{{ empresa.rfc }}</span>
+          </span>
+        </mat-option>
+      } @empty {
+        @if (busqueda().trim().length >= 2 && !buscando()) {
+          <mat-option disabled>Sin coincidencias.</mat-option>
+        }
+      }
+    </mat-autocomplete>
+
+    @if (seleccionada(); as empresa) {
+      <div class="facturacion__seleccion">
+        @if (empresa.brandingLogo) {
+          <img
+            class="facturacion__avatar-img"
+            [src]="empresa.brandingLogo"
+            [alt]="'Logo de ' + empresa.nombre"
+          />
+        } @else {
+          <span class="facturacion__avatar" aria-hidden="true">{{ iniciales(empresa.nombre) }}</span>
+        }
+        <span class="facturacion__seleccion-textos">
+          <span class="facturacion__seleccion-nombre">{{ empresa.nombre }}</span>
+          <span class="facturacion__seleccion-rfc">{{ empresa.rfc }}</span>
+        </span>
+        <button
+          matIconButton
+          type="button"
+          class="facturacion__quitar"
+          aria-label="Elegir otra empresa"
+          (click)="limpiarSeleccion()"
+        >
+          <mat-icon aria-hidden="true">close</mat-icon>
+        </button>
+      </div>
+    } @else {
+      <p class="facturacion__ayuda">Selecciona una empresa para ver y emitir sus facturas de renta.</p>
+    }
+  </mat-card-content>
+</mat-card>
+
+@if (seleccionada(); as empresa) {
+  <!-- KPIs de la empresa seleccionada. -->
+  <section class="facturacion__kpis" aria-label="Resumen de facturacion de la empresa">
+    <app-stat-card
+      etiqueta="Facturas emitidas"
+      [valor]="kpiConteo()"
+      icono="receipt_long"
+      tono="info"
+      ayuda="En esta empresa"
+    />
+    @if (kpiTotal(); as kpi) {
+      <app-stat-card
+        etiqueta="Total facturado"
+        [valor]="(kpi.monto | currency: kpi.moneda : 'symbol' : '1.2-2' : 'es-MX') ?? ''"
+        icono="payments"
+        tono="exito"
+        ayuda="Suma de las facturas emitidas"
+      />
+    }
+  </section>
+
+  <!-- Emision de una factura para un periodo. -->
+  @if (puedeEmitir) {
+    <mat-card appearance="outlined" class="facturacion__emision">
+      <mat-card-content>
+        <h2 class="facturacion__emision-titulo">Emitir factura de renta</h2>
+        <p class="facturacion__emision-ayuda">
+          Elige el periodo mensual. Puedes previsualizar el total calculado antes de emitir.
+        </p>
+
+        <div class="facturacion__periodo">
+          <mat-form-field appearance="outline" class="facturacion__periodo-campo">
+            <mat-label>Mes</mat-label>
+            <mat-select [value]="mesElegido()" (selectionChange)="mesElegido.set($event.value)">
+              @for (mes of meses; track mes.valor) {
+                <mat-option [value]="mes.valor">{{ mes.etiqueta }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="facturacion__periodo-campo">
+            <mat-label>Ano</mat-label>
+            <mat-select [value]="anioElegido()" (selectionChange)="anioElegido.set($event.value)">
+              @for (anio of anios; track anio) {
+                <mat-option [value]="anio">{{ anio }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <div class="facturacion__periodo-acciones">
+            @if (puedeLeer) {
+              <button matButton="tonal" type="button" [disabled]="procesando()" (click)="previsualizar()">
+                <mat-icon aria-hidden="true">visibility</mat-icon>
+                Previsualizar
+              </button>
+            }
+            <button matButton="filled" type="button" [disabled]="procesando()" (click)="emitir()">
+              <mat-icon aria-hidden="true">receipt_long</mat-icon>
+              Emitir factura
+            </button>
+          </div>
+        </div>
+
+        <!-- Panel de previsualizacion: total + lineas calculadas (sin persistir). -->
+        @if (previsualizacion(); as vista) {
+          <div class="facturacion__preview" role="region" aria-label="Previsualizacion de la factura">
+            <div class="facturacion__preview-encabezado">
+              <span class="facturacion__preview-periodo">
+                Periodo {{ vista.periodo | date: 'MMMM yyyy' : undefined : 'es-MX' }}
+              </span>
+              <span class="facturacion__preview-total">
+                {{ vista.total | currency: vista.monedaCodigo : 'symbol' : '1.2-2' : 'es-MX' }}
+              </span>
+            </div>
+            <ul class="facturacion__preview-lineas">
+              @for (linea of vista.lineas; track linea.id) {
+                <li class="facturacion__preview-linea">
+                  <span class="facturacion__preview-modulo">{{ linea.moduloNombre }}</span>
+                  <span class="facturacion__preview-precio">
+                    {{ linea.precioAplicado | currency: vista.monedaCodigo : 'symbol' : '1.2-2' : 'es-MX' }}
+                  </span>
+                </li>
+              }
+            </ul>
+            <div class="facturacion__preview-acciones">
+              <button matButton type="button" [disabled]="procesando()" (click)="cancelarPrevisualizacion()">
+                Descartar
+              </button>
+              <button matButton="filled" type="button" [disabled]="procesando()" (click)="emitir()">
+                <mat-icon aria-hidden="true">check</mat-icon>
+                Emitir esta factura
+              </button>
+            </div>
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <!-- Listado de facturas emitidas de la empresa. -->
+  <app-state-container
+    [fase]="estado().fase"
+    [mensajeError]="estado().mensajeError"
+    mensajeVacio="Esta empresa aun no tiene facturas de renta emitidas."
+    (reintentar)="cargar()"
+  >
+    <app-data-table
+      [columnas]="columnas"
+      [filas]="facturasPagina()"
+      [total]="total()"
+      [page]="page()"
+      [size]="size()"
+      (cambioPagina)="cambiarPagina($event)"
+    >
+      <ng-template appCelda="periodo" let-factura>
+        {{ factura.periodo | date: 'MMMM yyyy' : undefined : 'es-MX' }}
+      </ng-template>
+      <ng-template appCelda="moneda" let-factura>{{ factura.monedaCodigo }}</ng-template>
+      <ng-template appCelda="total" let-factura>
+        {{ factura.total | currency: factura.monedaCodigo : 'symbol' : '1.2-2' : 'es-MX' }}
+      </ng-template>
+      <ng-template appCelda="estado" let-factura>{{ factura.estado }}</ng-template>
+      <ng-template appCelda="emitida" let-factura>
+        @if (factura.emitidaEn) {
+          {{ factura.emitidaEn | date: 'dd/MM/yyyy' : undefined : 'es-MX' }}
+        } @else {
+          <span aria-hidden="true">—</span>
+        }
+      </ng-template>
+      <ng-template appCelda="acciones" let-factura>
+        @if (puedeLeer) {
+          <div class="facturacion__acciones-fila">
+            <button
+              matButton="tonal"
+              type="button"
+              [disabled]="procesando()"
+              [attr.aria-label]="'Ver PDF de la factura del periodo ' + factura.periodo"
+              (click)="verPdf(factura)"
+            >
+              <mat-icon aria-hidden="true">picture_as_pdf</mat-icon>
+              Ver PDF
+            </button>
+            <button
+              matButton
+              type="button"
+              [disabled]="procesando()"
+              [attr.aria-label]="'Descargar PDF de la factura del periodo ' + factura.periodo"
+              (click)="descargarPdf(factura)"
+            >
+              <mat-icon aria-hidden="true">download</mat-icon>
+              Descargar
+            </button>
+          </div>
+        }
+      </ng-template>
+    </app-data-table>
+  </app-state-container>
+}

@@ -1,0 +1,219 @@
+﻿@use '../../../../styles/breakpoints' as bp;
+
+.login {
+  display: grid;
+  grid-template-columns: 1fr;
+  min-height: 100dvh;
+  background: var(--ds-color-background);
+
+  @include bp.from('md') {
+    grid-template-columns: 1.1fr 1fr;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Panel de marca (izquierda). Solo visible desde tablet hacia arriba.
+  // ---------------------------------------------------------------------------
+  &__marca {
+    display: none;
+    position: relative;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: var(--ds-space-7);
+    overflow: hidden;
+    color: #fff;
+    // Gradiente corporativo profundo y estable en ambos temas (no depende de
+    // tokens que cambian con el tema, para conservar contraste AA del texto blanco).
+    background:
+      radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.14), transparent 45%),
+      radial-gradient(circle at 88% 82%, rgba(120, 160, 220, 0.22), transparent 48%),
+      linear-gradient(150deg, #2b4266 0%, #1e2f4d 55%, #16233b 100%);
+
+    @include bp.from('md') {
+      display: flex;
+    }
+  }
+
+  &__marca-contenido {
+    position: relative;
+    z-index: 1;
+    max-width: 440px;
+    margin: auto 0;
+  }
+
+  &__marca-titulo {
+    margin: var(--ds-space-5) 0 var(--ds-space-3);
+    font-size: var(--ds-font-size-2xl);
+    font-weight: var(--ds-font-weight-bold);
+    line-height: var(--ds-line-height-tight);
+    color: #fff;
+  }
+
+  &__marca-descripcion {
+    margin: 0 0 var(--ds-space-6);
+    font-size: var(--ds-font-size-md);
+    line-height: var(--ds-line-height-base);
+    color: rgba(255, 255, 255, 0.82);
+  }
+
+  &__marca-lista {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: var(--ds-space-3);
+      font-size: var(--ds-font-size-sm);
+      color: rgba(255, 255, 255, 0.94);
+    }
+
+    mat-icon {
+      flex: none;
+      width: 40px;
+      height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: var(--ds-radius-md);
+    }
+  }
+
+  &__marca-pie {
+    position: relative;
+    z-index: 1;
+    margin: 0;
+    font-size: var(--ds-font-size-xs);
+    color: rgba(255, 255, 255, 0.66);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Logotipo textual Dess-TI
+  // ---------------------------------------------------------------------------
+  &__logo {
+    font-family: var(--ds-font-family-heading);
+    font-size: var(--ds-font-size-2xl);
+    font-weight: var(--ds-font-weight-bold);
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: #fff;
+
+    &--compacto {
+      font-size: var(--ds-font-size-xl);
+      margin-bottom: var(--ds-space-5);
+      color: var(--ds-color-primary);
+    }
+  }
+
+  &__logo-acento {
+    color: #7fa8e6;
+  }
+
+  &__logo--compacto &__logo-acento {
+    color: var(--ds-color-text-muted);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Panel del formulario (derecha)
+  // ---------------------------------------------------------------------------
+  &__panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--ds-space-5);
+    background: var(--ds-color-surface);
+
+    @include bp.from('md') {
+      padding: var(--ds-space-7);
+    }
+  }
+
+  &__caja {
+    width: 100%;
+    max-width: 400px;
+  }
+
+  &__cabecera {
+    margin-bottom: var(--ds-space-6);
+    text-align: left;
+  }
+
+  &__titulo {
+    margin: 0 0 var(--ds-space-1);
+    font-size: var(--ds-font-size-xl);
+    font-weight: var(--ds-font-weight-bold);
+    color: var(--ds-color-text);
+  }
+
+  &__subtitulo {
+    margin: 0;
+    font-size: var(--ds-font-size-md);
+    color: var(--ds-color-text-muted);
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-3);
+
+    mat-form-field {
+      width: 100%;
+    }
+
+    // Icono de prefijo: tamano y espaciado controlados para que NO se solape
+    // con el label del campo (appearance="outline").
+    mat-icon[matPrefix] {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+      margin-inline: var(--ds-space-1) var(--ds-space-2);
+      color: var(--ds-color-text-muted);
+    }
+  }
+
+  &__error {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-2);
+    margin: 0 0 var(--ds-space-2);
+    padding: var(--ds-space-3);
+    color: var(--ds-color-error);
+    background: color-mix(in srgb, var(--ds-color-error) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--ds-color-error) 32%, transparent);
+    border-radius: var(--ds-radius-sm);
+    font-size: var(--ds-font-size-sm);
+
+    mat-icon {
+      flex: none;
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  &__enviar {
+    margin-top: var(--ds-space-3);
+    min-height: 48px;
+    font-size: var(--ds-font-size-md);
+    font-weight: var(--ds-font-weight-medium);
+
+    mat-spinner {
+      margin-inline: auto;
+    }
+  }
+
+  &__acciones {
+    display: flex;
+    justify-content: center;
+    margin-top: var(--ds-space-5);
+    padding-top: var(--ds-space-4);
+    border-top: 1px solid var(--ds-color-border);
+  }
+}

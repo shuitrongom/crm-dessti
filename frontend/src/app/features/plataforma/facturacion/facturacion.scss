@@ -1,0 +1,262 @@
+// =============================================================================
+// Estilos de Facturacion de renta (super_admin) (plataforma-multigiro)
+// -----------------------------------------------------------------------------
+// La Empresa se elige por autocompletado (nombre/RFC); su UUID nunca se teclea.
+// KPIs, panel de emision con previsualizacion y listado de facturas emitidas.
+// Solo tokens del Sistema de Diseno (tema claro y oscuro); responsive sin scroll
+// horizontal en pantallas estrechas (>=320px).
+// =============================================================================
+
+@use '../../../../styles/breakpoints' as bp;
+
+.facturacion__selector {
+  max-inline-size: 720px;
+}
+
+// Aviso de comprobante interno (no CFDI fiscal).
+.facturacion__aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ds-space-2);
+  margin: 0 0 var(--ds-space-4);
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-sm);
+  line-height: var(--ds-line-height-base);
+
+  .mat-icon {
+    flex: 0 0 auto;
+    inline-size: 1.125rem;
+    block-size: 1.125rem;
+    font-size: 1.125rem;
+    color: var(--ds-color-info);
+  }
+}
+
+.facturacion__busqueda {
+  inline-size: 100%;
+
+  @include bp.from('sm') {
+    inline-size: 24rem;
+  }
+}
+
+// Opcion del autocompletado: nombre + RFC en dos lineas.
+.facturacion__opcion {
+  display: flex;
+  flex-direction: column;
+  line-height: var(--ds-line-height-tight);
+}
+
+.facturacion__opcion-rfc {
+  font-size: var(--ds-font-size-xs);
+  color: var(--ds-color-text-muted);
+}
+
+.facturacion__ayuda {
+  margin: var(--ds-space-2) 0 0;
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-sm);
+}
+
+// Tarjeta de la Empresa seleccionada.
+.facturacion__seleccion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-3);
+  margin-block: var(--ds-space-2) 0;
+  padding: var(--ds-space-3);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-surface-variant);
+}
+
+.facturacion__avatar,
+.facturacion__avatar-img {
+  flex: 0 0 auto;
+  inline-size: 40px;
+  block-size: 40px;
+}
+
+.facturacion__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--ds-radius-pill);
+  background: var(--ds-color-primary-container);
+  color: var(--ds-color-primary);
+  font-size: var(--ds-font-size-sm);
+  font-weight: var(--ds-font-weight-medium);
+  text-transform: uppercase;
+}
+
+.facturacion__avatar-img {
+  border-radius: var(--ds-radius-md);
+  border: 1px solid var(--ds-color-border);
+  background: var(--ds-color-surface);
+  object-fit: contain;
+}
+
+.facturacion__seleccion-textos {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  flex: 1 1 12rem;
+}
+
+.facturacion__seleccion-nombre {
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.facturacion__seleccion-rfc {
+  font-size: var(--ds-font-size-xs);
+  color: var(--ds-color-text-muted);
+}
+
+.facturacion__quitar {
+  flex: 0 0 auto;
+  margin-inline-start: auto;
+}
+
+// -----------------------------------------------------------------------------
+// Fila de KPIs: se adapta con auto-fit para no desbordar en pantallas estrechas.
+// -----------------------------------------------------------------------------
+.facturacion__kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: var(--ds-space-4);
+  margin-block: var(--ds-space-4);
+}
+
+// -----------------------------------------------------------------------------
+// Panel de emision.
+// -----------------------------------------------------------------------------
+.facturacion__emision {
+  margin-block: var(--ds-space-4);
+}
+
+.facturacion__emision-titulo {
+  margin: 0 0 var(--ds-space-1);
+  font-size: var(--ds-font-size-lg);
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-text);
+}
+
+.facturacion__emision-ayuda {
+  margin: 0 0 var(--ds-space-4);
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-sm);
+}
+
+.facturacion__periodo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--ds-space-3);
+}
+
+.facturacion__periodo-campo {
+  inline-size: 100%;
+
+  @include bp.from('sm') {
+    inline-size: 10rem;
+  }
+}
+
+.facturacion__periodo-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-3);
+
+  @include bp.until('sm') {
+    inline-size: 100%;
+
+    button {
+      flex: 1 1 auto;
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Panel de previsualizacion (total + lineas calculadas, sin persistir).
+// -----------------------------------------------------------------------------
+.facturacion__preview {
+  margin-block-start: var(--ds-space-4);
+  padding: var(--ds-space-3);
+  border: 1px solid color-mix(in srgb, var(--ds-color-info) 40%, transparent);
+  border-radius: var(--ds-radius-md);
+  background: color-mix(in srgb, var(--ds-color-info) 12%, transparent);
+}
+
+.facturacion__preview-encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ds-space-2);
+  margin-block-end: var(--ds-space-3);
+}
+
+.facturacion__preview-periodo {
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-text);
+  text-transform: capitalize;
+}
+
+.facturacion__preview-total {
+  font-size: var(--ds-font-size-lg);
+  font-weight: var(--ds-font-weight-bold);
+  color: var(--ds-color-text);
+}
+
+.facturacion__preview-lineas {
+  margin: 0 0 var(--ds-space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.facturacion__preview-linea {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ds-space-3);
+  padding-block: var(--ds-space-1);
+  border-block-end: 1px solid var(--ds-color-border);
+  font-size: var(--ds-font-size-sm);
+
+  &:last-child {
+    border-block-end: none;
+  }
+}
+
+.facturacion__preview-modulo {
+  color: var(--ds-color-text);
+  min-inline-size: 0;
+}
+
+.facturacion__preview-precio {
+  flex: 0 0 auto;
+  color: var(--ds-color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.facturacion__preview-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--ds-space-3);
+}
+
+// -----------------------------------------------------------------------------
+// Acciones por fila del listado (Ver PDF / Descargar).
+// -----------------------------------------------------------------------------
+.facturacion__acciones-fila {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-2);
+  justify-content: flex-end;
+}

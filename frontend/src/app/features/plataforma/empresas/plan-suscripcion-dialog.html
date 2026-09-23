@@ -1,0 +1,246 @@
+<h2 mat-dialog-title>Plan y suscripción</h2>
+<mat-dialog-content>
+  <p class="plan-susc__intro">
+    Empresa: <strong>{{ data.empresa.nombre }}</strong>
+  </p>
+
+  @if (cargando()) {
+    <div class="plan-susc__cargando" role="status" aria-live="polite">
+      <mat-progress-spinner mode="indeterminate" diameter="36" aria-hidden="true" />
+      <span>Cargando plan y suscripción…</span>
+    </div>
+  } @else if (error()) {
+    <p class="plan-susc__error" role="alert">
+      <mat-icon aria-hidden="true">error_outline</mat-icon>
+      <span>{{ error() }}</span>
+    </p>
+    <div class="plan-susc__reintentar">
+      <button matButton type="button" (click)="reintentar()">Reintentar</button>
+    </div>
+  } @else if (vigente(); as sub) {
+    <!-- Contrato vigente unificado: plan XOR suscripcion (un solo bloque) (Req 5.2, 5.3, 5.4) -->
+    <section class="plan-susc__seccion" aria-labelledby="plan-susc-contrato-titulo">
+      <h3 id="plan-susc-contrato-titulo" class="plan-susc__titulo">
+        {{ tipoInstrumentoEtiqueta() ?? 'Contrato' }} vigente
+      </h3>
+      <dl class="plan-susc__datos">
+        <div class="plan-susc__dato">
+          <dt>Instrumento</dt>
+          <dd class="plan-susc__nombre-instrumento">
+            <span>{{ nombrePlanVigente() }}</span>
+            @if (tipoInstrumentoEtiqueta(); as tipo) {
+              <span class="plan-susc__tipo" [attr.aria-label]="'Tipo de instrumento: ' + tipo">
+                {{ tipo }}
+              </span>
+            }
+          </dd>
+        </div>
+        <div class="plan-susc__dato">
+          <dt>Estado</dt>
+          <dd class="plan-susc__estado-fila">
+            <span
+              class="plan-susc__estado"
+              [class.plan-susc__estado--activa]="!esVencida(sub) && !enPrueba() && sub.estado === 'activa'"
+              [class.plan-susc__estado--en_prueba]="!esVencida(sub) && (enPrueba() || sub.estado === 'en_prueba')"
+              [class.plan-susc__estado--suspendida]="!esVencida(sub) && sub.estado === 'suspendida'"
+              [class.plan-susc__estado--cancelada]="sub.estado === 'cancelada'"
+              [class.plan-susc__estado--vencida]="esVencida(sub)"
+            >
+              {{ estadoMostrado(sub) }}
+            </span>
+            @if (porVencer() && !esVencida(sub)) {
+              <span class="plan-susc__badge plan-susc__badge--por-vencer" role="status">
+                <mat-icon aria-hidden="true">schedule</mat-icon>
+                <span>Por vencer</span>
+              </span>
+            }
+          </dd>
+        </div>
+        @if (diasRestantes() !== null && sub.vigenciaFin) {
+          <div class="plan-susc__dato">
+            <dt>Días restantes</dt>
+            <dd>
+              @if (diasRestantes()! > 0) {
+                {{ diasRestantes() }}
+              } @else if (diasRestantes() === 0) {
+                Vence hoy
+              } @else {
+                Vencida hace {{ -diasRestantes()! }}
+                {{ diasRestantes()! === -1 ? 'día' : 'días' }}
+              }
+            </dd>
+          </div>
+        }
+        @if (planVigente(); as plan) {
+          <div class="plan-susc__dato">
+            <dt>Moneda</dt>
+            <dd>{{ plan.monedaCodigo ?? 'MXN' }}</dd>
+          </div>
+          <div class="plan-susc__dato">
+            <dt>Máximo de usuarios</dt>
+            <dd>{{ plan.maxUsuarios }}</dd>
+          </div>
+          <div class="plan-susc__dato">
+            <dt>Total</dt>
+            <dd>{{ plan.total | currency: (plan.monedaCodigo ?? 'MXN') : 'symbol' : '1.2-2' : 'es-MX' }}</dd>
+          </div>
+        } @else {
+          <div class="plan-susc__dato">
+            <dt>Moneda</dt>
+            <dd>{{ sub.monedaFacturacion ?? 'MXN' }}</dd>
+          </div>
+        }
+        <div class="plan-susc__dato">
+          <dt>Vigencia (inicio)</dt>
+          <dd>{{ sub.vigenciaInicio | date: 'longDate' : undefined : 'es-MX' }}</dd>
+        </div>
+        <div class="plan-susc__dato">
+          <dt>Vigencia (fin)</dt>
+          <dd>
+            @if (sub.vigenciaFin) {
+              {{ sub.vigenciaFin | date: 'longDate' : undefined : 'es-MX' }}
+            } @else {
+              Sin fecha de fin
+            }
+          </dd>
+        </div>
+        <div class="plan-susc__dato">
+          <dt>Moneda de facturación</dt>
+          <dd>{{ sub.monedaFacturacion ?? 'No definida' }}</dd>
+        </div>
+      </dl>
+      @if (modulosSuscripcion().length) {
+        <div class="plan-susc__modulos">
+          <span class="plan-susc__etiqueta">Módulos habilitados</span>
+          <mat-chip-set aria-label="Módulos habilitados del contrato vigente">
+            @for (modulo of modulosSuscripcion(); track modulo) {
+              <mat-chip>{{ modulo }}</mat-chip>
+            }
+          </mat-chip-set>
+          @if (modulosHeredadosDelPlan()) {
+            <p class="plan-susc__nota">
+              La suscripción no define módulos propios; se muestran los del plan vigente.
+            </p>
+          }
+        </div>
+      }
+
+      <!-- Capturador inline para extender el periodo de prueba (Req 8.1) -->
+      @if (extendiendoPrueba()) {
+        <form
+          class="plan-susc__extender"
+          [formGroup]="formularioExtender"
+          (ngSubmit)="confirmarExtenderPrueba()"
+          [attr.aria-busy]="procesando()"
+          aria-label="Extender periodo de prueba"
+          novalidate
+        >
+          <mat-form-field appearance="outline">
+            <mat-label>Nueva fecha de fin de prueba</mat-label>
+            <input
+              matInput
+              [matDatepicker]="extenderPicker"
+              formControlName="nuevaVigenciaFin"
+              required
+            />
+            <mat-datepicker-toggle matIconSuffix [for]="extenderPicker" />
+            <mat-datepicker #extenderPicker />
+            <mat-hint>Fecha hasta la que se extiende el periodo de prueba.</mat-hint>
+            @if (
+              formularioExtender.controls.nuevaVigenciaFin.hasError('required') &&
+              formularioExtender.controls.nuevaVigenciaFin.touched
+            ) {
+              <mat-error>Selecciona la nueva fecha de fin de prueba.</mat-error>
+            }
+          </mat-form-field>
+          <div class="plan-susc__extender-acciones">
+            <button
+              matButton
+              type="button"
+              (click)="cancelarExtenderPrueba()"
+              [disabled]="procesando()"
+            >
+              Cancelar
+            </button>
+            <button matButton="filled" type="submit" [disabled]="procesando()">
+              Guardar extensión
+            </button>
+          </div>
+        </form>
+      }
+    </section>
+  } @else {
+    <!-- Sin suscripción vigente (Req 5.5) -->
+    <section class="plan-susc__seccion" aria-labelledby="plan-susc-vacio-titulo">
+      <h3 id="plan-susc-vacio-titulo" class="plan-susc__titulo">Estado</h3>
+      <p class="plan-susc__vacio">
+        <mat-icon aria-hidden="true">info</mat-icon>
+        <span>Sin plan</span>
+      </p>
+      <p class="plan-susc__vacio-detalle">
+        Esta empresa no tiene una suscripción vigente. Asigna un plan para comenzar.
+      </p>
+    </section>
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  @if (!cargando() && !error()) {
+    @if (vigente(); as sub) {
+      @if (puedeCambiarEstado) {
+        @if (enPrueba()) {
+          <button
+            matButton
+            type="button"
+            (click)="activarFacturacion()"
+            [disabled]="procesando()"
+          >
+            Activar facturación
+          </button>
+        }
+        @if (sub.estado === 'suspendida') {
+          <button matButton type="button" (click)="activar()" [disabled]="procesando()">
+            Activar
+          </button>
+        } @else if (sub.estado === 'activa') {
+          <button matButton type="button" (click)="suspender()" [disabled]="procesando()">
+            Suspender
+          </button>
+        }
+        @if (sub.estado !== 'cancelada') {
+          <button
+            matButton
+            type="button"
+            class="ds-boton-destructivo"
+            (click)="cancelar()"
+            [disabled]="procesando()"
+          >
+            Cancelar suscripción
+          </button>
+        }
+      }
+      @if (puedeActualizarVigencia) {
+        @if (enPrueba()) {
+          <button
+            matButton
+            type="button"
+            (click)="iniciarExtenderPrueba()"
+            [disabled]="procesando() || extendiendoPrueba()"
+          >
+            Extender prueba
+          </button>
+        }
+        <button matButton type="button" (click)="actualizarVigencia()" [disabled]="procesando()">
+          Actualizar vigencia
+        </button>
+      }
+      @if (puedeAsignar) {
+        <button matButton type="button" (click)="asignarPlan()" [disabled]="procesando()">
+          Cambiar plan
+        </button>
+      }
+    } @else if (puedeAsignar) {
+      <button matButton="filled" type="button" (click)="asignarPlan()">Asignar plan</button>
+    }
+  }
+  <button matButton type="button" (click)="cerrar()">Cerrar</button>
+</mat-dialog-actions>

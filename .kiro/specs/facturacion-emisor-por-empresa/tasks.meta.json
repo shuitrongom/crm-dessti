@@ -1,0 +1,390 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Crear el record `DatosEmisor` (objeto de valor)": [
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789423482738
+      },
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789423498599
+      },
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789424531341
+      }
+    ],
+    "1.2 Definir el puerto `EmpresaEmisorPort` con `Optional<DatosEmisor> emisorDeTenant(UUID tenantId)`": [
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789423482805
+      },
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789424533132
+      }
+    ],
+    "1.3 Implementar `EmpresaEmisorAdapter` que lee `empresa` por id y mapea a `DatosEmisor`": [
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789423482871
+      },
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789424534501
+      }
+    ],
+    "1.4 Prueba `EmpresaEmisorAdapterTest`": [
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789423482973
+      },
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789424535937
+      }
+    ],
+    "2.1 Cambiar la firma de `CotizacionPdfService.generar` a `(Cotizacion, DatosCliente, DatosEmisor)`": [
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789423483070
+      },
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789424537352
+      }
+    ],
+    "2.2 Actualizar `ServicioCotizaciones` para resolver el emisor del tenant": [
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789423483122
+      },
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789424538749
+      }
+    ],
+    "2.3 Ampliar `CotizacionPdfServiceTest` (property-based donde aplique)": [
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789423483185
+      },
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789424540168
+      }
+    ],
+    "2.4 Ajustar `ServicioCotizacionesTest`": [
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789423483234
+      },
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789424541612
+      }
+    ],
+    "2.5 Verificar no regresion del flujo de plataforma": [
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789423483286
+      },
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789424543014
+      }
+    ],
+    "3.1 Reflejar `emisorIncompleto` en el contrato REST de Cotizacion": [
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789423483351
+      },
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789424544393
+      }
+    ],
+    "3.2 Prueba de rebanada del controlador": [
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789423483422
+      },
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789424545678
+      }
+    ],
+    "4.1 Normalizar el termino y relajar el sesgo geografico": [
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789423483486
+      },
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789424554775
+      },
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789425688978
+      }
+    ],
+    "4.2 Ampliar `photon.service.spec.ts`": [
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789423483586
+      },
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789425690146
+      }
+    ],
+    "5.1 Corregir la presentacion del panel en `AddressAutocomplete`": [
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789423483636
+      },
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789424556209
+      },
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789425692720
+      }
+    ],
+    "5.2 Ampliar `address-autocomplete.spec.ts`": [
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789423483699
+      },
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789425693300
+      }
+    ],
+    "5.3 Confirmar consistencia en los formularios padre": [
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789423483751
+      },
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789425694392
+      }
+    ],
+    "6.1 Mostrar banner/toast no intrusivo cuando `emisorIncompleto`": [
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789423483801
+      },
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789424557422
+      },
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789425695772
+      }
+    ],
+    "6.2 Prueba del aviso": [
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789423483873
+      },
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789425696771
+      }
+    ],
+    "7.1 Build + pruebas backend": [
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789423483936
+      },
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789425703430
+      },
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789425745562
+      }
+    ],
+    "7.2 Build + pruebas frontend": [
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789423484001
+      },
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789425746053
+      }
+    ],
+    "7.3 Verificacion viva": [
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789423484068
+      },
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789425748071
+      },
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789426033377
+      }
+    ],
+    "1. Backend: objeto de valor DatosEmisor y puerto EmpresaEmisorPort": [
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789424536013
+      }
+    ],
+    "2. Backend: PDF de Cotizacion usa el emisor de la Empresa (no Dess-TI)": [
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789424543115
+      }
+    ],
+    "3. Backend: exponer el aviso de datos fiscales incompletos en REST": [
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789424545750
+      }
+    ],
+    "4. Frontend: robustez del PhotonService (autocompletado devuelve resultados)": [
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789425690227
+      }
+    ],
+    "5. Frontend: panel de sugerencias sin traslape y accesible": [
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789425694495
+      }
+    ],
+    "6. Frontend: aviso de datos fiscales incompletos en Cotizacion": [
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789425696905
+      }
+    ],
+    "7. Verificacion integral y puesta en vivo": [
+      {
+        "executionId": "28458be4-325a-425b-9efe-a3eb5e638cdc",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789426033456
+      }
+    ],
+    "8.6 Verificacion viva del autocompletado": [
+      {
+        "executionId": "88efe14f-badd-4baa-853f-cdc481d3a68a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789428339429
+      },
+      {
+        "executionId": "88efe14f-badd-4baa-853f-cdc481d3a68a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789428704862
+      }
+    ],
+    "8.1 Backend: `ServicioGeocoding` + `DireccionSugeridaDto`": [
+      {
+        "executionId": "88efe14f-badd-4baa-853f-cdc481d3a68a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789428698173
+      }
+    ],
+    "8.2 Backend: `GeocodingController` `GET /api/v1/geocoding/direcciones?q=`": [
+      {
+        "executionId": "88efe14f-badd-4baa-853f-cdc481d3a68a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789428699363
+      }
+    ],
+    "8.3 Backend: pruebas de `ServicioGeocoding` y del controlador": [
+      {
+        "executionId": "88efe14f-badd-4baa-853f-cdc481d3a68a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789428700815
+      }
+    ],
+    "8.4 Frontend: `GeocodingService` llama al backend (URL relativa `/api`)": [
+      {
+        "executionId": "88efe14f-badd-4baa-853f-cdc481d3a68a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789428702225
+      }
+    ],
+    "8.5 Frontend: corregir espaciado del panel/hint y ampliar specs": [
+      {
+        "executionId": "88efe14f-badd-4baa-853f-cdc481d3a68a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789428703622
+      }
+    ],
+    "8. Geocoding via backend propio (autocompletado robusto) [R2]": [
+      {
+        "executionId": "88efe14f-badd-4baa-853f-cdc481d3a68a",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789428704945
+      }
+    ]
+  }
+}

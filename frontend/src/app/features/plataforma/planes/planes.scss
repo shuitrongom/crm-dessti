@@ -1,0 +1,220 @@
+// =============================================================================
+// Estilos de la vista de Planes (super_admin) (Req 25, 52, 53, 55)
+// -----------------------------------------------------------------------------
+// Rejilla responsive de tarjetas de Plan (1 col movil -> 2 en md -> 3 en lg).
+// Cada tarjeta es una superficie con borde y sombra sutil que se eleva al pasar
+// el cursor (respetando prefers-reduced-motion). Solo tokens del Sistema de
+// Diseno; correcto en tema claro y oscuro.
+// =============================================================================
+
+@use '../../../../styles/breakpoints' as bp;
+
+// Grupo de pestanas "Planes" | "Suscripciones": deja aire entre las etiquetas y
+// el contenido de cada seccion.
+.planes__tabs {
+  margin-top: var(--ds-space-3);
+}
+
+// Contenido de cada pestana (rejilla + paginador) con respiro superior respecto
+// a la fila de pestanas.
+.planes__seccion {
+  padding-top: var(--ds-space-4);
+}
+
+// Barra de accion por pestana: aloja el boton "Nuevo" alineado a la derecha.
+.planes__toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--ds-space-4);
+}
+
+.planes__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-space-4);
+  margin: 0 0 var(--ds-space-4);
+  padding: 0;
+  list-style: none;
+
+  @include bp.from('md') {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include bp.from('lg') {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.planes__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-4);
+  padding: var(--ds-space-5);
+  background: var(--ds-color-surface);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  box-shadow: var(--ds-shadow-sm);
+  transition:
+    transform var(--ds-duration-base) var(--ds-easing-standard),
+    box-shadow var(--ds-duration-base) var(--ds-easing-standard);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--ds-shadow-md);
+  }
+}
+
+.planes__card-cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ds-space-2);
+}
+
+.planes__card-encabezado {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-2);
+  min-inline-size: 0;
+}
+
+// Grupo de acciones de la tarjeta (Editar + Eliminar) alineado a la derecha, sin
+// abarrotar el encabezado.
+.planes__card-acciones {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-1);
+  flex: 0 0 auto;
+}
+
+// Accion destructiva de eliminacion: icono en tono de error (icono + aria-label
+// aportan el significado, no solo el color).
+.planes__accion--eliminar .mat-icon {
+  color: var(--ds-color-error);
+}
+
+.planes__card-titulo {
+  margin: 0;
+  font-size: var(--ds-font-size-lg);
+  font-weight: var(--ds-font-weight-bold);
+  line-height: var(--ds-line-height-tight);
+  color: var(--ds-color-text);
+}
+
+// Chip del Giro del Plan (etiqueta pequena con icono).
+.planes__giro-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-1);
+  align-self: flex-start;
+  padding: 2px var(--ds-space-2);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-pill, 999px);
+  background: var(--ds-color-surface-variant);
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-xs);
+  font-weight: var(--ds-font-weight-medium);
+  max-inline-size: 100%;
+
+  mat-icon {
+    flex: 0 0 auto;
+    font-size: 14px;
+    inline-size: 14px;
+    block-size: 14px;
+  }
+}
+
+// Precio total del Plan destacado (importe grande + periodicidad).
+.planes__precio {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ds-space-1);
+}
+
+.planes__precio-valor {
+  font-size: var(--ds-font-size-2xl);
+  font-weight: var(--ds-font-weight-bold);
+  line-height: var(--ds-line-height-tight);
+  color: var(--ds-color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.planes__precio-etiqueta {
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-text-muted);
+}
+
+// Bloque de metrica destacada: numero grande + etiqueta.
+.planes__metrica {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ds-space-2);
+}
+
+.planes__metrica-valor {
+  font-size: var(--ds-font-size-2xl);
+  font-weight: var(--ds-font-weight-bold);
+  line-height: var(--ds-line-height-tight);
+  color: var(--ds-color-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.planes__metrica-etiqueta {
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-text-muted);
+}
+
+// Lineas propias del Paquete de Suscripcion: vigencia en dias y periodo de
+// prueba (icono + texto aportan el significado, no solo el color).
+.planes__vigencia,
+.planes__prueba {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  margin: 0;
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-text-muted);
+
+  .mat-icon {
+    flex: 0 0 auto;
+    font-size: 18px;
+    inline-size: 18px;
+    block-size: 18px;
+  }
+}
+
+.planes__modulos {
+  flex: 1 1 auto;
+}
+
+.planes__sin-modulos {
+  margin: 0;
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-text-muted);
+}
+
+.planes__card-pie {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  padding-top: var(--ds-space-3);
+  border-top: 1px solid var(--ds-color-border);
+  font-size: var(--ds-font-size-xs);
+  color: var(--ds-color-text-muted);
+
+  .mat-icon {
+    font-size: 18px;
+    inline-size: 18px;
+    block-size: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .planes__card {
+    transition: none;
+
+    &:hover {
+      transform: none;
+    }
+  }
+}

@@ -1,0 +1,158 @@
+<app-page-header
+  titulo="Offboarding"
+  subtitulo="Gestiona la salida de una empresa: exporta, cancela y elimina sus datos de forma controlada."
+/>
+
+<mat-card appearance="outlined" class="offboarding__card">
+  <mat-card-content>
+    <!-- Explicacion breve del flujo de baja: Cancelar -> periodo de gracia ->
+         Eliminar. Visible siempre, incluso antes de elegir empresa. -->
+    <p class="offboarding__flujo">
+      <mat-icon aria-hidden="true">info</mat-icon>
+      <span>El flujo de baja es: Cancelar (inicia el periodo de gracia) → esperar a que venza → Eliminar definitivamente.</span>
+    </p>
+
+    <!-- Buscador de empresa: el super_admin elige por nombre o RFC; el
+         identificador (UUID) se usa internamente y no se teclea. -->
+    <mat-form-field appearance="outline" class="offboarding__busqueda">
+      <mat-label>Empresa</mat-label>
+      <mat-icon matPrefix aria-hidden="true">search</mat-icon>
+      <input
+        matInput
+        type="text"
+        placeholder="Busca por nombre o RFC…"
+        autocomplete="off"
+        [value]="busqueda()"
+        (input)="alEscribir($any($event.target).value)"
+        [matAutocomplete]="auto"
+      />
+      <mat-hint>Escribe al menos 2 caracteres para buscar.</mat-hint>
+    </mat-form-field>
+
+    <mat-autocomplete #auto="matAutocomplete" (optionSelected)="alSeleccionar($event)">
+      @for (empresa of resultados(); track empresa.id) {
+        <mat-option [value]="empresa">
+          <span class="offboarding__opcion">
+            <span class="offboarding__opcion-nombre">{{ empresa.nombre }}</span>
+            <span class="offboarding__opcion-rfc">{{ empresa.rfc }}</span>
+          </span>
+        </mat-option>
+      } @empty {
+        @if (busqueda().trim().length >= 2 && !buscando()) {
+          <mat-option disabled>Sin coincidencias.</mat-option>
+        }
+      }
+    </mat-autocomplete>
+
+    <!-- Empresa seleccionada: tarjeta con identidad y estado. -->
+    @if (seleccionada(); as empresa) {
+      <div class="offboarding__seleccion">
+        @if (empresa.brandingLogo) {
+          <img class="offboarding__avatar-img" [src]="empresa.brandingLogo" [alt]="'Logo de ' + empresa.nombre" />
+        } @else {
+          <span class="offboarding__avatar" aria-hidden="true">{{ iniciales(empresa.nombre) }}</span>
+        }
+        <span class="offboarding__seleccion-textos">
+          <span class="offboarding__seleccion-nombre">{{ empresa.nombre }}</span>
+          <span class="offboarding__seleccion-rfc">{{ empresa.rfc }}</span>
+        </span>
+        <span class="offboarding__estado offboarding__estado--{{ empresa.estado }}">
+          <span class="offboarding__estado-dot" aria-hidden="true"></span>
+          {{ etiquetaEstado(empresa.estado) }}
+        </span>
+        <button
+          matIconButton
+          type="button"
+          class="offboarding__quitar"
+          aria-label="Elegir otra empresa"
+          (click)="limpiarSeleccion()"
+        >
+          <mat-icon aria-hidden="true">close</mat-icon>
+        </button>
+      </div>
+
+      <!-- Panel informativo del periodo de gracia: solo cuando la Empresa esta
+           cancelada y el backend definio su fin. Tono info mientras corre la
+           gracia; tono neutral/exito cuando ya vencio. Los dias restantes se
+           derivan de finPeriodoGracia (nunca se fija una duracion en el front). -->
+      @if (enPeriodoGracia()) {
+        <div
+          class="offboarding__gracia"
+          [class.offboarding__gracia--vencida]="graciaVencida()"
+          role="status"
+        >
+          <mat-icon aria-hidden="true">{{ graciaVencida() ? 'task_alt' : 'hourglass_top' }}</mat-icon>
+          <div class="offboarding__gracia-textos">
+            <span class="offboarding__gracia-linea">
+              Cancelada el {{ empresa.fechaCancelacion | date: 'dd/MM/yyyy' }}.
+            </span>
+            <span class="offboarding__gracia-linea">
+              Fin del periodo de gracia: {{ empresa.finPeriodoGracia | date: 'dd/MM/yyyy' }}.
+            </span>
+            @if (graciaVencida()) {
+              <span class="offboarding__gracia-estado">
+                El periodo de gracia venció. Ya se puede eliminar definitivamente.
+              </span>
+            } @else {
+              <span class="offboarding__gracia-estado">
+                Faltan {{ diasRestantesGracia() }}
+                {{ diasRestantesGracia() === 1 ? 'día' : 'días' }} para poder eliminar definitivamente.
+              </span>
+            }
+          </div>
+        </div>
+      }
+    } @else {
+      <p class="offboarding__ayuda">Selecciona una empresa para operar sobre ella.</p>
+    }
+
+    <div class="offboarding__acciones">
+      @if (puedeExportar) {
+        <button matButton="tonal" type="button" [disabled]="procesando() || !seleccionada()" (click)="exportar()">
+          <mat-icon aria-hidden="true">download</mat-icon>
+          Exportar datos
+        </button>
+      }
+      @if (puedeCambiarEstado) {
+        <!-- Cancelar (iniciar gracia): se deshabilita si la Empresa ya esta
+             cancelada; en ese caso el panel de gracia informa el estado. -->
+        <button
+          matButton="tonal"
+          type="button"
+          [disabled]="procesando() || !seleccionada() || yaCancelada()"
+          [matTooltip]="yaCancelada() ? 'La empresa ya está cancelada; su periodo de gracia está en curso.' : ''"
+          [matTooltipDisabled]="!yaCancelada()"
+          (click)="cancelar()"
+        >
+          <mat-icon aria-hidden="true">pause_circle</mat-icon>
+          Cancelar (iniciar gracia)
+        </button>
+        <!-- Eliminar definitivamente: habilitado solo si la Empresa esta
+             cancelada Y su periodo de gracia ya vencio. El tooltip explica el
+             motivo cuando esta deshabilitado. -->
+        <span
+          class="offboarding__eliminar-envoltura"
+          [matTooltip]="motivoEliminarBloqueado()"
+          [matTooltipDisabled]="puedeEliminar()"
+        >
+          <button
+            matButton="filled"
+            type="button"
+            class="ds-boton-destructivo"
+            [disabled]="procesando() || !puedeEliminar()"
+            [attr.aria-describedby]="!puedeEliminar() ? 'offboarding-eliminar-ayuda' : null"
+            (click)="eliminar()"
+          >
+            <mat-icon aria-hidden="true">delete_forever</mat-icon>
+            Eliminar definitivamente
+          </button>
+        </span>
+        @if (!puedeEliminar() && seleccionada()) {
+          <span id="offboarding-eliminar-ayuda" class="offboarding__eliminar-ayuda">
+            {{ motivoEliminarBloqueado() }}
+          </span>
+        }
+      }
+    </div>
+  </mat-card-content>
+</mat-card>

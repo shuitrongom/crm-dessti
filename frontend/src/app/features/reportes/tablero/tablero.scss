@@ -1,0 +1,36 @@
+// =============================================================================
+// Estilos del Tablero de indicadores (Req 52, 22) — mobile-first, tokens --ds-*
+// =============================================================================
+
+.reportes-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-3);
+  margin-block-end: var(--ds-space-4);
+
+  mat-form-field {
+    flex: 1 1 10rem;
+    min-width: 8rem;
+  }
+}
+
+.reportes-area {
+  margin-block-end: var(--ds-space-5);
+
+  &__titulo {
+    margin: 0 0 var(--ds-space-3);
+    font-size: var(--ds-font-size-lg);
+    font-weight: var(--ds-font-weight-medium);
+  }
+}
+
+.reportes-indicadores {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-space-3);
+
+  @media (min-width: 40rem) {
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  }
+}

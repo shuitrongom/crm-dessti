@@ -1,0 +1,56 @@
+<h2 mat-dialog-title>Actualizar vigencia</h2>
+<mat-dialog-content>
+  @if (data.empresaNombre) {
+    <p class="vigencia__intro">
+      Empresa: <strong>{{ data.empresaNombre }}</strong>
+    </p>
+  }
+
+  <form
+    class="vigencia__form"
+    [formGroup]="formulario"
+    (ngSubmit)="guardar()"
+    [attr.aria-busy]="guardando()"
+    novalidate
+  >
+    @if (error()) {
+      <p class="vigencia__error" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </p>
+    }
+
+    <mat-form-field appearance="outline">
+      <mat-label>Inicio de vigencia</mat-label>
+      <input
+        matInput
+        [matDatepicker]="inicioPicker"
+        formControlName="vigenciaInicio"
+        required
+      />
+      <mat-datepicker-toggle matIconSuffix [for]="inicioPicker" />
+      <mat-datepicker #inicioPicker />
+      <mat-hint>Fecha en que comienza la vigencia de la suscripción.</mat-hint>
+      @if (
+        formulario.controls.vigenciaInicio.hasError('required') &&
+        formulario.controls.vigenciaInicio.touched
+      ) {
+        <mat-error>Selecciona la fecha de inicio de vigencia.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Fin de vigencia (opcional)</mat-label>
+      <input matInput [matDatepicker]="finPicker" formControlName="vigenciaFin" />
+      <mat-datepicker-toggle matIconSuffix [for]="finPicker" />
+      <mat-datepicker #finPicker />
+      <mat-hint>Déjala vacía si la suscripción no tiene fecha de fin.</mat-hint>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancelar()">Cancelar</button>
+  <button matButton="filled" type="button" (click)="guardar()" [disabled]="guardando()">
+    Guardar vigencia
+  </button>
+</mat-dialog-actions>

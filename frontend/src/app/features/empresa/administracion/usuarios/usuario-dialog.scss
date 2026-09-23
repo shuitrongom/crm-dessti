@@ -1,0 +1,174 @@
+// =============================================================================
+// Estilos compartidos de los dialogos de Usuario (alta y edicion) (Req 4, 52, 53)
+// -----------------------------------------------------------------------------
+// Formulario enterprise organizado en secciones tipo "tarjeta" con encabezado,
+// rejilla responsive (1 col en movil, 2 en escritorio) y un selector de roles
+// por casillas con nombre + descripcion. Solo tokens del Sistema de Diseno;
+// correcto en tema claro y oscuro. Sin desbordamiento horizontal.
+// =============================================================================
+
+@use '../../../../../styles/breakpoints' as bp;
+
+.usuario-dialog__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-4);
+  min-inline-size: 0;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  box-sizing: border-box;
+  padding-block-start: var(--ds-space-2);
+}
+
+// -----------------------------------------------------------------------------
+// Mensajes
+// -----------------------------------------------------------------------------
+.usuario-dialog__error {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  margin: 0;
+  padding: var(--ds-space-3);
+  border: 1px solid color-mix(in srgb, var(--ds-color-error) 32%, transparent);
+  border-radius: var(--ds-radius-sm);
+  background: color-mix(in srgb, var(--ds-color-error) 12%, transparent);
+  color: var(--ds-color-error);
+  font-size: var(--ds-font-size-sm);
+
+  mat-icon {
+    flex: 0 0 auto;
+    font-size: 20px;
+    inline-size: 20px;
+    block-size: 20px;
+  }
+}
+
+.usuario-dialog__vacio {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ds-space-2);
+  margin: 0;
+  padding: var(--ds-space-3);
+  border: 1px solid color-mix(in srgb, var(--ds-color-info) 32%, transparent);
+  border-radius: var(--ds-radius-md);
+  background: color-mix(in srgb, var(--ds-color-info) 10%, transparent);
+  color: var(--ds-color-text);
+  font-size: var(--ds-font-size-sm);
+  line-height: var(--ds-line-height-base);
+  min-inline-size: 0;
+
+  mat-icon {
+    flex: 0 0 auto;
+    margin-block-start: 1px;
+    font-size: 20px;
+    inline-size: 20px;
+    block-size: 20px;
+    color: var(--ds-color-info);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Secciones del formulario
+// -----------------------------------------------------------------------------
+.usuario-dialog__seccion {
+  margin: 0;
+  padding: var(--ds-space-4);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-surface);
+  min-inline-size: 0;
+}
+
+.usuario-dialog__seccion-titulo {
+  margin: 0 0 var(--ds-space-3);
+  padding-block-end: var(--ds-space-2);
+  border-block-end: 1px solid var(--ds-color-border);
+  font-size: var(--ds-font-size-xs);
+  font-weight: var(--ds-font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ds-color-text-muted);
+}
+
+.usuario-dialog__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-space-3) var(--ds-space-4);
+
+  @include bp.from('sm') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  mat-form-field {
+    min-inline-size: 0;
+    inline-size: 100%;
+  }
+}
+
+.usuario-dialog__campo--ancho {
+  @include bp.from('sm') {
+    grid-column: 1 / -1;
+  }
+}
+
+.usuario-dialog__ayuda {
+  margin: 0 0 var(--ds-space-3);
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-sm);
+}
+
+// -----------------------------------------------------------------------------
+// Selector de roles por casillas (nombre + descripcion)
+// -----------------------------------------------------------------------------
+.usuario-dialog__roles {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  max-block-size: 36vh;
+  overflow-y: auto;
+
+  @include bp.from('sm') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--ds-space-2) var(--ds-space-4);
+  }
+}
+
+.usuario-dialog__roles-legend {
+  // Etiqueta accesible del grupo; visualmente el titulo de seccion ya lo
+  // introduce, por lo que la legend se oculta de forma accesible.
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.usuario-dialog__rol {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--ds-space-2) var(--ds-space-3);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-surface-variant);
+  min-inline-size: 0;
+}
+
+.usuario-dialog__rol-nombre {
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-text);
+}
+
+.usuario-dialog__rol-descripcion {
+  margin-inline-start: 2rem;
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-xs);
+  line-height: var(--ds-line-height-base);
+}

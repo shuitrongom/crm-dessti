@@ -1,0 +1,64 @@
+// =============================================================================
+// Estilos de EntitySelect (Req 52, 53, 57)
+// -----------------------------------------------------------------------------
+// Selector de entidad por nombre: campo de busqueda con autocompletado y, tras
+// elegir, una tarjeta compacta con la entidad seleccionada. Solo tokens del
+// Sistema de Diseno (tema claro y oscuro).
+// =============================================================================
+
+:host {
+  display: block;
+}
+
+.entity-select__campo {
+  inline-size: 100%;
+}
+
+// Opcion del autocompletado: etiqueta principal + detalle en dos lineas.
+.entity-select__opcion {
+  display: flex;
+  flex-direction: column;
+  line-height: var(--ds-line-height-tight);
+}
+
+.entity-select__opcion-detalle {
+  font-size: var(--ds-font-size-xs);
+  color: var(--ds-color-text-muted);
+}
+
+// Tarjeta de la entidad seleccionada.
+.entity-select__seleccion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-2) var(--ds-space-3);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-surface-variant);
+}
+
+.entity-select__seleccion-textos {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  flex: 1 1 10rem;
+}
+
+.entity-select__seleccion-etiqueta {
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.entity-select__seleccion-detalle {
+  font-size: var(--ds-font-size-xs);
+  color: var(--ds-color-text-muted);
+}
+
+.entity-select__quitar {
+  flex: 0 0 auto;
+  margin-inline-start: auto;
+}

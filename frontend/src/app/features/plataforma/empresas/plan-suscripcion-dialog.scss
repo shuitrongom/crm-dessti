@@ -1,0 +1,234 @@
+// =============================================================================
+// Estilos del panel "Plan y Suscripcion" de una Empresa (super_admin)
+// (plan-suscripcion-empresa-super-admin) (Req 5, 11)
+// -----------------------------------------------------------------------------
+// Layout compacto en secciones (plan vigente / suscripcion actual) con listas de
+// definicion (dt/dd), chips de modulos y estados con color semantico. Solo tokens
+// del Sistema de Diseno; correcto en claro y oscuro; responsive.
+// =============================================================================
+
+.plan-susc {
+  &__intro {
+    margin: 0 0 var(--ds-space-4);
+    color: var(--ds-color-text);
+  }
+
+  &__cargando {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-3);
+    padding: var(--ds-space-4);
+    color: var(--ds-color-text-muted);
+  }
+
+  &__seccion {
+    margin: 0 0 var(--ds-space-4);
+    padding: var(--ds-space-3);
+    border: 1px solid var(--ds-color-border);
+    border-radius: var(--ds-radius-md);
+    background: var(--ds-color-surface-variant);
+    min-inline-size: 0;
+  }
+
+  &__titulo {
+    margin: 0 0 var(--ds-space-3);
+    font-size: var(--ds-font-size-md);
+    font-weight: var(--ds-font-weight-medium);
+    color: var(--ds-color-text);
+  }
+
+  &__datos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: var(--ds-space-3);
+    margin: 0;
+  }
+
+  &__dato {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-1);
+    min-inline-size: 0;
+
+    dt {
+      color: var(--ds-color-text-muted);
+      font-size: var(--ds-font-size-xs);
+      font-weight: var(--ds-font-weight-medium);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    dd {
+      margin: 0;
+      color: var(--ds-color-text);
+      word-break: break-word;
+    }
+  }
+
+  &__modulos {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-2);
+    margin-block-start: var(--ds-space-3);
+  }
+
+  &__etiqueta {
+    color: var(--ds-color-text-muted);
+    font-size: var(--ds-font-size-xs);
+    font-weight: var(--ds-font-weight-medium);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  &__nota {
+    margin: 0;
+    color: var(--ds-color-text-muted);
+    font-size: var(--ds-font-size-sm);
+  }
+
+  &__estado {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--ds-space-1) var(--ds-space-2);
+    border-radius: var(--ds-radius-sm);
+    font-size: var(--ds-font-size-sm);
+    font-weight: var(--ds-font-weight-medium);
+    background: color-mix(in srgb, var(--ds-color-text-muted) 16%, transparent);
+    color: var(--ds-color-text);
+
+    &--activa {
+      background: color-mix(in srgb, var(--ds-color-success) 16%, transparent);
+      color: var(--ds-color-success);
+    }
+
+    &--en_prueba {
+      background: color-mix(in srgb, var(--ds-color-info) 16%, transparent);
+      color: var(--ds-color-info);
+    }
+
+    &--suspendida {
+      background: color-mix(in srgb, var(--ds-color-warning) 18%, transparent);
+      color: var(--ds-color-warning);
+    }
+
+    &--cancelada {
+      background: color-mix(in srgb, var(--ds-color-error) 14%, transparent);
+      color: var(--ds-color-error);
+    }
+
+    &--vencida {
+      background: color-mix(in srgb, var(--ds-color-error) 16%, transparent);
+      color: var(--ds-color-error);
+    }
+  }
+
+  // Fila del estado: etiqueta de estado + posible badge "Por vencer".
+  &__estado-fila {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ds-space-2);
+  }
+
+  // Nombre del instrumento vigente con su chip de tipo (Plan / Suscripcion).
+  &__nombre-instrumento {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ds-space-2);
+  }
+
+  &__tipo {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--ds-space-1) var(--ds-space-2);
+    border-radius: var(--ds-radius-pill);
+    font-size: var(--ds-font-size-xs);
+    font-weight: var(--ds-font-weight-medium);
+    background: var(--ds-color-primary-container);
+    color: var(--ds-color-primary);
+  }
+
+  // Badge discreto (texto + icono, no solo color) para "Por vencer" (WCAG AA).
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ds-space-1);
+    padding: var(--ds-space-1) var(--ds-space-2);
+    border-radius: var(--ds-radius-pill);
+    font-size: var(--ds-font-size-xs);
+    font-weight: var(--ds-font-weight-medium);
+
+    mat-icon {
+      inline-size: 16px;
+      block-size: 16px;
+      font-size: 16px;
+    }
+
+    &--por-vencer {
+      background: color-mix(in srgb, var(--ds-color-warning) 18%, transparent);
+      color: var(--ds-color-warning);
+    }
+  }
+
+  // Capturador inline para extender el periodo de prueba.
+  &__extender {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-2);
+    margin-block-start: var(--ds-space-3);
+    padding: var(--ds-space-3);
+    border: 1px solid var(--ds-color-border);
+    border-radius: var(--ds-radius-md);
+    background: var(--ds-color-surface);
+
+    mat-form-field {
+      inline-size: 100%;
+    }
+  }
+
+  &__extender-acciones {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--ds-space-2);
+  }
+
+  &__vacio {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-2);
+    margin: 0 0 var(--ds-space-2);
+    font-weight: var(--ds-font-weight-medium);
+    color: var(--ds-color-text);
+  }
+
+  &__vacio-detalle {
+    margin: 0;
+    color: var(--ds-color-text-muted);
+    font-size: var(--ds-font-size-sm);
+  }
+
+  &__reintentar {
+    display: flex;
+    justify-content: flex-start;
+    margin-block-start: var(--ds-space-2);
+  }
+
+  // Aviso a nivel de panel (errores de carga del backend).
+  &__error {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-2);
+    margin: 0;
+    padding: var(--ds-space-3);
+    border: 1px solid color-mix(in srgb, var(--ds-color-error) 32%, transparent);
+    border-radius: var(--ds-radius-sm);
+    background: color-mix(in srgb, var(--ds-color-error) 12%, transparent);
+    color: var(--ds-color-error);
+    font-size: var(--ds-font-size-sm);
+
+    mat-icon {
+      flex: 0 0 auto;
+    }
+  }
+}

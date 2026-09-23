@@ -1,0 +1,44 @@
+erDiagram
+    CUENTA_CANAL_SOCIAL ||--o{ CONVERSACION : origina
+    CONVERSACION ||--o{ MENSAJE_SOCIAL : contiene
+    PLANTILLA_MENSAJE ||--o{ MENSAJE_SOCIAL : "usa fuera de ventana"
+    CLIENTE ||--o{ CONVERSACION : participa
+    CONVERSACION ||--o| OPORTUNIDAD : "captura lead"
+    CUENTA_CANAL_SOCIAL ||--o{ PUBLICACION_SOCIAL : publica
+    CUENTA_CANAL_SOCIAL ||--o{ CAMPANIA_PUBLICITARIA : gestiona
+
+    CUENTA_CANAL_SOCIAL {
+        uuid id PK
+        uuid tenant_id FK
+        string canal
+        boolean activo
+    }
+    CONVERSACION {
+        uuid id PK
+        uuid tenant_id FK
+        string canal
+        string estado
+        timestamp ultimo_mensaje_entrante_utc
+    }
+    MENSAJE_SOCIAL {
+        uuid id PK
+        string sentido
+        string tipo
+        string estado_entrega
+        timestamp timestamp_utc
+    }
+    PLANTILLA_MENSAJE {
+        uuid id PK
+        string estado_aprobacion
+    }
+    PUBLICACION_SOCIAL {
+        uuid id PK
+        string estado
+        timestamp fecha_programada
+    }
+    CAMPANIA_PUBLICITARIA {
+        uuid id PK
+        numeric presupuesto
+        date fecha_inicio
+        date fecha_fin
+    }

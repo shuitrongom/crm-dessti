@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manual funcional — Plataforma Dess-TI (CRM multigiro)</title>
+<style>
+  :root{
+    --azul:#0b3d6b; --azul2:#12578f; --acento:#1f8a70; --gris:#5b6672;
+    --gris-cl:#eef1f5; --gris-bd:#d7dde5; --texto:#1c2733; --blanco:#fff;
+    --alta:#b3261e; --media:#8a6d00; --baja:#1f6f3f; --aviso:#8a4b00;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--texto);background:#f4f6f9;line-height:1.6;font-size:16px;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+  header.banda{
+    background:linear-gradient(120deg,var(--azul),var(--azul2));
+    color:#fff;padding:38px 0 30px;box-shadow:0 2px 10px rgba(0,0,0,.15);
+  }
+  header.banda .wrap{padding-top:0}
+  .eyebrow{font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;opacity:.85;margin:0 0 8px}
+  header.banda h1{margin:0;font-size:2rem;line-height:1.2}
+  header.banda .sub{margin:12px 0 0;font-size:1.02rem;opacity:.95;max-width:820px}
+  header.banda .meta{margin-top:16px;font-size:.85rem;opacity:.85}
+  main{padding:34px 0 60px}
+  h2{color:var(--azul);font-size:1.5rem;margin:0 0 4px;border-bottom:2px solid var(--gris-bd);padding-bottom:8px}
+  h3{color:var(--azul2);font-size:1.18rem;margin:22px 0 6px}
+  h4{color:var(--texto);font-size:1.02rem;margin:16px 0 4px}
+  p{margin:8px 0}
+  a{color:var(--azul2)}
+  .card{
+    background:#fff;border:1px solid var(--gris-bd);border-radius:10px;
+    padding:22px 24px;margin:0 0 26px;box-shadow:0 1px 3px rgba(16,42,67,.06);
+  }
+  .toc{background:#fff;border:1px solid var(--gris-bd);border-radius:10px;padding:20px 24px;margin:0 0 30px}
+  .toc h2{border:0;margin-bottom:10px}
+  .toc ol{margin:0;padding-left:20px;columns:2;column-gap:34px}
+  .toc li{margin:4px 0;break-inside:avoid}
+  .toc a{text-decoration:none}
+  .toc a:hover{text-decoration:underline}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:.94rem}
+  caption{text-align:left;font-weight:600;color:var(--gris);margin-bottom:6px}
+  th,td{border:1px solid var(--gris-bd);padding:9px 11px;text-align:left;vertical-align:top}
+  thead th{background:var(--azul);color:#fff;font-weight:600}
+  tbody tr:nth-child(even){background:var(--gris-cl)}
+  .badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:.75rem;font-weight:600;line-height:1.5;white-space:nowrap}
+  .b-mod{background:#e3effb;color:var(--azul)}
+  .b-rol{background:#e8f4ef;color:var(--baja)}
+  .b-apr{background:#fbeede;color:var(--aviso)}
+  .callout{border-left:4px solid var(--acento);background:#eef7f4;padding:12px 16px;border-radius:0 8px 8px 0;margin:14px 0}
+  .callout.warn{border-left-color:var(--aviso);background:#fdf4e7}
+  .callout strong{color:var(--azul)}
+  ul.clean{margin:8px 0;padding-left:22px}
+  ul.clean li{margin:5px 0}
+  .pantalla{border:1px solid var(--gris-bd);border-radius:8px;padding:14px 16px;margin:12px 0;background:#fbfcfe}
+  .pantalla h4{margin-top:0;color:var(--azul2)}
+  .kv{display:grid;grid-template-columns:170px 1fr;gap:4px 14px;margin:6px 0}
+  .kv dt{font-weight:600;color:var(--gris)}
+  .kv dd{margin:0}
+  .back{font-size:.82rem;display:inline-block;margin-top:6px}
+  footer{border-top:1px solid var(--gris-bd);padding:22px 0;color:var(--gris);font-size:.85rem;text-align:center}
+  @media(max-width:720px){
+    .toc ol{columns:1}
+    header.banda h1{font-size:1.55rem}
+    .kv{grid-template-columns:1fr}
+  }
+  @media print{
+    body{background:#fff;font-size:12px}
+    header.banda{box-shadow:none}
+    .card,.toc,.pantalla{box-shadow:none;break-inside:avoid}
+    a{color:var(--texto);text-decoration:none}
+    .back{display:none}
+  }
+</style>
+</head>
+<body>
+<header class="banda">
+  <div class="wrap">
+    <p class="eyebrow">Documentación de producto · Fase de pruebas</p>
+    <h1>Manual funcional — Plataforma Dess-TI (CRM multigiro)</h1>
+    <p class="sub">Versión de pruebas — bloques listos: Super Admin, Cuenta, Comercial (CRM), Redes Sociales, Estrategia.</p>
+    <p class="meta">Documento funcional / de usuario · Idioma: Español (es-MX) · Fecha: <span id="fecha">febrero de 2025</span></p>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <nav class="toc" aria-label="Tabla de contenidos">
+    <h2>Tabla de contenidos</h2>
+    <ol>
+      <li><a href="#conceptos">Conceptos clave</a></li>
+      <li><a href="#superadmin">Bloque Super Admin (Plataforma)</a></li>
+      <li><a href="#cuenta">Bloque Cuenta (Empresa)</a></li>
+      <li><a href="#comercial">Bloque Comercial (CRM)</a></li>
+      <li><a href="#redes">Bloque Redes Sociales</a></li>
+      <li><a href="#estrategia">Bloque Estrategia (OKR)</a></li>
+      <li><a href="#transversal">Funciones transversales</a></li>
+      <li><a href="#credenciales">Credenciales para integración de redes</a></li>
+      <li><a href="#glosario">Glosario</a></li>
+    </ol>
+  </nav>
+
+  <!-- CONCEPTOS -->
+  <section id="conceptos" class="card">
+    <h2>1. Conceptos clave</h2>
+    <p>Antes de recorrer las pantallas conviene entender cómo está organizada la plataforma. Estos conceptos se repiten en todos los bloques.</p>
+
+    <h3>Dess-TI (proveedor) vs. Empresa (inquilino)</h3>
+    <p><strong>Dess-TI</strong> es el proveedor del software como servicio (SaaS): es quien renta los módulos del sistema a las compañías. Una <strong>Empresa</strong> es una compañía cliente que usa el sistema para operar su negocio. Cada empresa es independiente y solo ve sus propios datos.</p>
+    <div class="callout">
+      <strong>Regla importante:</strong> Dess-TI cobra la renta del sistema a las empresas y emite sus propias facturas de renta. En cambio, cuando una empresa genera una cotización para sus clientes, el emisor es <strong>la empresa</strong>, nunca Dess-TI.
+    </div>
+
+    <h3>Módulos contratados</h3>
+    <p>El sistema está dividido en módulos (Comercial, Redes Sociales, Estrategia, etc.). Cada empresa contrata solo los módulos que necesita. Un módulo no contratado no aparece en el menú de esa empresa. A esto se le llama <em>gating por módulo</em>.</p>
+
+    <h3>Roles y permisos</h3>
+    <p>Dentro de una empresa, cada usuario tiene uno o más roles. El rol define qué puede ver y hacer. Los roles disponibles dependen de los módulos que la empresa haya contratado.</p>
+
+    <h3>Separación de funciones (quién hace vs. quién aprueba)</h3>
+    <p>La plataforma distingue entre <strong>roles operativos</strong>, que realizan el trabajo del día a día (por ejemplo, capturar una cotización), y <strong>roles aprobadores</strong>, que autorizan (por ejemplo, aprobar esa cotización). Un mismo usuario operativo no puede autorizar su propio trabajo si no tiene el rol aprobador correspondiente. Esto reduce errores y da control.</p>
+
+    <h3>Multi-tenant</h3>
+    <p>El sistema es <em>multi-tenant</em>: varias empresas conviven en la misma plataforma pero con aislamiento total de datos. Los usuarios de una empresa nunca ven la información de otra.</p>
+    <div class="callout">
+      <strong>Sin identificadores técnicos a la vista:</strong> en ninguna pantalla se muestran identificadores técnicos (UUID) al usuario. Las personas se identifican por su nombre y su identificador de acceso.
+    </div>
+    <a class="back" href="#conceptos">↑ volver al índice</a>
+  </section>
+
+  <!-- SUPER ADMIN -->
+  <section id="superadmin" class="card">
+    <h2>2. Bloque Super Admin (ámbito Plataforma)</h2>
+    <p><strong>Propósito:</strong> es el panel del proveedor Dess-TI (rol <code>super_admin</code>). Desde aquí se administran las empresas cliente, sus planes y la facturación de la renta. Trabaja bajo el ámbito <em>Plataforma</em>.</p>
+
+    <div class="pantalla">
+      <h4>Giros (verticales / rubros de negocio)</h4>
+      <p><strong>Para qué sirve:</strong> mantener el catálogo de giros o actividades de negocio que pueden asignarse a las empresas.</p>
+      <p><strong>Acciones:</strong> crear un giro, activarlo o desactivarlo.</p>
+    </div>
+
+    <div class="pantalla">
+      <h4>Empresas</h4>
+      <p><strong>Para qué sirve:</strong> dar de alta y editar las empresas cliente.</p>
+      <p><strong>Qué se captura:</strong></p>
+      <ul class="clean">
+        <li>Razón social, RFC, nombre comercial.</li>
+        <li>Correo y sitio web.</li>
+        <li>Dirección (con autocompletado).</li>
+        <li>Branding / logo de la empresa.</li>
+        <li>Asignación del plan y de los módulos contratados.</li>
+      </ul>
+      <p><strong>Acciones:</strong> alta, edición y cambio de estado (activa / suspendida).</p>
+    </div>
+
+    <div class="pantalla">
+      <h4>Planes y suscripciones</h4>
+      <p><strong>Para qué sirve:</strong> definir los planes comerciales, los precios por módulo y la suscripción de cada empresa (qué módulos tiene contratados). Es lo que determina el <em>gating por módulo</em> de cada empresa.</p>
+    </div>
+
+    <div class="pantalla">
+      <h4>Facturación (renta)</h4>
+      <p><strong>Para qué sirve:</strong> consultar las facturas de renta que <strong>Dess-TI</strong> emite a las empresas por el uso del sistema.</p>
+      <p><strong>Acciones:</strong> ver la factura y descargar su PDF. El emisor de este PDF es <strong>Dess-TI</strong>.</p>
+    </div>
+
+    <div class="pantalla">
+      <h4>Offboarding</h4>
+      <p><strong>Para qué sirve:</strong> dar de baja y exportar la información de una empresa cuando termina su relación con la plataforma.</p>
+    </div>
+
+    <div class="pantalla">
+      <h4>Perfil</h4>
+      <p><strong>Para qué sirve:</strong> ver los datos de la cuenta del super_admin y cambiar su contraseña.</p>
+    </div>
+    <a class="back" href="#conceptos">↑ volver al índice</a>
+  </section>
+
+  <!-- CUENTA -->
+  <section id="cuenta" class="card">
+    <h2>3. Bloque Cuenta (ámbito Empresa — administración base)</h2>
+    <p><strong>Propósito:</strong> la administración base de una empresa. Siempre está visible para el administrador de la empresa, independientemente de qué módulos de negocio se hayan contratado.</p>
+
+    <div class="pantalla">
+      <h4>Inicio</h4>
+      <p><strong>Para qué sirve:</strong> panel de bienvenida y resumen de la empresa. Refleja información como la estrategia (misión/visión/objetivos) capturada en el módulo Estrategia.</p>
+    </div>
+
+    <div class="pantalla">
+      <h4>Usuarios</h4>
+      <p><strong>Para qué sirve:</strong> dar de alta y editar a los usuarios de la empresa.</p>
+      <p><strong>Qué se captura:</strong> nombre, correo, identificador de acceso y asignación de roles. No se muestran identificadores técnicos.</p>
+    </div>
+
+    <div class="pantalla">
+      <h4>Roles</h4>
+      <p><strong>Para qué sirve:</strong> catálogo de roles asignables según los módulos contratados, con separación entre roles operativos y roles aprobadores. El administrador de la empresa ve todos los roles de lo contratado.</p>
+      <p><strong>Roles operativos predefinidos:</strong></p>
+      <p>
+        <span class="badge b-rol">admin_empresa</span>
+        <span class="badge b-rol">director</span>
+        <span class="badge b-rol">gerente</span>
+        <span class="badge b-rol">supervisor</span>
+        <span class="badge b-rol">ventas</span>
+        <span class="badge b-rol">diseno</span>
+        <span class="badge b-rol">produccion</span>
+        <span class="badge b-rol">almacen</span>
+        <span class="badge b-rol">instalacion</span>
+        <span class="badge b-rol">mantenimiento</span>
+        <span class="badge b-rol">contabilidad</span>
+        <span class="badge b-rol">rh</span>
+        <span class="badge b-rol">marketing</span>
+        <span class="badge b-rol">calidad</span>
+      </p>
+      <p><strong>Roles aprobadores predefinidos:</strong></p>
+      <p>
+        <span class="badge b-apr">gerente_comercial</span>
+        <span class="badge b-apr">gerente_compras</span>
+        <span class="badge b-apr">contador_general</span>
+        <span class="badge b-apr">tesorero</span>
+        <span class="badge b-apr">gerente_rh</span>
+        <span class="badge b-apr">gerente_operaciones</span>
+        <span class="badge b-apr">gerente_calidad</span>
+      </p>
+    </div>
+
+    <div class="pantalla">
+      <h4>Sesiones</h4>
+      <p><strong>Para qué sirve:</strong> ver las sesiones activas por usuario y poder cerrarlas.</p>
+    </div>
+
+    <div class="pantalla">
+      <h4>Branding</h4>
+      <p><strong>Para qué sirve:</strong> subir el logo y definir el nombre visible de la empresa. Este branding se usa, por ejemplo, en el PDF de las cotizaciones.</p>
+    </div>
+
+    <div class="pantalla">
+      <h4>Mi perfil / Mi empresa</h4>
+      <p><strong>Para qué sirve:</strong> el administrador puede editar los datos de su propia empresa; cualquier usuario puede cambiar su contraseña.</p>
+    </div>
+    <a class="back" href="#conceptos">↑ volver al índice</a>
+  </section>
+
+  <!-- COMERCIAL -->
+  <section id="comercial" class="card">
+    <h2>4. Bloque Comercial (CRM) <span class="badge b-mod">módulo comercial</span></h2>
+    <p><strong>Propósito:</strong> gestionar el ciclo comercial: clientes, oportunidades, cotizaciones y catálogos de producto y precio.</p>
+
+    <div class="pantalla">
+      <h4>Clientes</h4>
+      <p><strong>Para qué sirve:</strong> administrar la cartera de clientes con datos básicos y fiscales.</p>
+      <p><strong>Qué se captura (con validación):</strong></p>
+      <ul class="clean">
+        <li>Nombre y tipo de persona.</li>
+        <li>RFC con validación de formato.</li>
+        <li>Correo válido.</li>
+        <li>Teléfono de 10 dígitos.</li>
+        <li>Dirección con autocompletado.</li>
+        <li>Notas.</li>
+      </ul>
+      <p><strong>Acciones:</strong> alta, edición, ver (solo lectura) y eliminar.</p>
+    </div>
+
+    <div class="pantalla">
+      <h4>Oportunidades</h4>
+      <p><strong>Para qué sirve:</strong> pipeline / embudo de ventas.</p>
+      <p><strong>Qué se captura:</strong> cliente, título, valor estimado y etapa.</p>
+      <p><strong>Acciones:</strong> crear, avanzar de etapa y aprobar (requiere rol aprobador).</p>
+    </div>
+
+    <div class="pantalla">
+      <h4>Cotizaciones</h4>
+      <p><strong>Para qué sirve:</strong> generar cotizaciones profesionales para los clientes de la empresa.</p>
+      <p><strong>Qué se captura:</strong> cliente (mediante selector), productos / partidas, folio profesional con formato <code>COT-AAAA-NNNN</code>, fecha "válido hasta", condiciones, notas y moneda.</p>
+      <p><strong>Acciones:</strong> ver detalle enterprise, descargar PDF, enviar por correo, enviar por WhatsApp (enlace wa.me). Estados: borrador, enviada, aprobada, rechazada.</p>
+      <div class="callout warn">
+        <strong>Emisor de la cotización:</strong> el PDF lo emite <strong>la empresa</strong>, nunca Dess-TI. Si faltan los datos fiscales de la empresa, el sistema muestra un aviso.
+      </div>
+    </div>
+
+    <div class="pantalla">
+      <h4>Productos</h4>
+      <p><strong>Para qué sirve:</strong> catálogo de productos.</p>
+      <p><strong>Qué se captura:</strong> foto (subir imagen), unidad de medida y descripción. En la lista se muestra una miniatura.</p>
+    </div>
+
+    <div class="pantalla">
+      <h4>Listas de precios</h4>
+      <p><strong>Para qué sirve:</strong> administrar precios por producto con vigencias (fechas de inicio/fin) y asignación del precio a cada producto.</p>
+    </div>
+
+    <div class="pantalla">
+      <h4>Canales de venta</h4>
+      <p><strong>Para qué sirve:</strong> registrar los canales de venta de la empresa.</p>
+    </div>
+    <a class="back" href="#conceptos">↑ volver al índice</a>
+  </section>
+
+  <!-- REDES -->
+  <section id="redes" class="card">
+    <h2>5. Bloque Redes Sociales <span class="badge b-mod">módulo redes-sociales</span></h2>
+    <p><strong>Propósito:</strong> centralizar la presencia de la empresa en redes sociales: conexiones, mensajería, publicaciones, campañas y analítica.</p>
+    <div class="callout">
+      <strong>Punto de entrada:</strong> Conexiones. Sin cuentas conectadas, el resto de las pantallas se ven vacías. Conecta primero.
+    </div>
+
+    <div class="pantalla">
+      <h4>Conexiones</h4>
+      <p><strong>Para qué sirve:</strong> conectar y gestionar las cuentas de las 5 redes soportadas: WhatsApp, Facebook, Instagram, Messenger y TikTok.</p>
+      <p><strong>Qué se captura:</strong> canal, nombre, identificador externo y una <em>referencia</em> de credencial. Nunca se guarda ni se muestra la credencial real.</p>
+    </div>
+
+    <div class="pantalla">
+      <h4>Bandeja</h4>
+      <p><strong>Para qué sirve:</strong> mensajería unificada con las conversaciones entrantes y salientes de las cuentas conectadas.</p>
+    </div>
+
+    <div class="pantalla">
+      <h4>Publicaciones</h4>
+      <p><strong>Para qué sirve:</strong> programar y publicar contenido. Estados: borrador → programada → publicada / fallida. Requiere al menos una cuenta conectada.</p>
+    </div>
+
+    <div class="pantalla">
+      <h4>Campañas</h4>
+      <p><strong>Para qué sirve:</strong> gestionar campañas publicitarias con presupuesto y periodo (fechas con calendario).</p>
+    </div>
+
+    <div class="pantalla">
+      <h4>Analítica</h4>
+      <p><strong>Para qué sirve:</strong> ver métricas por canal (alcance, interacciones, mensajes, conversiones), filtrables por fecha y por canal.</p>
+    </div>
+    <div class="callout warn">
+      <strong>Nota de integración:</strong> la conexión real con las APIs oficiales (Meta para WhatsApp, Facebook, Instagram y Messenger; TikTok para TikTok) queda <strong>preparada</strong>. Hoy se registra únicamente la referencia de credencial. Ver la sección de credenciales.
+    </div>
+    <a class="back" href="#conceptos">↑ volver al índice</a>
+  </section>
+
+  <!-- ESTRATEGIA -->
+  <section id="estrategia" class="card">
+    <h2>6. Bloque Estrategia (OKR) <span class="badge b-mod">módulo estrategia</span></h2>
+    <p><strong>Propósito:</strong> capturar la dirección estratégica de la empresa.</p>
+    <div class="pantalla">
+      <h4>Estrategia (OKR)</h4>
+      <p><strong>Para qué sirve:</strong> registrar misión, visión, valores, la planeación estratégica y los objetivos con sus resultados clave (OKR).</p>
+      <p><strong>Dónde se refleja:</strong> el contenido capturado aquí se muestra en la pantalla de Inicio.</p>
+    </div>
+    <a class="back" href="#conceptos">↑ volver al índice</a>
+  </section>
+
+  <!-- TRANSVERSAL -->
+  <section id="transversal" class="card">
+    <h2>7. Funciones transversales</h2>
+    <p>Estas funciones aplican a varios bloques del sistema.</p>
+    <h3>Calendario desplegable</h3>
+    <p>Todos los campos de fecha del sistema abren un calendario para seleccionar la fecha.</p>
+    <h3>Autocompletado de direcciones</h3>
+    <p>Al escribir una calle o ciudad, el sistema completa automáticamente calle, ciudad, estado, código postal y país.</p>
+    <h3>Menús acordeón por bloque</h3>
+    <p>El menú se organiza en bloques que se abren y cierran (acordeón).</p>
+    <h3>Gating por módulo y por permiso</h3>
+    <p>Si la empresa no contrató un módulo, ese bloque no aparece. Además, cada rol solo ve y hace aquello que su permiso le autoriza.</p>
+    <a class="back" href="#conceptos">↑ volver al índice</a>
+  </section>
+
+  <!-- CREDENCIALES -->
+  <section id="credenciales" class="card">
+    <h2>8. Credenciales para integración real de redes sociales</h2>
+    <p>Sección informativa. Hoy el sistema guarda únicamente una <em>referencia</em> de credencial; la integración real requerirá dar de alta la aplicación en cada plataforma y obtener las siguientes credenciales.</p>
+    <table>
+      <caption>Credenciales necesarias por plataforma (referencia informativa)</caption>
+      <thead>
+        <tr><th scope="col">Canal</th><th scope="col">Plataforma / proveedor</th><th scope="col">Credenciales típicas requeridas</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>WhatsApp</td><td>Meta (WhatsApp Business Platform / Cloud API)</td><td>ID de número de teléfono, ID de cuenta de WhatsApp Business (WABA), token de acceso, verificación de webhook.</td></tr>
+        <tr><td>Facebook</td><td>Meta (Graph API)</td><td>App ID, App Secret, token de página, ID de página, permisos de la app.</td></tr>
+        <tr><td>Instagram</td><td>Meta (Instagram Graph API)</td><td>Cuenta profesional vinculada a página de Facebook, token de acceso, ID de cuenta de Instagram.</td></tr>
+        <tr><td>Messenger</td><td>Meta (Messenger Platform)</td><td>Token de página, ID de página, verificación de webhook, permisos de mensajería.</td></tr>
+        <tr><td>TikTok</td><td>TikTok (TikTok for Business / Developers)</td><td>Client key, Client secret, token de acceso, ámbitos (scopes) autorizados.</td></tr>
+      </tbody>
+    </table>
+    <div class="callout">
+      <strong>Seguridad:</strong> las credenciales reales se administran fuera de la vista del usuario. En pantalla solo se muestra una referencia, nunca el valor real.
+    </div>
+    <a class="back" href="#conceptos">↑ volver al índice</a>
+  </section>
+
+  <!-- GLOSARIO -->
+  <section id="glosario" class="card">
+    <h2>9. Glosario</h2>
+    <dl class="kv">
+      <dt>Dess-TI</dt><dd>Proveedor del software como servicio (SaaS) que renta los módulos a las empresas.</dd>
+      <dt>Empresa</dt><dd>Compañía cliente (inquilino) que usa el sistema para operar su negocio.</dd>
+      <dt>Multi-tenant</dt><dd>Arquitectura en la que varias empresas comparten la plataforma con aislamiento total de datos.</dd>
+      <dt>Módulo</dt><dd>Conjunto de funciones (Comercial, Redes Sociales, Estrategia…) que una empresa contrata.</dd>
+      <dt>Gating</dt><dd>Mecanismo que oculta bloques/acciones según el módulo contratado o el permiso del rol.</dd>
+      <dt>Rol operativo</dt><dd>Rol que ejecuta el trabajo del día a día.</dd>
+      <dt>Rol aprobador</dt><dd>Rol que autoriza el trabajo (separación de funciones).</dd>
+      <dt>Folio</dt><dd>Identificador de negocio de una cotización, con formato COT-AAAA-NNNN.</dd>
+      <dt>OKR</dt><dd>Objetivos y resultados clave; método de planeación estratégica.</dd>
+      <dt>Referencia de credencial</dt><dd>Apuntador que reemplaza a la credencial real de una red social en pantalla.</dd>
+    </dl>
+    <a class="back" href="#conceptos">↑ volver al índice</a>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">Manual funcional — Plataforma Dess-TI (CRM multigiro) · Documento de la fase de pruebas · Español (es-MX)</div>
+</footer>
+
+</body>
+</html>

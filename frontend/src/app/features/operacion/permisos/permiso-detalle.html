@@ -1,0 +1,77 @@
+<app-page-header
+  titulo="Detalle de permiso"
+  subtitulo="Consulta el detalle del permiso de instalación y registra las acciones de decisión."
+>
+  <div acciones>
+    <a matButton routerLink=".." aria-label="Volver al listado de permisos">
+      <mat-icon aria-hidden="true">arrow_back</mat-icon>
+      Volver
+    </a>
+  </div>
+</app-page-header>
+
+<app-state-container [fase]="fase()" [mensajeError]="mensajeError()" (reintentar)="cargar()">
+  @if (permiso(); as p) {
+    <div class="perm-detalle">
+      <mat-card appearance="outlined" class="ds-card-enterprise">
+        <mat-card-header>
+          <mat-card-title>Permiso de {{ nombres.nombreSitio(p.sitioId) }}</mat-card-title>
+          <mat-card-subtitle>{{ etiquetaTipo(p.tipo) }} · {{ etiquetaEstado(p.estado) }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <dl class="perm-detalle__datos">
+            <div class="perm-detalle__dato">
+              <dt>Sitio</dt>
+              <dd>{{ nombres.nombreSitio(p.sitioId) }}</dd>
+            </div>
+            <div class="perm-detalle__dato">
+              <dt>Tipo</dt>
+              <dd>{{ etiquetaTipo(p.tipo) }}</dd>
+            </div>
+            <div class="perm-detalle__dato">
+              <dt>Estado</dt>
+              <dd>
+                <app-chip-estado
+                  [variante]="varianteEstado(p.estado)"
+                  [etiqueta]="etiquetaEstado(p.estado)"
+                />
+              </dd>
+            </div>
+            <div class="perm-detalle__dato">
+              <dt>Fecha de vencimiento</dt>
+              <dd>{{ p.fechaVencimiento }}</dd>
+            </div>
+            @if (p.decididoEn) {
+              <div class="perm-detalle__dato">
+                <dt>Decidido el</dt>
+                <dd>{{ p.decididoEn }}</dd>
+              </div>
+            }
+          </dl>
+        </mat-card-content>
+
+        @if (puedeAccionar()) {
+          <mat-card-actions>
+            <button matButton="tonal" type="button" (click)="decidir('aprobar')">
+              Aprobar
+            </button>
+            <button
+              matButton="tonal"
+              type="button"
+              class="ds-boton-destructivo"
+              (click)="decidir('rechazar')"
+            >
+              Rechazar
+            </button>
+          </mat-card-actions>
+        } @else if (p.estado !== 'solicitado') {
+          <mat-card-content>
+            <p class="perm-detalle__nota">
+              Este permiso ya tiene estado "{{ etiquetaEstado(p.estado) }}"; no admite mas acciones.
+            </p>
+          </mat-card-content>
+        }
+      </mat-card>
+    </div>
+  }
+</app-state-container>

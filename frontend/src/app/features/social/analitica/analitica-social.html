@@ -1,0 +1,92 @@
+<app-page-header
+  titulo="Analítica social"
+  subtitulo="Consulta tus métricas por canal y periodo: alcance, tiempo de respuesta, mensajes y conversiones."
+>
+  @if (puedeExportar) {
+    <button acciones matButton type="button" [disabled]="exportando()" (click)="exportar()">
+      <mat-icon>download</mat-icon>
+      Exportar
+    </button>
+  }
+</app-page-header>
+
+<form class="analitica-filtros" [formGroup]="formFiltro" (ngSubmit)="consultar()" novalidate>
+  <mat-form-field appearance="outline">
+    <mat-label>Desde</mat-label>
+    <input matInput [matDatepicker]="pickerDesde" formControlName="desde" />
+    <mat-datepicker-toggle matSuffix [for]="pickerDesde" />
+    <mat-datepicker #pickerDesde />
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>Hasta</mat-label>
+    <input matInput [matDatepicker]="pickerHasta" formControlName="hasta" />
+    <mat-datepicker-toggle matSuffix [for]="pickerHasta" />
+    <mat-datepicker #pickerHasta />
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>Canal</mat-label>
+    <mat-select formControlName="canal">
+      @for (opcion of canales; track opcion.valor) {
+        <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <button matButton="filled" type="submit">
+    <mat-icon>search</mat-icon> Consultar
+  </button>
+</form>
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="No hay metricas todavia. Conecta una cuenta en Conexiones y opera tus canales para ver resultados."
+  (reintentar)="consultar()"
+>
+  @if (estado().datos; as resumen) {
+    <!-- Totales del periodo -->
+    <section class="analitica-totales" aria-label="Totales del periodo">
+      <div class="analitica-total">
+        <span class="analitica-total__valor">{{ totales().alcance }}</span>
+        <span class="analitica-total__etiqueta">Alcance (conversaciones)</span>
+      </div>
+      <div class="analitica-total">
+        <span class="analitica-total__valor">{{ totales().interacciones }}</span>
+        <span class="analitica-total__etiqueta">Interacciones</span>
+      </div>
+      <div class="analitica-total">
+        <span class="analitica-total__valor">{{ totales().mensajesRecibidos }}</span>
+        <span class="analitica-total__etiqueta">Mensajes recibidos</span>
+      </div>
+      <div class="analitica-total">
+        <span class="analitica-total__valor">{{ totales().mensajesEnviados }}</span>
+        <span class="analitica-total__etiqueta">Mensajes enviados</span>
+      </div>
+      <div class="analitica-total">
+        <span class="analitica-total__valor">{{ totales().conversiones }}</span>
+        <span class="analitica-total__etiqueta">Leads / conversiones</span>
+      </div>
+    </section>
+
+    <!-- Detalle por canal -->
+    <section class="analitica-canales" aria-label="Metricas por canal">
+      @for (c of canalesDe(resumen); track c.canal) {
+        <mat-card appearance="outlined" class="analitica-canal">
+          <mat-card-content>
+            <h2 class="analitica-canal__titulo">
+              <mat-icon aria-hidden="true">{{ iconoCanal(c.canal) }}</mat-icon>
+              {{ etiquetaCanal(c.canal) }}
+            </h2>
+            <dl class="analitica-canal__grid">
+              <div><dt>Alcance</dt><dd>{{ c.alcance }}</dd></div>
+              <div><dt>Interacciones</dt><dd>{{ c.interacciones }}</dd></div>
+              <div><dt>Recibidos</dt><dd>{{ c.mensajesRecibidos }}</dd></div>
+              <div><dt>Enviados</dt><dd>{{ c.mensajesEnviados }}</dd></div>
+              <div><dt>Resp. promedio</dt><dd>{{ tiempoRespuesta(c.tiempoRespuestaPromedioSegundos) }}</dd></div>
+              <div><dt>Conversiones</dt><dd>{{ c.conversiones }}</dd></div>
+            </dl>
+          </mat-card-content>
+        </mat-card>
+      }
+    </section>
+  }
+</app-state-container>

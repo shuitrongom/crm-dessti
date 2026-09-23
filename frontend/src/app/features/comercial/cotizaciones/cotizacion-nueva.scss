@@ -1,0 +1,83 @@
+@use '../../../../styles/breakpoints' as bp;
+
+.cotizacion-nueva {
+  &__cabecera {
+    margin-bottom: var(--ds-space-3);
+
+    app-entity-select {
+      display: block;
+      max-width: 480px;
+    }
+  }
+
+  &__campos {
+    display: grid;
+    gap: var(--ds-space-2);
+    margin-top: var(--ds-space-2);
+
+    @include bp.from('md') {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      max-width: 640px;
+    }
+
+    mat-form-field {
+      width: 100%;
+    }
+  }
+
+  &__ancho {
+    width: 100%;
+    display: block;
+    margin-top: var(--ds-space-2);
+  }
+
+  &__partidas {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-3);
+  }
+
+  &__partida-cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--ds-space-2);
+  }
+
+  &__partida-num {
+    font-weight: var(--ds-font-weight-medium);
+  }
+
+  &__grid {
+    display: grid;
+    gap: var(--ds-space-2);
+
+    @include bp.from('md') {
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+    }
+
+    mat-form-field {
+      width: 100%;
+    }
+  }
+
+  &__subtotal {
+    margin: var(--ds-space-1) 0 0;
+    color: var(--ds-color-text-muted);
+    font-size: var(--ds-font-size-sm);
+  }
+
+  &__pie {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ds-space-3);
+    justify-content: space-between;
+    margin-top: var(--ds-space-4);
+  }
+
+  &__total {
+    margin: 0;
+    font-size: var(--ds-font-size-md);
+  }
+}

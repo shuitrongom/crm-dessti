@@ -1,0 +1,13 @@
+<div class="progress-badge">
+  <div class="progress-badge__cabecera">
+    <span class="progress-badge__valor">{{ avanceAcotado() }}%</span>
+    <span class="progress-badge__insignia" [class]="claseEstado()">
+      {{ etiquetaEstado() }}
+    </span>
+  </div>
+  <mat-progress-bar
+    mode="determinate"
+    [value]="avanceAcotado()"
+    [attr.aria-label]="'Avance ' + avanceAcotado() + ' por ciento, estado ' + etiquetaEstado()"
+  />
+</div>

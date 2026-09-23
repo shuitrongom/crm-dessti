@@ -1,0 +1,228 @@
+<app-page-header
+  titulo="Planes y suscripciones"
+  subtitulo="Define los planes comerciales y administra las suscripciones de las empresas en la plataforma."
+/>
+
+<mat-tab-group class="planes__tabs" aria-label="Planes y suscripciones">
+  <!-- Pestana 1: Planes (contratos de largo plazo) -->
+  <mat-tab label="Planes">
+    <div class="planes__seccion">
+      @if (puedeCrear) {
+        <div class="planes__toolbar">
+          <button matButton="filled" type="button" (click)="crear()">
+            <mat-icon aria-hidden="true">add</mat-icon>
+            Nuevo plan
+          </button>
+        </div>
+      }
+
+      <app-state-container
+        [fase]="estado().fase"
+        [mensajeError]="estado().mensajeError"
+        mensajeVacio="No hay planes definidos."
+        (reintentar)="cargar()"
+      >
+        <ul class="planes__grid">
+          @for (plan of estado().datos ?? []; track plan.id) {
+            <li class="planes__card">
+              <header class="planes__card-cabecera">
+                <div class="planes__card-encabezado">
+                  <h2 class="planes__card-titulo">{{ plan.nombre }}</h2>
+                  @if (etiquetaGiro(plan); as giro) {
+                    <span class="planes__giro-chip">
+                      <mat-icon aria-hidden="true">category</mat-icon>
+                      {{ giro }}
+                    </span>
+                  }
+                </div>
+                @if (puedeActualizar || puedeEliminar) {
+                  <div class="planes__card-acciones">
+                    @if (puedeActualizar) {
+                      <button
+                        matIconButton
+                        type="button"
+                        [attr.aria-label]="'Editar plan ' + plan.nombre"
+                        (click)="editar(plan)"
+                      >
+                        <mat-icon aria-hidden="true">edit</mat-icon>
+                      </button>
+                    }
+                    @if (puedeEliminar) {
+                      <button
+                        matIconButton
+                        type="button"
+                        class="planes__accion--eliminar"
+                        [attr.aria-label]="'Eliminar plan ' + plan.nombre"
+                        (click)="eliminar(plan)"
+                      >
+                        <mat-icon aria-hidden="true">delete</mat-icon>
+                      </button>
+                    }
+                  </div>
+                }
+              </header>
+
+              <div class="planes__precio">
+                <span class="planes__precio-valor">
+                  {{ plan.total | currency: (plan.monedaCodigo ?? 'MXN') : 'symbol' : '1.2-2' : 'es-MX' }}
+                </span>
+                <span class="planes__precio-etiqueta">{{ plan.monedaCodigo ?? 'MXN' }} /mes</span>
+              </div>
+
+              <div class="planes__metrica">
+                <span class="planes__metrica-valor">{{ plan.maxUsuarios }}</span>
+                <span class="planes__metrica-etiqueta">usuarios max.</span>
+              </div>
+
+              <div class="planes__modulos">
+                @if (plan.modulosHabilitados.length === 0) {
+                  <p class="planes__sin-modulos">Sin modulos</p>
+                } @else {
+                  <mat-chip-set>
+                    @for (etiqueta of chipsModulos(plan).visibles; track etiqueta) {
+                      <mat-chip>{{ etiqueta }}</mat-chip>
+                    }
+                    @if (chipsModulos(plan).restantes > 0) {
+                      <mat-chip>+{{ chipsModulos(plan).restantes }} mas</mat-chip>
+                    }
+                  </mat-chip-set>
+                }
+              </div>
+
+              <footer class="planes__card-pie">
+                <mat-icon aria-hidden="true">extension</mat-icon>
+                <span>{{ plan.modulosHabilitados.length }} modulos habilitados</span>
+              </footer>
+            </li>
+          }
+        </ul>
+
+        <mat-paginator
+          [length]="total()"
+          [pageIndex]="page()"
+          [pageSize]="size()"
+          [pageSizeOptions]="opcionesTamano"
+          (page)="cambiarPagina($event)"
+          aria-label="Paginacion de planes"
+        />
+      </app-state-container>
+    </div>
+  </mat-tab>
+
+  <!-- Pestana 2: Suscripciones (paquetes de corto plazo, con prueba opcional) -->
+  <mat-tab label="Suscripciones">
+    <div class="planes__seccion">
+      @if (puedeCrearPaquete) {
+        <div class="planes__toolbar">
+          <button matButton="filled" type="button" (click)="crearPaquete()">
+            <mat-icon aria-hidden="true">add</mat-icon>
+            Nueva suscripcion
+          </button>
+        </div>
+      }
+
+      <app-state-container
+        [fase]="estadoPaquetes().fase"
+        [mensajeError]="estadoPaquetes().mensajeError"
+        mensajeVacio="No hay suscripciones definidas."
+        (reintentar)="cargarPaquetes()"
+      >
+        <ul class="planes__grid">
+          @for (paquete of estadoPaquetes().datos ?? []; track paquete.id) {
+            <li class="planes__card">
+              <header class="planes__card-cabecera">
+                <div class="planes__card-encabezado">
+                  <h2 class="planes__card-titulo">{{ paquete.nombre }}</h2>
+                  @if (etiquetaGiroPaquete(paquete); as giro) {
+                    <span class="planes__giro-chip">
+                      <mat-icon aria-hidden="true">category</mat-icon>
+                      {{ giro }}
+                    </span>
+                  }
+                </div>
+                @if (puedeActualizarPaquete || puedeEliminarPaquete) {
+                  <div class="planes__card-acciones">
+                    @if (puedeActualizarPaquete) {
+                      <button
+                        matIconButton
+                        type="button"
+                        [attr.aria-label]="'Editar suscripcion ' + paquete.nombre"
+                        (click)="editarPaquete(paquete)"
+                      >
+                        <mat-icon aria-hidden="true">edit</mat-icon>
+                      </button>
+                    }
+                    @if (puedeEliminarPaquete) {
+                      <button
+                        matIconButton
+                        type="button"
+                        class="planes__accion--eliminar"
+                        [attr.aria-label]="'Eliminar suscripcion ' + paquete.nombre"
+                        (click)="eliminarPaquete(paquete)"
+                      >
+                        <mat-icon aria-hidden="true">delete</mat-icon>
+                      </button>
+                    }
+                  </div>
+                }
+              </header>
+
+              <div class="planes__precio">
+                <span class="planes__precio-valor">
+                  {{ paquete.total | currency: (paquete.monedaCodigo ?? 'MXN') : 'symbol' : '1.2-2' : 'es-MX' }}
+                </span>
+                <span class="planes__precio-etiqueta">{{ paquete.monedaCodigo ?? 'MXN' }} /mes</span>
+              </div>
+
+              <div class="planes__metrica">
+                <span class="planes__metrica-valor">{{ paquete.maxUsuarios }}</span>
+                <span class="planes__metrica-etiqueta">usuarios max.</span>
+              </div>
+
+              <p class="planes__vigencia">
+                <mat-icon aria-hidden="true">event</mat-icon>
+                <span>{{ paquete.duracionDias }} dias de vigencia</span>
+              </p>
+
+              @if (paquete.admitePrueba && paquete.duracionPruebaMeses) {
+                <p class="planes__prueba">
+                  <mat-icon aria-hidden="true">schedule</mat-icon>
+                  <span>Prueba: {{ paquete.duracionPruebaMeses }} meses</span>
+                </p>
+              }
+
+              <div class="planes__modulos">
+                @if (paquete.modulosHabilitados.length === 0) {
+                  <p class="planes__sin-modulos">Sin modulos</p>
+                } @else {
+                  <mat-chip-set>
+                    @for (etiqueta of chipsModulosPaquete(paquete).visibles; track etiqueta) {
+                      <mat-chip>{{ etiqueta }}</mat-chip>
+                    }
+                    @if (chipsModulosPaquete(paquete).restantes > 0) {
+                      <mat-chip>+{{ chipsModulosPaquete(paquete).restantes }} mas</mat-chip>
+                    }
+                  </mat-chip-set>
+                }
+              </div>
+
+              <footer class="planes__card-pie">
+                <mat-icon aria-hidden="true">extension</mat-icon>
+                <span>{{ paquete.modulosHabilitados.length }} modulos habilitados</span>
+              </footer>
+            </li>
+          }
+        </ul>
+
+        <mat-paginator
+          [length]="totalPaquetes()"
+          [pageIndex]="pagePaquetes()"
+          [pageSize]="sizePaquetes()"
+          [pageSizeOptions]="opcionesTamano"
+          (page)="cambiarPaginaPaquetes($event)"
+          aria-label="Paginacion de suscripciones"
+        />
+      </app-state-container>
+    </div>
+  </mat-tab>
+</mat-tab-group>

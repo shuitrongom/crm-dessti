@@ -1,0 +1,41 @@
+// =============================================================================
+// Estilos de la vista de Sesiones (admin_empresa) (Req 68, 52, 57)
+// -----------------------------------------------------------------------------
+// Barra de consulta enterprise: selector de cuenta (sin captura de identificador
+// tecnico) y accion destructiva de revocar sesiones, alineados y responsivos.
+// Solo tokens del Sistema de Diseno; correcto en tema claro y oscuro.
+// =============================================================================
+
+@use '../../../../../styles/breakpoints' as bp;
+
+.admin-consulta {
+  margin-block-end: var(--ds-space-4);
+}
+
+.sesiones__consulta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--ds-space-3) var(--ds-space-4);
+}
+
+.sesiones__cuenta {
+  inline-size: 100%;
+
+  @include bp.from('sm') {
+    inline-size: 24rem;
+  }
+}
+
+.sesiones__revocar {
+  block-size: 40px;
+
+  @include bp.until('sm') {
+    inline-size: 100%;
+  }
+
+  // Alinea el boton con el campo (compensa el espacio de la sugerencia/hint).
+  @include bp.from('sm') {
+    margin-block-start: var(--ds-space-1);
+  }
+}

@@ -1,0 +1,64 @@
+graph TB
+    subgraph Cliente["Navegador / Portal Cliente"]
+        NG[Angular SPA + Angular Material + Sistema Diseño]
+    end
+
+    subgraph IIS["IIS - Proxy Inverso (Windows)"]
+        TLS[Terminación TLS + Cabeceras Seguridad + Redirección HTTP a HTTPS]
+        STATIC[Sirve archivos estáticos Angular en /]
+        RW[ARR / URL Rewrite: /api al backend]
+    end
+
+    subgraph SB["Spring Boot 3.x - JAR ejecutable como Servicio Windows (Java 21)"]
+        subgraph ADAPTIN["Adaptadores de Entrada (Driving)"]
+            REST[Controladores REST /api/v1 + DTOs]
+            SEC[Filtro Spring Security + JWT + Contexto Tenant]
+            OPENAPI[OpenAPI / Swagger UI]
+        end
+        subgraph APP["Capa de Aplicación (Casos de Uso / Servicios)"]
+            UC[Servicios de Aplicación / Orquestación de Casos de Uso]
+        end
+        subgraph CORE["Núcleo de Dominio (puro, sin framework)"]
+            DOM[Entidades de Dominio + Máquinas de Estado + Reglas + Puertos]
+        end
+        subgraph ADAPTOUT["Adaptadores de Salida (Driven)"]
+            JPA[Adaptador JPA / Repositorios]
+            PACAD[Adaptador PAC - CFDI]
+            NOTIFAD[Adaptadores Notificación - Correo / WhatsApp]
+            SOCIALAD[Adaptador Redes Sociales - Meta]
+            BANKAD[Adaptador Importación Bancaria]
+            CACHE[Adaptador Caché Catálogos]
+        end
+    end
+
+    subgraph DB["PostgreSQL"]
+        PG[(Esquema compartido + tenant_id + RLS)]
+    end
+
+    subgraph EXT["Servicios Externos"]
+        PAC[PAC / SAT]
+        MAIL[Proveedor Correo]
+        WA[Proveedor WhatsApp]
+        META[Meta - WhatsApp / Messenger / Instagram]
+        BANK[Bancos - Estados de Cuenta]
+    end
+
+    NG --> TLS
+    TLS --> STATIC
+    TLS --> RW
+    RW --> REST
+    REST --> SEC
+    SEC --> UC
+    UC --> DOM
+    UC --> JPA
+    UC --> PACAD
+    UC --> NOTIFAD
+    UC --> SOCIALAD
+    UC --> BANKAD
+    UC --> CACHE
+    JPA --> PG
+    PACAD --> PAC
+    NOTIFAD --> MAIL
+    NOTIFAD --> WA
+    SOCIALAD --> META
+    BANKAD --> BANK

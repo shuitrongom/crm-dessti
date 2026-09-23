@@ -1,0 +1,177 @@
+<h2 mat-dialog-title>Editar empresa</h2>
+<mat-dialog-content>
+  <form class="editar-empresa__form" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+    @if (error()) {
+      <p class="editar-empresa__error" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </p>
+    }
+
+    <!-- Seccion: Identidad -->
+    <section class="editar-empresa__seccion">
+      <h3 class="editar-empresa__seccion-titulo">Identidad</h3>
+      <div class="editar-empresa__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Razon social</mat-label>
+          <input matInput type="text" formControlName="nombre" required />
+          @if (formulario.controls.nombre.hasError('required') && formulario.controls.nombre.touched) {
+            <mat-error>La razon social es obligatoria.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre comercial</mat-label>
+          <input matInput type="text" formControlName="nombreComercial" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>RFC</mat-label>
+          <input
+            matInput
+            type="text"
+            formControlName="rfc"
+            required
+            maxlength="13"
+            (input)="normalizarRfc($event)"
+          />
+          <mat-hint>Ej.: ABC010101AB1</mat-hint>
+          @if (formulario.controls.rfc.hasError('required') && formulario.controls.rfc.touched) {
+            <mat-error>El RFC es obligatorio.</mat-error>
+          } @else if (formulario.controls.rfc.hasError('rfc') && formulario.controls.rfc.touched) {
+            <mat-error>El RFC no tiene un formato valido.</mat-error>
+          } @else if (formulario.controls.rfc.hasError('maxlength') && formulario.controls.rfc.touched) {
+            <mat-error>El RFC no puede exceder 13 caracteres.</mat-error>
+          } @else if (formulario.controls.rfc.hasError('duplicado')) {
+            <mat-error>Ya existe una empresa con ese RFC.</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      <!-- Carga de logo del branding -->
+      <div class="editar-empresa__logo">
+        @if (logo(); as src) {
+          <img
+            class="editar-empresa__logo-preview"
+            [src]="src"
+            [alt]="'Vista previa del logo ' + (logoNombre() ?? '')"
+          />
+        } @else {
+          <span class="editar-empresa__logo-placeholder" aria-hidden="true">
+            <mat-icon>add_photo_alternate</mat-icon>
+          </span>
+        }
+        <div class="editar-empresa__logo-controles">
+          <span class="editar-empresa__logo-titulo">Logotipo de la empresa</span>
+          <span class="editar-empresa__logo-ayuda">PNG, JPG, SVG o WebP. Maximo 256 KB.</span>
+          <div class="editar-empresa__logo-botones">
+            <label class="editar-empresa__logo-boton">
+              <input
+                type="file"
+                class="editar-empresa__logo-input"
+                accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                aria-label="Cargar logo de la empresa"
+                (change)="seleccionarLogo($event)"
+              />
+              <span matButton="outlined">
+                <mat-icon aria-hidden="true">upload</mat-icon>
+                {{ logo() ? 'Cambiar' : 'Cargar logo' }}
+              </span>
+            </label>
+            @if (logo()) {
+              <button matButton type="button" (click)="quitarLogo()">Quitar</button>
+            }
+          </div>
+          @if (logoError()) {
+            <p class="editar-empresa__error editar-empresa__error--inline" role="alert">
+              <mat-icon aria-hidden="true">error_outline</mat-icon>
+              <span>{{ logoError() }}</span>
+            </p>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Seccion: Contacto -->
+    <section class="editar-empresa__seccion">
+      <h3 class="editar-empresa__seccion-titulo">Contacto</h3>
+      <div class="editar-empresa__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Correo de contacto</mat-label>
+          <input matInput type="email" formControlName="emailContacto" autocomplete="off" required />
+          <mat-hint>Se usa para el envío de la factura por correo.</mat-hint>
+          @if (formulario.controls.emailContacto.hasError('required') && formulario.controls.emailContacto.touched) {
+            <mat-error>El correo de contacto es obligatorio.</mat-error>
+          } @else if (formulario.controls.emailContacto.hasError('email') && formulario.controls.emailContacto.touched) {
+            <mat-error>Correo no válido.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Teléfono</mat-label>
+          <input
+            matInput
+            type="tel"
+            formControlName="telefono"
+            autocomplete="off"
+            inputmode="numeric"
+            maxlength="10"
+            (input)="soloDigitos($event)"
+          />
+          <mat-hint>10 dígitos</mat-hint>
+          @if (formulario.controls.telefono.hasError('telefono') && formulario.controls.telefono.touched) {
+            <mat-error>El teléfono debe tener 10 dígitos.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="editar-empresa__campo--ancho">
+          <mat-label>Sitio web</mat-label>
+          <input matInput type="url" formControlName="sitioWeb" autocomplete="off" placeholder="https://" />
+        </mat-form-field>
+      </div>
+    </section>
+
+    <!-- Seccion: Direccion -->
+    <section class="editar-empresa__seccion">
+      <h3 class="editar-empresa__seccion-titulo">Dirección</h3>
+      <app-address-autocomplete (direccionSeleccionada)="onDireccion($event)" />
+      <div class="editar-empresa__grid">
+        <mat-form-field appearance="outline" class="editar-empresa__campo--ancho">
+          <mat-label>Calle y número</mat-label>
+          <input matInput type="text" formControlName="direccionCalle" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Ciudad</mat-label>
+          <input matInput type="text" formControlName="direccionCiudad" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Estado</mat-label>
+          <input matInput type="text" formControlName="direccionEstado" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Código postal</mat-label>
+          <input matInput type="text" formControlName="direccionCp" inputmode="numeric" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>País</mat-label>
+          <input matInput type="text" formControlName="direccionPais" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="editar-empresa__campo--ancho">
+          <mat-label>Notas</mat-label>
+          <textarea matInput rows="3" formControlName="notas"></textarea>
+        </mat-form-field>
+      </div>
+    </section>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancelar()">Cancelar</button>
+  <button matButton="filled" type="button" (click)="guardar()" [disabled]="guardando()">
+    Guardar cambios
+  </button>
+</mat-dialog-actions>

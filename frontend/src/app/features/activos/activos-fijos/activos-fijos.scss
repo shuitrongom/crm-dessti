@@ -1,0 +1,43 @@
+// =============================================================================
+// Estilos de la vista de Activos fijos (Req 52) — mobile-first, tokens --ds-*
+// =============================================================================
+
+.activos-alta {
+  margin-block-end: var(--ds-space-5);
+}
+
+.activos-alta__titulo {
+  margin: 0 0 var(--ds-space-3);
+  font-size: var(--ds-font-size-lg);
+  font-weight: var(--ds-font-weight-medium);
+}
+
+.activos-ayuda {
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-sm);
+}
+
+.activos-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-3);
+  margin-block-end: var(--ds-space-4);
+
+  mat-form-field {
+    min-width: 12rem;
+  }
+}
+
+.activos-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-space-2);
+
+  @media (min-width: 40rem) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.activos-num {
+  font-variant-numeric: tabular-nums;
+}

@@ -1,0 +1,4 @@
+# Post-procesadores de entorno registrados al arranque (Req 11.2).
+# Valida la presencia de secretos requeridos antes de crear el contexto y sus beans.
+org.springframework.boot.env.EnvironmentPostProcessor=\
+  com.dessti.crm.platform.config.SecretosEnvironmentPostProcessor

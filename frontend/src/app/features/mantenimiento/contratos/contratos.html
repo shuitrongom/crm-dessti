@@ -1,0 +1,68 @@
+<app-page-header
+  titulo="Contratos de mantenimiento"
+  subtitulo="Administra los contratos de mantenimiento por cliente y sus niveles de servicio (SLA) comprometidos."
+>
+  @if (puedeCrear) {
+    <button acciones matButton="filled" type="button" (click)="alternarAlta()">
+      <mat-icon>{{ mostrarAlta() ? 'close' : 'add' }}</mat-icon>
+      {{ mostrarAlta() ? 'Cerrar' : 'Nuevo contrato' }}
+    </button>
+  }
+</app-page-header>
+
+@if (mostrarAlta() && puedeCrear) {
+  <mat-card appearance="outlined" class="man-alta">
+    <mat-card-content>
+      <form [formGroup]="formAlta" (ngSubmit)="crear()" novalidate>
+        <h2 class="man-alta__titulo">Nuevo contrato de mantenimiento</h2>
+        <div class="man-form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Cliente (identificador)</mat-label>
+            <input matInput formControlName="clienteId" autocomplete="off" />
+            <mat-error>Indica el cliente del contrato.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Tipo</mat-label>
+            <mat-select formControlName="tipo">
+              <mat-option value="preventivo">Preventivo</mat-option>
+              <mat-option value="correctivo">Correctivo</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>SLA respuesta (horas)</mat-label>
+            <input matInput type="number" min="1" formControlName="slaRespuestaHoras" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>SLA resolucion (horas)</mat-label>
+            <input matInput type="number" min="1" formControlName="slaResolucionHoras" />
+          </mat-form-field>
+        </div>
+        <button matButton="filled" type="submit" [disabled]="guardando()">Crear contrato</button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="No hay contratos de mantenimiento registrados."
+  (reintentar)="cargar()"
+>
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="cliente" let-c><span class="man-mono">{{ c.clienteId.slice(0, 8) }}</span></ng-template>
+    <ng-template appCelda="tipo" let-c>{{ humanizar(c.tipo) }}</ng-template>
+    <ng-template appCelda="respuesta" let-c>{{ c.slaRespuestaHoras }} h</ng-template>
+    <ng-template appCelda="resolucion" let-c>{{ c.slaResolucionHoras }} h</ng-template>
+    <ng-template appCelda="estado" let-c>
+      <app-estado-chip [etiqueta]="c.activo ? 'Vigente' : 'Inactivo'" [tono]="c.activo ? 'exito' : 'neutro'" />
+    </ng-template>
+  </app-data-table>
+</app-state-container>

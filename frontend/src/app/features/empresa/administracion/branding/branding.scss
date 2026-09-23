@@ -1,0 +1,192 @@
+// =============================================================================
+// Estilos de la vista de Branding de empresa (admin_empresa) (Req 26)
+// -----------------------------------------------------------------------------
+// Carga de logotipo (archivo de imagen) con vista previa y mensaje de error
+// accesible. Solo tokens del Sistema de Diseno (tema claro y oscuro).
+// =============================================================================
+
+.admin-branding {
+  &__logo {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-4);
+    padding: var(--ds-space-3);
+    border: 1px dashed var(--ds-color-border);
+    border-radius: var(--ds-radius-md);
+    background: var(--ds-color-surface-variant);
+  }
+
+  &__logo-preview,
+  &__logo-placeholder {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    inline-size: 64px;
+    block-size: 64px;
+    border: 1px solid var(--ds-color-border);
+    border-radius: var(--ds-radius-md);
+    background: var(--ds-color-surface);
+    object-fit: contain;
+    color: var(--ds-color-text-muted);
+
+    mat-icon {
+      font-size: 28px;
+      inline-size: 28px;
+      block-size: 28px;
+    }
+  }
+
+  &__logo-controles {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-1);
+    min-inline-size: 0;
+  }
+
+  &__logo-titulo {
+    font-size: var(--ds-font-size-sm);
+    font-weight: var(--ds-font-weight-medium);
+    color: var(--ds-color-text);
+  }
+
+  &__logo-ayuda {
+    color: var(--ds-color-text-muted);
+    font-size: var(--ds-font-size-xs);
+  }
+
+  &__logo-botones {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ds-space-2);
+    margin-block-start: var(--ds-space-1);
+  }
+
+  // El input de archivo se oculta pero permanece accesible: la etiqueta que lo
+  // envuelve actua como boton disparador.
+  &__logo-boton {
+    position: relative;
+    display: inline-flex;
+    cursor: pointer;
+  }
+
+  &__logo-input {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  &__logo-error {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-2);
+    margin: var(--ds-space-1) 0 0;
+    color: var(--ds-color-error);
+    font-size: var(--ds-font-size-sm);
+
+    mat-icon {
+      flex: 0 0 auto;
+      font-size: 20px;
+      inline-size: 20px;
+      block-size: 20px;
+    }
+  }
+
+  // Seccion de color de marca (selector libre + presets + previsualizacion).
+  &__color {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-2);
+    margin: 0;
+    padding: var(--ds-space-3);
+    border: 1px solid var(--ds-color-border);
+    border-radius: var(--ds-radius-md);
+    background: var(--ds-color-surface-variant);
+  }
+
+  &__color-titulo {
+    padding: 0 var(--ds-space-1);
+    font-size: var(--ds-font-size-sm);
+    font-weight: var(--ds-font-weight-medium);
+    color: var(--ds-color-text);
+  }
+
+  &__color-ayuda {
+    margin: 0;
+    color: var(--ds-color-text-muted);
+    font-size: var(--ds-font-size-xs);
+  }
+
+  &__color-controles {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--ds-space-4);
+  }
+
+  &__color-selector {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-1);
+  }
+
+  &__color-selector-label {
+    font-size: var(--ds-font-size-xs);
+    color: var(--ds-color-text-muted);
+  }
+
+  &__color-input {
+    inline-size: 56px;
+    block-size: 40px;
+    padding: 0;
+    border: 1px solid var(--ds-color-border);
+    border-radius: var(--ds-radius-sm);
+    background: var(--ds-color-surface);
+    cursor: pointer;
+  }
+
+  &__color-hex {
+    min-inline-size: 200px;
+  }
+
+  &__color-valor {
+    margin: 0;
+    color: var(--ds-color-text-muted);
+    font-size: var(--ds-font-size-xs);
+  }
+
+  &__presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ds-space-2);
+  }
+
+  &__preset {
+    inline-size: 32px;
+    block-size: 32px;
+    padding: 0;
+    border: 1px solid var(--ds-color-border);
+    border-radius: var(--ds-radius-sm);
+    cursor: pointer;
+
+    &[aria-pressed='true'] {
+      outline: 2px solid var(--ds-color-focus-ring);
+      outline-offset: 2px;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ds-color-focus-ring);
+      outline-offset: 2px;
+    }
+  }
+
+  &__color-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ds-space-2);
+  }
+}

@@ -1,0 +1,133 @@
+<app-page-header
+  titulo="Detalle de orden de trabajo"
+  subtitulo="Consulta el detalle de la orden de trabajo de instalación: pendientes, evidencias y acciones para cambiar su estado."
+>
+  <div acciones>
+    <a matButton routerLink=".." aria-label="Volver al listado de ordenes de trabajo">
+      <mat-icon aria-hidden="true">arrow_back</mat-icon>
+      Volver
+    </a>
+  </div>
+</app-page-header>
+
+<app-state-container [fase]="fase()" [mensajeError]="mensajeError()" (reintentar)="cargar()">
+  @if (oti(); as o) {
+    <div class="oti-detalle">
+      <mat-card appearance="outlined" class="ds-card-enterprise">
+        <mat-card-header>
+          <mat-card-title>Orden de trabajo de {{ nombres.nombreCliente(o.clienteId) }}</mat-card-title>
+          <mat-card-subtitle>{{ etiquetaEstado(o.estado) }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <dl class="oti-detalle__datos">
+            <div class="oti-detalle__dato">
+              <dt>Cliente</dt>
+              <dd>{{ nombres.nombreCliente(o.clienteId) }}</dd>
+            </div>
+            <div class="oti-detalle__dato">
+              <dt>Sitio</dt>
+              <dd>{{ nombres.nombreSitio(o.sitioId) }}</dd>
+            </div>
+            <div class="oti-detalle__dato">
+              <dt>Orden de fabricacion</dt>
+              <dd>{{ nombres.nombreOrdenFabricacion(o.ordenFabricacionId) }}</dd>
+            </div>
+            <div class="oti-detalle__dato">
+              <dt>Cuadrilla</dt>
+              <dd>{{ nombres.nombreCuadrilla(o.cuadrillaId) }}</dd>
+            </div>
+            <div class="oti-detalle__dato">
+              <dt>Estado</dt>
+              <dd>
+                <app-chip-estado
+                  [variante]="varianteEstado(o.estado)"
+                  [etiqueta]="etiquetaEstado(o.estado)"
+                />
+              </dd>
+            </div>
+            <div class="oti-detalle__dato">
+              <dt>Fecha programada</dt>
+              <dd>{{ o.fechaProgramada }}</dd>
+            </div>
+          </dl>
+        </mat-card-content>
+
+        @if (acciones().length > 0) {
+          <mat-card-actions>
+            @for (accion of acciones(); track accion.destino) {
+              <button
+                matButton="tonal"
+                type="button"
+                [class.ds-boton-destructivo]="accion.destructiva"
+                (click)="cambiarEstado(accion)"
+              >
+                {{ accion.etiqueta }}
+              </button>
+            }
+          </mat-card-actions>
+        }
+      </mat-card>
+
+      <mat-card appearance="outlined">
+        <mat-card-header>
+          <mat-card-title>Pendientes</mat-card-title>
+          <mat-card-subtitle>Tareas por resolver antes de completar la orden.</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          @if (o.pendientes.length > 0) {
+            <ul class="oti-detalle__pendientes">
+              @for (pendiente of o.pendientes; track pendiente.id) {
+                <li class="oti-detalle__pendiente">
+                  <span class="oti-detalle__pendiente-texto" [class.oti-detalle__pendiente-texto--resuelto]="pendiente.resuelto">
+                    {{ pendiente.descripcion }}
+                  </span>
+                  <span class="oti-detalle__pendiente-estado">
+                    @if (pendiente.resuelto) {
+                      <span class="oti-detalle__badge oti-detalle__badge--resuelto">
+                        <mat-icon aria-hidden="true">check_circle</mat-icon>
+                        Resuelto
+                      </span>
+                    } @else if (puedeGestionar) {
+                      <button matButton="tonal" type="button" (click)="resolver(pendiente)">
+                        Resolver
+                      </button>
+                    } @else {
+                      <span class="oti-detalle__badge">Pendiente</span>
+                    }
+                  </span>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="oti-detalle__vacio">Esta orden de trabajo no tiene pendientes registrados.</p>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card appearance="outlined">
+        <mat-card-header>
+          <mat-card-title>Evidencias</mat-card-title>
+          <mat-card-subtitle>Fotografias adjuntas a la orden de trabajo.</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          @if (o.evidencias.length > 0) {
+            <ul class="oti-detalle__galeria">
+              @for (evidencia of o.evidencias; track evidencia.id) {
+                <li class="oti-detalle__foto">
+                  <img
+                    class="oti-detalle__imagen"
+                    [src]="evidencia.url"
+                    alt="Evidencia de la orden de trabajo de {{ nombres.nombreCliente(o.clienteId) }}"
+                    loading="lazy"
+                  />
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="oti-detalle__vacio">Esta orden de trabajo no tiene evidencias registradas.</p>
+          }
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+</app-state-container>

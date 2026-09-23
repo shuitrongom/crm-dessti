@@ -1,0 +1,91 @@
+// =============================================================================
+// Estilos de la vista de Roles y permisos (admin_empresa) (Req 27, 28, 52, 57)
+// -----------------------------------------------------------------------------
+// Catalogo enterprise de roles asignables agrupados por modulo: cada grupo tiene
+// un encabezado con badge semantico (icono + texto, el color no es el unico
+// portador de significado) y una rejilla responsive de tarjetas de rol. Debajo,
+// un panel de referencia con los roles del Usuario. Solo tokens del Sistema de
+// Diseno; correcto en tema claro y oscuro.
+// =============================================================================
+
+.roles__catalogo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-6);
+}
+
+.roles__grupo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-3);
+}
+
+.roles__grupo-encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-2) var(--ds-space-3);
+}
+
+.roles__grupo-titulo {
+  margin: 0;
+  font-size: var(--ds-font-size-lg);
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-text);
+}
+
+// Badge de modulo: icono + texto (nunca solo color) sobre contenedor tonal.
+.roles__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-1);
+  padding: var(--ds-space-1) var(--ds-space-3);
+  border-radius: var(--ds-radius-pill);
+  background: var(--ds-color-surface-variant);
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-sm);
+  font-weight: var(--ds-font-weight-medium);
+
+  .mat-icon {
+    inline-size: 1.125rem;
+    block-size: 1.125rem;
+    font-size: 1.125rem;
+  }
+
+  &--administracion {
+    background: var(--ds-color-primary-container);
+    color: var(--ds-color-primary);
+  }
+}
+
+// Rejilla responsive de tarjetas de rol.
+.roles__tarjetas {
+  display: grid;
+  gap: var(--ds-space-4);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+}
+
+.roles__tarjeta {
+  block-size: 100%;
+}
+
+.roles__tarjeta-nombre {
+  font-size: var(--ds-font-size-md);
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-text);
+}
+
+.roles__tarjeta-descripcion {
+  margin: 0;
+  color: var(--ds-color-text-muted);
+}
+
+.roles__sin-datos {
+  color: var(--ds-color-text-muted);
+}
+
+// Panel de referencia (roles del Usuario), separado del catalogo.
+.roles__referencia {
+  display: block;
+  margin-block-start: var(--ds-space-6);
+}

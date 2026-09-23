@@ -1,0 +1,7 @@
+stateDiagram-v2
+    [*] --> borrador
+    borrador --> timbrada : timbrado PAC OK
+    borrador --> borrador : timbrado rechazado
+    timbrada --> cancelacion_en_proceso : solicitud cancelación
+    cancelacion_en_proceso --> cancelada : aceptación / vencimiento plazo
+    cancelada --> [*]

@@ -1,0 +1,100 @@
+// =============================================================================
+// Estilos de StatCard (tarjeta KPI) (Req 53, 55, 57)
+// -----------------------------------------------------------------------------
+// Superficie con borde y sombra sutil; al pasar el cursor se eleva ligeramente
+// (respetando prefers-reduced-motion via el reset global). El chip de icono se
+// tinta con un color-mix del color semantico del tono al ~14% y el icono usa el
+// color pleno del tono. Solo se usan tokens del Sistema de Diseno; correcto en
+// tema claro y oscuro.
+// =============================================================================
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-4);
+  padding: var(--ds-space-4);
+  background: var(--ds-color-surface);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  box-shadow: var(--ds-shadow-sm);
+  transition:
+    transform var(--ds-duration-base) var(--ds-easing-standard),
+    box-shadow var(--ds-duration-base) var(--ds-easing-standard);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--ds-shadow-md);
+  }
+
+  // Color semantico del tono (por defecto: primario / neutro).
+  --stat-card-tono: var(--ds-color-primary);
+
+  &--exito {
+    --stat-card-tono: var(--ds-color-success);
+  }
+  &--advertencia {
+    --stat-card-tono: var(--ds-color-warning);
+  }
+  &--error {
+    --stat-card-tono: var(--ds-color-error);
+  }
+  &--info {
+    --stat-card-tono: var(--ds-color-info);
+  }
+
+  &__chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    inline-size: 48px;
+    block-size: 48px;
+    border-radius: var(--ds-radius-md);
+    background: color-mix(in srgb, var(--stat-card-tono) 14%, transparent);
+    color: var(--stat-card-tono);
+  }
+
+  &__icono {
+    font-size: 26px;
+    inline-size: 26px;
+    block-size: 26px;
+  }
+
+  &__cuerpo {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-1);
+    min-width: 0;
+  }
+
+  &__valor {
+    margin: 0;
+    font-size: var(--ds-font-size-2xl);
+    font-weight: var(--ds-font-weight-bold);
+    line-height: var(--ds-line-height-tight);
+    color: var(--ds-color-text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__etiqueta {
+    margin: 0;
+    font-size: var(--ds-font-size-sm);
+    color: var(--ds-color-text-muted);
+  }
+
+  &__ayuda {
+    margin: 0;
+    font-size: var(--ds-font-size-xs);
+    color: var(--ds-color-text-muted);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stat-card {
+    transition: none;
+
+    &:hover {
+      transform: none;
+    }
+  }
+}

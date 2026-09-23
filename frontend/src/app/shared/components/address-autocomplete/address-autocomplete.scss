@@ -1,0 +1,34 @@
+// =============================================================================
+// Estilos de AddressAutocomplete (Req 52, 53, 57; espaciado R2)
+// -----------------------------------------------------------------------------
+// Campo de busqueda de direcciones a ancho completo, coherente con el resto de
+// campos de las secciones "Direccion". Solo tokens del Sistema de Diseno.
+// =============================================================================
+
+:host {
+  display: block;
+  // Separacion inferior para que el <mat-hint> del subscript no se vea "junto"
+  // ni colisione visualmente con el siguiente campo del formulario (p. ej.
+  // "Calle y numero"). El panel de sugerencias flota en el overlay del CDK con
+  // fondo solido y z-index propio (styles.scss), por lo que este margen solo
+  // afecta al flujo del campo, no al panel (R2, Req 5.1).
+  margin-block-end: var(--ds-space-4);
+}
+
+.address-autocomplete__campo {
+  inline-size: 100%;
+
+  // Garantiza el espacio normal del subscript (hint) bajo el campo, de modo que
+  // la ayuda "Empieza a escribir..." tenga aire y no se pegue al borde inferior.
+  ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+    min-block-size: var(--ds-space-5);
+  }
+}
+
+// Etiqueta de cada sugerencia: una sola linea con elipsis si desborda.
+.address-autocomplete__opcion {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -1,0 +1,719 @@
+<app-page-header
+  titulo="Inventario avanzado"
+  subtitulo="Controla tu inventario por almacén: existencias, movimientos, Kardex, lotes y su configuración."
+/>
+
+<mat-tab-group [selectedIndex]="pestanaSeleccionada()" (selectedIndexChange)="onCambioPestana($event)">
+  <!-- ============================= RESUMEN ============================= -->
+  @if (puedeLeerExistencias) {
+    <mat-tab label="Resumen">
+      <div class="inventario-avanzado__tab">
+        <app-state-container
+          [fase]="faseResumen()"
+          [mensajeError]="errorResumen()"
+          etiquetaCarga="Cargando el resumen del inventario"
+          mensajeVacio="Aun no hay materiales dados de alta. Crea materiales en Operacion para comenzar a operar tu inventario."
+          (reintentar)="reintentarResumen()"
+        >
+          <!-- Fila de KPIs del tablero operativo (Req 3.1) -->
+          <div class="inventario-avanzado__indicadores">
+            <app-stat-card
+              etiqueta="Almacenes"
+              [valor]="totalAlmacenesResumen()"
+              icono="warehouse"
+              tono="info"
+              ayuda="Almacenes registrados en el catalogo."
+            />
+            <app-stat-card
+              etiqueta="Materiales con stock bajo"
+              [valor]="totalStockBajo()"
+              icono="warning"
+              [tono]="totalStockBajo() > 0 ? 'advertencia' : 'exito'"
+              [ayuda]="
+                totalStockBajo() > 0
+                  ? 'Materiales por debajo de su stock minimo.'
+                  : 'Sin materiales por debajo de su stock minimo.'
+              "
+            />
+            <!-- "Por reabastecer" solo cuando la configuracion de reorden este disponible (Req 3.2: sin cero enganoso) -->
+            @if (configReordenDisponible()) {
+              <app-stat-card
+                etiqueta="Por reabastecer"
+                [valor]="totalPorReabastecer()"
+                icono="autorenew"
+                [tono]="totalPorReabastecer() > 0 ? 'advertencia' : 'exito'"
+                ayuda="Materiales cuya existencia esta en o por debajo de su punto de reorden."
+              />
+            }
+            <!-- Valor del inventario: honesto sobre lo paginado; sin cero enganoso si no hay existencias cargadas -->
+            <app-stat-card
+              etiqueta="Valor del inventario (cargado)"
+              [valor]="
+                hayExistenciasCargadas()
+                  ? ((valorInventarioCargado() | currency: 'MXN' : 'symbol-narrow') ?? '—')
+                  : 'Sin datos'
+              "
+              icono="payments"
+              tono="neutro"
+              [ayuda]="
+                hayExistenciasCargadas()
+                  ? 'Calculado sobre las existencias cargadas en la pestana Existencias (sobre lo paginado).'
+                  : 'Consulta la pestana Existencias para valorizar el inventario cargado.'
+              "
+            />
+          </div>
+
+          <section class="inventario-avanzado__seccion" aria-labelledby="titulo-alertas">
+            <h2 id="titulo-alertas" class="inventario-avanzado__subtitulo">Alertas de stock bajo</h2>
+            <app-state-container
+              [fase]="faseAlertas()"
+              [mensajeError]="errorAlertas()"
+              mensajeVacio="No hay materiales por debajo de su stock minimo."
+            >
+              <ul class="inventario-avanzado__alertas">
+                @for (material of materialesStockBajo(); track material.id) {
+                  <li class="inventario-avanzado__alerta">
+                    <div class="inventario-avanzado__alerta-info">
+                      <span class="inventario-avanzado__alerta-nombre">{{ material.nombre }}</span>
+                      <span class="inventario-avanzado__alerta-detalle">
+                        Existencias: {{ material.existencias }} / mínimo {{ material.stockMinimo }}
+                        ({{ material.unidadMedida }})
+                      </span>
+                    </div>
+                    <div class="inventario-avanzado__alerta-acciones">
+                      @if (puedeLeerKardex) {
+                        <button matButton type="button" (click)="verKardexDeMaterial(material)">
+                          <mat-icon aria-hidden="true">receipt_long</mat-icon>
+                          Ver Kardex
+                        </button>
+                      }
+                      @if (puedeCrearMovimiento) {
+                        <button matButton="tonal" type="button" (click)="registrarEntradaDeMaterial(material)">
+                          <mat-icon aria-hidden="true">add</mat-icon>
+                          Registrar entrada
+                        </button>
+                      }
+                    </div>
+                  </li>
+                }
+              </ul>
+            </app-state-container>
+          </section>
+        </app-state-container>
+      </div>
+    </mat-tab>
+  }
+
+  <!-- ============================ EXISTENCIAS ============================ -->
+  @if (puedeLeerExistencias) {
+    <mat-tab label="Existencias">
+      <div class="inventario-avanzado__tab">
+        @if (!hayMateriales()) {
+          <p class="inventario-avanzado__sin-materiales" role="status">
+            <mat-icon aria-hidden="true">info</mat-icon>
+            Aun no hay materiales dados de alta. Crea materiales en Operacion para comenzar a operar tu inventario.
+          </p>
+        }
+        <form
+          class="inventario-avanzado__filtros"
+          [formGroup]="formFiltroExistencias"
+          (ngSubmit)="aplicarFiltroExistencias()"
+          novalidate
+        >
+          <app-entity-select
+            formControlName="almacenId"
+            etiqueta="Almacen"
+            placeholder="Filtrar por almacen…"
+            [buscador]="buscarAlmacen"
+            [etiquetaDe]="etiquetaAlmacen"
+          />
+          <app-entity-select
+            formControlName="materialId"
+            etiqueta="Material"
+            placeholder="Filtrar por material…"
+            [buscador]="buscarMaterial"
+            [etiquetaDe]="etiquetaMaterial"
+            [detalleDe]="detalleMaterial"
+          />
+          <div class="inventario-avanzado__filtros-acciones">
+            <button matButton="filled" type="submit">
+              <mat-icon aria-hidden="true">search</mat-icon>
+              Filtrar
+            </button>
+            <button matButton type="button" (click)="limpiarFiltroExistencias()">Limpiar</button>
+          </div>
+        </form>
+
+        <app-state-container
+          [fase]="faseExistencias()"
+          [mensajeError]="errorExistencias()"
+          mensajeVacio="No hay existencias para el filtro seleccionado."
+          (reintentar)="cargarExistencias()"
+        >
+          <app-data-table
+            [columnas]="columnasExistencias"
+            [filas]="existencias()"
+            [total]="totalExistencias()"
+            [page]="pageExistencias()"
+            [size]="sizeExistencias()"
+            (cambioPagina)="onPaginaExistencias($event)"
+          >
+            <ng-template appCelda="almacen" let-fila>{{ nombreAlmacen(fila.almacenId) }}</ng-template>
+            <ng-template appCelda="material" let-fila>
+              <span [class.inventario-avanzado__stock-bajo]="esStockBajo(fila)">
+                {{ nombreMaterial(fila.materialId) }}
+                @if (esStockBajo(fila)) {
+                  <mat-icon class="inventario-avanzado__stock-bajo-icono" aria-label="Stock bajo">warning</mat-icon>
+                }
+              </span>
+            </ng-template>
+            <ng-template appCelda="cantidad" let-fila>{{ fila.cantidad }}</ng-template>
+            <ng-template appCelda="costoPromedio" let-fila>
+              {{ fila.costoPromedio | currency: 'MXN' : 'symbol-narrow' }}
+            </ng-template>
+            <ng-template appCelda="acciones" let-fila>
+              @if (puedeLeerKardex) {
+                <button
+                  matButton
+                  type="button"
+                  (click)="verKardexDeExistencia(fila)"
+                  aria-label="Ver Kardex de esta existencia"
+                >
+                  <mat-icon aria-hidden="true">receipt_long</mat-icon>
+                  Ver Kardex
+                </button>
+              } @else {
+                <span class="operacion-sin-acciones">—</span>
+              }
+            </ng-template>
+          </app-data-table>
+        </app-state-container>
+      </div>
+    </mat-tab>
+  }
+
+  <!-- ============================ MOVIMIENTOS ============================ -->
+  @if (puedeCrearMovimiento) {
+    <mat-tab label="Movimientos">
+      <div class="inventario-avanzado__tab">
+        <mat-card appearance="outlined">
+          <mat-card-header>
+            <mat-card-title>Registrar movimiento</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="inventario-avanzado__movimiento">
+              <!-- Selector de tipo de movimiento (indica el tipo actual, Req 2.4) -->
+              <div
+                class="inventario-avanzado__tipo-movimiento"
+                role="group"
+                aria-label="Tipo de movimiento"
+              >
+                <mat-button-toggle-group
+                  [value]="tipoMovimiento()"
+                  (change)="tipoMovimiento.set($event.value)"
+                  aria-label="Tipo de movimiento"
+                >
+                  <mat-button-toggle value="entrada" [attr.aria-pressed]="tipoMovimiento() === 'entrada'">
+                    <mat-icon aria-hidden="true">login</mat-icon>
+                    Entrada
+                  </mat-button-toggle>
+                  <mat-button-toggle value="salida" [attr.aria-pressed]="tipoMovimiento() === 'salida'">
+                    <mat-icon aria-hidden="true">logout</mat-icon>
+                    Salida
+                  </mat-button-toggle>
+                  <mat-button-toggle
+                    value="transferencia"
+                    [attr.aria-pressed]="tipoMovimiento() === 'transferencia'"
+                  >
+                    <mat-icon aria-hidden="true">swap_horiz</mat-icon>
+                    Transferencia
+                  </mat-button-toggle>
+                </mat-button-toggle-group>
+              </div>
+
+              <!-- Campos condicionados por el tipo seleccionado -->
+              @switch (tipoMovimiento()) {
+                @case ('entrada') {
+                  <form
+                    class="inventario-avanzado__movimiento-campos"
+                    [formGroup]="formEntrada"
+                    (ngSubmit)="registrarEntrada()"
+                    novalidate
+                  >
+                    <app-entity-select
+                      formControlName="almacenId"
+                      etiqueta="Almacen"
+                      placeholder="Elige el almacen…"
+                      [obligatorio]="true"
+                      [buscador]="buscarAlmacen"
+                      [etiquetaDe]="etiquetaAlmacen"
+                    />
+                    <app-entity-select
+                      formControlName="materialId"
+                      etiqueta="Material"
+                      placeholder="Elige el material…"
+                      [obligatorio]="true"
+                      [buscador]="buscarMaterial"
+                      [etiquetaDe]="etiquetaMaterial"
+                      [detalleDe]="detalleMaterial"
+                    />
+                    <mat-form-field appearance="outline">
+                      <mat-label>Cantidad</mat-label>
+                      <input matInput type="number" formControlName="cantidad" min="0" required />
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                      <mat-label>Costo unitario</mat-label>
+                      <input matInput type="number" formControlName="costoUnitario" min="0" required />
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                      <mat-label>Codigo de lote (opcional)</mat-label>
+                      <input matInput type="text" formControlName="loteCodigo" />
+                    </mat-form-field>
+                    @if (errorEntrada()) {
+                      <p class="inventario-avanzado__error" role="alert">{{ errorEntrada() }}</p>
+                    }
+                    <div class="operacion-form__acciones inventario-avanzado__movimiento-acciones">
+                      <button matButton="filled" type="submit" [disabled]="enviandoEntrada()">
+                        Registrar movimiento
+                      </button>
+                    </div>
+                  </form>
+                }
+                @case ('salida') {
+                  <form
+                    class="inventario-avanzado__movimiento-campos"
+                    [formGroup]="formSalida"
+                    (ngSubmit)="registrarSalida()"
+                    novalidate
+                  >
+                    <app-entity-select
+                      formControlName="almacenId"
+                      etiqueta="Almacen"
+                      placeholder="Elige el almacen…"
+                      [obligatorio]="true"
+                      [buscador]="buscarAlmacen"
+                      [etiquetaDe]="etiquetaAlmacen"
+                    />
+                    <app-entity-select
+                      formControlName="materialId"
+                      etiqueta="Material"
+                      placeholder="Elige el material…"
+                      [obligatorio]="true"
+                      [buscador]="buscarMaterial"
+                      [etiquetaDe]="etiquetaMaterial"
+                      [detalleDe]="detalleMaterial"
+                    />
+                    <mat-form-field appearance="outline">
+                      <mat-label>Cantidad</mat-label>
+                      <input matInput type="number" formControlName="cantidad" min="0" required />
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                      <mat-label>Codigo de lote (opcional)</mat-label>
+                      <input matInput type="text" formControlName="loteCodigo" />
+                    </mat-form-field>
+                    @if (errorSalida()) {
+                      <p class="inventario-avanzado__error" role="alert">{{ errorSalida() }}</p>
+                    }
+                    <div class="operacion-form__acciones inventario-avanzado__movimiento-acciones">
+                      <button matButton="filled" type="submit" [disabled]="enviandoSalida()">
+                        Registrar movimiento
+                      </button>
+                    </div>
+                  </form>
+                }
+                @case ('transferencia') {
+                  <form
+                    class="inventario-avanzado__movimiento-campos"
+                    [formGroup]="formTransferencia"
+                    (ngSubmit)="registrarTransferencia()"
+                    novalidate
+                  >
+                    <app-entity-select
+                      formControlName="almacenOrigenId"
+                      etiqueta="Almacen de origen"
+                      placeholder="Elige el origen…"
+                      [obligatorio]="true"
+                      [buscador]="buscarAlmacen"
+                      [etiquetaDe]="etiquetaAlmacen"
+                    />
+                    <app-entity-select
+                      formControlName="almacenDestinoId"
+                      etiqueta="Almacen de destino"
+                      placeholder="Elige el destino…"
+                      [obligatorio]="true"
+                      [buscador]="buscarAlmacen"
+                      [etiquetaDe]="etiquetaAlmacen"
+                    />
+                    <app-entity-select
+                      formControlName="materialId"
+                      etiqueta="Material"
+                      placeholder="Elige el material…"
+                      [obligatorio]="true"
+                      [buscador]="buscarMaterial"
+                      [etiquetaDe]="etiquetaMaterial"
+                      [detalleDe]="detalleMaterial"
+                    />
+                    <mat-form-field appearance="outline">
+                      <mat-label>Cantidad</mat-label>
+                      <input matInput type="number" formControlName="cantidad" min="0" required />
+                    </mat-form-field>
+                    @if (errorTransferencia()) {
+                      <p class="inventario-avanzado__error" role="alert">{{ errorTransferencia() }}</p>
+                    }
+                    <div class="operacion-form__acciones inventario-avanzado__movimiento-acciones">
+                      <button matButton="filled" type="submit" [disabled]="enviandoTransferencia()">
+                        Registrar movimiento
+                      </button>
+                    </div>
+                  </form>
+                }
+              }
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+  }
+
+  <!-- ============================== KARDEX ============================== -->
+  @if (puedeLeerKardex) {
+    <mat-tab label="Kardex">
+      <div class="inventario-avanzado__tab">
+        @if (!hayMateriales()) {
+          <p class="inventario-avanzado__sin-materiales" role="status">
+            <mat-icon aria-hidden="true">info</mat-icon>
+            Aun no hay materiales dados de alta. Crea materiales en Operacion para consultar su Kardex.
+          </p>
+        }
+        <form
+          class="inventario-avanzado__filtros"
+          [formGroup]="formKardex"
+          (ngSubmit)="consultarKardex()"
+          novalidate
+        >
+          <app-entity-select
+            formControlName="almacenId"
+            etiqueta="Almacen"
+            placeholder="Elige el almacen…"
+            [obligatorio]="true"
+            [buscador]="buscarAlmacen"
+            [etiquetaDe]="etiquetaAlmacen"
+          />
+          <app-entity-select
+            formControlName="materialId"
+            etiqueta="Material"
+            placeholder="Elige el material…"
+            [obligatorio]="true"
+            [buscador]="buscarMaterial"
+            [etiquetaDe]="etiquetaMaterial"
+            [detalleDe]="detalleMaterial"
+          />
+          <div class="inventario-avanzado__filtros-acciones">
+            <button matButton="filled" type="submit">Consultar Kardex</button>
+          </div>
+        </form>
+
+        <app-state-container
+          [fase]="faseKardex()"
+          [mensajeError]="errorKardex()"
+          mensajeVacio="Elige un almacen y un material para consultar su Kardex."
+          (reintentar)="consultarKardex()"
+        >
+          <app-data-table
+            [columnas]="columnasKardex"
+            [filas]="kardex()"
+            [total]="totalKardex()"
+            [page]="pageKardex()"
+            [size]="sizeKardex()"
+            (cambioPagina)="onPaginaKardex($event)"
+          >
+            <ng-template appCelda="createdAt" let-fila>{{ fila.createdAt | date: 'short' }}</ng-template>
+            <ng-template appCelda="tipo" let-fila>{{ etiquetaTipoKardex(fila.tipo) }}</ng-template>
+            <ng-template appCelda="cantidad" let-fila>{{ fila.cantidad }}</ng-template>
+            <ng-template appCelda="costoUnitario" let-fila>
+              {{ fila.costoUnitario | currency: 'MXN' : 'symbol-narrow' }}
+            </ng-template>
+            <ng-template appCelda="costoTotal" let-fila>
+              {{ fila.costoTotal | currency: 'MXN' : 'symbol-narrow' }}
+            </ng-template>
+            <ng-template appCelda="saldoCantidad" let-fila>{{ fila.saldoCantidad }}</ng-template>
+            <ng-template appCelda="saldoCostoTotal" let-fila>
+              {{ fila.saldoCostoTotal | currency: 'MXN' : 'symbol-narrow' }}
+            </ng-template>
+          </app-data-table>
+        </app-state-container>
+      </div>
+    </mat-tab>
+  }
+
+  <!-- =============================== LOTES =============================== -->
+  @if (puedeListarLotes || puedeCrearLote) {
+    <mat-tab label="Lotes">
+      <div class="inventario-avanzado__tab">
+        @if (!hayMateriales()) {
+          <p class="inventario-avanzado__sin-materiales" role="status">
+            <mat-icon aria-hidden="true">info</mat-icon>
+            Aun no hay materiales dados de alta. Crea materiales en Operacion para administrar sus lotes.
+          </p>
+        }
+        <form
+          class="inventario-avanzado__filtros"
+          [formGroup]="formLoteMaterial"
+          (ngSubmit)="cargarLotes()"
+          novalidate
+        >
+          <app-entity-select
+            formControlName="materialId"
+            etiqueta="Material"
+            placeholder="Elige el material…"
+            [obligatorio]="true"
+            [buscador]="buscarMaterial"
+            [etiquetaDe]="etiquetaMaterial"
+            [detalleDe]="detalleMaterial"
+          />
+          <div class="inventario-avanzado__filtros-acciones">
+            <button matButton="filled" type="submit">Ver lotes</button>
+          </div>
+        </form>
+
+        @if (puedeCrearLote) {
+          <mat-card appearance="outlined" class="operacion-form">
+            <mat-card-content>
+              <form class="inventario-avanzado__lote-form" [formGroup]="formLote" (ngSubmit)="crearLote()" novalidate>
+                <mat-form-field appearance="outline">
+                  <mat-label>Codigo de lote</mat-label>
+                  <input matInput type="text" formControlName="codigo" required />
+                  @if (formLote.controls.codigo.hasError('required') && formLote.controls.codigo.touched) {
+                    <mat-error>El codigo es obligatorio.</mat-error>
+                  }
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Fecha de caducidad (opcional)</mat-label>
+                  <input matInput [matDatepicker]="pickerCaducidad" formControlName="fechaCaducidad" />
+                  <mat-datepicker-toggle matSuffix [for]="pickerCaducidad" />
+                  <mat-datepicker #pickerCaducidad />
+                </mat-form-field>
+                <div class="operacion-form__acciones">
+                  <button matButton="filled" type="submit" [disabled]="guardandoLote()">Crear lote</button>
+                </div>
+              </form>
+            </mat-card-content>
+          </mat-card>
+        }
+
+        @if (puedeListarLotes) {
+          <app-state-container
+            [fase]="faseLotes()"
+            [mensajeError]="errorLotes()"
+            mensajeVacio="Elige un material para ver sus lotes."
+            (reintentar)="cargarLotes()"
+          >
+            <app-data-table
+              [columnas]="columnasLotes"
+              [filas]="lotes()"
+              [total]="totalLotes()"
+              [page]="pageLotes()"
+              [size]="sizeLotes()"
+              (cambioPagina)="onPaginaLotes($event)"
+            >
+              <ng-template appCelda="codigo" let-fila>{{ fila.codigo }}</ng-template>
+              <ng-template appCelda="fechaCaducidad" let-fila>
+                {{ fila.fechaCaducidad ? (fila.fechaCaducidad | date: 'mediumDate') : '—' }}
+              </ng-template>
+              <ng-template appCelda="estado" let-fila>
+                <span
+                  class="inventario-avanzado__lote-estado"
+                  [class.inventario-avanzado__lote-estado--caducado]="estadoLote(fila) === 'caducado'"
+                  [class.inventario-avanzado__lote-estado--proximo]="estadoLote(fila) === 'proximo'"
+                  [class.inventario-avanzado__lote-estado--vigente]="estadoLote(fila) === 'vigente'"
+                  [class.inventario-avanzado__lote-estado--sin-caducidad]="estadoLote(fila) === 'sin_caducidad'"
+                >
+                  <mat-icon
+                    class="inventario-avanzado__lote-estado-icono"
+                    [attr.aria-label]="etiquetaEstadoLote(fila)"
+                    >{{ iconoEstadoLote(fila) }}</mat-icon
+                  >
+                  {{ etiquetaEstadoLote(fila) }}
+                </span>
+              </ng-template>
+            </app-data-table>
+          </app-state-container>
+        }
+      </div>
+    </mat-tab>
+  }
+
+  <!-- =========================== CONFIGURACION =========================== -->
+  @if (puedeConfigurarMaterial) {
+    <mat-tab label="Configuracion">
+      <div class="inventario-avanzado__tab">
+        @if (!hayMateriales()) {
+          <p class="inventario-avanzado__sin-materiales" role="status">
+            <mat-icon aria-hidden="true">info</mat-icon>
+            Aun no hay materiales dados de alta. Crea materiales en Operacion para configurar su inventario.
+          </p>
+        }
+        <mat-card appearance="outlined" class="operacion-form">
+          <mat-card-content>
+            <form class="ds-dialog-form" [formGroup]="formConfig" (ngSubmit)="guardarConfig()" novalidate>
+              <app-entity-select
+                formControlName="materialId"
+                etiqueta="Material"
+                placeholder="Elige el material…"
+                [obligatorio]="true"
+                [buscador]="buscarMaterial"
+                [etiquetaDe]="etiquetaMaterial"
+                [detalleDe]="detalleMaterial"
+              />
+              <mat-form-field appearance="outline">
+                <mat-label>Metodo de costeo</mat-label>
+                <mat-select formControlName="metodoCosteo" required>
+                  @for (opcion of metodosCosteo; track opcion.valor) {
+                    <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Stock maximo (opcional)</mat-label>
+                <input matInput type="number" formControlName="stockMaximo" min="0" />
+                @if (formConfig.controls.stockMaximo.hasError('min')) {
+                  <mat-error>El stock maximo no puede ser negativo.</mat-error>
+                }
+              </mat-form-field>
+              <mat-slide-toggle formControlName="controlLote">Control por lote</mat-slide-toggle>
+              <mat-form-field appearance="outline">
+                <mat-label>Consumo promedio</mat-label>
+                <input matInput type="number" formControlName="consumoPromedio" min="0" required />
+                @if (formConfig.controls.consumoPromedio.hasError('required')) {
+                  <mat-error>El consumo promedio es obligatorio.</mat-error>
+                } @else if (formConfig.controls.consumoPromedio.hasError('min')) {
+                  <mat-error>El consumo promedio no puede ser negativo.</mat-error>
+                }
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Tiempo de entrega (dias)</mat-label>
+                <input matInput type="number" formControlName="tiempoEntregaDias" min="0" required />
+                @if (formConfig.controls.tiempoEntregaDias.hasError('required')) {
+                  <mat-error>El tiempo de entrega es obligatorio.</mat-error>
+                } @else if (formConfig.controls.tiempoEntregaDias.hasError('min')) {
+                  <mat-error>El tiempo de entrega no puede ser negativo.</mat-error>
+                }
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Stock de seguridad</mat-label>
+                <input matInput type="number" formControlName="stockSeguridad" min="0" required />
+                @if (formConfig.controls.stockSeguridad.hasError('required')) {
+                  <mat-error>El stock de seguridad es obligatorio.</mat-error>
+                } @else if (formConfig.controls.stockSeguridad.hasError('min')) {
+                  <mat-error>El stock de seguridad no puede ser negativo.</mat-error>
+                }
+              </mat-form-field>
+              <div class="operacion-form__acciones">
+                <button matButton="filled" type="submit" [disabled]="guardandoConfig()">
+                  Guardar configuracion
+                </button>
+              </div>
+            </form>
+
+            @if (configGuardada(); as config) {
+              <div class="inventario-avanzado__config-resultado" role="status">
+                <p>
+                  Configuracion guardada. Punto de reorden calculado:
+                  <strong>{{ config.puntoReorden }}</strong>
+                </p>
+              </div>
+            }
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+  }
+
+  <!-- ============================= ALMACENES ============================= -->
+  @if (puedeLeerAlmacen) {
+    <mat-tab label="Almacenes">
+      <div class="inventario-avanzado__tab">
+        @if (puedeCrearAlmacen) {
+          <div class="inventario-avanzado__acciones-tab">
+            <button matButton="filled" type="button" (click)="nuevoAlmacen()">
+              <mat-icon aria-hidden="true">add</mat-icon>
+              Nuevo almacen
+            </button>
+          </div>
+        }
+
+        @if (formularioAbierto()) {
+          <mat-card appearance="outlined" class="operacion-form">
+            <mat-card-content>
+              <form class="ds-dialog-form" [formGroup]="formAlmacen" (ngSubmit)="guardarAlmacen()" novalidate>
+                <mat-form-field appearance="outline">
+                  <mat-label>Nombre</mat-label>
+                  <input matInput type="text" formControlName="nombre" required />
+                  @if (formAlmacen.controls.nombre.hasError('required') && formAlmacen.controls.nombre.touched) {
+                    <mat-error>El nombre es obligatorio.</mat-error>
+                  }
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Tipo</mat-label>
+                  <mat-select formControlName="tipo" required>
+                    @for (tipo of tipos; track tipo) {
+                      <mat-option [value]="tipo">{{ etiquetaTipoAlmacen(tipo) }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+                <div class="operacion-form__acciones">
+                  <button matButton type="button" (click)="cancelarAlmacen()" [disabled]="guardando()">
+                    Cancelar
+                  </button>
+                  <button matButton="filled" type="submit" [disabled]="guardando()">Guardar</button>
+                </div>
+              </form>
+            </mat-card-content>
+          </mat-card>
+        }
+
+        <app-state-container
+          [fase]="faseAlmacenes()"
+          [mensajeError]="errorAlmacenes()"
+          mensajeVacio="No hay almacenes registrados."
+          (reintentar)="cargarAlmacenes()"
+        >
+          <app-data-table
+            [columnas]="columnasAlmacenes"
+            [filas]="almacenes()"
+            [total]="totalAlmacenes()"
+            [page]="pageAlmacenes()"
+            [size]="sizeAlmacenes()"
+            (cambioPagina)="onPaginaAlmacenes($event)"
+          >
+            <ng-template appCelda="nombre" let-fila>{{ fila.nombre }}</ng-template>
+            <ng-template appCelda="tipo" let-fila>{{ etiquetaTipoAlmacen(fila.tipo) }}</ng-template>
+            <ng-template appCelda="activo" let-fila>
+              <span
+                class="inventario-avanzado__estado-almacen"
+                [class.inventario-avanzado__estado-almacen--activo]="fila.activo"
+                [class.inventario-avanzado__estado-almacen--inactivo]="!fila.activo"
+              >
+                <mat-icon
+                  class="inventario-avanzado__estado-almacen-icono"
+                  [attr.aria-label]="fila.activo ? 'Activo' : 'Inactivo'"
+                  >{{ fila.activo ? 'check_circle' : 'cancel' }}</mat-icon
+                >
+                {{ fila.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </ng-template>
+            <ng-template appCelda="acciones" let-fila>
+              @if (puedeActualizarAlmacen) {
+                <button matIconButton type="button" (click)="editarAlmacen(fila)" aria-label="Editar almacen">
+                  <mat-icon aria-hidden="true">edit</mat-icon>
+                </button>
+              } @else {
+                <span class="operacion-sin-acciones">—</span>
+              }
+            </ng-template>
+          </app-data-table>
+        </app-state-container>
+      </div>
+    </mat-tab>
+  }
+</mat-tab-group>

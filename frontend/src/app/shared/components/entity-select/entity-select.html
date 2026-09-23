@@ -1,0 +1,60 @@
+@if (seleccionada(); as entidad) {
+  <div class="entity-select__seleccion">
+    <span class="entity-select__seleccion-textos">
+      <span class="entity-select__seleccion-etiqueta">{{ etiquetaDe()(entidad) }}</span>
+      @if (detalleDe()(entidad); as detalle) {
+        <span class="entity-select__seleccion-detalle">{{ detalle }}</span>
+      }
+    </span>
+    <button
+      matIconButton
+      type="button"
+      class="entity-select__quitar"
+      [disabled]="deshabilitado()"
+      [attr.aria-label]="'Elegir otro ' + etiqueta().toLowerCase()"
+      (click)="limpiar()"
+    >
+      <mat-icon aria-hidden="true">close</mat-icon>
+    </button>
+  </div>
+} @else {
+  <mat-form-field appearance="outline" class="entity-select__campo">
+    <mat-label>{{ etiqueta() }}</mat-label>
+    <mat-icon matPrefix aria-hidden="true">search</mat-icon>
+    <input
+      matInput
+      type="text"
+      autocomplete="off"
+      [required]="obligatorio()"
+      [placeholder]="placeholder()"
+      [disabled]="deshabilitado()"
+      [value]="texto()"
+      (input)="alEscribir($any($event.target).value)"
+      (blur)="marcarTocado()"
+      [matAutocomplete]="auto"
+    />
+    @if (ayuda(); as textoAyuda) {
+      <mat-hint>{{ textoAyuda }}</mat-hint>
+    }
+    @if (errorRequerido()) {
+      <mat-error>Selecciona un {{ etiqueta().toLowerCase() }} de la lista.</mat-error>
+    }
+  </mat-form-field>
+
+  <mat-autocomplete #auto="matAutocomplete" (optionSelected)="alSeleccionar($event)">
+    @for (entidad of resultados(); track entidad.id) {
+      <mat-option [value]="entidad">
+        <span class="entity-select__opcion">
+          <span class="entity-select__opcion-etiqueta">{{ etiquetaDe()(entidad) }}</span>
+          @if (detalleDe()(entidad); as detalle) {
+            <span class="entity-select__opcion-detalle">{{ detalle }}</span>
+          }
+        </span>
+      </mat-option>
+    } @empty {
+      @if (sinCoincidencias()) {
+        <mat-option disabled>Sin coincidencias.</mat-option>
+      }
+    }
+  </mat-autocomplete>
+}

@@ -1,0 +1,124 @@
+@if (creado(); as giro) {
+  <h2 mat-dialog-title>Giro creado</h2>
+  <mat-dialog-content>
+    <div class="giro-dialog__info">
+      <p class="giro-dialog__info-exito">
+        <mat-icon aria-hidden="true">check_circle</mat-icon>
+        <span>El giro «{{ giro.nombreVisible }}» se creó correctamente.</span>
+      </p>
+
+      <div class="giro-dialog__info-panel" role="note">
+        <p class="giro-dialog__info-parrafo">
+          <mat-icon aria-hidden="true">check</mat-icon>
+          <span>
+            Incluye los módulos base que comparten todas las empresas (comercial, finanzas,
+            inventario, facturación, etc.).
+          </span>
+        </p>
+        <p class="giro-dialog__info-parrafo giro-dialog__info-parrafo--aviso">
+          <mat-icon aria-hidden="true">engineering</mat-icon>
+          <span>
+            Las reglas de negocio específicas de este giro (operación/producción propia,
+            mantenimiento, proyectos especializados) aún NO están programadas. El equipo de
+            desarrollo debe alimentar este giro con esas reglas antes de que esté al 100%.
+          </span>
+        </p>
+        <p class="giro-dialog__info-parrafo">
+          <mat-icon aria-hidden="true">lightbulb</mat-icon>
+          <span>
+            Puedes usar el giro desde ya (solo con los módulos base) bajo tu criterio, o
+            solicitar al equipo de desarrollo que complete sus reglas de negocio.
+          </span>
+        </p>
+      </div>
+    </div>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button matButton="filled" type="button" (click)="cerrarConExito()">Entendido</button>
+  </mat-dialog-actions>
+} @else {
+<h2 mat-dialog-title>{{ esEdicion ? 'Editar giro' : 'Nuevo giro' }}</h2>
+<mat-dialog-content>
+  <form class="giro-dialog__form" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+    @if (error()) {
+      <p class="giro-dialog__error" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </p>
+    }
+
+    <p class="giro-dialog__intro">
+      Un giro define un vertical de negocio (ej. carpinteria, manufactura, telas).
+      Al crearlo, queda disponible para asignarse a nuevas empresas.
+    </p>
+
+    <section class="giro-dialog__seccion">
+      <h3 class="giro-dialog__seccion-titulo">Identificacion del giro</h3>
+
+      <mat-form-field appearance="outline" class="giro-dialog__campo">
+        <mat-label>Clave</mat-label>
+        <mat-icon matPrefix aria-hidden="true">vpn_key</mat-icon>
+        <input
+          matInput
+          type="text"
+          formControlName="clave"
+          autocomplete="off"
+          maxlength="60"
+          placeholder="ej. carpinteria, telas-textiles"
+          (input)="normalizarClave()"
+          [readonly]="esEdicion"
+          required
+        />
+        <mat-hint>{{ esEdicion ? 'La clave no se puede cambiar.' : 'Identificador unico, solo minusculas y guiones.' }}</mat-hint>
+        @if (formulario.controls.clave.hasError('required') && formulario.controls.clave.touched) {
+          <mat-error>La clave es obligatoria.</mat-error>
+        } @else if (formulario.controls.clave.hasError('pattern') && formulario.controls.clave.touched) {
+          <mat-error>Usa solo minusculas, numeros y guiones.</mat-error>
+        } @else if (formulario.controls.clave.hasError('maxlength') && formulario.controls.clave.touched) {
+          <mat-error>Maximo 60 caracteres.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="giro-dialog__campo">
+        <mat-label>Nombre visible</mat-label>
+        <mat-icon matPrefix aria-hidden="true">label</mat-icon>
+        <input
+          matInput
+          type="text"
+          formControlName="nombreVisible"
+          maxlength="150"
+          placeholder="ej. Carpinteria y ebanisteria"
+          required
+        />
+        <mat-hint>Nombre que se muestra en la plataforma.</mat-hint>
+        @if (formulario.controls.nombreVisible.hasError('required') && formulario.controls.nombreVisible.touched) {
+          <mat-error>El nombre visible es obligatorio.</mat-error>
+        } @else if (formulario.controls.nombreVisible.hasError('maxlength') && formulario.controls.nombreVisible.touched) {
+          <mat-error>Maximo 150 caracteres.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="giro-dialog__campo">
+        <mat-label>Descripcion (opcional)</mat-label>
+        <textarea
+          matInput
+          rows="3"
+          formControlName="descripcion"
+          maxlength="500"
+          placeholder="Describe brevemente las reglas de negocio de este giro…"
+        ></textarea>
+        @if (formulario.controls.descripcion.hasError('maxlength') && formulario.controls.descripcion.touched) {
+          <mat-error>Maximo 500 caracteres.</mat-error>
+        }
+      </mat-form-field>
+    </section>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancelar()">Cancelar</button>
+  <button matButton="filled" type="button" (click)="guardar()" [disabled]="guardando()">
+    <mat-icon aria-hidden="true">{{ esEdicion ? 'save' : 'add' }}</mat-icon>
+    {{ esEdicion ? 'Guardar cambios' : 'Crear giro' }}
+  </button>
+</mat-dialog-actions>
+}

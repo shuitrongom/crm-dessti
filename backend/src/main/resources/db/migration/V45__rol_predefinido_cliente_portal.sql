@@ -1,0 +1,47 @@
+-- ============================================================================
+-- V45__rol_predefinido_cliente_portal.sql
+--
+-- Semilla del rol predefinido EXTERNO `cliente_portal` (Req 45, tarea 45.1).
+--
+-- ----------------------------------------------------------------------------
+-- MOTIVACION
+-- ----------------------------------------------------------------------------
+--   El Portal del Cliente (modulo `portalcliente`) expone las rutas
+--   `/api/v1/portal/**` a traves de PortalClienteController, cuya autorizacion
+--   se gobierna EXCLUSIVAMENTE por el rol externo `cliente_portal` mediante
+--   `@PreAuthorize("hasRole('cliente_portal')")` a nivel de clase. La convencion
+--   de Spring Security mapea el rol `cliente_portal` del Token_Acceso a la
+--   authority `ROLE_cliente_portal` (ver JwtAuthenticationFilter.PREFIJO_ROL).
+--
+--   Hasta esta migracion el rol NO existia en el catalogo `rol`, por lo que un
+--   usuario del Portal no podia serle asignado de forma consistente. Esta
+--   semilla cierra ese hueco: registra `cliente_portal` como rol predefinido de
+--   Sistema (tenant_id NULL, predefinido = TRUE), homogeneo con los roles de
+--   V5__roles_predefinidos_permisos.sql.
+--
+-- ----------------------------------------------------------------------------
+-- DECISIONES DE DISENO (consistencia con V5 y con el modulo portalcliente)
+-- ----------------------------------------------------------------------------
+--   * ROL EXTERNO SIN PERMISOS ATOMICOS: a diferencia de los roles internos, el
+--     Portal NO evalua permisos `recurso:operacion`. La autorizacion es
+--     puramente basada en rol (hasRole) MAS el acotamiento por Cliente que hace
+--     ServicioPortalCliente usando la authority `cliente_id:<uuid>` resuelta del
+--     token (ClientePortalActualDesdeAuthenticationAdapter, Req 45.1/45.3).
+--     Por ello NO se insertan filas en `rol_permiso`: hacerlo otorgaria acceso
+--     a endpoints internos, violando el principio de minimo privilegio (Req 3,
+--     deny-by-default) y el aislamiento externo del Portal (Req 45).
+--   * UUID FIJO Y DETERMINISTA: se continua la familia `a0000000-...` usada por
+--     los roles predefinidos de V5. El siguiente valor libre tras `...00000d`
+--     (marketing) es `...00000e`.
+--   * `predefinido = TRUE`, `tenant_id = NULL`: rol comun a todas las Empresas.
+--     La unicidad global la garantiza el indice parcial
+--     `uq_rol_nombre_predefinido` (V1).
+--   * IDEMPOTENCIA: `ON CONFLICT DO NOTHING` tolera re-siembras manuales sin
+--     romper, coherente con V5.
+--   * `nombre` sin acentos (`cliente_portal`), estable en codificacion, igual
+--     que el resto de roles predefinidos.
+-- ============================================================================
+
+INSERT INTO rol (id, tenant_id, nombre, predefinido) VALUES
+    ('a0000000-0000-0000-0000-00000000000e', NULL, 'cliente_portal', TRUE)
+ON CONFLICT DO NOTHING;

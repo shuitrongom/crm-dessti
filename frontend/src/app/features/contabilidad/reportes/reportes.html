@@ -1,0 +1,81 @@
+<app-page-header
+  titulo="Reportes financieros"
+  subtitulo="Consulta los reportes financieros del periodo: ingresos, IVA y libro de pólizas (solo lectura)."
+/>
+
+<mat-card appearance="outlined" class="cont-alta">
+  <mat-card-content>
+    <form [formGroup]="formPeriodo" (ngSubmit)="consultar()" novalidate>
+      <div class="cont-filtros">
+        <mat-form-field appearance="outline">
+          <mat-label>Desde</mat-label>
+          <input matInput [matDatepicker]="pickerDesde" formControlName="desde" />
+          <mat-datepicker-toggle matSuffix [for]="pickerDesde" />
+          <mat-datepicker #pickerDesde />
+          <mat-error>Indica la fecha inicial.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Hasta</mat-label>
+          <input matInput [matDatepicker]="pickerHasta" formControlName="hasta" />
+          <mat-datepicker-toggle matSuffix [for]="pickerHasta" />
+          <mat-datepicker #pickerHasta />
+          <mat-error>Indica la fecha final.</mat-error>
+        </mat-form-field>
+        <button matButton="filled" type="submit" [disabled]="cargandoReportes()">Consultar</button>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>
+
+@if (errorReportes()) {
+  <p class="ds-dialog-error" role="alert">{{ errorReportes() }}</p>
+}
+
+<div class="cont-indicadores">
+  @if (ingresos(); as ing) {
+    <mat-card appearance="outlined">
+      <mat-card-content>
+        <div class="cont-ayuda">Ingresos del periodo ({{ ing.numeroFacturas }} facturas)</div>
+        <div class="cont-num">Subtotal: {{ ing.subtotal | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</div>
+        <div class="cont-num">IVA: {{ ing.iva | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</div>
+        <div class="cont-num">Retenciones: {{ ing.retenciones | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</div>
+        <div class="cont-num"><strong>Total: {{ ing.total | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</strong></div>
+      </mat-card-content>
+    </mat-card>
+  }
+  @if (iva(); as v) {
+    <mat-card appearance="outlined">
+      <mat-card-content>
+        <div class="cont-ayuda">IVA del periodo</div>
+        <div class="cont-num">Base gravable: {{ v.baseGravable | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</div>
+        <div class="cont-num">IVA trasladado: {{ v.ivaTrasladado | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</div>
+        <div class="cont-num">IVA retenido: {{ v.ivaRetenido | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</div>
+      </mat-card-content>
+    </mat-card>
+  }
+</div>
+
+<section aria-labelledby="titulo-libro">
+  <h2 id="titulo-libro" class="cont-alta__titulo">Libro de polizas</h2>
+  <app-state-container
+    [fase]="libro().fase"
+    [mensajeError]="libro().mensajeError"
+    mensajeVacio="No hay polizas en el periodo."
+    (reintentar)="cargarLibro()"
+  >
+    <app-data-table
+      [columnas]="columnas"
+      [filas]="libro().datos ?? []"
+      [total]="total()"
+      [page]="page()"
+      [size]="size()"
+      (cambioPagina)="cambiarPagina($event)"
+    >
+      <ng-template appCelda="fecha" let-p>{{ p.fecha | date: 'dd/MM/yyyy' }}</ng-template>
+      <ng-template appCelda="tipo" let-p>{{ p.tipo }}</ng-template>
+      <ng-template appCelda="concepto" let-p>{{ p.concepto }}</ng-template>
+      <ng-template appCelda="cargos" let-p>{{ p.totalCargos | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</ng-template>
+      <ng-template appCelda="abonos" let-p>{{ p.totalAbonos | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</ng-template>
+    </app-data-table>
+  </app-state-container>
+</section>

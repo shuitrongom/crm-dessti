@@ -1,0 +1,216 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "7.2 Vista `orden-fabricacion-detalle` (genérica, sin guardaGiro)": [
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790007766538
+      }
+    ],
+    "7.5 `agregarFotos` en `LevantamientosService` y la vista de Levantamientos": [
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790007767840
+      }
+    ],
+    "1.7 PBT: verificación de existencia del Cliente": [
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790007792368
+      }
+    ],
+    "1. BLOQUE A — Mover OF y Proyecto/Sitio al Núcleo (refactor de renombrado de paquete)": [
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790007792684
+      }
+    ],
+    "1.9 Controller test: OF genérica accesible por giro no-anuncios + no-regresión de anuncios": [
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790007794751
+      }
+    ],
+    "7.3 Vistas `levantamiento-detalle`, `permiso-detalle`, `oti-detalle` (con guardaGiro)": [
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790007817615
+      },
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790008552763
+      }
+    ],
+    "7.4 Filtros por nombre (Cliente en OF; Cliente/Cuadrilla en OTI) y rutas": [
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790008563969
+      },
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790010640340
+      }
+    ],
+    "3.3 PBT: partidas editables solo en `pendiente`": [
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790008565255
+      },
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790010643875
+      }
+    ],
+    "3.5 PBT: consumo atómico y no-negativo": [
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790008566694
+      },
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790010642700
+      }
+    ],
+    "6.4 PBT: la guarda de cierre de OTI informa los pendientes no resueltos": [
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790008568122
+      },
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790010641386
+      }
+    ],
+    "6.5 Controller + service tests de OTI (pendientes/evidencias/guarda)": [
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790008569490
+      },
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790010640504
+      }
+    ],
+    "7. BLOQUE D — Frontend enterprise (UX)": [
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790010640797
+      }
+    ],
+    "6. BLOQUE C — Exponer fotos de Levantamiento y pendientes/evidencias de OTI": [
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790010640950
+      }
+    ],
+    "3. BLOQUE B — Consumo de materiales en la OF": [
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790010643018
+      }
+    ],
+    "1.10 Service/controller test: verificación de Cliente (404/422) en Proyecto y OF directa": [
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790010657242
+      },
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790011119915
+      }
+    ],
+    "3.6 Test de integración del consumo (cableado real con `ServicioInventario`)": [
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790010658651
+      },
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790011121241
+      }
+    ],
+    "8.4 Tests de notificaciones (N permisos → N notificaciones; barrido multi-tenant)": [
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790010659947
+      },
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790011122652
+      }
+    ],
+    "8. BLOQUE E — Notificación de vencimiento de permisos (anuncios)": [
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790011122937
+      }
+    ],
+    "7.6 Specs one-shot de las cinco vistas + vistas de detalle (sin UUIDs, axe one-shot)": [
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790011128944
+      },
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790013728668
+      }
+    ],
+    "2. Checkpoint BLOQUE A — Asegurar que las pruebas pasan": [
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790018180896
+      }
+    ],
+    "4. Checkpoint BLOQUE B — Asegurar que las pruebas pasan": [
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790018181407
+      }
+    ],
+    "5. BLOQUE B/F — Migración Flyway V66 (Data Models)": [
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790018182894
+      }
+    ],
+    "9. Verificación final integral y no-regresión": [
+      {
+        "executionId": "34f09289-7ce4-4d2b-ab5e-8b24687811b5",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1790018185887
+      }
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+stateDiagram-v2
+    [*] --> pendiente
+    pendiente --> en_produccion
+    pendiente --> cancelada
+    en_produccion --> terminada
+    en_produccion --> cancelada
+    terminada --> [*]
+    cancelada --> [*]

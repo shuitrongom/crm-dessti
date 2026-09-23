@@ -1,0 +1,104 @@
+<app-page-header titulo="Detalle de proyecto" subtitulo="Consulta el estado consolidado del proyecto y el avance de cada uno de sus sitios.">
+  <div acciones>
+    <a matButton routerLink=".." aria-label="Volver al listado de proyectos">
+      <mat-icon aria-hidden="true">arrow_back</mat-icon>
+      Volver
+    </a>
+  </div>
+</app-page-header>
+
+<app-state-container [fase]="fase()" [mensajeError]="mensajeError()" (reintentar)="cargar()">
+  @if (proyecto(); as p) {
+    <div class="proyecto-detalle">
+      <mat-card appearance="outlined">
+        <mat-card-header>
+          <mat-card-title>{{ p.nombre }}</mat-card-title>
+          @if (p.estadoConsolidado) {
+            <mat-card-subtitle>Estado consolidado: {{ p.estadoConsolidado }}</mat-card-subtitle>
+          }
+        </mat-card-header>
+        @if (puedeAgregarSitio) {
+          <mat-card-actions>
+            <button matButton="tonal" type="button" (click)="alternarFormulario()">
+              <mat-icon aria-hidden="true">add_location_alt</mat-icon>
+              Agregar sitio
+            </button>
+          </mat-card-actions>
+        }
+      </mat-card>
+
+      @if (formularioAbierto()) {
+        <mat-card appearance="outlined">
+          <mat-card-header>
+            <mat-card-title>Nuevo sitio</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <form class="ds-dialog-form" [formGroup]="form" (ngSubmit)="agregarSitio()" novalidate>
+              <mat-form-field appearance="outline">
+                <mat-label>Nombre del sitio</mat-label>
+                <input matInput type="text" formControlName="nombre" required />
+                @if (form.controls.nombre.hasError('required') && form.controls.nombre.touched) {
+                  <mat-error>El nombre es obligatorio.</mat-error>
+                }
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Dirección (opcional)</mat-label>
+                <input matInput type="text" formControlName="direccion" />
+              </mat-form-field>
+              <div class="proyecto-detalle__form-acciones">
+                <button matButton type="button" (click)="alternarFormulario()" [disabled]="guardando()">
+                  Cancelar
+                </button>
+                <button matButton="filled" type="submit" [disabled]="guardando()">Agregar</button>
+              </div>
+            </form>
+          </mat-card-content>
+        </mat-card>
+      }
+
+      <section class="proyecto-detalle__sitios" aria-label="Sitios del proyecto">
+        @for (avance of p.sitios; track avance.sitio.id) {
+          <mat-card appearance="outlined" class="proyecto-detalle__sitio">
+            <mat-card-header>
+              <mat-card-title>{{ avance.sitio.nombre }}</mat-card-title>
+              @if (avance.sitio.direccion) {
+                <mat-card-subtitle>{{ avance.sitio.direccion }}</mat-card-subtitle>
+              }
+            </mat-card-header>
+            <mat-card-content>
+              <app-progress-badge [avance]="avanceDe(avance)" [estado]="estadoDe(avance)" />
+              <ul class="proyecto-detalle__fases">
+                <li [class.proyecto-detalle__fase--ok]="avance.tieneLevantamientoCompletado">
+                  <mat-icon aria-hidden="true">
+                    {{ avance.tieneLevantamientoCompletado ? 'check_circle' : 'radio_button_unchecked' }}
+                  </mat-icon>
+                  Levantamiento
+                </li>
+                <li [class.proyecto-detalle__fase--ok]="avance.tienePermisoAprobado">
+                  <mat-icon aria-hidden="true">
+                    {{ avance.tienePermisoAprobado ? 'check_circle' : 'radio_button_unchecked' }}
+                  </mat-icon>
+                  Permiso
+                </li>
+                <li [class.proyecto-detalle__fase--ok]="avance.tieneOrdenFabricacionTerminada">
+                  <mat-icon aria-hidden="true">
+                    {{ avance.tieneOrdenFabricacionTerminada ? 'check_circle' : 'radio_button_unchecked' }}
+                  </mat-icon>
+                  Fabricacion
+                </li>
+                <li [class.proyecto-detalle__fase--ok]="avance.tieneInstalacionCompletada">
+                  <mat-icon aria-hidden="true">
+                    {{ avance.tieneInstalacionCompletada ? 'check_circle' : 'radio_button_unchecked' }}
+                  </mat-icon>
+                  Instalacion
+                </li>
+              </ul>
+            </mat-card-content>
+          </mat-card>
+        } @empty {
+          <p class="proyecto-detalle__vacio">Este proyecto aun no tiene sitios registrados.</p>
+        }
+      </section>
+    </div>
+  }
+</app-state-container>

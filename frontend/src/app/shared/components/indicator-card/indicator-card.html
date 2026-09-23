@@ -1,0 +1,17 @@
+<article class="indicator-card">
+  <p class="indicator-card__etiqueta">{{ indicador().etiqueta }}</p>
+  <p class="indicator-card__valor">
+    {{ indicador().valor | number: '1.0-2' }}
+    <span class="indicator-card__unidad">{{ indicador().unidad }}</span>
+  </p>
+
+  @if (indicador().comparativo !== null && indicador().variacion !== null) {
+    <p class="indicator-card__comparativo" [class]="'indicator-card__comparativo--' + tendencia()">
+      <mat-icon class="indicator-card__icono" aria-hidden="true">{{ iconoTendencia() }}</mat-icon>
+      <span>
+        {{ indicador().variacion | number: '1.0-2' }} {{ textoTendencia() }}
+        <span class="ds-visually-hidden">respecto al periodo anterior</span>
+      </span>
+    </p>
+  }
+</article>

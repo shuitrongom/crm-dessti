@@ -1,0 +1,519 @@
+{
+  "pbtResults": {
+    "2.3 Prueba de propiedad: normalización idempotente de clave": {
+      "status": "passed",
+      "lastRunTimestamp": 1788996748166
+    },
+    "6.5 Prueba de propiedad: clasificación de permisos por Giro": {
+      "status": "passed",
+      "lastRunTimestamp": 1789017901871
+    }
+  },
+  "executionHistory": {
+    "1.1 Definir el puerto `ContratoVertical` e `ItemNavegacionVertical`": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995703546
+      },
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995718279
+      },
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788996012997
+      }
+    ],
+    "1.2 Implementar `RegistroVerticales` (indexación por giro y fail-fast por duplicado)": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995703936
+      },
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788996023632
+      },
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788996314158
+      }
+    ],
+    "2.1 Migración `V50`: tabla `giro` y siembra de `anuncios-luminosos`": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995704410
+      },
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995718681
+      },
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788996014016
+      }
+    ],
+    "2.2 Dominio y normalización de `Giro`": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995704667
+      },
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788996024472
+      },
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788996315269
+      }
+    ],
+    "2.4 Repositorio y adaptador JPA de `Giro`": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995704868
+      },
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788996325503
+      },
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788996873762
+      }
+    ],
+    "2.5 `ServicioGiros` (crear/activar/desactivar/listar) con reglas": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995705040
+      },
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788997002488
+      },
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788997285006
+      }
+    ],
+    "2.6 `GiroController` REST bajo `/api/v1/plataforma/giros`": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995705204
+      },
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788997291713
+      },
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788997719580
+      }
+    ],
+    "3. Checkpoint — Núcleo de giros y registro": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995705376
+      },
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788997731069
+      },
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788998161666
+      },
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788998963275
+      }
+    ],
+    "4.1 Migración `V51`: `empresa.giro_id` con backfill y NOT NULL": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995705514
+      },
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788997293180
+      }
+    ],
+    "4.2 Modelo `Empresa` con Giro y `cambiarGiro`": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995705728
+      },
+      {
+        "executionId": "39bc0583-9bdf-4c86-855e-ddd71f945abb",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788999167310
+      },
+      {
+        "executionId": "39bc0583-9bdf-4c86-855e-ddd71f945abb",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788999637165
+      }
+    ],
+    "4.3 `CrearEmpresaCommand` y `ServicioEmpresas.crearEmpresa` con Giro": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995705897
+      },
+      {
+        "executionId": "39bc0583-9bdf-4c86-855e-ddd71f945abb",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788999913536
+      },
+      {
+        "executionId": "39bc0583-9bdf-4c86-855e-ddd71f945abb",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789000379939
+      }
+    ],
+    "4.4 `DatosVerticalPort` y `ServicioEmpresas.cambiarGiro`": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995706074
+      },
+      {
+        "executionId": "39bc0583-9bdf-4c86-855e-ddd71f945abb",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789000380474
+      },
+      {
+        "executionId": "39bc0583-9bdf-4c86-855e-ddd71f945abb",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789000782974
+      }
+    ],
+    "4.5 `GiroEmpresaPort` + `GiroEmpresaAdapter`": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995706258
+      },
+      {
+        "executionId": "39bc0583-9bdf-4c86-855e-ddd71f945abb",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788999649856
+      },
+      {
+        "executionId": "39bc0583-9bdf-4c86-855e-ddd71f945abb",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788999906374
+      }
+    ],
+    "5. Checkpoint — Empresa con Giro y migración": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995706494
+      },
+      {
+        "executionId": "39bc0583-9bdf-4c86-855e-ddd71f945abb",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789000791642
+      },
+      {
+        "executionId": "39bc0583-9bdf-4c86-855e-ddd71f945abb",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789001056843
+      }
+    ],
+    "6.1 `Autorizador.giroCorresponde(modulo)` y auditoría de denegación": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995706693
+      },
+      {
+        "executionId": "39bc0583-9bdf-4c86-855e-ddd71f945abb",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789001063989
+      },
+      {
+        "executionId": "39bc0583-9bdf-4c86-855e-ddd71f945abb",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789005094539
+      }
+    ],
+    "6.4 `ClasificadorRecursosVertical` y validación de `Rol_Personalizado`": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995706840
+      },
+      {
+        "executionId": "39bc0583-9bdf-4c86-855e-ddd71f945abb",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789001065156
+      },
+      {
+        "executionId": "39bc0583-9bdf-4c86-855e-ddd71f945abb",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789016785180
+      }
+    ],
+    "7. Checkpoint — Doble gating y RBAC por giro": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995706998
+      },
+      {
+        "executionId": "39bc0583-9bdf-4c86-855e-ddd71f945abb",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789016795295
+      },
+      {
+        "executionId": "39bc0583-9bdf-4c86-855e-ddd71f945abb",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789017053983
+      }
+    ],
+    "8.1 Crear módulo `vertical.anuncios` y `AnunciosVertical` (contrato)": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995707173
+      },
+      {
+        "executionId": "c7e4f11d-0d00-4046-95f3-7a93c21ecf2f",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789020439595
+      },
+      {
+        "executionId": "c7e4f11d-0d00-4046-95f3-7a93c21ecf2f",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789025761056
+      }
+    ],
+    "8.2 Mover flujo de Prueba_Diseno al vertical (consumo de comercial por puerto)": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995707388
+      },
+      {
+        "executionId": "c7e4f11d-0d00-4046-95f3-7a93c21ecf2f",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789025772536
+      }
+    ],
+    "8.3 Mover flujo operativo de anuncios al vertical": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995707594
+      }
+    ],
+    "8.4 Aplicar doble gating en los endpoints del vertical": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995707860
+      }
+    ],
+    "8.5 Limpiar el Núcleo de referencias a anuncios": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995708076
+      }
+    ],
+    "9. Checkpoint — Vertical de Anuncios extraído (no regresión)": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995708298
+      }
+    ],
+    "10.1 Contexto de sesión con `giro` y navegación del vertical": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995708557
+      }
+    ],
+    "10.2 `AuthService` y `guardaGiro`": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995708716
+      }
+    ],
+    "10.3 `NavigationService`: items del vertical inyectados por Giro": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995708953
+      }
+    ],
+    "10.4 `empresa.routes.ts`: proteger ramas del vertical con `guardaGiro`": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995709243
+      }
+    ],
+    "11. Checkpoint — Frontend multigiro": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995709752
+      }
+    ],
+    "13. Checkpoint final — Suite completa verde": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788995710008
+      }
+    ],
+    "1. Núcleo: Contrato de Vertical y Registro de Verticales": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788996314382
+      }
+    ],
+    "1.3 Prueba de propiedad: indexación del registro": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788996873959
+      }
+    ],
+    "1.4 Prueba de propiedad: rechazo de giro duplicado": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788996875227
+      }
+    ],
+    "2.3 Prueba de propiedad: normalización idempotente de clave": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788996876336
+      }
+    ],
+    "2.7 Pruebas de ejemplo/borde de `ServicioGiros`": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788997294213
+      },
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788997720341
+      }
+    ],
+    "2. Núcleo: Catálogo de Giros": [
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788997720042
+      },
+      {
+        "executionId": "3138fbd7-16f7-458f-95dd-8a7cc9e86653",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788997721072
+      }
+    ],
+    "6. Núcleo: Autorización consciente del Giro (doble gating y RBAC por giro)": [
+      {
+        "executionId": "39bc0583-9bdf-4c86-855e-ddd71f945abb",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789016785345
+      }
+    ],
+    "6.2 Prueba de propiedad: composición del doble gating": [
+      {
+        "executionId": "dc7a1160-f21f-4fe6-895c-ce4b2b7de0ea",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789017518312
+      },
+      {
+        "executionId": "dc7a1160-f21f-4fe6-895c-ce4b2b7de0ea",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789017922084
+      }
+    ],
+    "6.3 Prueba de propiedad: el Núcleo nunca se bloquea por Giro": [
+      {
+        "executionId": "dc7a1160-f21f-4fe6-895c-ce4b2b7de0ea",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789017519528
+      },
+      {
+        "executionId": "dc7a1160-f21f-4fe6-895c-ce4b2b7de0ea",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789017923356
+      }
+    ],
+    "6.5 Prueba de propiedad: clasificación de permisos por Giro": [
+      {
+        "executionId": "dc7a1160-f21f-4fe6-895c-ce4b2b7de0ea",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789017520961
+      },
+      {
+        "executionId": "dc7a1160-f21f-4fe6-895c-ce4b2b7de0ea",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789017924665
+      }
+    ],
+    "6.6 Regla ArchUnit: el Núcleo no depende de los verticales": [
+      {
+        "executionId": "dc7a1160-f21f-4fe6-895c-ce4b2b7de0ea",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789017522190
+      },
+      {
+        "executionId": "dc7a1160-f21f-4fe6-895c-ce4b2b7de0ea",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789017545587
+      },
+      {
+        "executionId": "dc7a1160-f21f-4fe6-895c-ce4b2b7de0ea",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789017925732
+      },
+      {
+        "executionId": "dc7a1160-f21f-4fe6-895c-ce4b2b7de0ea",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789018436508
+      }
+    ]
+  }
+}

@@ -1,0 +1,139 @@
+<app-page-header titulo="Nueva cotización" subtitulo="Crea una cotización nueva: elige al cliente y agrega las partidas con cantidades y precios.">
+  <div acciones>
+    <a matButton routerLink=".." aria-label="Volver al listado de cotizaciones">
+      <mat-icon aria-hidden="true">arrow_back</mat-icon>
+      Volver
+    </a>
+  </div>
+</app-page-header>
+
+<form [formGroup]="form" (ngSubmit)="crear()" novalidate>
+  <mat-card appearance="outlined" class="cotizacion-nueva__cabecera">
+    <mat-card-header>
+      <mat-card-title>Datos generales</mat-card-title>
+      <mat-card-subtitle>Cliente, vigencia y condiciones de la cotizacion.</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <app-entity-select
+        formControlName="clienteId"
+        etiqueta="Cliente"
+        ayuda="Busca por nombre o RFC y elige el cliente de la lista."
+        placeholder="Busca por nombre o RFC…"
+        [obligatorio]="true"
+        [buscador]="buscarCliente"
+        [etiquetaDe]="etiquetaCliente"
+        [detalleDe]="detalleCliente"
+      />
+      <div class="cotizacion-nueva__campos">
+        <mat-form-field appearance="outline">
+          <mat-label>Valido hasta (opcional)</mat-label>
+          <input matInput [matDatepicker]="pickerValidoHasta" formControlName="validoHasta" />
+          <mat-datepicker-toggle matSuffix [for]="pickerValidoHasta" />
+          <mat-datepicker #pickerValidoHasta />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Moneda</mat-label>
+          <mat-select formControlName="moneda">
+            @for (opcion of monedas; track opcion.valor) {
+              <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <mat-form-field appearance="outline" class="cotizacion-nueva__ancho">
+        <mat-label>Condiciones (opcional)</mat-label>
+        <textarea
+          matInput
+          formControlName="condiciones"
+          rows="3"
+          maxlength="2000"
+          placeholder="Terminos comerciales, tiempos de entrega, garantia…"
+        ></textarea>
+        @if (form.controls.condiciones.hasError('maxlength')) {
+          <mat-error>Las condiciones admiten hasta 2000 caracteres.</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="cotizacion-nueva__ancho">
+        <mat-label>Notas (opcional)</mat-label>
+        <textarea
+          matInput
+          formControlName="notas"
+          rows="3"
+          maxlength="2000"
+          placeholder="Notas para el cliente o internas."
+        ></textarea>
+        @if (form.controls.notas.hasError('maxlength')) {
+          <mat-error>Las notas admiten hasta 2000 caracteres.</mat-error>
+        }
+      </mat-form-field>
+    </mat-card-content>
+  </mat-card>
+
+  <div class="cotizacion-nueva__partidas" formArrayName="partidas">
+    @for (grupo of partidas.controls; track $index) {
+      <mat-card appearance="outlined" class="cotizacion-nueva__partida" [formGroupName]="$index">
+        <mat-card-content>
+          <div class="cotizacion-nueva__partida-cabecera">
+            <span class="cotizacion-nueva__partida-num">Partida {{ $index + 1 }}</span>
+            <button
+              matIconButton
+              type="button"
+              class="ds-boton-destructivo"
+              [disabled]="partidas.length <= 1"
+              (click)="quitarPartida($index)"
+              aria-label="Quitar partida"
+            >
+              <mat-icon aria-hidden="true">close</mat-icon>
+            </button>
+          </div>
+          <div class="cotizacion-nueva__grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Descripcion</mat-label>
+              <input matInput type="text" formControlName="descripcion" autocomplete="off" required />
+              @if (grupo.get('descripcion')?.hasError('required') && grupo.get('descripcion')?.touched) {
+                <mat-error>La descripcion es obligatoria.</mat-error>
+              }
+            </mat-form-field>
+            <app-entity-select
+              formControlName="productoId"
+              etiqueta="Producto"
+              ayuda="Opcional. Si lo eliges y dejas el precio vacio, se sugiere el precio de lista."
+              placeholder="Busca por nombre…"
+              [buscador]="buscarProducto"
+              [etiquetaDe]="etiquetaProducto"
+              [detalleDe]="detalleProducto"
+            />
+            <mat-form-field appearance="outline">
+              <mat-label>Cantidad</mat-label>
+              <input matInput type="number" formControlName="cantidad" min="1" step="1" required />
+              @if (grupo.get('cantidad')?.invalid && grupo.get('cantidad')?.touched) {
+                <mat-error>La cantidad debe estar entre 1 y 999,999.</mat-error>
+              }
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Precio unitario (opcional)</mat-label>
+              <input matInput type="number" formControlName="precioUnitario" min="0.01" step="0.01" />
+              @if (grupo.get('precioUnitario')?.invalid && grupo.get('precioUnitario')?.touched) {
+                <mat-error>El precio debe estar entre 0.01 y 999,999,999.99.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+          <p class="cotizacion-nueva__subtotal">
+            Subtotal previsualizado: {{ subtotalDe($index) | currency: 'MXN' : 'symbol-narrow' }}
+          </p>
+        </mat-card-content>
+      </mat-card>
+    }
+  </div>
+
+  <div class="cotizacion-nueva__pie">
+    <button matButton="tonal" type="button" (click)="agregarPartida()">
+      <mat-icon aria-hidden="true">add</mat-icon>
+      Agregar partida
+    </button>
+    <p class="cotizacion-nueva__total">
+      Total previsualizado: <strong>{{ total() | currency: 'MXN' : 'symbol-narrow' }}</strong>
+    </p>
+    <button matButton="filled" type="submit" [disabled]="guardando()">Crear cotizacion</button>
+  </div>
+</form>

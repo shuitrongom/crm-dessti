@@ -1,0 +1,121 @@
+<app-page-header titulo="Giros" subtitulo="Administra el catálogo de giros (verticales de negocio) que ofrece la plataforma.">
+  <div acciones class="giros__acciones">
+    <mat-form-field appearance="outline" class="giros__filtro">
+      <mat-label>Estado</mat-label>
+      <mat-select [value]="filtroActivo()" (selectionChange)="cambiarFiltro($event.value)">
+        <mat-option [value]="null">Todos</mat-option>
+        <mat-option [value]="true">Activos</mat-option>
+        <mat-option [value]="false">Inactivos</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    @if (puedeCrear) {
+      <button matButton="filled" type="button" (click)="crear()">
+        <mat-icon aria-hidden="true">add</mat-icon>
+        Nuevo giro
+      </button>
+    }
+  </div>
+</app-page-header>
+
+<!-- Fila de indicadores KPI (conteos globales por estado). -->
+<section class="giros__kpis" aria-label="Resumen de giros">
+  <app-stat-card
+    etiqueta="Giros totales"
+    [valor]="kpiTotal()"
+    icono="category"
+    tono="info"
+    ayuda="Registrados en la plataforma"
+  />
+  <app-stat-card etiqueta="Activos" [valor]="kpiActivos()" icono="check_circle" tono="exito" />
+  <app-stat-card etiqueta="Inactivos" [valor]="kpiInactivos()" icono="do_not_disturb_on" tono="advertencia" />
+</section>
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="No hay giros registrados para el filtro seleccionado."
+  (reintentar)="cargar()"
+>
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="nombre" let-giro>
+      <div class="giros__giro">
+        <span class="giros__giro-nombre">{{ giro.nombreVisible }}</span>
+        <span class="giros__giro-clave">{{ giro.clave }}</span>
+      </div>
+    </ng-template>
+    <ng-template appCelda="estado" let-giro>
+      <mat-chip-set>
+        <mat-chip [class]="'giros__estado giros__estado--' + (giro.activo ? 'activo' : 'inactivo')">
+          <span class="giros__estado-dot" aria-hidden="true"></span>
+          {{ etiquetaEstado(giro.activo) }}
+        </mat-chip>
+      </mat-chip-set>
+    </ng-template>
+    <ng-template appCelda="completitud" let-giro>
+      <mat-chip-set>
+        <mat-chip
+          [class]="'giros__completitud giros__completitud--' + (giro.tieneReglasNegocio ? 'completo' : 'base')"
+          [matTooltip]="tooltipCompletitud(giro.tieneReglasNegocio)"
+        >
+          <mat-icon matChipAvatar aria-hidden="true">
+            {{ giro.tieneReglasNegocio ? 'verified' : 'schedule' }}
+          </mat-icon>
+          {{ etiquetaCompletitud(giro.tieneReglasNegocio) }}
+        </mat-chip>
+      </mat-chip-set>
+    </ng-template>
+    <ng-template appCelda="acciones" let-giro>
+      @if (puedeActualizar || (giro.activo && puedeDesactivar) || (!giro.activo && puedeActivar) || puedeEliminar) {
+        <button
+          matIconButton
+          type="button"
+          [attr.aria-label]="'Mas acciones para ' + giro.nombreVisible"
+          [matMenuTriggerFor]="menuAcciones"
+        >
+          <mat-icon aria-hidden="true">more_vert</mat-icon>
+        </button>
+        <mat-menu #menuAcciones="matMenu">
+          @if (puedeActualizar) {
+            <button mat-menu-item type="button" (click)="editar(giro)">
+              <mat-icon aria-hidden="true">edit</mat-icon>
+              <span>Editar</span>
+            </button>
+          }
+          @if (giro.activo && puedeDesactivar) {
+            <button mat-menu-item type="button" class="giros__accion--desactivar" (click)="desactivar(giro)">
+              <mat-icon aria-hidden="true">do_not_disturb_on</mat-icon>
+              <span>Desactivar</span>
+            </button>
+          } @else if (!giro.activo && puedeActivar) {
+            <button mat-menu-item type="button" class="giros__accion--activar" (click)="activar(giro)">
+              <mat-icon aria-hidden="true">play_circle</mat-icon>
+              <span>Activar</span>
+            </button>
+          }
+          @if (puedeEliminar) {
+            <button
+              mat-menu-item
+              type="button"
+              class="giros__accion--eliminar"
+              [disabled]="motivoNoEliminable(giro) !== null"
+              [matTooltip]="motivoNoEliminable(giro) ?? ''"
+              [matTooltipDisabled]="motivoNoEliminable(giro) === null"
+              (click)="eliminar(giro)"
+            >
+              <mat-icon aria-hidden="true">delete</mat-icon>
+              <span>Eliminar</span>
+            </button>
+          }
+        </mat-menu>
+      }
+    </ng-template>
+  </app-data-table>
+</app-state-container>

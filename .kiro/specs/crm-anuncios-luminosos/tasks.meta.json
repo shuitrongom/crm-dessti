@@ -1,0 +1,666 @@
+{
+  "pbtResults": {
+    "9.3 Prueba de propiedad: vigencia acotada de los tokens": {
+      "status": "passed",
+      "lastRunTimestamp": 1788590813625
+    },
+    "16.2 Prueba de propiedad: rango de precios de Producto": {
+      "status": "passed",
+      "lastRunTimestamp": 1788808820217
+    },
+    "54.8 Prueba de propiedad: guarda de cierre de Acción Correctiva (eficacia verificada)": {
+      "status": "passed",
+      "lastRunTimestamp": 1788936488689
+    }
+  },
+  "executionHistory": {
+    "1. Andamiaje del proyecto backend (Spring Boot 3.x / Java 21, hexagonal)": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573444293
+      },
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788575957638
+      },
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788580921017
+      }
+    ],
+    "2.1 Configurar Flyway y migración inicial de esquema base": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573444614
+      },
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788580932405
+      }
+    ],
+    "3. Andamiaje del frontend Angular + Sistema de Diseño": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573446268
+      },
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788575958231
+      },
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788580921732
+      }
+    ],
+    "4.1 Implementar TenantContext y filtro de resolución de tenant": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573446460
+      }
+    ],
+    "4.2 Activar Row-Level Security en PostgreSQL como segunda capa": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573446576
+      }
+    ],
+    "4.3 Definir unicidad de negocio por tenant y comportamiento de acceso cruzado": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573446707
+      }
+    ],
+    "5.1 Implementar manejo global de errores (Problem Details RFC 7807)": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573446810
+      }
+    ],
+    "5.2 Implementar utilidades de paginación y validación de entrada": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573446933
+      }
+    ],
+    "6.1 Implementar carga de secretos externa al código": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573447067
+      }
+    ],
+    "6.2 Implementar cifrado en reposo y gestión de Llave_Cifrado": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573447225
+      }
+    ],
+    "7.1 Implementar Registro_Auditoria y AuditoriaPort": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573447308
+      }
+    ],
+    "7.2 Implementar alertas de auditoría y verificación de cadena": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573447439
+      }
+    ],
+    "8. Checkpoint - Núcleo transversal": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573447553
+      }
+    ],
+    "9.1 Implementar Servicio_Autenticacion y emisión de tokens": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573447665
+      }
+    ],
+    "9.2 Implementar bloqueo por intentos fallidos y rate limiting": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573447757
+      }
+    ],
+    "10.1 Implementar RBAC deny-by-default con permisos atómicos": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573447846
+      }
+    ],
+    "10.2 Implementar roles predefinidos y roles personalizados por empresa": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573447947
+      }
+    ],
+    "11.1 Implementar gestión de Usuarios, Roles y Permisos": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573448058
+      }
+    ],
+    "11.2 Implementar gestión y revocación de sesiones": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573448159
+      }
+    ],
+    "12. Protección de comunicación y cabeceras de seguridad": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573448313
+      }
+    ],
+    "13. Checkpoint - Seguridad": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573448402
+      }
+    ],
+    "14.1 Implementar administración de Empresas (tenants) y super_admin": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573448492
+      }
+    ],
+    "14.2 Implementar Planes y Suscripciones": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573448581
+      }
+    ],
+    "14.3 Implementar personalización por empresa (branding)": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573448663
+      }
+    ],
+    "14.4 Implementar offboarding y portabilidad del tenant": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573448748
+      }
+    ],
+    "15.1 Implementar dominio y persistencia de Cliente y Contacto": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573448831
+      }
+    ],
+    "15.2 Implementar API REST de Clientes/Contactos con listado, filtro y paginación": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573448917
+      }
+    ],
+    "16.1 Implementar Producto, Lista_Precios y Precio_Producto": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573449011
+      }
+    ],
+    "17.1 Implementar Oportunidad y máquina de estados del pipeline": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573449093
+      }
+    ],
+    "17.2 Implementar Cotizacion, partidas y cálculo de totales": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573449183
+      }
+    ],
+    "17.3 Implementar clasificación por canal de venta": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573449268
+      }
+    ],
+    "18.1 Implementar Prueba_Diseno versionada y aprobación/rechazo": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573449372
+      }
+    ],
+    "19.1 Implementar Orden_Fabricacion y precondiciones de generación": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573449464
+      }
+    ],
+    "20.1 Implementar Material y Movimiento_Inventario": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573449557
+      }
+    ],
+    "21.1 Implementar Levantamiento_Sitio": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573449643
+      }
+    ],
+    "21.2 Implementar Permiso_Instalacion y zonificación": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573449731
+      }
+    ],
+    "22.1 Implementar Orden_Trabajo_Instalacion y Lista_Pendientes": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573449815
+      }
+    ],
+    "22.2 Implementar Proyecto y Sitio con avance consolidado": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573449914
+      }
+    ],
+    "23.1 Implementar Almacenes, existencias por almacén y Kardex": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573450010
+      }
+    ],
+    "23.2 Implementar costeo (promedio/PEPS), lotes y transferencias": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573450170
+      }
+    ],
+    "24. Checkpoint - Comercial y producción": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573450261
+      }
+    ],
+    "25.1 Implementar Contrato_Mantenimiento y Ticket_Servicio con SLA": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573450357
+      }
+    ],
+    "26.1 Implementar Proveedor": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573450447
+      }
+    ],
+    "26.2 Implementar Requisicion_Compra": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573450549
+      }
+    ],
+    "26.3 Implementar Orden_Compra con partidas y totales": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573450660
+      }
+    ],
+    "27.1 Implementar Recepcion_Mercancia integrada con inventario": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573450807
+      }
+    ],
+    "27.2 Implementar Factura_Proveedor y Conciliacion_Tres_Vias": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573450907
+      }
+    ],
+    "28.1 Definir PacPort y adaptador stub del PAC": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573451007
+      }
+    ],
+    "28.2 Implementar Factura (CFDI) y cálculo fiscal": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573451145
+      }
+    ],
+    "28.3 Implementar timbrado/cancelación y máquina de estados CFDI": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573451260
+      }
+    ],
+    "28.4 Implementar Nota_Credito": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573451354
+      }
+    ],
+    "29.1 Implementar Cuenta_Por_Cobrar y Pago_Cliente": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573451439
+      }
+    ],
+    "30.1 Implementar catálogo de cuentas y pólizas balanceadas": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573451526
+      }
+    ],
+    "30.2 Implementar Cuentas por Pagar y Programacion_Pago": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573451621
+      }
+    ],
+    "31.1 Definir ImportacionBancariaPort y adaptador": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573451713
+      }
+    ],
+    "31.2 Implementar Cuenta_Bancaria, estados de cuenta y conciliación bancaria": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573451827
+      }
+    ],
+    "32.1 Implementar Activo_Fijo y Depreciacion": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573451927
+      }
+    ],
+    "33.1 Implementar reportes financieros/fiscales": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573452032
+      }
+    ],
+    "33.2 Implementar estados financieros": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573452121
+      }
+    ],
+    "34.1 Implementar Empleado, Contrato_Laboral e Incidencia": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573452223
+      }
+    ],
+    "35.1 Implementar cálculo de Nomina y máquina de estados": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573452312
+      }
+    ],
+    "36.1 Implementar Puesto, organigrama, asignaciones y evaluaciones": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573452430
+      }
+    ],
+    "37.1 Implementar Esencia_Empresa y Objetivo_Estrategico con resultados clave": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573452540
+      }
+    ],
+    "38.1 Implementar Presupuesto y cálculo de variación": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573452654
+      }
+    ],
+    "39. Checkpoint - Finanzas, RH y estrategia": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573452741
+      }
+    ],
+    "40.1 Definir MensajeriaSocialPort y adaptador Meta stub": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573452825
+      }
+    ],
+    "40.2 Implementar Cuenta_Canal_Social y controlador de webhooks entrantes": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573452911
+      }
+    ],
+    "40.3 Implementar Bandeja_Unificada, envío, ventana de servicio y opt-in": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573453040
+      }
+    ],
+    "41.1 Implementar Publicacion_Social y Campaña_Publicitaria": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573453175
+      }
+    ],
+    "42.1 Implementar métricas sociales por canal y periodo": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573453260
+      }
+    ],
+    "43.1 Definir NotificacionPort e implementar notificaciones": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573453410
+      }
+    ],
+    "44.1 Implementar Tablero de indicadores por área": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573453519
+      }
+    ],
+    "44.2 Implementar Inteligencia de Negocio consolidada": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573453624
+      }
+    ],
+    "45.1 Implementar Portal_Cliente restringido": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573453723
+      }
+    ],
+    "46.1 Consolidar la implementación de máquinas de estado del dominio": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573453809
+      }
+    ],
+    "47. Checkpoint - Redes sociales, reportes y portal": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573453893
+      }
+    ],
+    "48.1 Implementar control de concurrencia optimista": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573453994
+      }
+    ],
+    "48.2 Publicar especificación OpenAPI y Swagger UI": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573454104
+      }
+    ],
+    "49.1 Implementar health check y procesamiento asíncrono": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573454198
+      }
+    ],
+    "49.2 Implementar respaldo y recuperación cifrados": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573454285
+      }
+    ],
+    "50.1 Implementar autenticación y enrutamiento por ámbito": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573454375
+      }
+    ],
+    "50.2 Implementar página principal por empresa": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573454463
+      }
+    ],
+    "50.3 Implementar área de administración de plataforma (super_admin)": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573454556
+      }
+    ],
+    "50.4 Implementar área de administración de empresa (admin_empresa)": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573454645
+      }
+    ],
+    "51.1 Implementar vistas comerciales y de producción": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573454740
+      }
+    ],
+    "51.2 Implementar vistas de finanzas, RH y estrategia": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573454827
+      }
+    ],
+    "51.3 Implementar vistas de redes sociales, reportes y portal del cliente": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573454910
+      }
+    ],
+    "52.1 Implementar responsive, modales, animaciones y estados": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573455031
+      }
+    ],
+    "53. Checkpoint final - Integración completa": [
+      {
+        "executionId": "7ae90f4c-5161-43fd-b6fb-8763ece96ab4",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1788573455129
+      }
+    ]
+  }
+}

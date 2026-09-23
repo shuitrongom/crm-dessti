@@ -1,0 +1,80 @@
+<app-page-header
+  titulo="Cuentas por cobrar"
+  subtitulo="Controla los saldos pendientes de cobro por factura y registra los pagos que recibes de tus clientes."
+/>
+
+@if (cxcSeleccionada(); as cxc) {
+  <mat-card appearance="outlined" class="cont-alta">
+    <mat-card-content>
+      <form [formGroup]="formPago" (ngSubmit)="registrarPago()" novalidate>
+        <h2 class="cont-alta__titulo">Registrar pago</h2>
+        <p class="cont-ayuda">
+          Factura <span class="cont-mono">{{ cxc.facturaId.slice(0, 8) }}</span> ·
+          saldo {{ cxc.saldo | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}
+        </p>
+        <div class="cont-form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Monto a pagar (MXN)</mat-label>
+            <input matInput type="number" min="0.01" step="0.01" formControlName="monto" />
+            <mat-error>El monto debe ser mayor a cero.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Forma de pago (clave SAT)</mat-label>
+            <input matInput formControlName="formaPago" autocomplete="off" />
+          </mat-form-field>
+        </div>
+        <mat-checkbox formControlName="esParcialidad">
+          Es parcialidad / pago en diferido (timbra complemento de pago)
+        </mat-checkbox>
+        <div class="cont-filtros">
+          <button matButton="filled" type="submit" [disabled]="guardando()">Registrar pago</button>
+          <button matButton type="button" (click)="cancelarPago()">Cancelar</button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="No hay cuentas por cobrar registradas."
+  (reintentar)="cargar()"
+>
+  <div class="cont-filtros">
+    <mat-form-field appearance="outline">
+      <mat-label>Estado</mat-label>
+      <mat-select [value]="filtroEstado()" (valueChange)="aplicarFiltro($event)">
+        @for (opcion of estadosFiltro; track opcion.valor) {
+          <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="factura" let-c><span class="cont-mono">{{ c.facturaId.slice(0, 8) }}</span></ng-template>
+    <ng-template appCelda="total" let-c>{{ c.total | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</ng-template>
+    <ng-template appCelda="saldo" let-c>{{ c.saldo | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</ng-template>
+    <ng-template appCelda="vencimiento" let-c>{{ c.fechaVencimiento ? (c.fechaVencimiento | date: 'dd/MM/yyyy') : '-' }}</ng-template>
+    <ng-template appCelda="estado" let-c>
+      <app-estado-chip [etiqueta]="humanizar(c.estado)" [tono]="tono(c.estado)" />
+    </ng-template>
+    <ng-template appCelda="acciones" let-c>
+      @if (puedeCobrar && (c.estado === 'pendiente' || c.estado === 'parcial')) {
+        <button matButton type="button" (click)="abrirPago(c)">
+          <mat-icon>payments</mat-icon> Registrar pago
+        </button>
+      } @else {
+        <span class="cont-ayuda">-</span>
+      }
+    </ng-template>
+  </app-data-table>
+</app-state-container>

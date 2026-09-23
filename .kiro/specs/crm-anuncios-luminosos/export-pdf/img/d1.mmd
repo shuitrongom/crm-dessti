@@ -1,0 +1,41 @@
+graph LR
+    subgraph Plataforma
+        PLAT[plataforma-tenants]
+        SEG[seguridad]
+    end
+    subgraph Negocio
+        COM[comercial-crm + catalogo-productos + canal-venta]
+        SOC[redes-sociales]
+        OPS[operacion-produccion + inventario-avanzado]
+        MANT[mantenimiento]
+        COMP[compras]
+        FACT[facturacion-cfdi]
+        CONT[contabilidad-finanzas]
+        RH[rh-nomina + organizacion-personal]
+        TES[tesoreria]
+        AF[activos-fijos]
+        PORT[portal-cliente]
+        EST[estrategia]
+        PRE[presupuestos]
+    end
+    subgraph Transversal
+        NOTIF[notificaciones]
+        REP[reportes-bi]
+        AUD[auditoria]
+    end
+
+    SEG --> AUD
+    COM --> AUD
+    OPS --> AUD
+    FACT --> CONT
+    COMP --> CONT
+    RH --> CONT
+    TES --> CONT
+    AF --> CONT
+    PRE --> CONT
+    COM --> REP
+    EST --> REP
+    PRE --> REP
+    SOC --> COM
+    SOC --> AUD
+    SOC --> REP

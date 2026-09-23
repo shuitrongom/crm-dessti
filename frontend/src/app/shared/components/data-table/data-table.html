@@ -1,0 +1,42 @@
+<div class="data-table">
+  <div class="data-table__scroll">
+    <table mat-table [dataSource]="filas()" class="data-table__tabla">
+      @for (columna of columnas(); track columna.clave) {
+        <ng-container [matColumnDef]="columna.clave">
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+            [class.data-table__celda--centro]="columna.alineacion === 'centro'"
+            [class.data-table__celda--fin]="columna.alineacion === 'fin'"
+            [class.data-table__col--movil-oculta]="columna.ocultarEnMovil"
+          >
+            {{ columna.encabezado }}
+          </th>
+          <td
+            mat-cell
+            *matCellDef="let fila"
+            [class.data-table__celda--centro]="columna.alineacion === 'centro'"
+            [class.data-table__celda--fin]="columna.alineacion === 'fin'"
+            [class.data-table__col--movil-oculta]="columna.ocultarEnMovil"
+          >
+            @if (plantillaDe(columna.clave); as plantilla) {
+              <ng-container [ngTemplateOutlet]="plantilla" [ngTemplateOutletContext]="{ $implicit: fila }" />
+            }
+          </td>
+        </ng-container>
+      }
+
+      <tr mat-header-row *matHeaderRowDef="claves"></tr>
+      <tr mat-row *matRowDef="let fila; columns: claves"></tr>
+    </table>
+  </div>
+
+  <mat-paginator
+    [length]="total()"
+    [pageIndex]="page()"
+    [pageSize]="size()"
+    [pageSizeOptions]="opcionesTamano()"
+    (page)="onPage($event)"
+    aria-label="Paginacion de resultados"
+  />
+</div>

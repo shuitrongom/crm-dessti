@@ -1,0 +1,312 @@
+// =============================================================================
+// Estilos de la vista de Empresas (super_admin) (Req 24, 52, 53, 57)
+// -----------------------------------------------------------------------------
+// Tablero enterprise: fila de KPIs, celda de empresa con avatar de iniciales +
+// nombre + RFC en dos lineas, chip de estado con punto semantico y acciones de
+// estado servidas por un menu de desbordamiento (3 puntos). El significado no
+// se transmite solo por color: cada accion lleva icono + texto y el chip su
+// etiqueta. Solo tokens del Sistema de Diseno; correcto en tema claro y oscuro.
+// =============================================================================
+
+@use '../../../../styles/breakpoints' as bp;
+
+// -----------------------------------------------------------------------------
+// Acciones del encabezado: busqueda + filtro + boton de alta. Se envuelven en
+// pantallas estrechas y se acotan los anchos para que la fila no se vea abarrotada.
+// -----------------------------------------------------------------------------
+.empresas__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-2) var(--ds-space-3);
+
+  // En moviles (xs) cada control ocupa toda la fila y se apila; asi la busqueda,
+  // el filtro y el boton no se abarrotan (Req 52).
+  @include bp.until('sm') {
+    flex-direction: column;
+    align-items: stretch;
+
+    button[matButton='filled'] {
+      inline-size: 100%;
+    }
+  }
+
+  // La barra de acciones queda tomando toda la fila del encabezado en escritorio
+  // y alinea sus controles a la derecha para un aspecto ordenado.
+  @include bp.from('md') {
+    inline-size: 100%;
+    justify-content: flex-end;
+  }
+
+  // El boton de alta se alinea a la altura del campo (los form-field reservan
+  // espacio de subscript; se compensa para que el boton no "flote").
+  button[matButton='filled'] {
+    block-size: 40px;
+  }
+}
+
+// Los campos de busqueda y filtro comparten alto y colapsan el espacio de
+// subscript (no muestran hint/error), evitando el hueco inferior que los hacia
+// verse sueltos.
+.empresas__busqueda,
+.empresas__filtro {
+  inline-size: 100%;
+
+  ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+    display: none;
+  }
+}
+
+.empresas__busqueda {
+  @include bp.from('sm') {
+    inline-size: 18rem;
+  }
+}
+
+.empresas__filtro {
+  @include bp.from('sm') {
+    inline-size: 11rem;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Fila de indicadores KPI (mobile-first: 1 col -> 2 -> 4)
+// -----------------------------------------------------------------------------
+.empresas__kpis {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-space-4);
+  margin-bottom: var(--ds-space-5);
+
+  @include bp.from('sm') {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include bp.from('lg') {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Celda de empresa: avatar de iniciales + nombre + RFC
+// -----------------------------------------------------------------------------
+.empresas__empresa {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  min-width: 0;
+}
+
+.empresas__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  inline-size: 40px;
+  block-size: 40px;
+  border-radius: var(--ds-radius-pill);
+  background: var(--ds-color-primary-container);
+  color: var(--ds-color-primary);
+  font-size: var(--ds-font-size-sm);
+  font-weight: var(--ds-font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.empresas__empresa-textos {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.empresas__empresa-nombre {
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Logo del branding en lugar del avatar de iniciales cuando existe.
+.empresas__avatar-img {
+  flex: 0 0 auto;
+  inline-size: 40px;
+  block-size: 40px;
+  border-radius: var(--ds-radius-md);
+  border: 1px solid var(--ds-color-border);
+  background: var(--ds-color-surface);
+  object-fit: contain;
+}
+
+.empresas__empresa-rfc {
+  font-size: var(--ds-font-size-xs);
+  color: var(--ds-color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empresas__empresa-comercial {
+  font-size: var(--ds-font-size-xs);
+  color: var(--ds-color-text-muted);
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// -----------------------------------------------------------------------------
+// Celda de contacto: correo/telefono con icono, atenuados y truncados.
+// -----------------------------------------------------------------------------
+.empresas__contacto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-1);
+  min-width: 0;
+}
+
+.empresas__contacto-linea {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  min-width: 0;
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-sm);
+
+  .mat-icon {
+    flex: 0 0 auto;
+    inline-size: 1rem;
+    block-size: 1rem;
+    font-size: 1rem;
+  }
+}
+
+.empresas__contacto-texto {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empresas__contacto-vacio {
+  color: var(--ds-color-text-muted);
+}
+
+// -----------------------------------------------------------------------------
+// Celda "Giro": nombre del vertical de negocio (nunca el UUID).
+// -----------------------------------------------------------------------------
+.empresas__giro {
+  color: var(--ds-color-text);
+  word-break: break-word;
+}
+
+// -----------------------------------------------------------------------------
+// Celda "Plan": nombre del plan vigente (nunca el UUID) con una pildora opcional
+// que refleja el estado de la suscripcion. Reutiliza los tokens y las clases de
+// estado existentes; solo apila nombre + pildora sin estilos ad-hoc de color.
+// -----------------------------------------------------------------------------
+.empresas__plan {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-2);
+  align-items: flex-start;
+  min-width: 0;
+}
+
+// -----------------------------------------------------------------------------
+// Punto de estado dentro del chip: refuerza el estado con color semantico.
+// -----------------------------------------------------------------------------
+.empresas__estado-dot {
+  display: inline-block;
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  border-radius: var(--ds-radius-pill);
+  margin-inline-end: var(--ds-space-2);
+  background: var(--ds-color-text-muted);
+  flex: 0 0 auto;
+}
+
+.empresas__estado {
+  &--activa .empresas__estado-dot {
+    background: var(--ds-color-success);
+  }
+  &--en_prueba .empresas__estado-dot {
+    background: var(--ds-color-info);
+  }
+  &--suspendida .empresas__estado-dot {
+    background: var(--ds-color-warning);
+  }
+  &--cancelada .empresas__estado-dot {
+    background: var(--ds-color-error);
+  }
+  &--vencida .empresas__estado-dot {
+    background: var(--ds-color-error);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Celda "Plan": nombre + etiqueta del tipo ("Plan"/"Suscripción") en una linea,
+// y un indicador compacto de vigencia (aviso "Por vencer" + dias restantes).
+// Solo tokens del design system; el estado se transmite por texto ademas del
+// color (WCAG AA).
+// -----------------------------------------------------------------------------
+.empresas__plan-linea {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.empresas__tipo {
+  display: inline-flex;
+  align-items: center;
+  padding-inline: var(--ds-space-2);
+  padding-block: calc(var(--ds-space-1) / 2);
+  border-radius: var(--ds-radius-pill);
+  border: 1px solid var(--ds-color-border);
+  background: var(--ds-color-surface-variant);
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-xs);
+  line-height: 1;
+}
+
+.empresas__vigencia {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  flex-wrap: wrap;
+}
+
+.empresas__por-vencer {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--ds-space-1) / 2);
+  color: var(--ds-color-warning);
+  font-size: var(--ds-font-size-xs);
+  line-height: 1;
+
+  .mat-icon {
+    inline-size: 1rem;
+    block-size: 1rem;
+    font-size: 1rem;
+  }
+}
+
+.empresas__dias {
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-xs);
+  line-height: 1;
+}
+
+// -----------------------------------------------------------------------------
+// Acciones de estado dentro del menu de desbordamiento: color semantico
+// accesible (icono + texto ademas del color).
+// -----------------------------------------------------------------------------
+.empresas__accion--activar .mat-icon {
+  color: var(--ds-color-success);
+}
+
+.empresas__accion--suspender .mat-icon {
+  color: var(--ds-color-error);
+}
+

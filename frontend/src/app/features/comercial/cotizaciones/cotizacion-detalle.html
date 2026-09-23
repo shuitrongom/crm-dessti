@@ -1,0 +1,330 @@
+<app-page-header [titulo]="titulo()" subtitulo="Revisa las partidas de la cotización, su estado y las pruebas de diseño asociadas.">
+  <div acciones>
+    <a matButton routerLink=".." aria-label="Volver al listado de cotizaciones">
+      <mat-icon aria-hidden="true">arrow_back</mat-icon>
+      Volver
+    </a>
+  </div>
+</app-page-header>
+
+<app-state-container [fase]="fase()" [mensajeError]="mensajeError()" (reintentar)="cargar()">
+  @if (cotizacion(); as c) {
+    <div class="cotizacion-detalle">
+      <!-- Aviso no intrusivo: datos fiscales de la Empresa incompletos (Req 3) -->
+      @if (emisorIncompleto()) {
+        <div class="cotizacion-detalle__aviso-fiscal" role="status">
+          <mat-icon aria-hidden="true">info</mat-icon>
+          <p>
+            Completa los datos fiscales de tu empresa (RFC y direccion) en
+            <a routerLink="/empresa/perfil">Mi empresa</a>
+            para que tus cotizaciones salgan completas.
+          </p>
+        </div>
+      }
+
+      <!-- Encabezado: folio, estado y datos de emision -->
+      <mat-card appearance="outlined">
+        <mat-card-content>
+          <div class="cotizacion-detalle__cabecera">
+            <div class="cotizacion-detalle__titulo">
+              <h2 class="cotizacion-detalle__folio">{{ c.folio ?? 'Sin folio' }}</h2>
+              <app-estado-chip [etiqueta]="etiquetaEstado[c.estado]" [tono]="tonoEstado(c.estado)" />
+            </div>
+            <dl class="cotizacion-detalle__meta">
+              <div>
+                <dt>Fecha de emision</dt>
+                <dd>{{ c.fechaEmision ? (c.fechaEmision | date: 'dd/MM/yyyy') : '—' }}</dd>
+              </div>
+              <div>
+                <dt>Valido hasta</dt>
+                <dd>{{ c.validoHasta ? (c.validoHasta | date: 'dd/MM/yyyy') : '—' }}</dd>
+              </div>
+              <div>
+                <dt>Moneda</dt>
+                <dd>{{ moneda() }}</dd>
+              </div>
+              @if (c.enviadaEn) {
+                <div>
+                  <dt>Enviada</dt>
+                  <dd>{{ c.enviadaEn | date: 'dd/MM/yyyy HH:mm' }}</dd>
+                </div>
+              }
+            </dl>
+          </div>
+
+          <!-- Toolbar de acciones enterprise -->
+          <div class="cotizacion-detalle__acciones" role="group" aria-label="Acciones de la cotizacion">
+            @if (puedeLeer) {
+              <button matButton="tonal" type="button" [disabled]="descargando()" (click)="descargarPdf()">
+                <mat-icon aria-hidden="true">picture_as_pdf</mat-icon>
+                Descargar PDF
+              </button>
+            }
+            @if (puedeActualizar) {
+              <button matButton="tonal" type="button" [disabled]="enviando()" (click)="enviarCorreo()">
+                <mat-icon aria-hidden="true">mail</mat-icon>
+                Enviar por correo
+              </button>
+            }
+            <button matButton="tonal" type="button" (click)="compartirWhatsApp()">
+              <mat-icon aria-hidden="true">share</mat-icon>
+              Enviar por WhatsApp
+            </button>
+            @if (puedeCambiarEstado) {
+              @for (destino of transiciones(); track destino) {
+                <button matButton="filled" type="button" (click)="cambiarEstado(destino)">
+                  {{ etiquetaEstado[destino] }}
+                </button>
+              }
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Datos del cliente -->
+      @if (c.clienteNombre || c.clienteRfc || c.clienteEmail) {
+        <mat-card appearance="outlined">
+          <mat-card-header>
+            <mat-card-title>Cliente</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <dl class="cotizacion-detalle__cliente">
+              <div>
+                <dt>Nombre</dt>
+                <dd>
+                  <!-- Nombre navegable a la Ficha 360 del Cliente si hay permiso (Req 3.1, 7.1) -->
+                  @if (puedeVerCliente && c.clienteNombre) {
+                    <a [routerLink]="['/empresa/comercial/clientes', c.clienteId]">
+                      {{ c.clienteNombre }}
+                    </a>
+                  } @else {
+                    {{ c.clienteNombre ?? '—' }}
+                  }
+                </dd>
+              </div>
+              <div>
+                <dt>RFC</dt>
+                <dd>{{ c.clienteRfc ?? '—' }}</dd>
+              </div>
+              <div>
+                <dt>Correo</dt>
+                <dd>{{ c.clienteEmail ?? '—' }}</dd>
+              </div>
+            </dl>
+
+            <!-- Oportunidad de origen: enlace al pipeline si la cotizacion se genero
+                 desde una oportunidad y el Usuario puede leerla (Req 3.1, 7.1) -->
+            @if (c.oportunidadId) {
+              <p class="cotizacion-detalle__origen">
+                <mat-icon aria-hidden="true">insights</mat-icon>
+                @if (puedeVerOportunidad) {
+                  <a
+                    [routerLink]="['/empresa/comercial/oportunidades']"
+                    [queryParams]="{ oportunidad: c.oportunidadId }"
+                  >
+                    Generada desde una oportunidad
+                  </a>
+                } @else {
+                  <span>Generada desde una oportunidad</span>
+                }
+              </p>
+            }
+
+            <!-- Canal de venta actual (sin exponer el UUID, Req 3.3) -->
+            <div class="cotizacion-detalle__canal">
+              <p class="cotizacion-detalle__canal-actual">
+                <mat-icon aria-hidden="true">sell</mat-icon>
+                <span>Canal de venta: {{ nombreCanal() ?? 'Sin canal' }}</span>
+              </p>
+              @if (puedeAsignarCanal) {
+                <button
+                  matButton
+                  type="button"
+                  (click)="abrirAsignarCanal()"
+                  [attr.aria-label]="c.canalVentaId ? 'Cambiar canal de venta' : 'Asignar canal de venta'"
+                >
+                  <mat-icon aria-hidden="true">sell</mat-icon>
+                  {{ c.canalVentaId ? 'Cambiar canal' : 'Asignar canal' }}
+                </button>
+              }
+            </div>
+
+            @if (asignandoCanal()) {
+              <form class="ds-dialog-form" [formGroup]="formCanal" (ngSubmit)="guardarCanal()" novalidate>
+                <mat-form-field appearance="outline">
+                  <mat-label>Canal de venta</mat-label>
+                  <mat-select formControlName="canalId">
+                    <mat-option value="">Sin canal</mat-option>
+                    @for (canal of canalesDisponibles(); track canal.id) {
+                      <mat-option [value]="canal.id">{{ canal.nombre }}</mat-option>
+                    }
+                  </mat-select>
+                  <mat-hint>Clasifica la cotizacion por su via comercial (Directo, Referido, Redes...).</mat-hint>
+                </mat-form-field>
+                <div class="cotizacion-detalle__form-acciones">
+                  <button matButton type="button" (click)="cerrarAsignarCanal()" [disabled]="guardando()">
+                    Cancelar
+                  </button>
+                  <button matButton="filled" type="submit" [disabled]="guardando()">Guardar canal</button>
+                </div>
+              </form>
+            }
+          </mat-card-content>
+        </mat-card>
+      }
+
+      <!-- Partidas y totales -->
+      <mat-card appearance="outlined">
+        <mat-card-header>
+          <mat-card-title>Partidas</mat-card-title>
+          @if (puedeActualizar && esBorrador()) {
+            <span class="cotizacion-detalle__spacer"></span>
+            <button matButton="tonal" type="button" (click)="alternarFormPartida()">
+              <mat-icon aria-hidden="true">add</mat-icon>
+              Agregar partida
+            </button>
+          }
+        </mat-card-header>
+        <mat-card-content>
+          @if (formPartidaAbierto()) {
+            <form class="ds-dialog-form" [formGroup]="formPartida" (ngSubmit)="agregarPartida()" novalidate>
+              <mat-form-field appearance="outline">
+                <mat-label>Descripcion</mat-label>
+                <input matInput type="text" formControlName="descripcion" required />
+                @if (formPartida.controls.descripcion.hasError('required') && formPartida.controls.descripcion.touched) {
+                  <mat-error>La descripcion es obligatoria.</mat-error>
+                }
+              </mat-form-field>
+              <app-entity-select
+                formControlName="productoId"
+                etiqueta="Producto"
+                ayuda="Opcional. Con producto y sin precio, se sugiere el precio de lista."
+                placeholder="Busca por nombre…"
+                [buscador]="buscarProducto"
+                [etiquetaDe]="etiquetaProducto"
+                [detalleDe]="detalleProducto"
+              />
+              <mat-form-field appearance="outline">
+                <mat-label>Cantidad</mat-label>
+                <input matInput type="number" formControlName="cantidad" min="1" step="1" required />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Precio unitario (opcional)</mat-label>
+                <input matInput type="number" formControlName="precioUnitario" min="0.01" step="0.01" />
+              </mat-form-field>
+              <div class="cotizacion-detalle__form-acciones">
+                <button matButton type="button" (click)="alternarFormPartida()" [disabled]="guardando()">
+                  Cancelar
+                </button>
+                <button matButton="filled" type="submit" [disabled]="guardando()">Agregar</button>
+              </div>
+            </form>
+          }
+
+          <table mat-table [dataSource]="c.partidas" class="cotizacion-detalle__tabla">
+            <ng-container matColumnDef="descripcion">
+              <th mat-header-cell *matHeaderCellDef>Descripcion</th>
+              <td mat-cell *matCellDef="let p">{{ p.descripcion }}</td>
+            </ng-container>
+            <ng-container matColumnDef="cantidad">
+              <th mat-header-cell *matHeaderCellDef class="cotizacion-detalle__num">Cantidad</th>
+              <td mat-cell *matCellDef="let p" class="cotizacion-detalle__num">{{ p.cantidad }}</td>
+            </ng-container>
+            <ng-container matColumnDef="precioUnitario">
+              <th mat-header-cell *matHeaderCellDef class="cotizacion-detalle__num">Precio unitario</th>
+              <td mat-cell *matCellDef="let p" class="cotizacion-detalle__num">
+                {{ p.precioUnitario | currency: moneda() : 'symbol-narrow' : '1.2-2' : 'es-MX' }}
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="subtotal">
+              <th mat-header-cell *matHeaderCellDef class="cotizacion-detalle__num">Subtotal</th>
+              <td mat-cell *matCellDef="let p" class="cotizacion-detalle__num">
+                {{ p.subtotal | currency: moneda() : 'symbol-narrow' : '1.2-2' : 'es-MX' }}
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="columnasPartidas"></tr>
+            <tr mat-row *matRowDef="let fila; columns: columnasPartidas"></tr>
+          </table>
+
+          <dl class="cotizacion-detalle__totales">
+            <div>
+              <dt>Subtotal</dt>
+              <dd>{{ c.subtotal | currency: moneda() : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</dd>
+            </div>
+            <div class="cotizacion-detalle__total">
+              <dt>Total</dt>
+              <dd>{{ c.total | currency: moneda() : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</dd>
+            </div>
+          </dl>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Condiciones y notas (solo si existen) -->
+      @if (c.condiciones || c.notas) {
+        <mat-card appearance="outlined">
+          <mat-card-content class="cotizacion-detalle__textos">
+            @if (c.condiciones) {
+              <section>
+                <h3 class="cotizacion-detalle__subtitulo">Condiciones</h3>
+                <p class="cotizacion-detalle__parrafo">{{ c.condiciones }}</p>
+              </section>
+            }
+            @if (c.notas) {
+              <section>
+                <h3 class="cotizacion-detalle__subtitulo">Notas</h3>
+                <p class="cotizacion-detalle__parrafo">{{ c.notas }}</p>
+              </section>
+            }
+          </mat-card-content>
+        </mat-card>
+      }
+
+      <!-- Pruebas de diseno -->
+      @if (puedeListarPruebas) {
+        <mat-card appearance="outlined">
+          <mat-card-header>
+            <mat-card-title>Pruebas de diseno</mat-card-title>
+            @if (puedeGenerarPrueba) {
+              <span class="cotizacion-detalle__spacer"></span>
+              <button matButton="tonal" type="button" (click)="generarPrueba()">
+                <mat-icon aria-hidden="true">design_services</mat-icon>
+                Generar prueba
+              </button>
+            }
+          </mat-card-header>
+          <mat-card-content>
+            @if (pruebas().length > 0) {
+              <ul class="cotizacion-detalle__pruebas">
+                @for (prueba of pruebas(); track prueba.id) {
+                  <li class="cotizacion-detalle__prueba">
+                    <div>
+                      <strong>Version {{ prueba.numeroVersion }}</strong>
+                      <span class="cotizacion-detalle__prueba-estado">
+                        {{ etiquetaEstadoPrueba[prueba.estado] }}
+                      </span>
+                    </div>
+                    @if (puedeDecidirPrueba && prueba.estado === 'pendiente') {
+                      <div class="cotizacion-detalle__prueba-acciones">
+                        <button matButton="tonal" type="button" (click)="aprobarPrueba(prueba)">Aprobar</button>
+                        <button
+                          matButton
+                          type="button"
+                          class="ds-boton-destructivo"
+                          (click)="rechazarPrueba(prueba)"
+                        >
+                          Rechazar
+                        </button>
+                      </div>
+                    }
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="cotizacion-detalle__vacio">Aun no hay pruebas de diseno para esta cotizacion.</p>
+            }
+          </mat-card-content>
+        </mat-card>
+      }
+    </div>
+  }
+</app-state-container>

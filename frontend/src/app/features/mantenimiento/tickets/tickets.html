@@ -1,0 +1,126 @@
+<app-page-header
+  titulo="Tickets de servicio"
+  subtitulo="Da seguimiento a los tickets de servicio y su SLA a lo largo de su ciclo: abierto, asignado, en proceso, resuelto y cerrado."
+>
+  @if (puedeCrear) {
+    <button acciones matButton="filled" type="button" (click)="alternarAlta()">
+      <mat-icon>{{ mostrarAlta() ? 'close' : 'add' }}</mat-icon>
+      {{ mostrarAlta() ? 'Cerrar' : 'Nuevo ticket' }}
+    </button>
+  }
+</app-page-header>
+
+@if (mostrarAlta() && puedeCrear) {
+  <mat-card appearance="outlined" class="man-alta">
+    <mat-card-content>
+      <form [formGroup]="formAlta" (ngSubmit)="generar()" novalidate>
+        <h2 class="man-alta__titulo">Nuevo ticket</h2>
+        <div class="man-form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Cliente (identificador)</mat-label>
+            <input matInput formControlName="clienteId" autocomplete="off" />
+            <mat-error>Indica el cliente del ticket.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Contrato (opcional)</mat-label>
+            <input matInput formControlName="contratoMantenimientoId" autocomplete="off" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Origen</mat-label>
+            <mat-select formControlName="origen">
+              <mat-option value="manual">Manual</mat-option>
+              <mat-option value="preventivo">Preventivo</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <button matButton="filled" type="submit" [disabled]="guardando()">Generar ticket</button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+@if (asignando(); as ticket) {
+  <mat-card appearance="outlined" class="man-alta">
+    <mat-card-content>
+      <form [formGroup]="formAsignar" (ngSubmit)="asignar()" novalidate>
+        <h2 class="man-alta__titulo">Asignar ticket {{ ticket.id.slice(0, 8) }}</h2>
+        <div class="man-form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Asignado a</mat-label>
+            <mat-select formControlName="asignadoTipo">
+              <mat-option value="tecnico">Tecnico</mat-option>
+              <mat-option value="cuadrilla">Cuadrilla</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Identificador destinatario</mat-label>
+            <input matInput formControlName="asignadoId" autocomplete="off" />
+          </mat-form-field>
+        </div>
+        <div class="man-filtros">
+          <button matButton="filled" type="submit">Asignar</button>
+          <button matButton type="button" (click)="cancelarAsignacion()">Cancelar</button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="No hay tickets de servicio registrados."
+  (reintentar)="cargar()"
+>
+  <div class="man-filtros">
+    <mat-form-field appearance="outline">
+      <mat-label>Estado</mat-label>
+      <mat-select [value]="filtroEstado()" (valueChange)="aplicarFiltroEstado($event)">
+        @for (opcion of estadosFiltro; track opcion.valor) {
+          <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>SLA</mat-label>
+      <mat-select value="" (valueChange)="aplicarFiltroSla($event)">
+        <mat-option value="">Todos</mat-option>
+        <mat-option value="true">SLA vencido</mat-option>
+        <mat-option value="false">SLA vigente</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="id" let-t><span class="man-mono">{{ t.id.slice(0, 8) }}</span></ng-template>
+    <ng-template appCelda="cliente" let-t><span class="man-mono">{{ t.clienteId.slice(0, 8) }}</span></ng-template>
+    <ng-template appCelda="origen" let-t>{{ humanizar(t.origen) }}</ng-template>
+    <ng-template appCelda="estado" let-t><app-estado-chip [etiqueta]="humanizar(t.estado)" [tono]="tono(t.estado)" /></ng-template>
+    <ng-template appCelda="sla" let-t><app-estado-chip [etiqueta]="etiquetaSla(t)" [tono]="tonoSla(t)" /></ng-template>
+    <ng-template appCelda="abierto" let-t>{{ t.abiertoEn | date: 'dd/MM/yyyy HH:mm' }}</ng-template>
+    <ng-template appCelda="acciones" let-t>
+      @if (puedeCambiarEstado) {
+        @if (t.estado === 'abierto') {
+          <button matButton type="button" (click)="abrirAsignacion(t)">
+            <mat-icon>person_add</mat-icon> Asignar
+          </button>
+        } @else if (avanceDe(t.estado); as accion) {
+          <button matButton type="button" (click)="avanzar(t, accion)">
+            <mat-icon>{{ accion.icono }}</mat-icon> {{ accion.etiqueta }}
+          </button>
+        } @else {
+          <span class="man-ayuda">-</span>
+        }
+      } @else {
+        <span class="man-ayuda">-</span>
+      }
+    </ng-template>
+  </app-data-table>
+</app-state-container>

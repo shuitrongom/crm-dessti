@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guía de despliegue en Windows Server + IIS — CRM Dess-TI / plataforma-multigiro</title>
+<style>
+  :root{
+    --azul:#0b3d6b; --azul2:#12578f; --acento:#1f8a70; --gris:#5b6672;
+    --gris-cl:#eef1f5; --gris-bd:#d7dde5; --texto:#1c2733; --blanco:#fff;
+    --alta:#b3261e; --media:#8a6d00; --baja:#1f6f3f; --aviso:#8a4b00;
+    --code-bg:#0f2233; --code-fg:#e6edf3;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--texto);background:#f4f6f9;line-height:1.55;font-size:15.5px}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+  header.banda{background:linear-gradient(120deg,var(--azul),var(--azul2));color:#fff;padding:38px 0 30px;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+  .eyebrow{font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;opacity:.85;margin:0 0 8px}
+  header.banda h1{margin:0;font-size:2rem;line-height:1.2}
+  header.banda .sub{margin:12px 0 0;font-size:1.02rem;opacity:.95;max-width:860px}
+  header.banda .meta{margin-top:16px;font-size:.85rem;opacity:.9}
+  header.banda .url{display:inline-block;margin-top:14px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);padding:8px 14px;border-radius:8px;font-size:.95rem}
+  header.banda .url a{color:#fff;font-weight:600}
+  main{padding:34px 0 60px}
+  h2{color:var(--azul);font-size:1.5rem;margin:34px 0 6px;border-bottom:2px solid var(--gris-bd);padding-bottom:8px;scroll-margin-top:14px}
+  h3{color:var(--azul2);font-size:1.15rem;margin:22px 0 6px}
+  p{margin:8px 0}
+  a{color:var(--azul2)}
+  .card{background:#fff;border:1px solid var(--gris-bd);border-radius:10px;padding:22px 24px;margin:0 0 26px;box-shadow:0 1px 3px rgba(16,42,67,.06)}
+  .toc{background:#fff;border:1px solid var(--gris-bd);border-radius:10px;padding:20px 24px;margin:0 0 30px}
+  .toc h2{border:0;margin:0 0 10px}
+  .toc ol{margin:0;padding-left:20px;columns:2;column-gap:34px}
+  .toc li{margin:5px 0;break-inside:avoid}
+  .toc a{text-decoration:none}
+  .toc a:hover{text-decoration:underline}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:.9rem}
+  caption{text-align:left;font-weight:600;color:var(--gris);margin-bottom:6px}
+  th,td{border:1px solid var(--gris-bd);padding:8px 10px;text-align:left;vertical-align:top}
+  thead th{background:var(--azul);color:#fff;font-weight:600}
+  tbody tr:nth-child(even){background:var(--gris-cl)}
+  td.k{font-weight:700;color:var(--azul);white-space:nowrap;font-family:Consolas,"Courier New",monospace;font-size:.85rem}
+  pre{background:var(--code-bg);color:var(--code-fg);padding:14px 16px;border-radius:8px;overflow:auto;font-family:Consolas,"Courier New",monospace;font-size:.85rem;line-height:1.45;margin:12px 0}
+  pre .cm{color:#8fb3c9}
+  code{background:#eef1f5;padding:1px 5px;border-radius:4px;font-size:.86em;font-family:Consolas,"Courier New",monospace}
+  pre code{background:transparent;padding:0;font-size:1em;color:inherit}
+  .callout{border-left:4px solid var(--acento);background:#eef7f4;padding:12px 16px;border-radius:0 8px 8px 0;margin:14px 0}
+  .callout.warn{border-left-color:var(--aviso);background:#fdf4e7}
+  .callout.danger{border-left-color:var(--alta);background:#fdeceb}
+  .callout .t{font-weight:700;display:block;margin-bottom:4px}
+  ul.clean{margin:8px 0;padding-left:22px}
+  ul.clean li{margin:5px 0}
+  ol.pasos{margin:8px 0;padding-left:22px}
+  ol.pasos>li{margin:12px 0}
+  .step{background:#fff;border:1px solid var(--gris-bd);border-left:4px solid var(--azul2);border-radius:0 8px 8px 0;padding:6px 18px 14px;margin:16px 0}
+  .step h3{margin-top:12px}
+  .badge{display:inline-block;background:var(--azul);color:#fff;font-size:.72rem;font-weight:700;border-radius:999px;padding:2px 10px;letter-spacing:.03em}
+  .chk{list-style:none;margin:8px 0;padding-left:0}
+  .chk li{margin:7px 0;padding-left:30px;position:relative}
+  .chk li::before{content:"";position:absolute;left:0;top:1px;width:18px;height:18px;border:2px solid var(--azul2);border-radius:4px;background:#fff}
+  .diag{background:var(--code-bg);color:var(--code-fg);border-radius:8px;padding:18px 16px;font-family:Consolas,"Courier New",monospace;font-size:.82rem;line-height:1.35;white-space:pre;overflow:auto;margin:12px 0}
+  .back{font-size:.82rem;display:inline-block;margin-top:8px}
+  footer{border-top:1px solid var(--gris-bd);padding:22px 0;color:var(--gris);font-size:.85rem;text-align:center}
+  @media(max-width:900px){.toc ol{columns:1}header.banda h1{font-size:1.55rem}}
+  @media print{
+    body{background:#fff;font-size:11px}
+    header.banda{box-shadow:none;color:#000;background:none;border-bottom:2px solid #000}
+    header.banda h1,header.banda .sub,header.banda .eyebrow,header.banda .meta{color:#000}
+    header.banda .url{background:none;border:1px solid #000}
+    header.banda .url a{color:#000}
+    .card,.toc,.step{box-shadow:none;break-inside:avoid}
+    pre,.diag{background:#f2f2f2;color:#000;border:1px solid #ccc}
+    a{color:#000;text-decoration:none}
+    .back{display:none}
+  }
+</style>
+</head>
+<body>
+<header class="banda">
+  <div class="wrap">
+    <p class="eyebrow">CRM empresarial · Dess-TI / plataforma-multigiro</p>
+    <h1>Guía de despliegue en Windows Server con IIS</h1>
+    <p class="sub">Instalación completa del CRM en un servidor Windows: IIS como proxy inverso que termina TLS, sirve la SPA de Angular y enruta <code>/api</code> al backend Spring Boot local, con PostgreSQL como base de datos.</p>
+    <span class="url">Acceso para pruebas: <a href="https://dessti-aplicaciones.ddns.net:8056">https://dessti-aplicaciones.ddns.net:8056</a></span>
+    <p class="meta">Documento de operaciones · Ejecútelo usted mismo en el servidor · Español (es-MX)</p>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ============================ TOC ============================ -->
+  <nav class="toc" aria-label="Contenido">
+    <h2>Contenido</h2>
+    <ol>
+      <li><a href="#arquitectura">Resumen de arquitectura</a></li>
+      <li><a href="#requisitos">Requisitos previos en el servidor</a></li>
+      <li><a href="#datos">Datos que debes preparar</a></li>
+      <li><a href="#paso1">Paso 1 · Base de datos (PostgreSQL)</a></li>
+      <li><a href="#paso2">Paso 2 · Backend (jar + argumentos)</a></li>
+      <li><a href="#paso3">Paso 3 · Frontend (SPA + web.config)</a></li>
+      <li><a href="#paso4">Paso 4 · IIS (sitio, TLS, ARR, firewall)</a></li>
+      <li><a href="#paso5">Paso 5 · Backend como servicio de Windows</a></li>
+      <li><a href="#paso6">Paso 6 · Verificación de extremo a extremo</a></li>
+      <li><a href="#problemas">Solución de problemas</a></li>
+      <li><a href="#seguridad">Seguridad</a></li>
+      <li><a href="#actualizaciones">Actualizaciones futuras</a></li>
+    </ol>
+  </nav>
+
+  <!-- ============================ ARQUITECTURA ============================ -->
+  <section id="arquitectura" class="card">
+    <h2>Resumen de arquitectura</h2>
+    <p>IIS actúa como <strong>proxy inverso</strong> delante de la aplicación. Recibe el tráfico HTTPS del navegador, <strong>termina TLS</strong>, sirve la aplicación de Angular (SPA) en la raíz <code>/</code> y reenvía las peticiones a <code>/api</code> hacia el backend de Spring Boot, que escucha <strong>solo en la interfaz local</strong> por HTTP. El backend nunca se expone directamente a Internet.</p>
+    <div class="diag">Navegador (tester)
+   │  HTTPS · TLS 1.2+ · puerto 8056
+   │  https://dessti-aplicaciones.ddns.net:8056
+   ▼
+┌─────────────────────────────────────────────────────────────┐
+│  IIS  (Windows Server) — Proxy inverso                        │
+│   • Termina TLS con el certificado del dominio                │
+│   • Sirve la SPA de Angular en  /   (archivos estáticos)      │
+│   • Enruta  /api  → backend   (URL Rewrite + ARR)             │
+│   • Añade X-Forwarded-Proto=https / Host / For                │
+└─────────────────────────────────────────────────────────────┘
+   │  HTTP interno (solo localhost) + cabeceras X-Forwarded-*
+   │  http://127.0.0.1:8080
+   ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Backend Spring Boot (Java 21, Tomcat embebido)               │
+│   • context-path  /api/v1                                     │
+│   • Autenticación stateless con Bearer JWT (sin CSRF)         │
+│   • Migraciones Flyway al arrancar                            │
+└─────────────────────────────────────────────────────────────┘
+   │  JDBC (localhost:5432)
+   ▼
+┌─────────────────────────────────────────────────────────────┐
+│  PostgreSQL 17 — base "dessti_plataforma"                     │
+│   • Rol migrador (DDL, BYPASSRLS) para Flyway                 │
+│   • Rol de aplicación (RLS activa) para el runtime            │
+└─────────────────────────────────────────────────────────────┘</div>
+    <div class="callout">
+      <span class="t">Puntos clave</span>
+      <ul class="clean">
+        <li>El frontend usa la base de API <strong>relativa</strong> <code>/api/v1</code> (mismo origen), por lo que <strong>no requiere recompilarse</strong> para el servidor.</li>
+        <li>El backend confía en las cabeceras <code>X-Forwarded-*</code> gracias a <code>--server.forward-headers-strategy=framework</code>, así reconstruye URLs <code>https://</code> y emite HSTS coherente.</li>
+        <li>El puerto interno del backend (<code>8080</code>) <strong>no</strong> debe abrirse en el firewall.</li>
+      </ul>
+    </div>
+    <a class="back" href="#arquitectura">↑ Contenido</a>
+  </section>
+
+  <!-- ============================ REQUISITOS ============================ -->
+  <section id="requisitos" class="card">
+    <h2>Requisitos previos en el servidor</h2>
+    <p>Verifica cada requisito antes de comenzar. Usa PowerShell <strong>como Administrador</strong>.</p>
+
+    <h3>1. Windows Server con permisos de administrador</h3>
+    <p>Inicia sesión con una cuenta con privilegios de administrador local. Abre PowerShell con «Ejecutar como administrador».</p>
+
+    <h3>2. IIS instalado</h3>
+    <p>Comprueba que el servicio web (W3SVC) está presente y en ejecución:</p>
+    <pre><span class="cm"># ¿Está instalado y corriendo IIS?</span>
+Get-Service W3SVC
+<span class="cm"># Si falta, instálalo (rol Web Server):</span>
+Install-WindowsFeature -Name Web-Server -IncludeManagementTools</pre>
+
+    <h3>3. Módulos URL Rewrite y ARR (Application Request Routing)</h3>
+    <p><strong>URL Rewrite</strong> reescribe rutas; <strong>ARR</strong> es lo que habilita el <em>proxy inverso</em> (permite que IIS reenvíe peticiones a otro servidor HTTP, en este caso el backend local). Ambos se instalan con el <em>Web Platform Installer</em> o descargándolos desde el sitio de IIS de Microsoft.</p>
+    <div class="callout warn">
+      <span class="t">Habilita el proxy en ARR (imprescindible)</span>
+      Sin esto, el reenvío de <code>/api</code> devolverá error. En el <strong>Administrador de IIS</strong>: selecciona el <em>nodo del servidor</em> (raíz, no el sitio) → doble clic en <strong>Application Request Routing Cache</strong> → panel derecho <strong>Server Proxy Settings…</strong> → marca <strong>Enable proxy</strong> → <strong>Apply</strong>.
+    </div>
+    <p>Para verificar que los módulos están registrados:</p>
+    <pre><span class="cm"># Lista módulos globales; busca "RewriteModule" y "ApplicationRequestRouting"</span>
+&amp; "$env:windir\system32\inetsrv\appcmd.exe" list modules</pre>
+
+    <h3>4. Java 21 (JDK) instalado y en el PATH</h3>
+    <pre><span class="cm"># Debe reportar la versión 21</span>
+java -version</pre>
+    <p>Si el comando no se reconoce, instala un JDK 21 (por ejemplo, Temurin/Adoptium u Oracle) y agrega su carpeta <code>bin</code> al PATH del sistema. Anota la ruta a <code>java.exe</code>; la necesitarás en el Paso 5.</p>
+
+    <h3>5. PostgreSQL instalado (versión 17 recomendada)</h3>
+    <pre><span class="cm"># ¿Está el servicio de PostgreSQL en ejecución? (el nombre suele incluir la versión)</span>
+Get-Service *postgres*
+<span class="cm"># Versión de la herramienta de línea de comandos</span>
+psql --version</pre>
+    <p>Asegúrate de recordar la contraseña del superusuario <code>postgres</code> (la definiste al instalar). La necesitarás para crear la base y los roles en el Paso 1.</p>
+    <a class="back" href="#arquitectura">↑ Contenido</a>
+  </section>
+
+  <!-- ============================ DATOS ============================ -->
+  <section id="datos" class="card">
+    <h2>Datos que debes preparar</h2>
+    <p>Reúne estos valores <strong>antes</strong> de empezar. Los marcados con <code>[CORCHETES]</code> son secretos: genéralos <strong>nuevos para producción</strong> y no reutilices los de desarrollo.</p>
+    <table>
+      <caption>Placeholders del despliegue</caption>
+      <thead>
+        <tr><th>Dato</th><th>Placeholder</th><th>Descripción / cómo obtenerlo</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Clave del rol migrador (BD)</td><td class="k">[CLAVE_MIGRATOR]</td><td>Contraseña del rol de PostgreSQL que ejecuta Flyway (DDL).</td></tr>
+        <tr><td>Clave del rol de aplicación (BD)</td><td class="k">[CLAVE_APP]</td><td>Contraseña del rol de PostgreSQL que usa el backend en runtime.</td></tr>
+        <tr><td>Clave de firma JWT</td><td class="k">[JWT_SIGNING_KEY_PRODUCCION]</td><td>Secreto de firma de tokens. Genérala aleatoria (ver Paso 2).</td></tr>
+        <tr><td>Llave de cifrado v1 (AES-256)</td><td class="k">[LLAVE_CIFRADO_V1_BASE64]</td><td>Material Base64 de 32 bytes para cifrado en reposo (ver Paso 2).</td></tr>
+        <tr><td>Certificado del dominio</td><td class="k">[RUTA_O_PFX_CERT]</td><td>Certificado TLS de <code>dessti-aplicaciones.ddns.net</code> (Let's Encrypt vía win-acme, o un archivo <code>.pfx</code>).</td></tr>
+        <tr><td>Usuario super_admin inicial</td><td class="k">[SUPERADMIN_LOGIN]</td><td>Identificador de acceso del super administrador de plataforma (p. ej. <code>superadmin@dessti</code>).</td></tr>
+        <tr><td>Contraseña super_admin inicial</td><td class="k">[SUPERADMIN_PASSWORD]</td><td>Contraseña inicial del super_admin (cámbiala tras el primer acceso).</td></tr>
+        <tr><td>Datos del emisor (opcionales)</td><td class="k">[RFC_EMISOR] …</td><td>RFC, dirección, email y sitio web de Dess-TI para el comprobante de renta.</td></tr>
+      </tbody>
+    </table>
+    <div class="callout">
+      <span class="t">¿De dónde salen estos valores en el arranque?</span>
+      El backend lee la configuración y los secretos desde <strong>argumentos de línea de comando</strong> (<code>--clave=valor</code>). En este paquete los concentras en <code>parametros.ps1</code> (Paso 5), que el script del servicio consume. Así no quedan secretos incrustados en el jar ni en IIS.
+    </div>
+    <a class="back" href="#arquitectura">↑ Contenido</a>
+  </section>
+
+  <!-- ============================ PASO 1 ============================ -->
+  <section id="paso1" class="card">
+    <h2><span class="badge">Paso 1</span> Base de datos (PostgreSQL)</h2>
+    <p>Crea la base <code>dessti_plataforma</code> y dos roles con privilegios separados (Req 23): un <strong>rol migrador</strong> que es dueño del esquema y puede saltarse RLS solo para migrar, y un <strong>rol de aplicación</strong> con RLS siempre activa para el runtime.</p>
+    <p>Abre una consola <code>psql</code> como superusuario:</p>
+    <pre><span class="cm"># Conéctate como el superusuario "postgres"</span>
+psql -U postgres -h 127.0.0.1</pre>
+    <p>Ejecuta el siguiente script SQL (sustituye los placeholders por tus claves reales):</p>
+    <pre><span class="cm">-- 1) Rol MIGRADOR: dueño del esquema, con DDL y BYPASSRLS (solo para migrar)</span>
+CREATE ROLE dessti_migrator WITH LOGIN PASSWORD '[CLAVE_MIGRATOR]' BYPASSRLS;
+
+<span class="cm">-- 2) Rol de APLICACIÓN: runtime del backend, SIN superusuario y SIN BYPASSRLS</span>
+<span class="cm">--    (la Row-Level Security SIEMPRE aplica al tráfico de negocio)</span>
+CREATE ROLE dessti_app WITH LOGIN PASSWORD '[CLAVE_APP]' NOSUPERUSER NOBYPASSRLS;
+
+<span class="cm">-- 3) Base de datos, propiedad del rol migrador</span>
+CREATE DATABASE dessti_plataforma OWNER dessti_migrator;
+
+<span class="cm">-- 4) Permisos de conexión del rol de aplicación</span>
+GRANT CONNECT ON DATABASE dessti_plataforma TO dessti_app;
+
+<span class="cm">-- 5) Conéctate a la nueva base para ajustar privilegios de esquema</span>
+\c dessti_plataforma
+
+<span class="cm">-- El esquema public queda como área de trabajo del migrador</span>
+ALTER SCHEMA public OWNER TO dessti_migrator;
+GRANT USAGE ON SCHEMA public TO dessti_app;
+
+<span class="cm">-- Privilegios por defecto: lo que cree el migrador será usable por la app</span>
+ALTER DEFAULT PRIVILEGES FOR ROLE dessti_migrator IN SCHEMA public
+  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO dessti_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE dessti_migrator IN SCHEMA public
+  GRANT USAGE, SELECT ON SEQUENCES TO dessti_app;</pre>
+    <div class="callout">
+      <span class="t">Flyway crea el esquema al arrancar</span>
+      No necesitas crear tablas a mano. Al iniciar el backend, <strong>Flyway aplica las migraciones</strong> (con el rol migrador) y siembra los datos de plataforma (roles predefinidos, permisos, catálogos). El rol de aplicación consulta después con RLS activa.
+    </div>
+    <div class="callout warn">
+      <span class="t">No uses las claves de desarrollo</span>
+      <code>[CLAVE_MIGRATOR]</code> y <code>[CLAVE_APP]</code> deben ser contraseñas nuevas y robustas, exclusivas de este servidor.
+    </div>
+    <a class="back" href="#arquitectura">↑ Contenido</a>
+  </section>
+
+  <!-- ============================ PASO 2 ============================ -->
+  <section id="paso2" class="card">
+    <h2><span class="badge">Paso 2</span> Backend (jar + argumentos)</h2>
+    <ol class="pasos">
+      <li>Crea las carpetas de instalación y de logs:
+        <pre>New-Item -ItemType Directory -Force -Path C:\apps\crm\backend
+New-Item -ItemType Directory -Force -Path C:\apps\crm\logs</pre>
+      </li>
+      <li>Copia el artefacto del backend a la carpeta de instalación:
+        <pre>Copy-Item ".\crm-0.0.1-SNAPSHOT.jar" "C:\apps\crm\backend\"</pre>
+        <p>El artefacto se genera en <code>backend/target/crm-0.0.1-SNAPSHOT.jar</code> tras compilar. Cópialo desde tu equipo de build al servidor.</p>
+      </li>
+    </ol>
+
+    <h3>Argumentos de arranque</h3>
+    <p>El backend recibe su configuración por <strong>argumentos de línea de comando</strong>. Estos son los grupos que debes proveer (los concentrarás en <code>parametros.ps1</code>, Paso 5):</p>
+    <table>
+      <caption>Argumentos de arranque del backend</caption>
+      <thead><tr><th>Grupo</th><th>Argumentos</th></tr></thead>
+      <tbody>
+        <tr><td>Datasource (runtime)</td><td class="k">--spring.datasource.url=jdbc:postgresql://127.0.0.1:5432/dessti_plataforma<br>--spring.datasource.username=dessti_app<br>--spring.datasource.password=[CLAVE_APP]</td></tr>
+        <tr><td>Flyway (migración)</td><td class="k">--spring.flyway.url=jdbc:postgresql://127.0.0.1:5432/dessti_plataforma<br>--spring.flyway.user=dessti_migrator<br>--spring.flyway.password=[CLAVE_MIGRATOR]</td></tr>
+        <tr><td>Secretos</td><td class="k">--crm.secretos.db-user=dessti_app<br>--crm.secretos.db-password=[CLAVE_APP]<br>--crm.secretos.jwt-signing-key=[JWT_SIGNING_KEY_PRODUCCION]</td></tr>
+        <tr><td>Cifrado (AES-256)</td><td class="k">--crm.cifrado.activa=v1<br>--crm.cifrado.llaves.v1=[LLAVE_CIFRADO_V1_BASE64]</td></tr>
+        <tr><td>Emisor (comprobante)</td><td class="k">--crm.facturacion.emisor.nombre=Dess-TI<br>--crm.facturacion.emisor.rfc=[RFC_EMISOR] (opcional)</td></tr>
+        <tr><td>Proxy inverso</td><td class="k">--server.forward-headers-strategy=framework</td></tr>
+        <tr><td>Red (solo local)</td><td class="k">--server.address=127.0.0.1<br>--server.port=8080</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Genera claves NUEVAS para producción</h3>
+    <p>Nunca reutilices las claves de desarrollo. Genera valores aleatorios con PowerShell:</p>
+    <pre><span class="cm"># Clave de firma JWT (Base64, 64 bytes)</span>
+[Convert]::ToBase64String((1..64 | % {Get-Random -Max 256}))
+
+<span class="cm"># Llave de cifrado AES-256 (Base64, 32 bytes)</span>
+[Convert]::ToBase64String((1..32 | % {Get-Random -Max 256}))</pre>
+    <div class="callout">
+      <span class="t">Prueba manual opcional</span>
+      Antes de crear el servicio puedes arrancar el jar a mano para ver que migra y levanta. Usa el <code>parametros.ps1</code> del <a href="#paso5">Paso 5</a> como referencia de los argumentos. Detén con <kbd>Ctrl</kbd>+<kbd>C</kbd> antes de continuar.
+    </div>
+    <a class="back" href="#arquitectura">↑ Contenido</a>
+  </section>
+
+  <!-- ============================ PASO 3 ============================ -->
+  <section id="paso3" class="card">
+    <h2><span class="badge">Paso 3</span> Frontend (SPA + web.config)</h2>
+    <ol class="pasos">
+      <li>Crea la carpeta del sitio:
+        <pre>New-Item -ItemType Directory -Force -Path C:\inetpub\wwwroot\crm</pre>
+      </li>
+      <li>Copia el <strong>contenido</strong> de la carpeta <code>browser</code> del build (no la carpeta, sino lo que hay dentro: <code>index.html</code>, los <code>.js</code>, <code>.css</code>, etc.):
+        <pre><span class="cm"># Desde tu equipo de build, el origen es frontend\dist\frontend\browser</span>
+Copy-Item ".\dist\frontend\browser\*" "C:\inetpub\wwwroot\crm\" -Recurse -Force</pre>
+      </li>
+      <li>Coloca el <code>web.config</code> de este paquete en la raíz del sitio:
+        <pre>Copy-Item ".\web.config" "C:\inetpub\wwwroot\crm\web.config" -Force</pre>
+      </li>
+    </ol>
+    <div class="callout">
+      <span class="t">Sobre la base de API relativa</span>
+      La SPA llama a <code>/api/v1</code> en el <strong>mismo origen</strong>. IIS reenvía esas llamadas al backend (regla del <code>web.config</code>). Por eso <strong>no hace falta recompilar</strong> el frontend para el servidor.
+    </div>
+    <div class="callout warn">
+      <span class="t">Verifica el contenido copiado</span>
+      En <code>C:\inetpub\wwwroot\crm</code> debe existir <code>index.html</code> directamente (no dentro de una subcarpeta <code>browser</code>). Si ves una subcarpeta <code>browser</code>, copiaste la carpeta en vez de su contenido.
+    </div>
+    <a class="back" href="#arquitectura">↑ Contenido</a>
+  </section>
+
+  <!-- ============================ PASO 4 ============================ -->
+  <section id="paso4" class="card">
+    <h2><span class="badge">Paso 4</span> IIS: sitio, TLS, ARR y firewall</h2>
+
+    <h3>4.1 Crear el sitio "CRM"</h3>
+    <p>En el <strong>Administrador de IIS</strong>: clic derecho en <em>Sitios</em> → <strong>Agregar sitio web…</strong></p>
+    <ul class="clean">
+      <li><strong>Nombre del sitio:</strong> <code>CRM</code></li>
+      <li><strong>Ruta de acceso física:</strong> <code>C:\inetpub\wwwroot\crm</code></li>
+      <li><strong>Enlace (binding):</strong> lo configuras en el siguiente punto.</li>
+    </ul>
+    <p>Equivalente por línea de comando:</p>
+    <pre>&amp; "$env:windir\system32\inetsrv\appcmd.exe" add site /name:"CRM" /physicalPath:"C:\inetpub\wwwroot\crm" /bindings:"http/*:8056:"</pre>
+
+    <h3>4.2 Binding HTTPS en el puerto 8056 con el certificado del dominio</h3>
+    <p>El sitio debe atender HTTPS en el puerto <strong>8056</strong> con el certificado de <code>dessti-aplicaciones.ddns.net</code>.</p>
+    <p><strong>Opción A — Let's Encrypt con win-acme (recomendado si el dominio es accesible):</strong></p>
+    <ul class="clean">
+      <li>Descarga <a href="https://www.win-acme.com/">win-acme</a> y ejecútalo como administrador.</li>
+      <li>Elige crear un certificado para <code>dessti-aplicaciones.ddns.net</code> y enlazarlo al sitio <code>CRM</code>. win-acme instala el certificado y programa su renovación automática.</li>
+      <li>Ajusta el binding para que use el puerto <strong>8056</strong> (win-acme suele crear en 443; edítalo o créalo en 8056 según abajo).</li>
+    </ul>
+    <p><strong>Opción B — Certificado en archivo <code>.pfx</code>:</strong></p>
+    <pre><span class="cm"># Importa el .pfx al almacén del equipo (te pedirá la contraseña del pfx)</span>
+Import-PfxCertificate -FilePath "[RUTA_O_PFX_CERT]" `
+  -CertStoreLocation Cert:\LocalMachine\My `
+  -Password (Read-Host -AsSecureString "Contraseña del PFX")</pre>
+    <p>Después, en IIS → sitio <code>CRM</code> → <strong>Enlaces…</strong> → <strong>Agregar</strong>: tipo <code>https</code>, puerto <code>8056</code>, host <code>dessti-aplicaciones.ddns.net</code>, y selecciona el certificado importado.</p>
+    <div class="callout">
+      <span class="t">TLS 1.2+</span>
+      Configura Schannel de Windows para permitir solo TLS 1.2 o superior y deshabilitar SSL 3.0 / TLS 1.0 / 1.1. Ver la sección <a href="#seguridad">Seguridad</a>.
+    </div>
+
+    <h3>4.3 (Opcional) Redirección HTTP → HTTPS</h3>
+    <p>Si quieres que quien entre por HTTP sea llevado a HTTPS, agrega un binding HTTP y una regla de redirección a nivel de sitio. En el <code>web.config</code> de este paquete se incluye una regla de redirección <strong>comentada</strong> (desactivada) para no interferir con el proxy de ARR; actívala solo si comprendes su efecto.</p>
+
+    <h3>4.4 Habilitar el proxy de ARR</h3>
+    <p>Este es el interruptor que permite el reenvío de <code>/api</code>. En el Administrador de IIS: selecciona el <strong>nodo del servidor</strong> (raíz) → <strong>Application Request Routing Cache</strong> → <strong>Server Proxy Settings…</strong> → marca <strong>Enable proxy</strong> → <strong>Apply</strong>.</p>
+    <div class="callout warn">
+      <span class="t">Sin ARR proxy no hay backend</span>
+      Si olvidas este paso, las llamadas a <code>/api</code> fallarán (típicamente 502/504). Es el error más común.
+    </div>
+
+    <h3>4.5 Firewall: abre 8056, no expongas 8080</h3>
+    <pre><span class="cm"># Permitir tráfico entrante HTTPS en el puerto público 8056</span>
+New-NetFirewallRule -DisplayName "CRM HTTPS 8056" -Direction Inbound `
+  -Protocol TCP -LocalPort 8056 -Action Allow
+
+<span class="cm"># NO crear ninguna regla que abra el 8080: el backend es solo local.</span></pre>
+    <div class="callout danger">
+      <span class="t">Nunca abras el 8080 al exterior</span>
+      El backend escucha en <code>127.0.0.1:8080</code> y solo debe ser alcanzable por IIS en el mismo servidor. Exponerlo saltaría la terminación TLS y las cabeceras de reenvío.
+    </div>
+    <a class="back" href="#arquitectura">↑ Contenido</a>
+  </section>
+
+  <!-- ============================ PASO 5 ============================ -->
+  <section id="paso5" class="card">
+    <h2><span class="badge">Paso 5</span> Backend como servicio de Windows</h2>
+    <p>Para que el backend arranque solo al reiniciar el servidor y se recupere ante fallos, instálalo como <strong>servicio de Windows</strong>. Este paquete incluye <code>instalar-servicio-backend.ps1</code> y la plantilla <code>parametros.example.ps1</code>.</p>
+
+    <h3>5.1 Prepara tus parámetros</h3>
+    <ol class="pasos">
+      <li>Copia la plantilla y renómbrala (sin «example»):
+        <pre>Copy-Item ".\parametros.example.ps1" ".\parametros.ps1"</pre>
+      </li>
+      <li>Edita <code>parametros.ps1</code> y sustituye todos los <code>[CORCHETES]</code> por tus valores reales (rutas de Java y del jar, claves de BD, JWT, cifrado, emisor).</li>
+    </ol>
+
+    <h3>5.2 Instala el servicio</h3>
+    <p><strong>Opción recomendada — nssm</strong> (más simple y robusto para logs/reinicios). nssm es una utilidad externa (un único <code>nssm.exe</code>); descárgala de <a href="https://nssm.cc/download">nssm.cc</a> y colócala en el PATH o indica su ruta:</p>
+    <pre><span class="cm"># En PowerShell como administrador, en esta carpeta:</span>
+.\instalar-servicio-backend.ps1 -Metodo nssm -NssmPath C:\tools\nssm.exe
+<span class="cm"># Si nssm.exe ya está en el PATH, basta:</span>
+.\instalar-servicio-backend.ps1 -Metodo nssm</pre>
+    <p><strong>Opción de respaldo — sc.exe</strong> (nativo de Windows, sin dependencias). El script genera un <code>.cmd</code> envoltorio y crea el servicio con <code>sc.exe</code>:</p>
+    <pre>.\instalar-servicio-backend.ps1 -Metodo sc</pre>
+    <div class="callout">
+      <span class="t">nssm vs sc.exe</span>
+      <code>nssm</code> es la opción recomendada: gestiona bien el arranque, la detención, el reinicio ante fallos y la rotación de logs de un proceso Java. <code>sc.exe</code> funciona sin instalar nada, pero como <code>java.exe</code> no es un servicio nativo, el control de detención/reinicio es menos limpio.
+    </div>
+
+    <h3>5.3 Verifica que el backend responde localmente</h3>
+    <pre><span class="cm"># El servicio debe estar "Running"</span>
+Get-Service CRM-Backend
+
+<span class="cm"># El health check debe responder (desde el propio servidor)</span>
+Invoke-WebRequest http://127.0.0.1:8080/api/v1/actuator/health -UseBasicParsing</pre>
+    <p>Revisa el arranque y los posibles errores en <code>C:\apps\crm\logs\backend-stdout.log</code> y <code>backend-stderr.log</code>.</p>
+    <a class="back" href="#arquitectura">↑ Contenido</a>
+  </section>
+
+  <!-- ============================ PASO 6 ============================ -->
+  <section id="paso6" class="card">
+    <h2><span class="badge">Paso 6</span> Verificación de extremo a extremo</h2>
+    <ol class="pasos">
+      <li>Desde un equipo externo (o el mismo servidor), abre <a href="https://dessti-aplicaciones.ddns.net:8056">https://dessti-aplicaciones.ddns.net:8056</a>. Debe cargar la pantalla de inicio de sesión del CRM y el candado del navegador debe indicar conexión segura.</li>
+      <li>Inicia sesión como <strong>super_admin</strong> con <code>[SUPERADMIN_LOGIN]</code> / <code>[SUPERADMIN_PASSWORD]</code>. Si el login responde, IIS está enrutando <code>/api</code> al backend correctamente.</li>
+      <li>Crea una <strong>empresa de prueba</strong> desde el panel de plataforma para confirmar que la escritura en la base funciona.</li>
+      <li>Recarga (F5) estando en una ruta interna (p. ej. el listado de empresas): debe seguir funcionando, sin 404 (confirma el <em>fallback</em> de la SPA).</li>
+    </ol>
+    <h3>Checklist final</h3>
+    <ul class="chk">
+      <li>IIS en ejecución y sitio <code>CRM</code> iniciado.</li>
+      <li>ARR con <strong>Enable proxy</strong> activado.</li>
+      <li>Binding HTTPS en el puerto <strong>8056</strong> con el certificado del dominio.</li>
+      <li>Servicio <code>CRM-Backend</code> en estado <em>Running</em> y con arranque automático.</li>
+      <li><code>http://127.0.0.1:8080/api/v1/actuator/health</code> responde en el servidor.</li>
+      <li>La SPA carga en <code>https://dessti-aplicaciones.ddns.net:8056</code> con candado seguro.</li>
+      <li>Login de super_admin correcto (prueba que <code>/api</code> se enruta).</li>
+      <li>Recarga en una ruta interna no da 404 (fallback SPA).</li>
+      <li>Puerto <strong>8080</strong> NO abierto en el firewall.</li>
+      <li>Claves de producción (BD, JWT, cifrado) distintas de las de desarrollo.</li>
+    </ul>
+    <a class="back" href="#arquitectura">↑ Contenido</a>
+  </section>
+
+  <!-- ============================ PROBLEMAS ============================ -->
+  <section id="problemas" class="card">
+    <h2>Solución de problemas</h2>
+    <table>
+      <caption>Síntomas frecuentes y causas</caption>
+      <thead><tr><th>Síntoma</th><th>Causa probable</th><th>Qué revisar</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>502 / 504</strong> al llamar a <code>/api</code></td>
+          <td>Backend caído o <strong>ARR proxy no habilitado</strong>.</td>
+          <td>Verifica <code>Get-Service CRM-Backend</code> y el health en <code>127.0.0.1:8080</code>. Confirma <strong>Enable proxy</strong> en ARR (Paso 4.4).</td>
+        </tr>
+        <tr>
+          <td><strong>404</strong> al recargar una ruta de Angular</td>
+          <td>Falta la regla de <em>fallback</em> de la SPA.</td>
+          <td>Confirma que <code>web.config</code> está en la raíz del sitio y que la regla «Fallback SPA» existe (Paso 3).</td>
+        </tr>
+        <tr>
+          <td><strong>Error de conexión a la BD</strong> en el arranque</td>
+          <td>Credenciales incorrectas o servicio de PostgreSQL detenido.</td>
+          <td>Revisa <code>Get-Service *postgres*</code> y las claves en <code>parametros.ps1</code>. Mira <code>backend-stderr.log</code>.</td>
+        </tr>
+        <tr>
+          <td><strong>Mixed content</strong> / llamadas a http</td>
+          <td>La SPA está usando una URL absoluta en vez de <code>/api</code>.</td>
+          <td>La base de API debe ser relativa (<code>/api/v1</code>, mismo origen). Verifica el build del frontend.</td>
+        </tr>
+        <tr>
+          <td><strong>HTTP 500.19</strong> al abrir el sitio</td>
+          <td>Falta URL Rewrite/ARR, o MIME duplicado en <code>web.config</code>.</td>
+          <td>Confirma que URL Rewrite y ARR están instalados. El <code>web.config</code> usa <code>remove</code> antes de <code>add</code> para evitar duplicados.</td>
+        </tr>
+        <tr>
+          <td><strong>Login falla con token grande</strong></td>
+          <td>Cabecera Authorization muy larga.</td>
+          <td>El backend ya amplía el límite a 64&nbsp;KB por defecto; no requiere acción salvo casos extremos.</td>
+        </tr>
+      </tbody>
+    </table>
+    <a class="back" href="#arquitectura">↑ Contenido</a>
+  </section>
+
+  <!-- ============================ SEGURIDAD ============================ -->
+  <section id="seguridad" class="card">
+    <h2>Seguridad</h2>
+    <ul class="clean">
+      <li><strong>No expongas el 8080.</strong> El backend escucha solo en <code>127.0.0.1</code> y únicamente IIS lo alcanza. No abras ese puerto en el firewall.</li>
+      <li><strong>Claves de producción.</strong> Genera JWT y llaves de cifrado nuevas para el servidor; no reutilices las de desarrollo. Restringe el acceso a <code>parametros.ps1</code>.</li>
+      <li><strong>TLS 1.2+.</strong> Deshabilita SSL 3.0 y TLS 1.0/1.1 en Schannel; permite solo TLS 1.2 o superior con cifradores modernos.</li>
+      <li><strong>Confianza en X-Forwarded-*.</strong> El backend confía en estas cabeceras <em>solo</em> porque está detrás de IIS y no es accesible directamente. Mantener el 8080 cerrado es lo que hace segura esa confianza.</li>
+      <li><strong>Cabeceras de seguridad y CSRF.</strong> El backend emite CSP, HSTS, X-Frame-Options, Referrer-Policy y X-Content-Type-Options en cada respuesta, y es stateless con Bearer JWT (sin superficie CSRF clásica).</li>
+      <li><strong>Cuenta del servicio.</strong> Ejecuta el servicio con una cuenta de privilegios mínimos y controla los permisos de <code>C:\apps\crm</code>.</li>
+    </ul>
+    <a class="back" href="#arquitectura">↑ Contenido</a>
+  </section>
+
+  <!-- ============================ ACTUALIZACIONES ============================ -->
+  <section id="actualizaciones" class="card">
+    <h2>Actualizaciones futuras</h2>
+    <h3>Nuevo build del frontend</h3>
+    <ol class="pasos">
+      <li>Genera el nuevo build y copia el contenido de <code>dist\frontend\browser\*</code> sobre <code>C:\inetpub\wwwroot\crm</code> (sobrescribiendo).</li>
+      <li>Conserva el <code>web.config</code> existente (no lo borres al copiar).</li>
+      <li>Refresca el navegador; los nombres de archivo llevan hash, así que el navegador tomará la versión nueva.</li>
+    </ol>
+    <h3>Nuevo jar del backend</h3>
+    <pre><span class="cm"># 1) Detener el servicio</span>
+Stop-Service CRM-Backend
+
+<span class="cm"># 2) Reemplazar el jar</span>
+Copy-Item ".\crm-0.0.1-SNAPSHOT.jar" "C:\apps\crm\backend\" -Force
+
+<span class="cm"># 3) Iniciar el servicio (Flyway aplicará nuevas migraciones al arrancar)</span>
+Start-Service CRM-Backend
+
+<span class="cm"># 4) Verificar</span>
+Invoke-WebRequest http://127.0.0.1:8080/api/v1/actuator/health -UseBasicParsing</pre>
+    <div class="callout">
+      <span class="t">Respaldo antes de actualizar</span>
+      Antes de una actualización que incluya nuevas migraciones, respalda la base <code>dessti_plataforma</code> (p. ej. con <code>pg_dump</code>). Así puedes revertir si algo sale mal.
+    </div>
+    <a class="back" href="#arquitectura">↑ Contenido</a>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    CRM Dess-TI / plataforma-multigiro · Guía de despliegue en Windows Server + IIS · Documento interno de operaciones (es-MX).
+  </div>
+</footer>
+</body>
+</html>

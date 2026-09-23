@@ -1,0 +1,84 @@
+<app-page-header
+  titulo="Recepciones de mercancía"
+  subtitulo="Registra la entrada de materiales contra la orden de compra; es la tercera vía del proceso de abastecimiento."
+/>
+
+@if (puedeCrear) {
+  <mat-card appearance="outlined" class="compras-alta">
+    <mat-card-content>
+      <form [formGroup]="formRegistro" (ngSubmit)="registrar()" novalidate>
+        <h2 class="compras-alta__titulo">Registrar recepcion</h2>
+        <p class="compras-ayuda">
+          Indica la orden de compra y carga sus partidas para capturar lo recibido.
+        </p>
+
+        <div class="compras-acciones">
+          <mat-form-field appearance="outline" class="recepcion-oc">
+            <mat-label>Orden de compra (identificador)</mat-label>
+            <input matInput formControlName="ordenCompraId" autocomplete="off" />
+            <mat-error>Indica el identificador de la orden de compra.</mat-error>
+          </mat-form-field>
+          <button matButton type="button" [disabled]="cargandoOrden()" (click)="cargarOrden()">
+            <mat-icon>download</mat-icon> Cargar partidas
+          </button>
+        </div>
+
+        @if (ordenSeleccionada(); as orden) {
+          <div formArrayName="partidas" class="partidas">
+            @for (renglon of partidas.controls; track $index) {
+              <div class="partidas__renglon" [formGroupName]="$index">
+                <mat-form-field appearance="outline">
+                  <mat-label>Material</mat-label>
+                  <input matInput [value]="materialDeRenglon($index)" disabled />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Recibida (ordenada: {{ cantidadOrdenada($index) }})</mat-label>
+                  <input matInput type="number" min="0" step="0.001" formControlName="cantidadRecibida" />
+                </mat-form-field>
+              </div>
+            }
+          </div>
+
+          <div class="compras-acciones">
+            <button matButton="filled" type="submit" [disabled]="guardando()">
+              Registrar recepcion
+            </button>
+          </div>
+        }
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="No hay recepciones registradas."
+  (reintentar)="cargar()"
+>
+  <div class="compras-filtros">
+    <mat-form-field appearance="outline">
+      <mat-label>Orden de compra (identificador)</mat-label>
+      <input
+        matInput
+        [value]="filtroOrden()"
+        (change)="aplicarFiltro($any($event.target).value)"
+        autocomplete="off"
+      />
+    </mat-form-field>
+  </div>
+
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="id" let-r><span class="compras-mono">{{ r.id.slice(0, 8) }}</span></ng-template>
+    <ng-template appCelda="orden" let-r><span class="compras-mono">{{ r.ordenCompraId.slice(0, 8) }}</span></ng-template>
+    <ng-template appCelda="renglones" let-r>{{ r.partidas.length }}</ng-template>
+    <ng-template appCelda="fecha" let-r>{{ r.recibidaEn | date: 'dd/MM/yyyy HH:mm' }}</ng-template>
+  </app-data-table>
+</app-state-container>

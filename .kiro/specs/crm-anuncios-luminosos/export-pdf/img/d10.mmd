@@ -1,0 +1,7 @@
+graph TD
+    LOGIN[Autenticación] --> ROUTER{Ámbito según Rol}
+    ROUTER --> PLAT[Administración de Plataforma - super_admin]
+    ROUTER --> HOME[Inicio de Empresa - post-login]
+    ROUTER --> PORTAL[Portal del Cliente - cliente_portal]
+    HOME --> ADMIN[Administración de la Empresa - admin_empresa]
+    HOME --> MODS[Módulos Operativos por Rol]

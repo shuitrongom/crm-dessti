@@ -1,0 +1,82 @@
+// =============================================================================
+// Estilos compartidos del modulo Tesoreria (Req 52) — mobile-first, tokens
+// =============================================================================
+
+.tes-alta {
+  margin-block-end: var(--ds-space-5);
+}
+
+.tes-alta__titulo {
+  margin: 0 0 var(--ds-space-3);
+  font-size: var(--ds-font-size-lg);
+  font-weight: var(--ds-font-weight-medium);
+}
+
+.tes-mono {
+  font-family: var(--ds-font-mono, ui-monospace, monospace);
+  font-size: var(--ds-font-size-sm);
+}
+
+.tes-ayuda {
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-sm);
+}
+
+.tes-num {
+  font-variant-numeric: tabular-nums;
+}
+
+.tes-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-3);
+  margin-block-end: var(--ds-space-4);
+
+  mat-form-field {
+    min-width: 12rem;
+  }
+}
+
+.tes-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-space-2);
+
+  @media (min-width: 40rem) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.tes-movimiento {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-space-2);
+  align-items: start;
+
+  @media (min-width: 48rem) {
+    grid-template-columns: 1fr 1fr 1fr 1fr auto;
+    align-items: center;
+  }
+}
+
+.tes-movimientos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-2);
+  margin-block: var(--ds-space-3);
+}
+
+.tes-diferencia {
+  display: inline-flex;
+  gap: var(--ds-space-2);
+  align-items: center;
+  font-variant-numeric: tabular-nums;
+
+  &--cero {
+    color: var(--ds-color-success);
+  }
+
+  &--distinta {
+    color: var(--ds-color-warning);
+  }
+}

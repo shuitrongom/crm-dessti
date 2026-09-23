@@ -1,0 +1,260 @@
+@use '../../../../styles/breakpoints' as bp;
+
+.operacion-form {
+  margin-bottom: var(--ds-space-4);
+
+  &__acciones {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--ds-space-2);
+    margin-top: var(--ds-space-2);
+  }
+}
+
+.operacion-sin-acciones {
+  color: var(--ds-color-text-muted);
+}
+
+.inventario-avanzado {
+  &__tab {
+    padding-top: var(--ds-space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-3);
+  }
+
+  &__acciones-tab {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  &__indicadores {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--ds-space-3);
+    // Separacion respecto al panel de alertas cuando ambos se proyectan dentro
+    // del contenedor de estado del tablero Resumen.
+    margin-bottom: var(--ds-space-4);
+  }
+
+  &__seccion {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-2);
+  }
+
+  &__subtitulo {
+    font-size: var(--ds-font-size-lg, 1.125rem);
+    font-weight: 600;
+    margin: 0;
+  }
+
+  &__alertas {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-2);
+  }
+
+  &__alerta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--ds-space-2);
+    padding: var(--ds-space-3);
+    border: 1px solid var(--ds-color-border);
+    border-radius: var(--ds-radius-md, 8px);
+    background: var(--ds-color-surface);
+  }
+
+  &__alerta-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__alerta-nombre {
+    font-weight: 600;
+  }
+
+  &__alerta-detalle {
+    color: var(--ds-color-text-muted);
+    font-size: var(--ds-font-size-sm, 0.875rem);
+  }
+
+  &__alerta-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ds-space-2);
+  }
+
+  &__filtros {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--ds-space-3);
+
+    app-entity-select {
+      width: 100%;
+      max-width: 280px;
+    }
+  }
+
+  &__filtros-acciones {
+    display: flex;
+    gap: var(--ds-space-2);
+    align-items: center;
+    padding-top: var(--ds-space-1);
+  }
+
+  &__movimiento {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-4);
+  }
+
+  &__tipo-movimiento {
+    display: flex;
+
+    mat-button-toggle-group {
+      flex-wrap: wrap;
+    }
+  }
+
+  &__movimiento-campos {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--ds-space-3);
+
+    @include bp.from(md) {
+      grid-template-columns: repeat(2, minmax(240px, 1fr));
+    }
+
+    app-entity-select,
+    mat-form-field {
+      width: 100%;
+    }
+  }
+
+  &__movimiento-acciones {
+    grid-column: 1 / -1;
+  }
+
+  &__lote-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--ds-space-3);
+
+    mat-form-field {
+      width: 100%;
+      max-width: 260px;
+    }
+  }
+
+  &__error {
+    color: var(--ds-color-error, #b3261e);
+    margin: 0;
+    font-size: var(--ds-font-size-sm, 0.875rem);
+  }
+
+  // Aviso descriptivo cuando aun no existen Materiales: orienta a crearlos en
+  // Operacion antes de operar las secciones que dependen del catalogo base
+  // (Req 14.2). Solo design tokens; icono + texto (no solo color, WCAG).
+  &__sin-materiales {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-2);
+    margin: 0;
+    padding: var(--ds-space-3);
+    border: 1px solid var(--ds-color-border);
+    border-radius: var(--ds-radius-md, 8px);
+    background: var(--ds-color-surface-variant, rgba(0, 0, 0, 0.04));
+    color: var(--ds-color-text-muted);
+    font-size: var(--ds-font-size-sm, 0.875rem);
+
+    mat-icon {
+      color: var(--ds-color-info, #1b6a8c);
+      flex-shrink: 0;
+    }
+  }
+
+  &__stock-bajo {
+    color: var(--ds-color-error, #b3261e);
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ds-space-1);
+  }
+
+  &__stock-bajo-icono {
+    font-size: 1.125rem;
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+
+  &__config-resultado {
+    margin-top: var(--ds-space-3);
+    padding: var(--ds-space-3);
+    border-radius: var(--ds-radius-md, 8px);
+    background: var(--ds-color-surface-variant, rgba(0, 0, 0, 0.04));
+  }
+
+  // Estado de caducidad de un lote: color-token + icono (no solo color, WCAG).
+  // Los cuatro estados tienen tratamiento visual propio, incluidos "Vigente"
+  // (exito) y "Sin caducidad" (neutro atenuado).
+  &__lote-estado {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ds-space-1);
+    font-weight: 600;
+
+    &--caducado {
+      color: var(--ds-color-error, #b3261e);
+    }
+
+    &--proximo {
+      color: var(--ds-color-warning, #a15c00);
+    }
+
+    &--vigente {
+      color: var(--ds-color-success, #2e7d4f);
+    }
+
+    &--sin-caducidad {
+      color: var(--ds-color-text-muted);
+      font-weight: 500;
+    }
+  }
+
+  &__lote-estado-icono {
+    font-size: 1.125rem;
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+
+  // Estado del Almacen en la tabla: color-token + icono (no solo color, WCAG).
+  &__estado-almacen {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ds-space-1);
+    font-weight: 600;
+
+    &--activo {
+      color: var(--ds-color-success, #2e7d4f);
+    }
+
+    &--inactivo {
+      color: var(--ds-color-text-muted);
+      font-weight: 500;
+    }
+  }
+
+  &__estado-almacen-icono {
+    font-size: 1.125rem;
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+}

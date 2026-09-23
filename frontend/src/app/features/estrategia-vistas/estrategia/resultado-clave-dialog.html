@@ -1,0 +1,65 @@
+<h2 mat-dialog-title>Agregar resultado clave</h2>
+<mat-dialog-content>
+  <form class="est-dialog__form" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+    @if (error()) {
+      <p class="est-dialog__error" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </p>
+    }
+
+    <p class="est-dialog__intro">
+      Resultado clave del objetivo «{{ datos.objetivoNombre }}». Es una métrica
+      medible con un valor objetivo y un valor actual; su peso pondera cuánto
+      aporta al avance total.
+    </p>
+
+    <mat-form-field appearance="outline" class="est-dialog__campo">
+      <mat-label>Descripción</mat-label>
+      <mat-icon matPrefix aria-hidden="true">check_circle</mat-icon>
+      <input matInput type="text" formControlName="descripcion" maxlength="500" autocomplete="off" required
+        placeholder="ej. Cerrar 30 nuevos contratos" />
+      @if (formulario.controls.descripcion.hasError('required') && formulario.controls.descripcion.touched) {
+        <mat-error>La descripción es obligatoria.</mat-error>
+      } @else if (formulario.controls.descripcion.hasError('maxlength') && formulario.controls.descripcion.touched) {
+        <mat-error>Máximo 500 caracteres.</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="est-dialog__grid">
+      <mat-form-field appearance="outline" class="est-dialog__campo">
+        <mat-label>Valor objetivo</mat-label>
+        <input matInput type="number" step="0.0001" formControlName="valorObjetivo" required />
+        @if (formulario.controls.valorObjetivo.hasError('required') && formulario.controls.valorObjetivo.touched) {
+          <mat-error>El valor objetivo es obligatorio.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="est-dialog__campo">
+        <mat-label>Valor actual</mat-label>
+        <input matInput type="number" step="0.0001" formControlName="valorActual" required />
+        @if (formulario.controls.valorActual.hasError('required') && formulario.controls.valorActual.touched) {
+          <mat-error>El valor actual es obligatorio.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="est-dialog__campo">
+        <mat-label>Peso</mat-label>
+        <input matInput type="number" step="0.01" min="0.01" formControlName="peso" required />
+        <mat-hint>Ponderación relativa (por defecto 1).</mat-hint>
+        @if (formulario.controls.peso.hasError('required') && formulario.controls.peso.touched) {
+          <mat-error>El peso es obligatorio.</mat-error>
+        } @else if (formulario.controls.peso.hasError('min') && formulario.controls.peso.touched) {
+          <mat-error>El peso debe ser mayor que cero.</mat-error>
+        }
+      </mat-form-field>
+    </div>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancelar()">Cancelar</button>
+  <button matButton="filled" type="button" (click)="guardar()" [disabled]="guardando()">
+    <mat-icon aria-hidden="true">add</mat-icon>
+    Agregar
+  </button>
+</mat-dialog-actions>

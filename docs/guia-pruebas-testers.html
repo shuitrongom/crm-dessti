@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guía de pruebas para testers — Plataforma Dess-TI</title>
+<style>
+  :root{
+    --azul:#0b3d6b; --azul2:#12578f; --acento:#1f8a70; --gris:#5b6672;
+    --gris-cl:#eef1f5; --gris-bd:#d7dde5; --texto:#1c2733; --blanco:#fff;
+    --alta:#b3261e; --media:#8a6d00; --baja:#1f6f3f; --aviso:#8a4b00;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--texto);background:#f4f6f9;line-height:1.55;font-size:15.5px}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+  header.banda{background:linear-gradient(120deg,var(--azul),var(--azul2));color:#fff;padding:38px 0 30px;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+  .eyebrow{font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;opacity:.85;margin:0 0 8px}
+  header.banda h1{margin:0;font-size:2rem;line-height:1.2}
+  header.banda .sub{margin:12px 0 0;font-size:1.02rem;opacity:.95;max-width:840px}
+  header.banda .meta{margin-top:16px;font-size:.85rem;opacity:.85}
+  main{padding:34px 0 60px}
+  h2{color:var(--azul);font-size:1.5rem;margin:0 0 6px;border-bottom:2px solid var(--gris-bd);padding-bottom:8px}
+  h3{color:var(--azul2);font-size:1.15rem;margin:20px 0 6px}
+  p{margin:8px 0}
+  a{color:var(--azul2)}
+  .card{background:#fff;border:1px solid var(--gris-bd);border-radius:10px;padding:22px 24px;margin:0 0 26px;box-shadow:0 1px 3px rgba(16,42,67,.06)}
+  .toc{background:#fff;border:1px solid var(--gris-bd);border-radius:10px;padding:20px 24px;margin:0 0 30px}
+  .toc h2{border:0;margin-bottom:10px}
+  .toc ol{margin:0;padding-left:20px;columns:2;column-gap:34px}
+  .toc li{margin:4px 0;break-inside:avoid}
+  .toc a{text-decoration:none}
+  .toc a:hover{text-decoration:underline}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:.9rem}
+  caption{text-align:left;font-weight:600;color:var(--gris);margin-bottom:6px}
+  th,td{border:1px solid var(--gris-bd);padding:8px 10px;text-align:left;vertical-align:top}
+  thead th{background:var(--azul);color:#fff;font-weight:600}
+  tbody tr:nth-child(even){background:var(--gris-cl)}
+  td.id{font-weight:700;color:var(--azul);white-space:nowrap}
+  ol.pasos{margin:0;padding-left:18px}
+  ol.pasos li{margin:2px 0}
+  .prio{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.72rem;font-weight:700;color:#fff}
+  .p-alta{background:var(--alta)}
+  .p-media{background:var(--media)}
+  .p-baja{background:var(--baja)}
+  .res{min-width:74px;background:#fff}
+  .notas-col{min-width:130px;background:#fff}
+  .callout{border-left:4px solid var(--acento);background:#eef7f4;padding:12px 16px;border-radius:0 8px 8px 0;margin:14px 0}
+  .callout.warn{border-left-color:var(--aviso);background:#fdf4e7}
+  ul.clean{margin:8px 0;padding-left:22px}
+  ul.clean li{margin:5px 0}
+  code{background:#eef1f5;padding:1px 5px;border-radius:4px;font-size:.86em}
+  .back{font-size:.82rem;display:inline-block;margin-top:6px}
+  .count{font-size:.82rem;color:var(--gris);font-weight:600;margin-left:8px}
+  footer{border-top:1px solid var(--gris-bd);padding:22px 0;color:var(--gris);font-size:.85rem;text-align:center}
+  @media(max-width:900px){.toc ol{columns:1}header.banda h1{font-size:1.55rem}}
+  @media print{
+    body{background:#fff;font-size:11px}
+    header.banda{box-shadow:none}
+    .card,.toc{box-shadow:none}
+    table{break-inside:auto}
+    tr{break-inside:avoid}
+    a{color:var(--texto);text-decoration:none}
+    .back{display:none}
+  }
+</style>
+</head>
+<body>
+<header class="banda">
+  <div class="wrap">
+    <p class="eyebrow">Aseguramiento de calidad · Casos de prueba</p>
+    <h1>Guía de pruebas para testers — Plataforma Dess-TI</h1>
+    <p class="sub">Casos de prueba para los bloques listos: Super Admin, Cuenta, Comercial (CRM), Redes Sociales y Estrategia. Prueba todos los escenarios y reporta los errores encontrados.</p>
+    <p class="meta">Idioma: Español (es-MX) · Fecha: febrero de 2025</p>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- INTRO -->
+  <section id="intro" class="card">
+    <h2>Antes de empezar</h2>
+    <h3>Cómo reportar un error</h3>
+    <p>Cuando encuentres una falla, registra un reporte con la mayor cantidad de detalle posible. Un buen reporte incluye:</p>
+    <ul class="clean">
+      <li><strong>Pantalla / bloque</strong> donde ocurrió.</li>
+      <li><strong>Pasos</strong> exactos para reproducirlo.</li>
+      <li><strong>Resultado esperado</strong> vs. <strong>resultado obtenido</strong>.</li>
+      <li><strong>Usuario y rol</strong> con el que estabas probando.</li>
+      <li><strong>Captura de pantalla</strong> (o video corto si aplica).</li>
+    </ul>
+    <div class="callout">
+      <strong>Recomendación de navegador:</strong> usa Chrome o Edge en su versión actual. Ante comportamientos raros, refresca con <code>Ctrl+F5</code> (recarga forzada) antes de reportar.
+    </div>
+
+    <h3>Ambientes y usuarios de prueba</h3>
+    <table>
+      <caption>Completar con la información que provea el administrador</caption>
+      <thead>
+        <tr><th scope="col">Elemento</th><th scope="col">Valor</th><th scope="col">Notas</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>URL del sistema</td><td><code>[URL_DEL_SERVIDOR]</code></td><td>Dirección donde se accede a la plataforma.</td></tr>
+        <tr><td>Super Admin (usuario)</td><td><code>[SA_USUARIO]</code></td><td>Ámbito Plataforma (Dess-TI).</td></tr>
+        <tr><td>Super Admin (clave)</td><td><code>[SA_CLAVE]</code></td><td>La provee el administrador.</td></tr>
+        <tr><td>Admin de empresa (usuario)</td><td><code>[EMP_USUARIO]</code></td><td>Ámbito Empresa (inquilino de prueba).</td></tr>
+        <tr><td>Admin de empresa (clave)</td><td><code>[EMP_CLAVE]</code></td><td>La provee el administrador.</td></tr>
+      </tbody>
+    </table>
+    <div class="callout warn">
+      Las <strong>credenciales reales las provee el administrador</strong>. Los valores entre corchetes son marcadores de posición que deben reemplazarse antes de probar.
+    </div>
+
+    <h3>Cómo llenar las tablas</h3>
+    <p>Cada bloque tiene una tabla de casos. Escribe <strong>Passed</strong> o <strong>Failed</strong> en la columna <em>Resultado</em> y agrega observaciones en <em>Notas</em>. Las prioridades son <span class="prio p-alta">Alta</span> <span class="prio p-media">Media</span> <span class="prio p-baja">Baja</span>.</p>
+  </section>
+
+  <!-- TOC -->
+  <nav class="toc" aria-label="Tabla de contenidos">
+    <h2>Tabla de contenidos</h2>
+    <ol>
+      <li><a href="#sa">Super Admin (SA)</a></li>
+      <li><a href="#cta">Cuenta (CTA)</a></li>
+      <li><a href="#com">Comercial / CRM (COM)</a></li>
+      <li><a href="#rs">Redes Sociales (RS)</a></li>
+      <li><a href="#est">Estrategia (EST)</a></li>
+      <li><a href="#tr">Transversal (TR)</a></li>
+      <li><a href="#bitacora">Bitácora de errores encontrados</a></li>
+    </ol>
+  </nav>
+
+  <!-- SUPER ADMIN -->
+  <section id="sa" class="card">
+    <h2>1. Super Admin <span class="count">10 casos</span></h2>
+    <table>
+      <caption>Casos de prueba — ámbito Plataforma (Dess-TI)</caption>
+      <thead>
+        <tr>
+          <th scope="col">ID</th><th scope="col">Caso / Escenario</th><th scope="col">Pasos</th>
+          <th scope="col">Resultado esperado</th><th scope="col">Prioridad</th>
+          <th scope="col">Resultado</th><th scope="col">Notas</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="id">SA-01</td><td>Crear un giro</td>
+          <td><ol class="pasos"><li>Entrar como Super Admin.</li><li>Ir a Giros.</li><li>Crear un giro nuevo.</li></ol></td>
+          <td>El giro se crea y aparece en el catálogo.</td><td><span class="prio p-media">Media</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">SA-02</td><td>Activar / desactivar un giro</td>
+          <td><ol class="pasos"><li>En Giros, desactivar un giro activo.</li><li>Volver a activarlo.</li></ol></td>
+          <td>El estado del giro cambia correctamente.</td><td><span class="prio p-baja">Baja</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">SA-03</td><td>Crear empresa con datos fiscales + logo</td>
+          <td><ol class="pasos"><li>Ir a Empresas → nueva.</li><li>Capturar razón social, RFC, nombre comercial, correo, sitio web.</li><li>Capturar dirección (autocompletado).</li><li>Subir logo.</li><li>Guardar.</li></ol></td>
+          <td>La empresa se crea con todos sus datos y branding.</td><td><span class="prio p-alta">Alta</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">SA-04</td><td>Asignar plan / módulos a la empresa</td>
+          <td><ol class="pasos"><li>Editar la empresa creada.</li><li>Asignar un plan y seleccionar módulos contratados.</li><li>Guardar.</li></ol></td>
+          <td>La suscripción queda registrada con los módulos elegidos.</td><td><span class="prio p-alta">Alta</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">SA-05</td><td>La empresa solo ve los módulos contratados</td>
+          <td><ol class="pasos"><li>Contratar solo algunos módulos (p. ej. Comercial).</li><li>Iniciar sesión como admin de esa empresa.</li></ol></td>
+          <td>Solo aparecen los bloques contratados; los no contratados no se muestran.</td><td><span class="prio p-alta">Alta</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">SA-06</td><td>Suspender empresa</td>
+          <td><ol class="pasos"><li>En Empresas, cambiar estado a Suspendida.</li><li>Intentar iniciar sesión como usuario de esa empresa.</li></ol></td>
+          <td>La empresa queda suspendida y no se permite operar.</td><td><span class="prio p-alta">Alta</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">SA-07</td><td>Reactivar empresa</td>
+          <td><ol class="pasos"><li>Cambiar estado a Activa.</li><li>Iniciar sesión como usuario de la empresa.</li></ol></td>
+          <td>La empresa vuelve a operar normalmente.</td><td><span class="prio p-media">Media</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">SA-08</td><td>Factura de renta con emisor Dess-TI</td>
+          <td><ol class="pasos"><li>Ir a Facturación (renta).</li><li>Abrir una factura y descargar su PDF.</li></ol></td>
+          <td>El PDF muestra a <strong>Dess-TI</strong> como emisor.</td><td><span class="prio p-alta">Alta</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">SA-09</td><td>Cambiar la propia contraseña</td>
+          <td><ol class="pasos"><li>Ir a Perfil.</li><li>Cambiar la contraseña.</li><li>Cerrar sesión y entrar con la nueva.</li></ol></td>
+          <td>La contraseña se actualiza y funciona.</td><td><span class="prio p-media">Media</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">SA-10</td><td>Acceso negado a módulo sin permiso</td>
+          <td><ol class="pasos"><li>Intentar entrar a una función que no corresponde al ámbito Plataforma.</li></ol></td>
+          <td>El sistema niega el acceso.</td><td><span class="prio p-alta">Alta</span></td><td class="res"></td><td class="notas-col"></td></tr>
+      </tbody>
+    </table>
+    <a class="back" href="#sa">↑ volver al índice</a>
+  </section>
+
+  <!-- CUENTA -->
+  <section id="cta" class="card">
+    <h2>2. Cuenta (Empresa) <span class="count">10 casos</span></h2>
+    <table>
+      <caption>Casos de prueba — administración base de la empresa</caption>
+      <thead>
+        <tr><th scope="col">ID</th><th scope="col">Caso / Escenario</th><th scope="col">Pasos</th><th scope="col">Resultado esperado</th><th scope="col">Prioridad</th><th scope="col">Resultado</th><th scope="col">Notas</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="id">CTA-01</td><td>Ver panel de Inicio</td>
+          <td><ol class="pasos"><li>Entrar como admin de empresa.</li><li>Abrir Inicio.</li></ol></td>
+          <td>Se muestra el panel de bienvenida/resumen.</td><td><span class="prio p-baja">Baja</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">CTA-02</td><td>Crear usuario y asignar rol</td>
+          <td><ol class="pasos"><li>Ir a Usuarios → nuevo.</li><li>Capturar nombre, correo, identificador de acceso.</li><li>Asignar un rol.</li><li>Guardar.</li></ol></td>
+          <td>El usuario se crea con su rol; no se muestra ningún UUID.</td><td><span class="prio p-alta">Alta</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">CTA-03</td><td>Rol de módulo no contratado no asignable</td>
+          <td><ol class="pasos"><li>Con un módulo no contratado, ir a Usuarios/Roles.</li><li>Intentar asignar un rol de ese módulo.</li></ol></td>
+          <td>El rol no está disponible / no se puede asignar.</td><td><span class="prio p-alta">Alta</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">CTA-04</td><td>Iniciar sesión con el nuevo usuario</td>
+          <td><ol class="pasos"><li>Cerrar sesión.</li><li>Entrar con el usuario recién creado.</li></ol></td>
+          <td>El usuario ve solo la parte que le permite su rol.</td><td><span class="prio p-alta">Alta</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">CTA-05</td><td>Cerrar una sesión desde Sesiones</td>
+          <td><ol class="pasos"><li>Ir a Sesiones.</li><li>Cerrar una sesión activa de un usuario.</li></ol></td>
+          <td>La sesión se cierra y el usuario debe volver a autenticarse.</td><td><span class="prio p-media">Media</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">CTA-06</td><td>Subir logo / branding</td>
+          <td><ol class="pasos"><li>Ir a Branding.</li><li>Subir logo y definir nombre visible.</li><li>Guardar.</li></ol></td>
+          <td>El branding se guarda y se refleja en el sistema.</td><td><span class="prio p-media">Media</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">CTA-07</td><td>Editar datos de la empresa (Mi empresa)</td>
+          <td><ol class="pasos"><li>Ir a Mi empresa.</li><li>Modificar un dato (p. ej. sitio web).</li><li>Guardar.</li></ol></td>
+          <td>Los datos de la empresa se actualizan.</td><td><span class="prio p-media">Media</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">CTA-08</td><td>Cambiar contraseña propia</td>
+          <td><ol class="pasos"><li>Ir a Mi perfil.</li><li>Cambiar contraseña.</li><li>Entrar con la nueva.</li></ol></td>
+          <td>La contraseña se actualiza y funciona.</td><td><span class="prio p-media">Media</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">CTA-09</td><td>Recuperar / restablecer contraseña</td>
+          <td><ol class="pasos"><li>Usar la opción de recuperar contraseña.</li><li>Seguir el flujo de restablecimiento.</li></ol></td>
+          <td>Se puede restablecer la contraseña correctamente.</td><td><span class="prio p-media">Media</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">CTA-10</td><td>Validación al crear usuario (correo inválido)</td>
+          <td><ol class="pasos"><li>Crear usuario con un correo mal formado.</li><li>Guardar.</li></ol></td>
+          <td>El sistema rechaza el correo inválido y avisa.</td><td><span class="prio p-media">Media</span></td><td class="res"></td><td class="notas-col"></td></tr>
+      </tbody>
+    </table>
+    <a class="back" href="#cta">↑ volver al índice</a>
+  </section>
+
+  <!-- COMERCIAL -->
+  <section id="com" class="card">
+    <h2>3. Comercial / CRM <span class="count">16 casos</span></h2>
+    <table>
+      <caption>Casos de prueba — módulo comercial</caption>
+      <thead>
+        <tr><th scope="col">ID</th><th scope="col">Caso / Escenario</th><th scope="col">Pasos</th><th scope="col">Resultado esperado</th><th scope="col">Prioridad</th><th scope="col">Resultado</th><th scope="col">Notas</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="id">COM-01</td><td>Alta de cliente con RFC válido</td>
+          <td><ol class="pasos"><li>Ir a Clientes → nuevo.</li><li>Capturar datos con un RFC válido.</li><li>Guardar.</li></ol></td>
+          <td>El cliente se crea correctamente.</td><td><span class="prio p-alta">Alta</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">COM-02</td><td>RFC inválido (validación)</td>
+          <td><ol class="pasos"><li>Capturar un RFC con formato incorrecto.</li><li>Guardar.</li></ol></td>
+          <td>El sistema rechaza el RFC y muestra un aviso de validación.</td><td><span class="prio p-alta">Alta</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">COM-03</td><td>Correo inválido (validación)</td>
+          <td><ol class="pasos"><li>Capturar un correo mal formado.</li><li>Guardar.</li></ol></td>
+          <td>El sistema rechaza el correo inválido.</td><td><span class="prio p-media">Media</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">COM-04</td><td>Teléfono ≠ 10 dígitos (validación)</td>
+          <td><ol class="pasos"><li>Capturar teléfono con más o menos de 10 dígitos.</li><li>Guardar.</li></ol></td>
+          <td>El sistema exige exactamente 10 dígitos.</td><td><span class="prio p-media">Media</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">COM-05</td><td>Dirección con autocompletado</td>
+          <td><ol class="pasos"><li>En el cliente, escribir una calle/ciudad.</li><li>Seleccionar una sugerencia.</li></ol></td>
+          <td>Se rellenan calle, ciudad, estado, CP y país.</td><td><span class="prio p-media">Media</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">COM-06</td><td>Ver cliente (solo lectura)</td>
+          <td><ol class="pasos"><li>Abrir un cliente en modo ver.</li></ol></td>
+          <td>Se muestran los datos sin poder editarlos.</td><td><span class="prio p-baja">Baja</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">COM-07</td><td>Eliminar cliente y cerrar formulario</td>
+          <td><ol class="pasos"><li>Con un cliente abierto en formulario, eliminarlo.</li></ol></td>
+          <td>El cliente se elimina y el formulario abierto se cierra.</td><td><span class="prio p-media">Media</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">COM-08</td><td>Crear oportunidad</td>
+          <td><ol class="pasos"><li>Ir a Oportunidades → nueva.</li><li>Elegir cliente, título, valor estimado, etapa.</li><li>Guardar.</li></ol></td>
+          <td>La oportunidad se crea en el pipeline.</td><td><span class="prio p-alta">Alta</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">COM-09</td><td>Avanzar oportunidad de etapa</td>
+          <td><ol class="pasos"><li>Abrir la oportunidad.</li><li>Avanzarla a la siguiente etapa.</li></ol></td>
+          <td>La etapa cambia en el embudo.</td><td><span class="prio p-media">Media</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">COM-10</td><td>Crear cotización con partidas y folio</td>
+          <td><ol class="pasos"><li>Ir a Cotizaciones → nueva.</li><li>Elegir cliente (selector), agregar partidas.</li><li>Capturar válido hasta, condiciones, notas, moneda.</li><li>Guardar.</li></ol></td>
+          <td>Se crea la cotización con folio <code>COT-AAAA-NNNN</code>.</td><td><span class="prio p-alta">Alta</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">COM-11</td><td>Ventas NO puede aprobar cotización</td>
+          <td><ol class="pasos"><li>Entrar con rol <code>ventas</code>.</li><li>Intentar aprobar una cotización.</li></ol></td>
+          <td>La aprobación no está permitida para el rol operativo.</td><td><span class="prio p-alta">Alta</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">COM-12</td><td>Gerente comercial SÍ aprueba</td>
+          <td><ol class="pasos"><li>Entrar con rol <code>gerente_comercial</code>.</li><li>Aprobar la cotización.</li></ol></td>
+          <td>La cotización queda aprobada (separación de funciones).</td><td><span class="prio p-alta">Alta</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">COM-13</td><td>PDF con emisor = la empresa</td>
+          <td><ol class="pasos"><li>Abrir el detalle de la cotización.</li><li>Descargar PDF.</li></ol></td>
+          <td>El emisor es <strong>la empresa</strong>; <strong>no</strong> aparece "Dess-TI".</td><td><span class="prio p-alta">Alta</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">COM-14</td><td>Enviar cotización por correo / WhatsApp</td>
+          <td><ol class="pasos"><li>Desde el detalle, enviar por correo.</li><li>Enviar por WhatsApp (enlace wa.me).</li></ol></td>
+          <td>Se abre el envío por correo y el enlace de WhatsApp funciona.</td><td><span class="prio p-media">Media</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">COM-15</td><td>Aviso por datos fiscales faltantes</td>
+          <td><ol class="pasos"><li>Con la empresa sin datos fiscales completos, generar cotización.</li></ol></td>
+          <td>El sistema avisa que faltan datos fiscales de la empresa.</td><td><span class="prio p-media">Media</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">COM-16</td><td>Producto con foto, lista de precios y canal</td>
+          <td><ol class="pasos"><li>Crear producto con foto, unidad de medida y descripción (ver miniatura).</li><li>Crear lista de precios con vigencia (calendario).</li><li>Crear un canal de venta.</li></ol></td>
+          <td>Producto muestra miniatura; la lista de precios respeta vigencias; el canal se crea.</td><td><span class="prio p-media">Media</span></td><td class="res"></td><td class="notas-col"></td></tr>
+      </tbody>
+    </table>
+    <a class="back" href="#com">↑ volver al índice</a>
+  </section>
+
+  <!-- REDES -->
+  <section id="rs" class="card">
+    <h2>4. Redes Sociales <span class="count">11 casos</span></h2>
+    <table>
+      <caption>Casos de prueba — módulo redes-sociales</caption>
+      <thead>
+        <tr><th scope="col">ID</th><th scope="col">Caso / Escenario</th><th scope="col">Pasos</th><th scope="col">Resultado esperado</th><th scope="col">Prioridad</th><th scope="col">Resultado</th><th scope="col">Notas</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="id">RS-01</td><td>Conectar cuenta de WhatsApp</td>
+          <td><ol class="pasos"><li>Ir a Conexiones.</li><li>Conectar WhatsApp (canal, nombre, identificador externo, referencia de credencial).</li></ol></td>
+          <td>La cuenta queda conectada; no se muestra la credencial real.</td><td><span class="prio p-alta">Alta</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">RS-02</td><td>Conectar cuenta de Facebook</td>
+          <td><ol class="pasos"><li>En Conexiones, conectar Facebook.</li></ol></td>
+          <td>La cuenta de Facebook queda conectada.</td><td><span class="prio p-media">Media</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">RS-03</td><td>Conectar cuenta de Instagram</td>
+          <td><ol class="pasos"><li>En Conexiones, conectar Instagram.</li></ol></td>
+          <td>La cuenta de Instagram queda conectada.</td><td><span class="prio p-media">Media</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">RS-04</td><td>Conectar cuenta de Messenger</td>
+          <td><ol class="pasos"><li>En Conexiones, conectar Messenger.</li></ol></td>
+          <td>La cuenta de Messenger queda conectada.</td><td><span class="prio p-media">Media</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">RS-05</td><td>Conectar cuenta de TikTok</td>
+          <td><ol class="pasos"><li>En Conexiones, conectar TikTok.</li></ol></td>
+          <td>La cuenta de TikTok queda conectada.</td><td><span class="prio p-media">Media</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">RS-06</td><td>Duplicar conexión (conflicto)</td>
+          <td><ol class="pasos"><li>Intentar conectar otra vez el mismo canal + mismo identificador externo.</li></ol></td>
+          <td>El sistema detecta el conflicto y no permite el duplicado.</td><td><span class="prio p-alta">Alta</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">RS-07</td><td>Publicaciones exige cuenta conectada</td>
+          <td><ol class="pasos"><li>Sin cuentas conectadas, ir a Publicaciones e intentar crear una.</li></ol></td>
+          <td>El sistema exige una cuenta conectada antes de publicar.</td><td><span class="prio p-alta">Alta</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">RS-08</td><td>Crear publicación (borrador → programada)</td>
+          <td><ol class="pasos"><li>Con una cuenta conectada, crear publicación en borrador.</li><li>Programarla con fecha (calendario).</li></ol></td>
+          <td>La publicación pasa de borrador a programada.</td><td><span class="prio p-media">Media</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">RS-09</td><td>Crear campaña con presupuesto y fechas</td>
+          <td><ol class="pasos"><li>Ir a Campañas → nueva.</li><li>Capturar presupuesto y periodo con calendario.</li></ol></td>
+          <td>La campaña se crea con presupuesto y fechas correctas.</td><td><span class="prio p-media">Media</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">RS-10</td><td>Analítica filtrada por canal y fecha</td>
+          <td><ol class="pasos"><li>Ir a Analítica.</li><li>Filtrar por canal y por rango de fechas.</li></ol></td>
+          <td>Se muestran métricas (alcance, interacciones, mensajes, conversiones) según el filtro.</td><td><span class="prio p-media">Media</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">RS-11</td><td>No se muestra ninguna credencial real</td>
+          <td><ol class="pasos"><li>Revisar Conexiones y detalle de cada cuenta.</li></ol></td>
+          <td>Solo se ve la referencia de credencial, nunca el valor real.</td><td><span class="prio p-alta">Alta</span></td><td class="res"></td><td class="notas-col"></td></tr>
+      </tbody>
+    </table>
+    <a class="back" href="#rs">↑ volver al índice</a>
+  </section>
+
+  <!-- ESTRATEGIA -->
+  <section id="est" class="card">
+    <h2>5. Estrategia <span class="count">4 casos</span></h2>
+    <table>
+      <caption>Casos de prueba — módulo estrategia (OKR)</caption>
+      <thead>
+        <tr><th scope="col">ID</th><th scope="col">Caso / Escenario</th><th scope="col">Pasos</th><th scope="col">Resultado esperado</th><th scope="col">Prioridad</th><th scope="col">Resultado</th><th scope="col">Notas</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="id">EST-01</td><td>Capturar misión, visión y valores</td>
+          <td><ol class="pasos"><li>Ir a Estrategia.</li><li>Capturar misión, visión y valores.</li><li>Guardar.</li></ol></td>
+          <td>Los textos se guardan correctamente.</td><td><span class="prio p-media">Media</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">EST-02</td><td>Crear objetivo con resultados clave</td>
+          <td><ol class="pasos"><li>Agregar un objetivo.</li><li>Añadir sus resultados clave.</li><li>Guardar.</li></ol></td>
+          <td>El objetivo con sus resultados clave queda registrado.</td><td><span class="prio p-media">Media</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">EST-03</td><td>Se refleja en Inicio</td>
+          <td><ol class="pasos"><li>Ir a Inicio.</li></ol></td>
+          <td>La estrategia capturada aparece en el panel de Inicio.</td><td><span class="prio p-media">Media</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">EST-04</td><td>Sin UUIDs visibles</td>
+          <td><ol class="pasos"><li>Revisar las pantallas del módulo.</li></ol></td>
+          <td>No se muestran identificadores técnicos (UUID).</td><td><span class="prio p-baja">Baja</span></td><td class="res"></td><td class="notas-col"></td></tr>
+      </tbody>
+    </table>
+    <a class="back" href="#est">↑ volver al índice</a>
+  </section>
+
+  <!-- TRANSVERSAL -->
+  <section id="tr" class="card">
+    <h2>6. Transversal <span class="count">4 casos</span></h2>
+    <table>
+      <caption>Casos de prueba — funciones transversales</caption>
+      <thead>
+        <tr><th scope="col">ID</th><th scope="col">Caso / Escenario</th><th scope="col">Pasos</th><th scope="col">Resultado esperado</th><th scope="col">Prioridad</th><th scope="col">Resultado</th><th scope="col">Notas</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="id">TR-01</td><td>Calendario en campos de fecha</td>
+          <td><ol class="pasos"><li>Abrir cualquier campo de fecha del sistema.</li></ol></td>
+          <td>Se abre el calendario para seleccionar la fecha.</td><td><span class="prio p-media">Media</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">TR-02</td><td>Autocompletado de direcciones</td>
+          <td><ol class="pasos"><li>En un campo de dirección, escribir una calle/ciudad.</li><li>Elegir una sugerencia.</li></ol></td>
+          <td>Se rellenan calle, ciudad, estado, CP y país.</td><td><span class="prio p-media">Media</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">TR-03</td><td>Bloques no contratados no aparecen</td>
+          <td><ol class="pasos"><li>Con módulos parcialmente contratados, revisar el menú.</li></ol></td>
+          <td>Los bloques no contratados no se muestran.</td><td><span class="prio p-alta">Alta</span></td><td class="res"></td><td class="notas-col"></td></tr>
+        <tr><td class="id">TR-04</td><td>Menús acordeón abren y cierran</td>
+          <td><ol class="pasos"><li>Hacer clic en un bloque del menú para abrirlo y cerrarlo.</li></ol></td>
+          <td>El acordeón responde correctamente.</td><td><span class="prio p-baja">Baja</span></td><td class="res"></td><td class="notas-col"></td></tr>
+      </tbody>
+    </table>
+    <a class="back" href="#tr">↑ volver al índice</a>
+  </section>
+
+  <!-- BITACORA -->
+  <section id="bitacora" class="card">
+    <h2>7. Bitácora de errores encontrados</h2>
+    <p>Registra aquí cada error detectado durante las pruebas.</p>
+    <table>
+      <caption>Tabla para llenar durante las pruebas</caption>
+      <thead>
+        <tr><th scope="col">ID</th><th scope="col">Fecha</th><th scope="col">Bloque</th><th scope="col">Descripción</th><th scope="col">Severidad</th><th scope="col">Estado</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>
+      </tbody>
+    </table>
+    <a class="back" href="#bitacora">↑ volver al índice</a>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">Guía de pruebas para testers — Plataforma Dess-TI · Fase de pruebas · Español (es-MX)</div>
+</footer>
+</body>
+</html>

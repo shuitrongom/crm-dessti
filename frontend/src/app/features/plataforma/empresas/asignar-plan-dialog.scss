@@ -1,0 +1,89 @@
+// =============================================================================
+// Estilos del dialogo para asignar / cambiar el Plan de una Empresa (super_admin)
+// (plan-suscripcion-empresa-super-admin) (Req 6, 11)
+// -----------------------------------------------------------------------------
+// Layout compacto: intro con el nombre de la empresa, selector de planes a ancho
+// completo, bloque de detalles del plan seleccionado y dos datepickers de
+// vigencia (uno junto a otro en pantallas anchas, apilados en estrechas). Solo
+// tokens del Sistema de Diseno; correcto en claro y oscuro.
+// =============================================================================
+
+.asignar-plan {
+  &__intro {
+    margin: 0 0 var(--ds-space-4);
+    color: var(--ds-color-text);
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-3);
+    min-inline-size: 0;
+    padding-block-start: var(--ds-space-1);
+
+    mat-form-field {
+      inline-size: 100%;
+      min-inline-size: 0;
+    }
+  }
+
+  // Detalles de ayuda del plan seleccionado (moneda, maximo de usuarios, total).
+  &__detalle {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-1);
+    margin: 0;
+    padding: var(--ds-space-3);
+    border: 1px solid var(--ds-color-border);
+    border-radius: var(--ds-radius-md);
+    background: var(--ds-color-surface-variant);
+    min-inline-size: 0;
+  }
+
+  &__detalle-fila {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--ds-space-3);
+
+    dt {
+      color: var(--ds-color-text-muted);
+      font-size: var(--ds-font-size-sm);
+    }
+
+    dd {
+      margin: 0;
+      color: var(--ds-color-text);
+      font-weight: var(--ds-font-weight-medium);
+      word-break: break-word;
+    }
+  }
+
+  // Fechas de vigencia: en linea en pantallas anchas, apiladas en estrechas.
+  &__fechas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ds-space-3);
+
+    mat-form-field {
+      flex: 1 1 12rem;
+    }
+  }
+
+  // Aviso a nivel de formulario (errores 404/422 del backend).
+  &__error {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-2);
+    margin: 0;
+    padding: var(--ds-space-3);
+    border: 1px solid color-mix(in srgb, var(--ds-color-error) 32%, transparent);
+    border-radius: var(--ds-radius-sm);
+    background: color-mix(in srgb, var(--ds-color-error) 12%, transparent);
+    color: var(--ds-color-error);
+    font-size: var(--ds-font-size-sm);
+
+    mat-icon {
+      flex: 0 0 auto;
+    }
+  }
+}

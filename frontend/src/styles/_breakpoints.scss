@@ -1,0 +1,43 @@
+// =============================================================================
+// Sistema de Diseño — Breakpoints responsive mobile-first (Requisito 52)
+// -----------------------------------------------------------------------------
+// Puntos de quiebre (Punto_Quiebre) y mixins para un enfoque mobile-first.
+// La operación debe conservarse legible desde 320px de ancho (Req 52.4).
+// Uso:
+//   @use 'breakpoints' as bp;
+//   .foo { ... @include bp.from('md') { ... } }
+// =============================================================================
+
+@use 'sass:map';
+
+// Anchos de referencia (mobile-first: se estilan primero móviles y se
+// amplían hacia arriba con `from`).
+$breakpoints: (
+  'xs': 320px,   // móvil pequeño (mínimo soportado — Req 52.4)
+  'sm': 600px,   // móvil grande
+  'md': 905px,   // tablet
+  'lg': 1240px,  // escritorio
+  'xl': 1440px   // escritorio amplio
+);
+
+// Aplica estilos a partir del breakpoint indicado (min-width).
+@mixin from($name) {
+  @if map.has-key($breakpoints, $name) {
+    @media (min-width: map.get($breakpoints, $name)) {
+      @content;
+    }
+  } @else {
+    @error "Breakpoint '#{$name}' no está definido en $breakpoints.";
+  }
+}
+
+// Aplica estilos hasta el breakpoint indicado (max-width, exclusivo).
+@mixin until($name) {
+  @if map.has-key($breakpoints, $name) {
+    @media (max-width: (map.get($breakpoints, $name) - 1px)) {
+      @content;
+    }
+  } @else {
+    @error "Breakpoint '#{$name}' no está definido en $breakpoints.";
+  }
+}

@@ -1,0 +1,108 @@
+.comercial-form {
+  margin-bottom: var(--ds-space-4);
+
+  &__acciones {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--ds-space-2);
+    margin-top: var(--ds-space-2);
+  }
+}
+
+.comercial-filtro {
+  width: 100%;
+  max-width: 420px;
+  margin-bottom: var(--ds-space-3);
+}
+
+.comercial-acciones-fila {
+  display: flex;
+  gap: var(--ds-space-1);
+  justify-content: flex-end;
+}
+
+// =============================================================================
+// Tira de KPIs premium/enterprise (patron compartido del ambito Comercial)
+// -----------------------------------------------------------------------------
+// Mismo lenguaje visual que la tira del Pipeline (oportunidades). Solo tokens
+// del Sistema de Diseno (--ds-*) para respetar el branding por empresa.
+// =============================================================================
+
+.comercial-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--ds-space-3);
+  margin-bottom: var(--ds-space-4);
+}
+
+.comercial-kpi {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-3) var(--ds-space-4);
+  background: var(--ds-color-surface);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  box-shadow: var(--ds-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.06));
+
+  &__icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 44px;
+    block-size: 44px;
+    border-radius: var(--ds-radius-md);
+    background: var(--ds-color-primary-container, color-mix(in srgb, var(--ds-color-primary) 14%, transparent));
+    color: var(--ds-color-text-on-primary-container, var(--ds-color-primary));
+    flex: 0 0 auto;
+
+    mat-icon {
+      font-size: 24px;
+      inline-size: 24px;
+      block-size: 24px;
+    }
+  }
+
+  &__cuerpo {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  &__valor {
+    font-size: var(--ds-font-size-xl, 1.5rem);
+    font-weight: var(--ds-font-weight-bold, 700);
+    line-height: 1.15;
+    color: var(--ds-color-text);
+  }
+
+  &__etiqueta {
+    font-size: var(--ds-font-size-sm);
+    color: var(--ds-color-text-muted);
+    margin-top: 2px;
+  }
+
+  &--valor {
+    border-color: color-mix(in srgb, var(--ds-color-primary) 40%, var(--ds-color-border));
+
+    .comercial-kpi__icono {
+      background: var(--ds-color-primary);
+      color: var(--ds-color-text-on-primary, #fff);
+    }
+  }
+
+  &--exito {
+    .comercial-kpi__icono {
+      background: color-mix(in srgb, var(--ds-color-success, #2e7d4f) 16%, transparent);
+      color: var(--ds-color-success, #2e7d4f);
+    }
+  }
+}
+
+// Elevacion sutil del contenedor del listado (tabla de datos).
+:host ::ng-deep app-data-table .data-table__scroll {
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  box-shadow: var(--ds-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.06));
+  overflow: hidden;
+}

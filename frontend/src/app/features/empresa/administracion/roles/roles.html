@@ -1,0 +1,59 @@
+<app-page-header
+  titulo="Roles y permisos"
+  subtitulo="Consulta y asigna los roles disponibles para tu empresa según su plan, organizados por módulo."
+/>
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="Tu plan no incluye roles asignables por el momento."
+  (reintentar)="cargar()"
+>
+  <div class="roles__catalogo">
+    @for (grupo of grupos(); track grupo.modulo) {
+      <section class="roles__grupo" [attr.aria-label]="'Roles de ' + grupo.modulo">
+        <header class="roles__grupo-encabezado">
+          <h2 class="roles__grupo-titulo">{{ grupo.modulo }}</h2>
+          <span
+            class="roles__badge"
+            [class.roles__badge--administracion]="grupo.esAdministracion"
+          >
+            <mat-icon aria-hidden="true">{{
+              grupo.esAdministracion ? 'admin_panel_settings' : 'extension'
+            }}</mat-icon>
+            {{ grupo.esAdministracion ? 'Administración' : 'Módulo' }}
+          </span>
+        </header>
+
+        <div class="roles__tarjetas">
+          @for (rol of grupo.roles; track rol.id) {
+            <mat-card appearance="outlined" class="roles__tarjeta">
+              <mat-card-header>
+                <mat-card-title class="roles__tarjeta-nombre">{{ rol.nombre }}</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <p class="roles__tarjeta-descripcion">{{ rol.descripcion }}</p>
+              </mat-card-content>
+            </mat-card>
+          }
+        </div>
+      </section>
+    }
+  </div>
+</app-state-container>
+
+<mat-accordion class="roles__referencia">
+  <mat-expansion-panel>
+    <mat-expansion-panel-header>
+      <mat-panel-title>Tus roles</mat-panel-title>
+      <mat-panel-description>Roles asociados a tu cuenta.</mat-panel-description>
+    </mat-expansion-panel-header>
+    <mat-chip-set aria-label="Roles del usuario autenticado">
+      @for (rol of rolesUsuario(); track rol) {
+        <mat-chip>{{ rol }}</mat-chip>
+      } @empty {
+        <span class="roles__sin-datos">Tu cuenta no tiene roles asociados.</span>
+      }
+    </mat-chip-set>
+  </mat-expansion-panel>
+</mat-accordion>

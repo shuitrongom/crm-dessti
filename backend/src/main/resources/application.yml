@@ -1,0 +1,334 @@
+# ============================================================================
+# Configuracion base del CRM de Anuncios Luminosos (backend)
+#
+# NO se embeben secretos aqui (Req 11). Las credenciales y la URL de la base
+# de datos se resuelven desde variables de entorno / almacen externo.
+#
+# Decision de ruta base de API (Req 12.4): se expone toda la API bajo /api/v1.
+# En esta fase de andamiaje se usa server.servlet.context-path para prefijar
+# todas las rutas del backend con /api/v1. El Proxy_Inverso (IIS) enruta /api
+# hacia el backend (ver design.md). Los controladores no necesitan repetir el
+# prefijo. Swagger/Actuator quedan bajo ese mismo context-path.
+# ============================================================================
+
+spring:
+  application:
+    name: crm-anuncios-luminosos
+
+# ============================================================================
+# Secretos del Sistema (Req 11): se resuelven EXCLUSIVAMENTE desde variables de
+# entorno / almacen externo. NO se definen valores por defecto sensibles.
+# La presencia de estos secretos se valida al arranque (fail-fast, Req 11.2) y
+# sus valores NUNCA se escriben en logs (Req 11.3).
+#   crm.secretos.db-user          <- DB_USER
+#   crm.secretos.db-password      <- DB_PASSWORD
+#   crm.secretos.jwt-signing-key  <- JWT_SIGNING_KEY (uso real en la Tarea 9)
+# ============================================================================
+crm:
+  secretos:
+    db-user: ${DB_USER}
+    db-password: ${DB_PASSWORD}
+    jwt-signing-key: ${JWT_SIGNING_KEY}
+
+  # ==========================================================================
+  # Cifrado de datos sensibles en reposo (Req 67). El material de las llaves se
+  # resuelve EXCLUSIVAMENTE desde variables de entorno / almacen externo (Req 11)
+  # y NUNCA se escribe en logs (Req 67.2). Convencion de variables:
+  #   crm.cifrado.activa       <- CRM_ENC_KEY_ACTIVE  (alias de la version activa, p. ej. v1)
+  #   crm.cifrado.llaves.v1    <- CRM_ENC_KEY_V1       (material Base64 de 32 bytes = AES-256)
+  #   crm.cifrado.llaves.v2    <- CRM_ENC_KEY_V2       (version disponible tras rotacion)
+  # La version activa es obligatoria: si falta, el arranque se bloquea de forma
+  # controlada (Req 67.6). Las versiones no configuradas se omiten.
+  # ==========================================================================
+  cifrado:
+    activa: ${CRM_ENC_KEY_ACTIVE}
+    llaves:
+      v1: ${CRM_ENC_KEY_V1:}
+      v2: ${CRM_ENC_KEY_V2:}
+
+  # ==========================================================================
+  # JWT (Req 1, tarea 9.1). Solo parametros NO sensibles (vigencias y emisor).
+  # La clave de firma NO se define aqui: proviene de crm.secretos.jwt-signing-key
+  # (Req 11) y nunca se escribe en configuracion ni en logs.
+  #   - vigencia-token-acceso   <= 15 min (Req 1.4)
+  #   - vigencia-token-refresco <= 7 dias (Req 1.7)
+  # ==========================================================================
+  jwt:
+    emisor: crm-anuncios-luminosos
+    vigencia-token-acceso: ${JWT_ACCESS_TTL:PT15M}
+    vigencia-token-refresco: ${JWT_REFRESH_TTL:P7D}
+
+  # ==========================================================================
+  # PAC / Facturacion CFDI (Req 35.8, 11). Las credenciales del PAC (Proveedor
+  # Autorizado de Certificacion) se resuelven EXCLUSIVAMENTE desde variables de
+  # entorno / almacen externo (Req 11) y NUNCA se escriben en logs (Req 11.3). NO
+  # se definen valores por defecto sensibles: usuario y contrasena quedan vacios
+  # si no se proveen (el adaptador stub determinista no los necesita; el futuro
+  # adaptador HTTP real si los exigira). La URL admite un placeholder vacio.
+  #   crm.pac.usuario   <- PAC_USER
+  #   crm.pac.password  <- PAC_PASSWORD
+  #   crm.pac.url       <- PAC_URL
+  # ==========================================================================
+  pac:
+    usuario: ${PAC_USER:}
+    password: ${PAC_PASSWORD:}
+    url: ${PAC_URL:}
+
+  # ==========================================================================
+  # Notificaciones (Req 46, tarea 43.1). Adaptadores de correo/WhatsApp/Canal_Social
+  # desacoplados con politica de reintentos CONFIGURABLE (Req 46.3): si un envio
+  # falla, se reintenta hasta max-intentos, registrando el resultado de cada intento.
+  # Las credenciales de los proveedores (correo/WhatsApp) se resuelven EXCLUSIVAMENTE
+  # desde la gestion de secretos / variables de entorno (Req 11) y NUNCA se escriben
+  # en logs ni se definen aqui; los adaptadores por defecto de registro en log no las
+  # necesitan. Solo se declaran parametros NO sensibles de la politica de reintentos.
+  #   crm.notificaciones.reintentos.max-intentos    <- NOTIF_MAX_INTENTOS (por defecto 3)
+  #   crm.notificaciones.reintentos.backoff-millis  <- NOTIF_BACKOFF_MS  (por defecto 1000)
+  # ==========================================================================
+  notificaciones:
+    reintentos:
+      max-intentos: ${NOTIF_MAX_INTENTOS:3}
+      backoff-millis: ${NOTIF_BACKOFF_MS:1000}
+
+  # ==========================================================================
+  # Auditoria (Req 10). La retencion de la bitacora es CONFIGURABLE (Req 10.8).
+  # La purga efectiva se implementa en una tarea posterior; aqui solo se declara
+  # el periodo (por defecto 10 anios, acorde con la retencion fiscal en Mexico).
+  #   crm.auditoria.retencion  <- AUDIT_RETENTION (formato ISO-8601, p. ej. P3650D)
+  # ==========================================================================
+  auditoria:
+    retencion: ${AUDIT_RETENTION:P3650D}
+
+  # ==========================================================================
+  # Offboarding del tenant (Req 69, tarea 14.4). El Periodo_Gracia es
+  # CONFIGURABLE (Req 69.2): tras cancelar la Empresa/Suscripcion, sus datos de
+  # negocio se conservan durante este periodo antes de cualquier eliminacion
+  # definitiva (Req 69.3), con el acceso restringido segun el estado (Req 24.4).
+  #   crm.offboarding.periodo-gracia  <- OFFBOARDING_GRACE (ISO-8601, p. ej. P30D)
+  # Por defecto 30 dias.
+  # ==========================================================================
+  offboarding:
+    periodo-gracia: ${OFFBOARDING_GRACE:P30D}
+
+  # ==========================================================================
+  # Contratacion de instrumentos (Plan/Suscripcion). Umbral de aviso de
+  # vencimiento (Req 7.2/7.3): dias de anticipacion con los que un Contrato
+  # vigente se marca como "por vencer". El backend calcula el indicador
+  # porVencer con este umbral, de modo que vive solo en el backend.
+  #   crm.contratacion.umbral-aviso-dias  <- CONTRATACION_UMBRAL_AVISO_DIAS
+  # Por defecto 14 dias.
+  # ==========================================================================
+  contratacion:
+    umbral-aviso-dias: ${CONTRATACION_UMBRAL_AVISO_DIAS:14}
+
+  # ==========================================================================
+  # Monetizacion de plataforma (Fase A de precios de modulos). La plataforma
+  # cotiza los Planes (suma de precios de modulo) y emite la factura de renta en
+  # una UNICA moneda principal; no hay seleccion de moneda por Plan. Aqui solo se
+  # declara el codigo ISO 4217 de esa moneda principal (parametro NO sensible).
+  # El codigo se valida (3 letras) al enlazar; su existencia como moneda sembrada
+  # y activa se verifica en el punto de uso, con degradacion controlada a MXN si
+  # la moneda configurada no existe (se registra una advertencia, no se cae).
+  #   crm.monetizacion.moneda-principal  <- MONEDA_PRINCIPAL (por defecto MXN)
+  # ==========================================================================
+  monetizacion:
+    moneda-principal: ${MONEDA_PRINCIPAL:MXN}
+
+  # ==========================================================================
+  # Emisor del comprobante de renta de modulos (Fase A del PDF). Datos NO
+  # sensibles de Dess-TI que se imprimen como bloque "Emisor" en el comprobante
+  # PREMIUM de renta descargable (GET /facturas-renta/{id}/pdf). Todos admiten
+  # override por variable de entorno. Solo 'nombre' tiene valor por defecto
+  # ("Dess-TI"); el resto quedan vacios y, si asi permanecen, NO se imprimen.
+  #   crm.facturacion.emisor.nombre     <- EMISOR_NOMBRE    (por defecto "Dess-TI")
+  #   crm.facturacion.emisor.rfc        <- EMISOR_RFC        (opcional)
+  #   crm.facturacion.emisor.direccion  <- EMISOR_DIRECCION  (opcional)
+  #   crm.facturacion.emisor.email      <- EMISOR_EMAIL      (opcional)
+  #   crm.facturacion.emisor.sitio-web  <- EMISOR_SITIO_WEB  (opcional)
+  # ==========================================================================
+  facturacion:
+    emisor:
+      nombre: ${EMISOR_NOMBRE:Dess-TI}
+      rfc: ${EMISOR_RFC:}
+      direccion: ${EMISOR_DIRECCION:}
+      email: ${EMISOR_EMAIL:}
+      sitio-web: ${EMISOR_SITIO_WEB:}
+
+  # ==========================================================================
+  # Respaldo y recuperacion de datos (Req 50, tarea 49.2). Respaldos periodicos
+  # CIFRADOS de los datos de negocio, fiscales y contables, con RPO/RTO
+  # CONFIGURABLES (Req 50.2) y restauracion auditada y restringida al super_admin
+  # (Req 50.3). El artefacto se cifra con la Llave_Cifrado existente (AES-256-GCM,
+  # Req 67), reutilizando su versionado para descifrar tras una rotacion.
+  #
+  # 'habilitado' (por defecto false) controla la capacidad OPERATIVA: cuando es
+  # false, el motor real (pg_dump/pg_restore) NO se instancia y el programador
+  # periodico NO se registra, de modo que el arranque nunca invoca procesos
+  # externos (seguro en pruebas). Poner true SOLO en el servidor Windows con
+  # PostgreSQL, con las rutas y credenciales resueltas desde el entorno (Req 11).
+  #
+  # Las credenciales de la conexion de respaldo se resuelven EXCLUSIVAMENTE desde
+  # variables de entorno / almacen externo (Req 11) y NUNCA se escriben en logs
+  # (Req 11.3). La contrasena se pasa a pg_dump/pg_restore via PGPASSWORD.
+  #   crm.respaldo.habilitado       <- RESPALDO_HABILITADO (por defecto false)
+  #   crm.respaldo.cron             <- RESPALDO_CRON (por defecto diario 02:00)
+  #   crm.respaldo.directorio       <- RESPALDO_DIR (almacenamiento restringido)
+  #   crm.respaldo.rpo              <- RESPALDO_RPO (ISO-8601, p. ej. PT24H)
+  #   crm.respaldo.rto              <- RESPALDO_RTO (ISO-8601, p. ej. PT4H)
+  #   crm.respaldo.pg-dump-path     <- RESPALDO_PGDUMP (ruta a pg_dump)
+  #   crm.respaldo.pg-restore-path  <- RESPALDO_PGRESTORE (ruta a pg_restore)
+  #   crm.respaldo.host / puerto / base-datos / usuario / password
+  # ==========================================================================
+  respaldo:
+    habilitado: ${RESPALDO_HABILITADO:false}
+    cron: ${RESPALDO_CRON:0 0 2 * * *}
+    directorio: ${RESPALDO_DIR:respaldos}
+    rpo: ${RESPALDO_RPO:PT24H}
+    rto: ${RESPALDO_RTO:PT4H}
+    pg-dump-path: ${RESPALDO_PGDUMP:pg_dump}
+    pg-restore-path: ${RESPALDO_PGRESTORE:pg_restore}
+    host: ${RESPALDO_DB_HOST:localhost}
+    puerto: ${RESPALDO_DB_PORT:5432}
+    base-datos: ${RESPALDO_DB_NAME:crm}
+    usuario: ${RESPALDO_DB_USER:}
+    password: ${RESPALDO_DB_PASSWORD:}
+    tiempo-limite: ${RESPALDO_TIEMPO_LIMITE:PT1H}
+
+  # ==========================================================================
+  # Conciliacion de tres vias de Facturas de Proveedor (Req 33, tarea 27.2).
+  # La tolerancia de precio es CONFIGURABLE (Req 33.3): fraccion RELATIVA maxima
+  # de desviacion admitida entre el precio facturado y el precio de la
+  # Orden_Compra por partida. Ejemplo: 0.02 = 2%. Una desviacion mayor marca la
+  # Factura_Proveedor como 'discrepancia' y no autoriza el pago (Req 33.4).
+  #   crm.compras.conciliacion.tolerancia-precio  <- CONCILIACION_TOLERANCIA
+  # Por defecto 0.02 (2%).
+  # ==========================================================================
+  compras:
+    conciliacion:
+      tolerancia-precio: ${CONCILIACION_TOLERANCIA:0.02}
+
+  # ==========================================================================
+  # Notificacion de vencimiento de permisos de instalacion (Req 13, Decision D8).
+  # Planificador diario multi-tenant que, por cada Empresa activa, notifica los
+  # Permiso_Instalacion 'aprobado' que venceran en los proximos 30 dias.
+  #
+  # 'habilitado' (por defecto false) controla si el planificador periodico se
+  # registra: cuando es false, el bean ProgramadorVencimientosPermisos NO existe
+  # (@ConditionalOnProperty), de modo que en pruebas (incluidos los tests de
+  # contexto) y en un arranque sin configurar el barrido NO se dispara. El
+  # endpoint manual POST /permisos-instalacion/notificar-vencimientos funciona
+  # con independencia de esta bandera.
+  #   crm.permisos.vencimientos.habilitado <- PERMISOS_VENCIMIENTOS_HABILITADO (por defecto false)
+  #   crm.permisos.vencimientos.cron       <- PERMISOS_VENCIMIENTOS_CRON (por defecto diario 06:00)
+  # ==========================================================================
+  permisos:
+    vencimientos:
+      habilitado: ${PERMISOS_VENCIMIENTOS_HABILITADO:false}
+      cron: ${PERMISOS_VENCIMIENTOS_CRON:0 0 6 * * *}
+
+  # ==========================================================================
+  # Redes sociales / Mensajeria omnicanal de Meta (Req 64, 11, 9; tarea 40).
+  # Las credenciales de Meta se resuelven EXCLUSIVAMENTE desde variables de
+  # entorno / almacen externo (Req 11) y NUNCA se escriben en logs (Req 11.3). NO
+  # se definen valores por defecto sensibles: el app-secret, el verify-token y el
+  # token de acceso quedan vacios si no se proveen (el adaptador stub determinista
+  # no los necesita; los adaptadores HTTP reales y la validacion de firma del
+  # webhook si los exigiran). El token de acceso concreto de cada cuenta se resuelve
+  # por su credenciales_ref (referencia, nunca el valor).
+  #   crm.social.app-secret     <- META_APP_SECRET    (firma HMAC del webhook, Req 64.3)
+  #   crm.social.verify-token   <- META_VERIFY_TOKEN  (handshake del webhook, Req 64.3)
+  #   crm.social.token-acceso   <- META_ACCESS_TOKEN  (token de acceso por defecto)
+  # La Ventana_Servicio es CONFIGURABLE (Req 64.6); por defecto 24 horas. La
+  # politica de reintentos ante fallo (Req 64.13) tambien es configurable.
+  # TLS termina en el Proxy_Inverso (IIS, Req 9); la aplicacion valida la firma.
+  # ==========================================================================
+  social:
+    app-secret: ${META_APP_SECRET:}
+    verify-token: ${META_VERIFY_TOKEN:}
+    token-acceso: ${META_ACCESS_TOKEN:}
+    ventana-servicio-horas: ${SOCIAL_VENTANA_SERVICIO_HORAS:24}
+    max-intentos: ${SOCIAL_MAX_INTENTOS:3}
+    espera-reintento-millis: ${SOCIAL_ESPERA_REINTENTO_MILLIS:200}
+
+  datasource:
+    # Placeholders sin valores por defecto de credenciales: el arranque debe
+    # proveer estas variables de entorno. La URL tiene un default local no
+    # sensible solo para desarrollo; usuario y contrasena NO tienen default.
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/crm}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: false
+    show-sql: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    # ------------------------------------------------------------------------
+    # SEPARACION DE PRIVILEGIOS DDL/RUNTIME (Req 23). Las migraciones (DDL y
+    # semillas de plataforma con tenant_id NULL, p. ej. roles predefinidos) se
+    # ejecutan con un ROL MIGRADOR dedicado que es owner del esquema y se salta
+    # RLS (BYPASSRLS) SOLO para migrar; el runtime (spring.datasource) se conecta
+    # con el rol de aplicacion `dessti_app` (NOSUPERUSER, NOBYPASSRLS) para que la
+    # Row-Level Security SIEMPRE aplique a las consultas de negocio.
+    #
+    # Compatibilidad: si no se definen DB_MIGRATOR_USER/PASSWORD, Flyway reutiliza
+    # las credenciales del datasource (DB_USER/DB_PASSWORD). Esto preserva el
+    # comportamiento de las pruebas de integracion (Testcontainers), que migran y
+    # consultan como el superusuario del contenedor y no configuran migrador.
+    #   spring.flyway.user     <- DB_MIGRATOR_USER (por defecto DB_USER)
+    #   spring.flyway.password <- DB_MIGRATOR_PASSWORD (por defecto DB_PASSWORD)
+    # La URL de migracion es la misma que la del datasource.
+    # ------------------------------------------------------------------------
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/crm}
+    user: ${DB_MIGRATOR_USER:${DB_USER}}
+    password: ${DB_MIGRATOR_PASSWORD:${DB_PASSWORD}}
+
+server:
+  # ==========================================================================
+  # Tamano maximo de la cabecera HTTP de peticion. El JWT viaja en el header
+  # Authorization: Bearer <token>. El claim permisos del admin_empresa puede
+  # ser extenso (acceso a TODOS los modulos de negocio, V58), de modo que el
+  # token supera el limite por defecto de Tomcat (8 KB) y este rechazaria la
+  # peticion con "Request header is too large" (HTTP 400). Se amplia a 64 KB
+  # para dar holgura a tokens con muchos permisos/modulos, sin comprometer la
+  # seguridad (el limite solo evita cabeceras abusivas).
+  #   server.max-http-request-header-size <- MAX_HTTP_HEADER_SIZE (por defecto 64KB)
+  # ==========================================================================
+  max-http-request-header-size: ${MAX_HTTP_HEADER_SIZE:64KB}
+  servlet:
+    context-path: /api/v1
+  # ==========================================================================
+  # Proxy inverso IIS (Req 9). TLS termina en IIS y las peticiones llegan al
+  # backend por HTTP interno con cabeceras X-Forwarded-* (Proto/For/Host).
+  # 'framework' hace que Spring confie en esas cabeceras para reconstruir el
+  # esquema/host originales (HTTPS), de modo que redirecciones, enlaces y la
+  # emision de HSTS reflejen el origen seguro. Ver docs/tls-y-proxy-inverso-iis.md.
+  # ==========================================================================
+  forward-headers-strategy: framework
+
+# OpenAPI / Swagger UI (Req 13)
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+
+# Actuator: health check expuesto (Req 51.4)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized

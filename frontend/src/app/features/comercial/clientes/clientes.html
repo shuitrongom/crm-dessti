@@ -1,0 +1,290 @@
+<app-page-header titulo="Clientes" subtitulo="Gestiona tu cartera de clientes y sus contactos: da de alta, consulta y mantén actualizada su información.">
+  <div acciones>
+    @if (puedeCrear) {
+      <button matButton="filled" type="button" (click)="nuevo()">
+        <mat-icon aria-hidden="true">add</mat-icon>
+        Nuevo cliente
+      </button>
+    }
+  </div>
+</app-page-header>
+
+@if (formularioAbierto()) {
+  <mat-card appearance="outlined" class="cliente-form">
+    <mat-card-header>
+      <mat-card-title>{{ tituloFormulario() }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form class="cliente-form__cuerpo" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+        <!-- Seccion: Identificacion -->
+        <section class="cliente-form__seccion">
+          <h3 class="cliente-form__seccion-titulo">Identificación</h3>
+          <div class="cliente-form__grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Nombre o razón social *</mat-label>
+              <input matInput type="text" formControlName="nombre" autocomplete="off" required />
+              @if (form.controls.nombre.hasError('required') && form.controls.nombre.touched) {
+                <mat-error>El nombre es obligatorio.</mat-error>
+              } @else if (form.controls.nombre.hasError('maxlength') && form.controls.nombre.touched) {
+                <mat-error>El nombre admite máximo 200 caracteres.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Nombre comercial</mat-label>
+              <input matInput type="text" formControlName="nombreComercial" autocomplete="off" maxlength="200" />
+              @if (form.controls.nombreComercial.hasError('maxlength') && form.controls.nombreComercial.touched) {
+                <mat-error>El nombre comercial admite máximo 200 caracteres.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Tipo de persona</mat-label>
+              <mat-select formControlName="tipoPersona">
+                <mat-option value="">Sin especificar</mat-option>
+                @for (tipo of tiposPersona; track tipo.valor) {
+                  <mat-option [value]="tipo.valor">{{ tipo.etiqueta }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>RFC *</mat-label>
+              <input
+                matInput
+                type="text"
+                formControlName="rfc"
+                autocomplete="off"
+                required
+                maxlength="13"
+                oninput="this.value = this.value.toUpperCase()"
+              />
+              <mat-hint>12 (moral) o 13 (física) caracteres. Ej.: ABC010101AB1</mat-hint>
+              @if (form.controls.rfc.hasError('required') && form.controls.rfc.touched) {
+                <mat-error>El RFC es obligatorio.</mat-error>
+              } @else if (form.controls.rfc.hasError('duplicado') && form.controls.rfc.touched) {
+                <mat-error>Ya existe un cliente con ese RFC.</mat-error>
+              } @else if (form.controls.rfc.hasError('rfc') && form.controls.rfc.touched) {
+                <mat-error>El RFC no tiene un formato válido (12 o 13 caracteres).</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </section>
+
+        <!-- Seccion: Contacto -->
+        <section class="cliente-form__seccion">
+          <h3 class="cliente-form__seccion-titulo">Contacto</h3>
+          <div class="cliente-form__grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Correo electrónico</mat-label>
+              <input matInput type="email" formControlName="email" autocomplete="off" maxlength="254" />
+              @if (form.controls.email.hasError('email') && form.controls.email.touched) {
+                <mat-error>El correo no tiene un formato válido.</mat-error>
+              } @else if (form.controls.email.hasError('maxlength') && form.controls.email.touched) {
+                <mat-error>El correo admite máximo 254 caracteres.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Teléfono *</mat-label>
+              <input
+                matInput
+                type="tel"
+                formControlName="telefono"
+                autocomplete="off"
+                inputmode="numeric"
+                maxlength="10"
+              />
+              <mat-hint>10 dígitos.</mat-hint>
+              @if (form.controls.telefono.hasError('pattern') && form.controls.telefono.touched) {
+                <mat-error>El teléfono debe tener 10 dígitos.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Teléfono adicional</mat-label>
+              <input
+                matInput
+                type="tel"
+                formControlName="telefonoAdicional"
+                autocomplete="off"
+                inputmode="numeric"
+                maxlength="10"
+              />
+              <mat-hint>10 dígitos.</mat-hint>
+              @if (form.controls.telefonoAdicional.hasError('pattern') && form.controls.telefonoAdicional.touched) {
+                <mat-error>El teléfono debe tener 10 dígitos.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+          @if (form.hasError('contacto') && form.touched) {
+            <p class="cliente-form__error" role="alert">
+              <mat-icon aria-hidden="true">error_outline</mat-icon>
+              <span>Proporcione al menos un correo o un teléfono.</span>
+            </p>
+          }
+        </section>
+
+        <!-- Seccion: Direccion -->
+        <section class="cliente-form__seccion">
+          <h3 class="cliente-form__seccion-titulo">Dirección</h3>
+          <app-address-autocomplete (direccionSeleccionada)="onDireccion($event)" />
+          <div class="cliente-form__grid">
+            <mat-form-field appearance="outline" class="cliente-form__campo--ancho">
+              <mat-label>Calle y número</mat-label>
+              <input matInput type="text" formControlName="direccionCalle" autocomplete="off" maxlength="200" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Ciudad</mat-label>
+              <input matInput type="text" formControlName="direccionCiudad" autocomplete="off" maxlength="120" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Estado</mat-label>
+              <input matInput type="text" formControlName="direccionEstado" autocomplete="off" maxlength="120" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Código postal</mat-label>
+              <input
+                matInput
+                type="text"
+                formControlName="direccionCp"
+                autocomplete="off"
+                inputmode="numeric"
+                maxlength="10"
+              />
+              @if (form.controls.direccionCp.hasError('pattern') && form.controls.direccionCp.touched) {
+                <mat-error>El código postal solo admite dígitos.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>País</mat-label>
+              <input matInput type="text" formControlName="direccionPais" autocomplete="off" maxlength="80" />
+            </mat-form-field>
+          </div>
+        </section>
+
+        <!-- Seccion: Notas -->
+        <section class="cliente-form__seccion">
+          <h3 class="cliente-form__seccion-titulo">Notas</h3>
+          <div class="cliente-form__grid">
+            <mat-form-field appearance="outline" class="cliente-form__campo--ancho">
+              <mat-label>Notas</mat-label>
+              <textarea matInput rows="3" formControlName="notas" [maxlength]="maxNotas"></textarea>
+              <mat-hint align="end">{{ longitudNotas() }} / {{ maxNotas }}</mat-hint>
+            </mat-form-field>
+          </div>
+        </section>
+
+        <div class="cliente-form__acciones">
+          <button matButton type="button" (click)="cancelar()" [disabled]="guardando()">
+            Cancelar
+          </button>
+          <button matButton="filled" type="submit" [disabled]="guardando() || form.invalid">
+            Guardar
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+<!-- Tira de indicadores de la cartera (patron enterprise: outcome-first). Solo
+     se muestra cuando el listado cargo correctamente para no distraer en vacio. -->
+@if (fase() === "ok") {
+  <section class="comercial-kpis" aria-label="Indicadores de la cartera de clientes">
+    <article class="comercial-kpi comercial-kpi--valor">
+      <span class="comercial-kpi__icono" aria-hidden="true"><mat-icon>groups</mat-icon></span>
+      <span class="comercial-kpi__cuerpo">
+        <span class="comercial-kpi__valor">{{ total() }}</span>
+        <span class="comercial-kpi__etiqueta">Clientes registrados</span>
+      </span>
+    </article>
+    <article class="comercial-kpi comercial-kpi--exito">
+      <span class="comercial-kpi__icono" aria-hidden="true"><mat-icon>verified_user</mat-icon></span>
+      <span class="comercial-kpi__cuerpo">
+        <span class="comercial-kpi__valor">{{ clientesActivos() }}</span>
+        <span class="comercial-kpi__etiqueta">Activos en esta página</span>
+      </span>
+    </article>
+    <article class="comercial-kpi">
+      <span class="comercial-kpi__icono" aria-hidden="true"><mat-icon>domain</mat-icon></span>
+      <span class="comercial-kpi__cuerpo">
+        <span class="comercial-kpi__valor">{{ clientesMorales() }}</span>
+        <span class="comercial-kpi__etiqueta">Personas morales</span>
+      </span>
+    </article>
+    <article class="comercial-kpi">
+      <span class="comercial-kpi__icono" aria-hidden="true"><mat-icon>person</mat-icon></span>
+      <span class="comercial-kpi__cuerpo">
+        <span class="comercial-kpi__valor">{{ clientesFisicas() }}</span>
+        <span class="comercial-kpi__etiqueta">Personas físicas</span>
+      </span>
+    </article>
+  </section>
+}
+
+<mat-form-field appearance="outline" class="comercial-filtro">
+  <mat-label>Buscar por nombre o RFC</mat-label>
+  <input
+    matInput
+    type="search"
+    [value]="filtro()"
+    (change)="aplicarFiltro($any($event.target).value)"
+    placeholder="Escribe y presiona Enter"
+  />
+  <mat-icon matSuffix aria-hidden="true">search</mat-icon>
+</mat-form-field>
+
+<app-state-container
+  [fase]="fase()"
+  [mensajeError]="mensajeError()"
+  mensajeVacio="No hay clientes que coincidan con la búsqueda."
+  (reintentar)="cargar()"
+>
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="clientes()"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="onPagina($event)"
+  >
+    <ng-template appCelda="nombre" let-fila>
+      <span class="cliente-nombre">{{ fila.nombre }}</span>
+      @if (fila.nombreComercial) {
+        <span class="cliente-nombre-comercial">{{ fila.nombreComercial }}</span>
+      }
+    </ng-template>
+    <ng-template appCelda="tipoPersona" let-fila>{{ etiquetaTipoPersona(fila.tipoPersona) }}</ng-template>
+    <ng-template appCelda="rfc" let-fila>{{ fila.rfc }}</ng-template>
+    <ng-template appCelda="email" let-fila>{{ fila.email || '—' }}</ng-template>
+    <ng-template appCelda="telefono" let-fila>{{ fila.telefono || '—' }}</ng-template>
+    <ng-template appCelda="acciones" let-fila>
+      <div class="comercial-acciones-fila">
+        <button matIconButton type="button" (click)="ver(fila)" aria-label="Ver detalle del cliente">
+          <mat-icon aria-hidden="true">visibility</mat-icon>
+        </button>
+        @if (puedeActualizar) {
+          <button matIconButton type="button" (click)="editar(fila)" aria-label="Editar cliente">
+            <mat-icon aria-hidden="true">edit</mat-icon>
+          </button>
+        }
+        @if (puedeEliminar) {
+          <button
+            matIconButton
+            type="button"
+            class="ds-boton-destructivo"
+            (click)="eliminar(fila)"
+            aria-label="Dar de baja cliente"
+          >
+            <mat-icon aria-hidden="true">delete</mat-icon>
+          </button>
+        }
+      </div>
+    </ng-template>
+  </app-data-table>
+</app-state-container>

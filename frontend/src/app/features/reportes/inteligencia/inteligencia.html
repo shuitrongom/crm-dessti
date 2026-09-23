@@ -1,0 +1,94 @@
+<app-page-header
+  titulo="Inteligencia de negocio"
+  subtitulo="Análisis consolidado por área con comparativos frente al periodo anterior."
+>
+  @if (puedeExportar) {
+    <button acciones matButton type="button" [disabled]="exportando()" (click)="exportar()">
+      <mat-icon>download</mat-icon>
+      Exportar
+    </button>
+  }
+</app-page-header>
+
+<form class="reportes-filtros" [formGroup]="formFiltro" (ngSubmit)="consultar()" novalidate>
+  <mat-form-field appearance="outline">
+    <mat-label>Desde</mat-label>
+    <input matInput [matDatepicker]="pickerDesde" formControlName="desde" />
+    <mat-datepicker-toggle matSuffix [for]="pickerDesde" />
+    <mat-datepicker #pickerDesde />
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>Hasta</mat-label>
+    <input matInput [matDatepicker]="pickerHasta" formControlName="hasta" />
+    <mat-datepicker-toggle matSuffix [for]="pickerHasta" />
+    <mat-datepicker #pickerHasta />
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>Area</mat-label>
+    <input matInput formControlName="area" autocomplete="off" />
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>Dimension</mat-label>
+    <input matInput formControlName="dimension" autocomplete="off" />
+  </mat-form-field>
+  <button matButton="filled" type="submit">
+    <mat-icon>search</mat-icon> Consultar
+  </button>
+</form>
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="No hay analisis consolidado para los filtros seleccionados."
+  (reintentar)="consultar()"
+>
+  @if (estado().datos; as datos) {
+    @if (datos.desdeComparativo && datos.hastaComparativo) {
+      <p class="inteligencia-leyenda">
+        Comparado contra el periodo anterior
+        ({{ datos.desdeComparativo }} a {{ datos.hastaComparativo }}).
+      </p>
+    }
+
+    @for (grupo of datos.areas; track grupo.area) {
+      <section class="reportes-area" [attr.aria-label]="'Indicadores de ' + humanizarArea(grupo.area)">
+        <h2 class="reportes-area__titulo">{{ humanizarArea(grupo.area) }}</h2>
+        <div class="inteligencia-indicadores">
+          @for (indicador of grupo.indicadores; track indicador.clave) {
+            <mat-card appearance="outlined" class="inteligencia-card">
+              <mat-card-content>
+                <div class="inteligencia-card__etiqueta">{{ indicador.etiqueta }}</div>
+                <div class="inteligencia-card__valor">
+                  {{ indicador.valor | number: '1.0-2' : 'es-MX' }}
+                  <span class="inteligencia-card__unidad">{{ indicador.unidad }}</span>
+                </div>
+
+                @if (comparativo(indicador).variacion !== null) {
+                  <div class="inteligencia-delta" [class]="claseTendencia(indicador)">
+                    <mat-icon aria-hidden="true">{{ comparativo(indicador).icono }}</mat-icon>
+                    <span>
+                      @if (comparativo(indicador).porcentaje !== null) {
+                        {{ comparativo(indicador).porcentaje | number: '1.0-2' : 'es-MX' }}%
+                      } @else {
+                        {{ comparativo(indicador).variacion | number: '1.0-2' : 'es-MX' }}
+                      }
+                    </span>
+                    <span class="inteligencia-delta__texto">
+                      {{ comparativo(indicador).texto }}
+                    </span>
+                  </div>
+                  <div class="inteligencia-card__previo">
+                    Periodo anterior: {{ indicador.comparativo | number: '1.0-2' : 'es-MX' }}
+                    {{ indicador.unidad }}
+                  </div>
+                } @else {
+                  <div class="inteligencia-card__previo">Sin comparativo del periodo anterior.</div>
+                }
+              </mat-card-content>
+            </mat-card>
+          }
+        </div>
+      </section>
+    }
+  }
+</app-state-container>

@@ -1,0 +1,162 @@
+// =============================================================================
+// Estilos de la vista de Giros (super_admin) (Req 9, 52, 53, 57)
+// -----------------------------------------------------------------------------
+// Tablero enterprise: fila de KPIs, celda de giro con nombre visible + clave en
+// dos lineas, chip de estado con punto semantico y acciones servidas por un menu
+// de desbordamiento (3 puntos). El significado no se transmite solo por color:
+// cada accion lleva icono + texto y el chip su etiqueta. Solo tokens del Sistema
+// de Diseno; correcto en tema claro y oscuro.
+// =============================================================================
+
+@use '../../../../styles/breakpoints' as bp;
+
+// -----------------------------------------------------------------------------
+// Acciones del encabezado: filtro por estado + boton de alta. Se envuelven y,
+// en moviles (xs), se apilan a todo el ancho para no abarrotarse (Req 52).
+// -----------------------------------------------------------------------------
+.giros__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-2) var(--ds-space-3);
+
+  @include bp.until('sm') {
+    flex-direction: column;
+    align-items: stretch;
+
+    button[matButton='filled'] {
+      inline-size: 100%;
+    }
+  }
+
+  @include bp.from('md') {
+    inline-size: 100%;
+    justify-content: flex-end;
+  }
+
+  button[matButton='filled'] {
+    block-size: 40px;
+  }
+}
+
+// El campo de filtro colapsa el espacio de subscript y ocupa todo el ancho en
+// movil; desde sm toma un ancho acotado para alinearse con el boton.
+.giros__filtro {
+  inline-size: 100%;
+
+  ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+    display: none;
+  }
+
+  @include bp.from('sm') {
+    inline-size: 11rem;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Fila de indicadores KPI (mobile-first: 1 col -> 3)
+// -----------------------------------------------------------------------------
+.giros__kpis {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-space-4);
+  margin-bottom: var(--ds-space-5);
+
+  @include bp.from('sm') {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Celda de giro: nombre visible + clave (dos lineas)
+// -----------------------------------------------------------------------------
+.giros__giro {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.giros__giro-nombre {
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.giros__giro-clave {
+  font-size: var(--ds-font-size-xs);
+  color: var(--ds-color-text-muted);
+}
+
+// -----------------------------------------------------------------------------
+// Punto de estado dentro del chip: refuerza el estado con color semantico.
+// -----------------------------------------------------------------------------
+.giros__estado-dot {
+  display: inline-block;
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  border-radius: var(--ds-radius-pill);
+  margin-inline-end: var(--ds-space-2);
+  background: var(--ds-color-text-muted);
+  flex: 0 0 auto;
+}
+
+.giros__estado {
+  &--activo .giros__estado-dot {
+    background: var(--ds-color-success);
+  }
+  &--inactivo .giros__estado-dot {
+    background: var(--ds-color-warning);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Chip de completitud del giro: "Completo" (tono exito) vs "Base" (tono
+// advertencia). El significado no se transmite solo por color: cada chip lleva
+// icono + texto y un tooltip explicativo.
+// -----------------------------------------------------------------------------
+.giros__completitud {
+  .mat-icon {
+    font-size: 16px;
+    inline-size: 16px;
+    block-size: 16px;
+  }
+
+  &--completo {
+    background: color-mix(in srgb, var(--ds-color-success) 16%, transparent);
+    color: var(--ds-color-success);
+
+    .mat-icon {
+      color: var(--ds-color-success);
+    }
+  }
+
+  &--base {
+    background: color-mix(in srgb, var(--ds-color-warning) 18%, transparent);
+    color: var(--ds-color-warning);
+
+    .mat-icon {
+      color: var(--ds-color-warning);
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Acciones dentro del menu de desbordamiento: color semantico accesible
+// (icono + texto ademas del color).
+// -----------------------------------------------------------------------------
+.giros__accion--activar .mat-icon {
+  color: var(--ds-color-success);
+}
+
+.giros__accion--desactivar .mat-icon {
+  color: var(--ds-color-error);
+}
+
+// Accion destructiva de eliminacion: icono en tono de error. Cuando el item esta
+// deshabilitado (giro definitivo) Angular Material atenua el contenido, por lo
+// que no se fuerza el color en ese estado.
+.giros__accion--eliminar:not([disabled]) .mat-icon {
+  color: var(--ds-color-error);
+}

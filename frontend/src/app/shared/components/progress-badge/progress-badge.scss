@@ -1,0 +1,40 @@
+.progress-badge {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-2);
+
+  &__cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ds-space-2);
+  }
+
+  &__valor {
+    font-weight: var(--ds-font-weight-medium);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__insignia {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--ds-space-1) var(--ds-space-3);
+    border-radius: var(--ds-radius-pill);
+    font-size: var(--ds-font-size-xs);
+    font-weight: var(--ds-font-weight-medium);
+    color: var(--ds-color-text-on-primary);
+    white-space: nowrap;
+
+    &--en_riesgo {
+      background: var(--ds-color-error);
+    }
+
+    &--en_curso {
+      background: var(--ds-color-warning);
+    }
+
+    &--cumplido {
+      background: var(--ds-color-success);
+    }
+  }
+}

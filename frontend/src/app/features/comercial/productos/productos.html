@@ -1,0 +1,218 @@
+<app-page-header titulo="Productos" subtitulo="Administra tu catálogo de productos y servicios: altas, cambios y disponibilidad para cotizar y vender.">
+  <div acciones>
+    @if (puedeCrear) {
+      <button matButton="filled" type="button" (click)="nuevo()">
+        <mat-icon aria-hidden="true">add</mat-icon>
+        Nuevo producto
+      </button>
+    }
+  </div>
+</app-page-header>
+
+@if (formularioAbierto()) {
+  <mat-card appearance="outlined" class="comercial-form">
+    <mat-card-header>
+      <mat-card-title>{{ tituloFormulario() }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form class="producto-form" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+        <!-- Seccion: Foto del producto (carga como archivo de imagen con preview) -->
+        <section class="producto-form__seccion">
+          <h3 class="producto-form__seccion-titulo">Foto del producto</h3>
+          <div class="producto-foto">
+            @if (foto(); as src) {
+              <img
+                class="producto-foto__preview"
+                [src]="src"
+                [alt]="form.controls.nombre.value.trim() || 'Vista previa del producto'"
+              />
+            } @else {
+              <span class="producto-foto__placeholder" aria-hidden="true">
+                <mat-icon>add_photo_alternate</mat-icon>
+              </span>
+            }
+            <div class="producto-foto__controles">
+              <span class="producto-foto__ayuda">Imagen (PNG, JPG, WebP). Máximo 1 MB.</span>
+              <div class="producto-foto__botones">
+                <label class="producto-foto__boton">
+                  <input
+                    type="file"
+                    class="producto-foto__input"
+                    accept="image/*"
+                    aria-label="Cargar foto del producto"
+                    (change)="seleccionarFoto($event)"
+                  />
+                  <span matButton="outlined">
+                    <mat-icon aria-hidden="true">upload</mat-icon>
+                    {{ foto() ? 'Cambiar foto' : 'Cargar foto' }}
+                  </span>
+                </label>
+                @if (foto()) {
+                  <button matButton type="button" (click)="quitarFoto()">Quitar foto</button>
+                }
+              </div>
+              @if (fotoError()) {
+                <p class="producto-foto__error" role="alert">
+                  <mat-icon aria-hidden="true">error_outline</mat-icon>
+                  <span>{{ fotoError() }}</span>
+                </p>
+              }
+            </div>
+          </div>
+        </section>
+
+        <!-- Seccion: Datos generales -->
+        <section class="producto-form__seccion">
+          <h3 class="producto-form__seccion-titulo">Datos generales</h3>
+          <div class="producto-form__grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Nombre</mat-label>
+              <input matInput type="text" formControlName="nombre" required />
+              @if (form.controls.nombre.hasError('required') && form.controls.nombre.touched) {
+                <mat-error>El nombre es obligatorio.</mat-error>
+              }
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Unidad de medida</mat-label>
+              <input matInput type="text" formControlName="unidad" required />
+              @if (form.controls.unidad.hasError('required') && form.controls.unidad.touched) {
+                <mat-error>La unidad es obligatoria.</mat-error>
+              }
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="producto-form__campo-ancho">
+              <mat-label>Descripción</mat-label>
+              <textarea matInput rows="2" formControlName="descripcion" required></textarea>
+              @if (form.controls.descripcion.hasError('required') && form.controls.descripcion.touched) {
+                <mat-error>La descripción es obligatoria.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </section>
+
+        <!-- Seccion: Datos comerciales -->
+        <section class="producto-form__seccion">
+          <h3 class="producto-form__seccion-titulo">Datos comerciales (opcional)</h3>
+          <div class="producto-form__grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Cliente meta</mat-label>
+              <input matInput type="text" formControlName="clienteMeta" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Alianzas</mat-label>
+              <input matInput type="text" formControlName="alianzas" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Competencia</mat-label>
+              <input matInput type="text" formControlName="competencia" />
+            </mat-form-field>
+          </div>
+        </section>
+
+        <!-- Seccion: Precios por lista (Req 4.1, 4.3).
+             Los precios de un producto se definen y consultan en Listas de precios;
+             desde aqui se ofrece un acceso directo honesto (no hay endpoint de lectura
+             de precios por producto). Solo al editar un producto ya existente. -->
+        @if (editandoId() && puedeVerPrecios) {
+          <section class="producto-form__seccion">
+            <h3 class="producto-form__seccion-titulo">Precios por lista</h3>
+            <p class="producto-form__precios-ayuda">
+              Los precios de este producto se gestionan en cada lista de precios (por vigencia,
+              prioridad y segmento). Al cotizar, si eliges el producto sin capturar precio, se
+              sugiere el de la lista vigente.
+            </p>
+            <a matButton="outlined" routerLink="/empresa/comercial/listas-precios">
+              <mat-icon aria-hidden="true">sell</mat-icon>
+              Gestionar precios por lista
+            </a>
+          </section>
+        }
+
+        <div class="comercial-form__acciones">
+          <button matButton type="button" (click)="cancelar()" [disabled]="guardando()">Cancelar</button>
+          <button matButton="filled" type="submit" [disabled]="guardando()">Guardar</button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+<!-- Tira de indicadores del catalogo (patron enterprise: outcome-first). Solo
+     cuando el listado cargo correctamente para no distraer en vacio. -->
+@if (fase() === "ok") {
+  <section class="comercial-kpis" aria-label="Indicadores del catálogo de productos">
+    <article class="comercial-kpi comercial-kpi--valor">
+      <span class="comercial-kpi__icono" aria-hidden="true"><mat-icon>inventory_2</mat-icon></span>
+      <span class="comercial-kpi__cuerpo">
+        <span class="comercial-kpi__valor">{{ total() }}</span>
+        <span class="comercial-kpi__etiqueta">Productos en el catálogo</span>
+      </span>
+    </article>
+    <article class="comercial-kpi comercial-kpi--exito">
+      <span class="comercial-kpi__icono" aria-hidden="true"><mat-icon>check_circle</mat-icon></span>
+      <span class="comercial-kpi__cuerpo">
+        <span class="comercial-kpi__valor">{{ productosActivos() }}</span>
+        <span class="comercial-kpi__etiqueta">Activos en esta página</span>
+      </span>
+    </article>
+  </section>
+}
+
+<mat-form-field appearance="outline" class="comercial-filtro">
+  <mat-label>Buscar por nombre</mat-label>
+  <input
+    matInput
+    type="search"
+    [value]="filtro()"
+    (change)="aplicarFiltro($any($event.target).value)"
+  />
+  <mat-icon matSuffix aria-hidden="true">search</mat-icon>
+</mat-form-field>
+
+<app-state-container
+  [fase]="fase()"
+  [mensajeError]="mensajeError()"
+  mensajeVacio="No hay productos que coincidan con la búsqueda."
+  (reintentar)="cargar()"
+>
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="productos()"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="onPagina($event)"
+  >
+    <ng-template appCelda="foto" let-fila>
+      @if (fila.foto) {
+        <img class="producto-miniatura" [src]="fila.foto" [alt]="'Foto de ' + fila.nombre" />
+      } @else {
+        <span class="producto-miniatura producto-miniatura--vacia" aria-hidden="true">
+          <mat-icon>image</mat-icon>
+        </span>
+      }
+    </ng-template>
+    <ng-template appCelda="nombre" let-fila>{{ fila.nombre }}</ng-template>
+    <ng-template appCelda="unidad" let-fila>{{ fila.unidad }}</ng-template>
+    <ng-template appCelda="descripcion" let-fila>{{ fila.descripcion }}</ng-template>
+    <ng-template appCelda="acciones" let-fila>
+      <div class="comercial-acciones-fila">
+        @if (puedeActualizar) {
+          <button matIconButton type="button" (click)="editar(fila)" aria-label="Editar producto">
+            <mat-icon aria-hidden="true">edit</mat-icon>
+          </button>
+        }
+        @if (puedeEliminar) {
+          <button
+            matIconButton
+            type="button"
+            class="ds-boton-destructivo"
+            (click)="eliminar(fila)"
+            aria-label="Dar de baja producto"
+          >
+            <mat-icon aria-hidden="true">delete</mat-icon>
+          </button>
+        }
+      </div>
+    </ng-template>
+  </app-data-table>
+</app-state-container>

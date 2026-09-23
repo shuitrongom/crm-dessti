@@ -1,0 +1,159 @@
+<div class="shell">
+  <mat-toolbar class="shell__barra" color="primary">
+    <header class="shell__cabecera">
+      @if (!esEscritorio()) {
+        <button
+          matIconButton
+          type="button"
+          aria-label="Abrir o cerrar menu de navegacion"
+          (click)="alternarDrawer()"
+        >
+          <mat-icon aria-hidden="true">menu</mat-icon>
+        </button>
+      }
+      <span class="shell__titulo">{{ tituloAmbito() }}</span>
+
+      <span class="shell__espaciador"></span>
+
+      <button
+        matIconButton
+        type="button"
+        [attr.aria-label]="'Cambiar a tema ' + (theme.mode() === 'dark' ? 'claro' : 'oscuro')"
+        (click)="theme.toggle()"
+      >
+        <mat-icon aria-hidden="true">{{ theme.mode() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
+      </button>
+
+      <button
+        matIconButton
+        type="button"
+        [matMenuTriggerFor]="menuUsuario"
+        [attr.aria-label]="'Menu de la cuenta de ' + (nombreMostrado() ?? 'usuario')"
+      >
+        <span class="shell__avatar" aria-hidden="true">{{ iniciales() }}</span>
+      </button>
+      <mat-menu #menuUsuario="matMenu">
+        <div class="shell__usuario" mat-menu-item disabled>
+          <mat-icon aria-hidden="true">badge</mat-icon>
+          <span class="shell__usuario-nombre">{{ nombreMostrado() ?? 'Usuario' }}</span>
+        </div>
+        @if (rutaPerfil(); as ruta) {
+          <a mat-menu-item [routerLink]="ruta">
+            <mat-icon aria-hidden="true">manage_accounts</mat-icon>
+            <span>Mi perfil</span>
+          </a>
+        }
+        <button mat-menu-item type="button" (click)="cerrarSesion()">
+          <mat-icon aria-hidden="true">logout</mat-icon>
+          <span>Cerrar sesion</span>
+        </button>
+      </mat-menu>
+    </header>
+  </mat-toolbar>
+
+  <mat-sidenav-container class="shell__contenedor">
+    <mat-sidenav
+      class="shell__drawer"
+      [mode]="modoDrawer()"
+      [opened]="esEscritorio() || drawerAbierto()"
+      [disableClose]="esEscritorio()"
+      (closedStart)="drawerAbierto.set(false)"
+    >
+      <div class="shell__marca">
+        @if (esEmpresa()) {
+          @if (logoEmpresa(); as logo) {
+            <img
+              class="shell__marca-imagen"
+              [src]="logo"
+              [alt]="etiquetaEmpresa()"
+            />
+          } @else {
+            <span class="shell__marca-logo shell__marca-empresa">{{ etiquetaEmpresa() }}</span>
+          }
+        } @else {
+          <span class="shell__marca-logo">
+            <span class="shell__marca-nombre">Dess</span><span class="shell__marca-acento">-TI</span>
+          </span>
+        }
+      </div>
+
+      <nav class="shell__nav" aria-label="Navegacion principal">
+        @for (grupo of grupos(); track grupo.titulo ?? $index) {
+          @if (grupo.titulo) {
+            <!-- Toda seccion con titulo (incluida "Cuenta") es un acordeon
+                 colapsable que arranca CERRADO. El encabezado es un <button>
+                 real con aria-expanded/aria-controls, operable por teclado
+                 (Enter/Espacio); la lista de items es la region controlada. La
+                 navegacion NUNCA auto-abre la seccion: solo resalta su
+                 encabezado cuando contiene la ruta activa. -->
+            <section
+              class="shell__grupo shell__grupo--colapsable"
+              [class.shell__grupo--activo]="seccionActiva() === grupo.titulo"
+            >
+              <button
+                type="button"
+                class="shell__seccion-boton"
+                [attr.aria-expanded]="estaExpandida(grupo.titulo)"
+                [attr.aria-controls]="idSeccion(grupo.titulo)"
+                (click)="alternarSeccion(grupo.titulo)"
+              >
+                <span class="shell__seccion-titulo">{{ grupo.titulo }}</span>
+                <mat-icon class="shell__seccion-chevron" aria-hidden="true">
+                  {{ estaExpandida(grupo.titulo) ? 'expand_less' : 'expand_more' }}
+                </mat-icon>
+              </button>
+              @if (estaExpandida(grupo.titulo)) {
+                <mat-nav-list
+                  class="shell__seccion-items"
+                  [id]="idSeccion(grupo.titulo)"
+                >
+                  @for (item of grupo.items; track item.ruta) {
+                    <a
+                      mat-list-item
+                      class="shell__enlace"
+                      [routerLink]="item.ruta"
+                      routerLinkActive="shell__enlace--activo"
+                      [routerLinkActiveOptions]="{ exact: false }"
+                      (click)="alNavegar()"
+                    >
+                      <mat-icon matListItemIcon aria-hidden="true">{{ item.icono }}</mat-icon>
+                      <span matListItemTitle>{{ item.etiqueta }}</span>
+                    </a>
+                  }
+                </mat-nav-list>
+              }
+            </section>
+          } @else {
+            <!-- Grupo sin titulo (p. ej. portal como lista unica): no hay
+                 encabezado que colapsar, se pintan los enlaces directamente. -->
+            <mat-nav-list class="shell__grupo">
+              @for (item of grupo.items; track item.ruta) {
+                <a
+                  mat-list-item
+                  class="shell__enlace"
+                  [routerLink]="item.ruta"
+                  routerLinkActive="shell__enlace--activo"
+                  [routerLinkActiveOptions]="{ exact: false }"
+                  (click)="alNavegar()"
+                >
+                  <mat-icon matListItemIcon aria-hidden="true">{{ item.icono }}</mat-icon>
+                  <span matListItemTitle>{{ item.etiqueta }}</span>
+                </a>
+              }
+            </mat-nav-list>
+          }
+        } @empty {
+          <p class="shell__sin-items">No hay secciones disponibles para tu cuenta.</p>
+        }
+      </nav>
+    </mat-sidenav>
+
+    <mat-sidenav-content class="shell__contenido">
+      <main id="main-content" class="shell__main ds-container">
+        <router-outlet />
+      </main>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+</div>
+
+

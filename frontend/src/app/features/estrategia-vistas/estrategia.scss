@@ -1,0 +1,305 @@
+// =============================================================================
+// Estilos del tablero de Estrategia (planeacion estrategica / OKR) — tokens --ds-*
+// =============================================================================
+
+@use '../../../styles/breakpoints' as bp;
+
+.est-seccion {
+  margin-block-end: var(--ds-space-6);
+}
+
+.est-seccion__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-3);
+  flex-wrap: wrap;
+  margin-block-end: var(--ds-space-3);
+}
+
+.est-seccion__titulo {
+  margin: 0 0 var(--ds-space-3);
+  font-size: var(--ds-font-size-lg);
+  font-weight: var(--ds-font-weight-medium);
+}
+
+.est-seccion__cabecera .est-seccion__titulo {
+  margin: 0;
+}
+
+.est-subtitulo {
+  margin: var(--ds-space-3) 0 var(--ds-space-2);
+  font-size: var(--ds-font-size-md);
+  font-weight: var(--ds-font-weight-medium);
+}
+
+.est-ayuda {
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-sm);
+}
+
+// --- Esencia (mision / vision / valores) -----------------------------------
+.est-esencia {
+  display: grid;
+  gap: var(--ds-space-4);
+
+  @include bp.from('md') {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.est-esencia__panel {
+  height: 100%;
+}
+
+.est-esencia__etiqueta {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  margin: 0 0 var(--ds-space-2);
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-primary);
+
+  mat-icon {
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+}
+
+.est-esencia__texto {
+  margin: 0;
+  white-space: pre-line;
+}
+
+.est-esencia__texto--vacio {
+  color: var(--ds-color-text-muted);
+  font-style: italic;
+}
+
+.est-esencia-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-2);
+
+  mat-form-field {
+    width: 100%;
+  }
+}
+
+.est-esencia-form__acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ds-space-2);
+}
+
+// --- Resumen de KPIs --------------------------------------------------------
+.est-kpis {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--ds-space-3);
+  margin-block-end: var(--ds-space-4);
+
+  @include bp.from('sm') {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+// --- Indicadores comerciales (apoyo a los OKR) -----------------------------
+.est-indicadores-comerciales {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-space-4);
+  margin-block-start: var(--ds-space-3);
+
+  @include bp.from('sm') {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include bp.from('md') {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.est-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-1);
+  padding: var(--ds-space-4);
+  background: var(--ds-color-surface);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  border-inline-start: 4px solid var(--ds-color-border);
+
+  &--en_riesgo {
+    border-inline-start-color: var(--ds-color-error);
+  }
+
+  &--en_curso {
+    border-inline-start-color: var(--ds-color-warning);
+  }
+
+  &--cumplido {
+    border-inline-start-color: var(--ds-color-success);
+  }
+}
+
+.est-kpi__valor {
+  font-size: var(--ds-font-size-xl);
+  font-weight: var(--ds-font-weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.est-kpi__etiqueta {
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-text-muted);
+}
+
+// --- Objetivos --------------------------------------------------------------
+.est-objetivos {
+  display: block;
+}
+
+.est-objetivo {
+  margin-block-end: var(--ds-space-3);
+}
+
+.est-objetivo__cabecera {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-1);
+}
+
+.est-objetivo__nombre {
+  font-weight: var(--ds-font-weight-medium);
+}
+
+.est-objetivo__meta-linea {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ds-space-1);
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-text-muted);
+
+  mat-icon {
+    font-size: 1rem;
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
+.est-objetivo__resumen {
+  justify-content: flex-end;
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--ds-font-weight-medium);
+}
+
+.est-objetivo app-progress-badge {
+  display: block;
+  margin-block: var(--ds-space-2) var(--ds-space-3);
+}
+
+.est-objetivo__meta {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ds-space-2);
+  margin: var(--ds-space-2) 0;
+
+  mat-icon {
+    color: var(--ds-color-primary);
+    flex-shrink: 0;
+  }
+}
+
+.est-objetivo__acciones {
+  margin-block-start: var(--ds-space-3);
+}
+
+// --- Tabla de resultados clave (grid accesible) -----------------------------
+.est-tabla {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  overflow: hidden;
+}
+
+.est-tabla__fila {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-space-1) var(--ds-space-3);
+  align-items: center;
+  padding: var(--ds-space-3);
+  border-block-start: 1px solid var(--ds-color-border);
+
+  &:first-child {
+    border-block-start: none;
+  }
+
+  @include bp.from('md') {
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
+  }
+}
+
+.est-tabla__fila--cabecera {
+  background: var(--ds-color-surface-alt, var(--ds-color-surface));
+  font-weight: var(--ds-font-weight-medium);
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-text-muted);
+  display: none;
+
+  @include bp.from('md') {
+    display: grid;
+  }
+}
+
+.est-tabla__desc {
+  font-weight: var(--ds-font-weight-medium);
+}
+
+.est-tabla__accion {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+}
+
+.est-tabla__campo {
+  min-width: 8rem;
+}
+
+.est-num {
+  font-variant-numeric: tabular-nums;
+}
+
+// --- Estado vacio -----------------------------------------------------------
+.est-vacio {
+  text-align: center;
+
+  mat-card-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--ds-space-3);
+    padding-block: var(--ds-space-5);
+  }
+}
+
+.est-vacio__icono {
+  font-size: 3rem;
+  width: 3rem;
+  height: 3rem;
+  color: var(--ds-color-text-muted);
+}
+
+.est-vacio__titulo {
+  margin: 0;
+  font-size: var(--ds-font-size-lg);
+  font-weight: var(--ds-font-weight-medium);
+}
+
+.est-vacio__texto {
+  margin: 0;
+  max-width: 40rem;
+  color: var(--ds-color-text-muted);
+}

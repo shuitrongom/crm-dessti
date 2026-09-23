@@ -1,0 +1,88 @@
+<h2 mat-dialog-title>Nuevo objetivo estratégico</h2>
+<mat-dialog-content>
+  <form class="est-dialog__form" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+    @if (error()) {
+      <p class="est-dialog__error" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </p>
+    }
+
+    <p class="est-dialog__intro">
+      Un objetivo (OKR) es una meta cualitativa y ambiciosa. Después podrás
+      asociarle de 3 a 5 resultados clave medibles para seguir su avance.
+    </p>
+
+    <mat-form-field appearance="outline" class="est-dialog__campo">
+      <mat-label>Nombre del objetivo</mat-label>
+      <mat-icon matPrefix aria-hidden="true">flag</mat-icon>
+      <input matInput type="text" formControlName="nombre" maxlength="200" autocomplete="off" required
+        placeholder="ej. Consolidar el liderazgo en el mercado regional" />
+      @if (formulario.controls.nombre.hasError('required') && formulario.controls.nombre.touched) {
+        <mat-error>El nombre es obligatorio.</mat-error>
+      } @else if (formulario.controls.nombre.hasError('maxlength') && formulario.controls.nombre.touched) {
+        <mat-error>Máximo 200 caracteres.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="est-dialog__campo">
+      <mat-label>Responsable</mat-label>
+      <mat-icon matPrefix aria-hidden="true">person</mat-icon>
+      <input matInput type="text" formControlName="responsable" maxlength="200" autocomplete="off" required
+        placeholder="ej. Dirección Comercial" />
+      @if (formulario.controls.responsable.hasError('required') && formulario.controls.responsable.touched) {
+        <mat-error>El responsable es obligatorio.</mat-error>
+      } @else if (formulario.controls.responsable.hasError('maxlength') && formulario.controls.responsable.touched) {
+        <mat-error>Máximo 200 caracteres.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="est-dialog__campo">
+      <mat-label>Meta</mat-label>
+      <mat-icon matPrefix aria-hidden="true">target</mat-icon>
+      <input matInput type="text" formControlName="meta" maxlength="500" autocomplete="off" required
+        placeholder="ej. Alcanzar el 25% de participación de mercado" />
+      @if (formulario.controls.meta.hasError('required') && formulario.controls.meta.touched) {
+        <mat-error>La meta es obligatoria.</mat-error>
+      } @else if (formulario.controls.meta.hasError('maxlength') && formulario.controls.meta.touched) {
+        <mat-error>Máximo 500 caracteres.</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="est-dialog__grid">
+      <mat-form-field appearance="outline" class="est-dialog__campo">
+        <mat-label>Periodo inicio</mat-label>
+        <input matInput [matDatepicker]="pickerPeriodoInicio" formControlName="periodoInicio" required />
+        <mat-datepicker-toggle matSuffix [for]="pickerPeriodoInicio" />
+        <mat-datepicker #pickerPeriodoInicio />
+        @if (formulario.controls.periodoInicio.hasError('required') && formulario.controls.periodoInicio.touched) {
+          <mat-error>La fecha de inicio es obligatoria.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="est-dialog__campo">
+        <mat-label>Periodo fin</mat-label>
+        <input matInput [matDatepicker]="pickerPeriodoFin" formControlName="periodoFin" required />
+        <mat-datepicker-toggle matSuffix [for]="pickerPeriodoFin" />
+        <mat-datepicker #pickerPeriodoFin />
+        @if (formulario.controls.periodoFin.hasError('required') && formulario.controls.periodoFin.touched) {
+          <mat-error>La fecha de fin es obligatoria.</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    @if (formulario.hasError('periodoInvalido') && formulario.controls.periodoFin.touched) {
+      <p class="est-dialog__error" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>La fecha de fin debe ser igual o posterior a la de inicio.</span>
+      </p>
+    }
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancelar()">Cancelar</button>
+  <button matButton="filled" type="button" (click)="guardar()" [disabled]="guardando()">
+    <mat-icon aria-hidden="true">add</mat-icon>
+    Crear objetivo
+  </button>
+</mat-dialog-actions>

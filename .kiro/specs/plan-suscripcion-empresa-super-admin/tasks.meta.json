@@ -1,0 +1,364 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Crear el record anidado `PlanVigenteDto` dentro de `EmpresaDto`": [
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762358724
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762372492
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762526523
+      }
+    ],
+    "1.2 Agregar el componente `planVigente` a `EmpresaDto` conservando la fabrica existente": [
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762358811
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762533327
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762888045
+      }
+    ],
+    "2.1 Agregar consulta por lote de suscripciones en `SuscripcionRepository`": [
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762358909
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762534471
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762889423
+      }
+    ],
+    "3.1 Implementar la regla unica de \"suscripcion vigente\" como metodo reutilizable": [
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762358993
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762920779
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789763242724
+      }
+    ],
+    "3.2 Enriquecer `consultarEmpresa(id)` para armar `planVigente`": [
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762359057
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762922190
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789763244129
+      }
+    ],
+    "3.3 Agregar `listarEmpresasDto(estado, q, pageable)` con enriquecimiento por lote": [
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762359125
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762923789
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789763245182
+      }
+    ],
+    "4.1 GET /empresas y GET /empresas/{id} devuelven el DTO enriquecido": [
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762359193
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789763261406
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789763569000
+      }
+    ],
+    "5. Backend: verificacion y no regresion": [
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762359259
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789764415480
+      }
+    ],
+    "6.1 Agregar `PlanVigente` y `planVigente` al modelo": [
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762359357
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762373733
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762527756
+      }
+    ],
+    "6.2 Crear `SuscripcionesService` y migrar operaciones desde `PlanesService`": [
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762359440
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762535548
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762890620
+      }
+    ],
+    "7.1 Agregar la columna \"Plan\" con el patron de la columna \"Giro\"": [
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762359508
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789763262383
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789763570490
+      }
+    ],
+    "8.1 Crear el panel con carga y presentacion del plan/suscripcion vigentes": [
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762359586
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789763578568
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789764089363
+      }
+    ],
+    "9.1 Crear `AsignarPlanDialog` (asignar/cambiar plan)": [
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762359681
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789763579791
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789764090785
+      }
+    ],
+    "9.2 Crear `VigenciaDialog` (actualizar vigencia)": [
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762359756
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789763581158
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789764091682
+      }
+    ],
+    "9.3 Acciones activar/suspender/cancelar desde el panel": [
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762359883
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789764093142
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789764229644
+      }
+    ],
+    "10.1 Cablear la accion \"Plan y suscripcion\" en el menu de fila": [
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762359958
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789764230920
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789764407174
+      }
+    ],
+    "10.2 Manejo de errores 404/409/422/403 en espanol": [
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762360020
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789764232060
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789764408470
+      }
+    ],
+    "11. Frontend: verificacion y no regresion": [
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762360075
+      },
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789764416238
+      }
+    ],
+    "1. Backend: enriquecer el `EmpresaDto` con el plan vigente (cambio aditivo)": [
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762888135
+      }
+    ],
+    "2. Backend: consultas por lote para resolver suscripcion vigente y nombre de plan (anti-N+1)": [
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762889518
+      }
+    ],
+    "6. Frontend: modelo y servicio de suscripciones": [
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789762890717
+      }
+    ],
+    "3. Backend: regla de suscripcion vigente y enriquecimiento en `ServicioEmpresas`": [
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789763245277
+      }
+    ],
+    "4. Backend: exponer el DTO enriquecido desde `EmpresaController`": [
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789763569098
+      }
+    ],
+    "7. Frontend: columna \"Plan\" en la vista `PlataformaEmpresas`": [
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789763570680
+      }
+    ],
+    "8. Frontend: panel \"Plan y Suscripcion\" (`PlanSuscripcionDialog`)": [
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789764089453
+      }
+    ],
+    "9. Frontend: dialogos de accion de suscripcion": [
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789764229717
+      }
+    ],
+    "10. Frontend: cableado, errores y refresco en la vista": [
+      {
+        "executionId": "b384a6fb-0d00-45b9-8ba7-4477fc8bfb54",
+        "chatSessionId": "sess_bf9f3a18-f89d-428a-b9f4-86f786fefa4c",
+        "timestamp": 1789764408561
+      }
+    ]
+  }
+}

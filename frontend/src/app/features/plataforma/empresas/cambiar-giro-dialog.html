@@ -1,0 +1,49 @@
+<h2 mat-dialog-title>Cambiar giro</h2>
+<mat-dialog-content>
+  <p class="cambiar-giro__intro">
+    Empresa: <strong>{{ data.empresa.nombre }}</strong>
+  </p>
+  <p class="cambiar-giro__actual">
+    <span class="cambiar-giro__etiqueta">Giro actual</span>
+    <span class="cambiar-giro__valor">{{ giroActual() }}</span>
+  </p>
+
+  <form
+    class="cambiar-giro__form"
+    [formGroup]="formulario"
+    (ngSubmit)="guardar()"
+    [attr.aria-busy]="guardando()"
+    novalidate
+  >
+    @if (error()) {
+      <p class="cambiar-giro__error" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </p>
+    }
+
+    <mat-form-field appearance="outline">
+      <mat-label>Nuevo giro</mat-label>
+      <mat-select formControlName="giroId" required (selectionChange)="cambiarGiro($event.value)">
+        @for (giro of girosActivos; track giro.id) {
+          <mat-option [value]="giro.id">{{ giro.nombreVisible }}</mat-option>
+        }
+      </mat-select>
+      <mat-hint>Selecciona el vertical de negocio de la empresa.</mat-hint>
+      @if (formulario.controls.giroId.hasError('required') && formulario.controls.giroId.touched) {
+        <mat-error>Selecciona un giro.</mat-error>
+      }
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancelar()">Cancelar</button>
+  <button
+    matButton="filled"
+    type="button"
+    (click)="guardar()"
+    [disabled]="guardando() || sinCambio()"
+  >
+    Cambiar giro
+  </button>
+</mat-dialog-actions>

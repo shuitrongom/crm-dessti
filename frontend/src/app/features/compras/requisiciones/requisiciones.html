@@ -1,0 +1,118 @@
+<app-page-header
+  titulo="Requisiciones de compra"
+  subtitulo="Captura las solicitudes internas de materiales; son la primera vía del proceso de abastecimiento."
+>
+  @if (puedeCrear) {
+    <button acciones matButton="filled" type="button" (click)="alternarAlta()">
+      <mat-icon>{{ mostrarAlta() ? 'close' : 'add' }}</mat-icon>
+      {{ mostrarAlta() ? 'Cerrar' : 'Nueva requisicion' }}
+    </button>
+  }
+</app-page-header>
+
+@if (mostrarAlta() && puedeCrear) {
+  <mat-card appearance="outlined" class="compras-alta">
+    <mat-card-content>
+    <form [formGroup]="formAlta" (ngSubmit)="crear()" novalidate>
+      <h2 class="compras-alta__titulo">Nueva requisicion</h2>
+      <p class="compras-ayuda">
+        Agrega los materiales solicitados. La requisicion se crea en estado borrador.
+      </p>
+
+      <div formArrayName="partidas" class="partidas">
+        @for (partida of partidas.controls; track $index) {
+          <div class="partidas__renglon" [formGroupName]="$index">
+            <mat-form-field appearance="outline">
+              <mat-label>Material (identificador)</mat-label>
+              <input matInput formControlName="materialId" autocomplete="off" />
+              <mat-error>Indica el identificador del material.</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Cantidad</mat-label>
+              <input matInput type="number" min="1" max="999999" formControlName="cantidad" />
+              <mat-error>Cantidad entre 1 y 999,999.</mat-error>
+            </mat-form-field>
+
+            <button
+              matIconButton
+              type="button"
+              aria-label="Quitar partida"
+              [disabled]="partidas.length <= 1"
+              (click)="quitarPartida($index)"
+            >
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        }
+      </div>
+
+      <div class="compras-acciones">
+        <button matButton type="button" (click)="agregarPartida()">
+          <mat-icon>add</mat-icon> Agregar partida
+        </button>
+        <button matButton="filled" type="submit" [disabled]="guardando()">
+          Crear requisicion
+        </button>
+      </div>
+    </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="No hay requisiciones registradas."
+  (reintentar)="cargar()"
+>
+  <div class="compras-filtros">
+    <mat-form-field appearance="outline">
+      <mat-label>Estado</mat-label>
+      <mat-select [value]="filtroEstado()" (valueChange)="aplicarFiltro($event)">
+        @for (opcion of estadosFiltro; track opcion.valor) {
+          <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="id" let-r>
+      <span class="compras-mono">{{ r.id.slice(0, 8) }}</span>
+    </ng-template>
+    <ng-template appCelda="estado" let-r>
+      <app-estado-chip [etiqueta]="humanizar(r.estado)" [tono]="tono(r.estado)" />
+    </ng-template>
+    <ng-template appCelda="partidas" let-r>{{ r.partidas.length }}</ng-template>
+    <ng-template appCelda="orden" let-r>
+      @if (r.ordenCompraId) {
+        <span class="compras-mono">{{ r.ordenCompraId.slice(0, 8) }}</span>
+      } @else {
+        <span class="compras-ayuda">Sin generar</span>
+      }
+    </ng-template>
+    <ng-template appCelda="fecha" let-r>{{ r.createdAt | date: 'dd/MM/yyyy' }}</ng-template>
+    <ng-template appCelda="acciones" let-r>
+      @if (puedeCambiarEstado && transicionesDe(r.estado).length > 0) {
+        <button matIconButton [matMenuTriggerFor]="menu" aria-label="Acciones de estado">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+          @for (t of transicionesDe(r.estado); track t.estado) {
+            <button mat-menu-item type="button" (click)="cambiarEstado(r, t)">{{ t.etiqueta }}</button>
+          }
+        </mat-menu>
+      } @else {
+        <span class="compras-ayuda">-</span>
+      }
+    </ng-template>
+  </app-data-table>
+</app-state-container>

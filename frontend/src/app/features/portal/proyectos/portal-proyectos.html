@@ -1,0 +1,60 @@
+<app-page-header
+  titulo="Mis proyectos"
+  subtitulo="Sigue el avance de tus proyectos por sitio y por fase de instalación."
+/>
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="Aun no tienes proyectos."
+  (reintentar)="cargar()"
+>
+  <div class="portal-proyectos">
+    @for (p of estado().datos ?? []; track p.id) {
+      <mat-card appearance="outlined" class="portal-proyecto">
+        <mat-card-content>
+          <div class="portal-proyecto__cabecera">
+            <h2 class="portal-proyecto__titulo">{{ p.nombre }}</h2>
+            <button matButton type="button" (click)="verAvance(p)">
+              <mat-icon>{{ detalle()?.id === p.id ? 'expand_less' : 'expand_more' }}</mat-icon>
+              {{ detalle()?.id === p.id ? 'Ocultar avance' : 'Ver avance' }}
+            </button>
+          </div>
+
+          @if (detalle()?.id === p.id) {
+            <app-state-container
+              [fase]="detalleEstado().fase"
+              [mensajeError]="detalleEstado().mensajeError"
+              mensajeVacio="Este proyecto aun no tiene sitios registrados."
+              (reintentar)="verAvance(p)"
+            >
+              @if (detalleEstado().datos; as proyecto) {
+                @if (proyecto.estadoConsolidado) {
+                  <p class="portal-proyecto__estado">
+                    Estado general: {{ humanizar(proyecto.estadoConsolidado) }}
+                  </p>
+                }
+                <ul class="portal-sitios">
+                  @for (s of proyecto.sitios; track s.sitio.id) {
+                    <li class="portal-sitio">
+                      <div class="portal-sitio__nombre">
+                        {{ s.sitio.nombre }}
+                        @if (s.sitio.direccion) {
+                          <span class="portal-ayuda">· {{ s.sitio.direccion }}</span>
+                        }
+                      </div>
+                      <app-progress-badge
+                        [avance]="avanceSitio(s)"
+                        [estado]="estadoSitio(s)"
+                      />
+                    </li>
+                  }
+                </ul>
+              }
+            </app-state-container>
+          }
+        </mat-card-content>
+      </mat-card>
+    }
+  </div>
+</app-state-container>

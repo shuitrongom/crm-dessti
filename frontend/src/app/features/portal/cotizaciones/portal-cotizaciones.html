@@ -1,0 +1,30 @@
+<app-page-header
+  titulo="Mis cotizaciones"
+  subtitulo="Consulta el estado y el detalle de las cotizaciones que te han enviado."
+/>
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="Aun no tienes cotizaciones."
+  (reintentar)="cargar()"
+>
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="folio" let-c>{{ c.id }}</ng-template>
+    <ng-template appCelda="partidas" let-c>{{ c.partidas.length }}</ng-template>
+    <ng-template appCelda="total" let-c>
+      <span class="portal-num">{{ c.total | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span>
+    </ng-template>
+    <ng-template appCelda="estado" let-c>
+      <app-estado-chip [etiqueta]="humanizar(c.estado)" [tono]="tono(c.estado)" />
+    </ng-template>
+    <ng-template appCelda="fecha" let-c>{{ c.createdAt | date: 'dd/MM/yyyy' }}</ng-template>
+  </app-data-table>
+</app-state-container>

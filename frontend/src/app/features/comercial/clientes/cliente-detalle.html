@@ -1,0 +1,211 @@
+<app-page-header [titulo]="titulo()" subtitulo="Ficha 360 del cliente: sus datos de contacto, oportunidades, cotizaciones y toda su actividad comercial en un solo lugar.">
+  <div acciones>
+    <a matButton routerLink="/empresa/comercial/clientes">
+      <mat-icon aria-hidden="true">arrow_back</mat-icon>
+      Volver a clientes
+    </a>
+  </div>
+</app-page-header>
+
+<app-state-container
+  [fase]="fase()"
+  [mensajeError]="mensajeError()"
+  mensajeVacio="No se encontro el cliente."
+  (reintentar)="cargar()"
+>
+  @if (cliente(); as c) {
+    <!-- Indicadores comerciales del cliente (Req 1.3) -->
+    <section class="ficha-seccion" aria-label="Indicadores del cliente">
+      <div class="ficha-indicadores">
+        @if (puedeListarOportunidades) {
+          <app-stat-card
+            icono="trending_up"
+            tono="info"
+            etiqueta="Oportunidades abiertas"
+            [valor]="numOportunidadesAbiertas()"
+            ayuda="En etapas activas del pipeline"
+          />
+          <app-stat-card
+            icono="payments"
+            tono="exito"
+            etiqueta="Valor en pipeline"
+            [valor]="valorPipelineTexto()"
+            ayuda="Suma de oportunidades abiertas"
+          />
+        }
+        @if (puedeListarCotizaciones) {
+          <app-stat-card
+            icono="request_quote"
+            tono="neutro"
+            etiqueta="Cotizaciones"
+            [valor]="numCotizaciones()"
+            ayuda="Cotizaciones registradas"
+          />
+          <app-stat-card
+            icono="schedule"
+            tono="neutro"
+            etiqueta="Ultima cotizacion"
+            [valor]="ultimaCotizacionFolio()"
+            [ayuda]="ultimaCotizacion()?.fechaEmision
+              ? (ultimaCotizacion()!.fechaEmision | date: 'longDate' : undefined : 'es-MX')!
+              : 'Aun sin cotizaciones'"
+          />
+        }
+      </div>
+    </section>
+
+    <!-- Datos del cliente (solo lectura) -->
+    <mat-card appearance="outlined" class="ficha-seccion">
+      <mat-card-header>
+        <mat-card-title>Datos del cliente</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <dl class="ficha-datos">
+          <div class="ficha-dato">
+            <dt>Nombre o razon social</dt>
+            <dd>{{ c.nombre }}</dd>
+          </div>
+          @if (c.nombreComercial) {
+            <div class="ficha-dato">
+              <dt>Nombre comercial</dt>
+              <dd>{{ c.nombreComercial }}</dd>
+            </div>
+          }
+          @if (tipoPersonaEtiqueta()) {
+            <div class="ficha-dato">
+              <dt>Tipo de persona</dt>
+              <dd>{{ tipoPersonaEtiqueta() }}</dd>
+            </div>
+          }
+          <div class="ficha-dato">
+            <dt>RFC</dt>
+            <dd>{{ c.rfc }}</dd>
+          </div>
+          <div class="ficha-dato">
+            <dt>Correo electronico</dt>
+            <dd>{{ c.email || '—' }}</dd>
+          </div>
+          <div class="ficha-dato">
+            <dt>Teléfono</dt>
+            <dd>{{ c.telefono || '—' }}</dd>
+          </div>
+          @if (c.telefonoAdicional) {
+            <div class="ficha-dato">
+              <dt>Teléfono adicional</dt>
+              <dd>{{ c.telefonoAdicional }}</dd>
+            </div>
+          }
+          @if (direccion(); as dir) {
+            <div class="ficha-dato ficha-dato--ancho">
+              <dt>Dirección</dt>
+              <dd>{{ dir }}</dd>
+            </div>
+          }
+          @if (c.notas) {
+            <div class="ficha-dato ficha-dato--ancho">
+              <dt>Notas</dt>
+              <dd>{{ c.notas }}</dd>
+            </div>
+          }
+        </dl>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Contactos: el backend no expone listado por cliente (nota explicita, Req 1.1) -->
+    <mat-card appearance="outlined" class="ficha-seccion">
+      <mat-card-header>
+        <mat-card-title>Contactos</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p class="ficha-nota">
+          Los contactos se administran desde el formulario del cliente. El listado de contactos
+          por cliente estara disponible aqui cuando el servicio lo publique.
+        </p>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Oportunidades del cliente (gated por permiso, Req 1.4) -->
+    @if (puedeListarOportunidades) {
+      <mat-card appearance="outlined" class="ficha-seccion">
+        <mat-card-header>
+          <mat-card-title>Oportunidades</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <app-state-container
+            [fase]="faseOportunidades()"
+            [mensajeError]="errorOportunidades()"
+            mensajeVacio="Este cliente aun no tiene oportunidades."
+            (reintentar)="cargarOportunidades()"
+          >
+            <ul class="ficha-lista" aria-label="Oportunidades del cliente">
+              @for (o of oportunidades(); track o.id) {
+                <li class="ficha-item">
+                  <a
+                    class="ficha-item__enlace"
+                    routerLink="/empresa/comercial/oportunidades"
+                    [queryParams]="{ oportunidad: o.id }"
+                  >
+                    <span class="ficha-item__titulo">{{ o.titulo }}</span>
+                  </a>
+                  <div class="ficha-item__meta">
+                    <app-estado-chip
+                      [etiqueta]="etiquetaEtapa[o.etapa]"
+                      [tono]="tonoEstado(o.etapa)"
+                    />
+                    <span class="ficha-item__valor">
+                      {{ o.valorEstimado | currency: 'MXN' : 'symbol-narrow' }}
+                    </span>
+                  </div>
+                </li>
+              }
+            </ul>
+          </app-state-container>
+        </mat-card-content>
+      </mat-card>
+    }
+
+    <!-- Cotizaciones del cliente (gated por permiso, Req 1.4) -->
+    @if (puedeListarCotizaciones) {
+      <mat-card appearance="outlined" class="ficha-seccion">
+        <mat-card-header>
+          <mat-card-title>Cotizaciones</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <app-state-container
+            [fase]="faseCotizaciones()"
+            [mensajeError]="errorCotizaciones()"
+            mensajeVacio="Este cliente aun no tiene cotizaciones."
+            (reintentar)="cargarCotizaciones()"
+          >
+            <ul class="ficha-lista" aria-label="Cotizaciones del cliente">
+              @for (cot of cotizaciones(); track cot.id) {
+                <li class="ficha-item">
+                  <a
+                    class="ficha-item__enlace"
+                    [routerLink]="['/empresa/comercial/cotizaciones', cot.id]"
+                  >
+                    <span class="ficha-item__titulo">{{ cot.folio || 'Cotizacion sin folio' }}</span>
+                  </a>
+                  <div class="ficha-item__meta">
+                    <app-estado-chip
+                      [etiqueta]="etiquetaEstadoCotizacion[cot.estado]"
+                      [tono]="tonoEstado(cot.estado)"
+                    />
+                    <span class="ficha-item__valor">
+                      {{ cot.total | currency: (cot.moneda || 'MXN') : 'symbol-narrow' }}
+                    </span>
+                    @if (cot.fechaEmision) {
+                      <span class="ficha-item__fecha">
+                        {{ cot.fechaEmision | date: 'mediumDate' : undefined : 'es-MX' }}
+                      </span>
+                    }
+                  </div>
+                </li>
+              }
+            </ul>
+          </app-state-container>
+        </mat-card-content>
+      </mat-card>
+    }
+  }
+</app-state-container>

@@ -1,0 +1,253 @@
+<app-page-header
+  titulo="Bandeja unificada"
+  subtitulo="Atiende tus conversaciones de WhatsApp, Messenger e Instagram en una sola bandeja, con la ventana de servicio de 24 horas."
+>
+  <button acciones matButton type="button" (click)="cargar()">
+    <mat-icon>refresh</mat-icon>
+    Actualizar
+  </button>
+</app-page-header>
+
+<div class="bandeja-filtros">
+  <mat-form-field appearance="outline">
+    <mat-label>Canal</mat-label>
+    <mat-select [value]="filtroCanal()" (valueChange)="aplicarCanal($event)">
+      @for (opcion of canales; track opcion.valor) {
+        <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>Estado</mat-label>
+    <mat-select [value]="filtroEstado()" (valueChange)="aplicarEstado($event)">
+      @for (opcion of estados; track opcion.valor) {
+        <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+</div>
+
+<div class="bandeja-layout">
+  <!-- Lista de conversaciones -->
+  <section class="bandeja-lista" aria-label="Conversaciones">
+    <app-state-container
+      [fase]="estado().fase"
+      [mensajeError]="estado().mensajeError"
+      mensajeVacio="No hay conversaciones para los filtros seleccionados."
+      (reintentar)="cargar()"
+    >
+      <ul class="bandeja-conversaciones">
+        @for (c of estado().datos ?? []; track c.id) {
+          <li>
+            <button
+              type="button"
+              class="bandeja-conversacion"
+              [class.bandeja-conversacion--activa]="seleccionada()?.id === c.id"
+              (click)="seleccionar(c)"
+            >
+              <span class="bandeja-conversacion__icono" aria-hidden="true">
+                <mat-icon>{{ iconoCanal(c.canal) }}</mat-icon>
+              </span>
+              <span class="bandeja-conversacion__cuerpo">
+                <span class="bandeja-conversacion__titulo">{{ c.remitenteExterno }}</span>
+                <span class="bandeja-conversacion__meta">
+                  {{ etiquetaCanal(c.canal) }} · {{ humanizar(c.estado) }}
+                </span>
+                <span class="bandeja-conversacion__ventana">
+                  <app-estado-chip
+                    [etiqueta]="etiquetaVentana(ventanaDe(c).estado)"
+                    [tono]="tonoVentana(ventanaDe(c).estado)"
+                  />
+                  <span class="bandeja-conversacion__restante">{{ textoRestante(ventanaDe(c)) }}</span>
+                </span>
+              </span>
+            </button>
+          </li>
+        }
+      </ul>
+    </app-state-container>
+  </section>
+
+  <!-- Detalle de la conversacion -->
+  <section class="bandeja-detalle" aria-label="Detalle de la conversacion">
+    @if (seleccionada(); as c) {
+      <mat-card appearance="outlined" class="bandeja-detalle__card">
+        <mat-card-header class="bandeja-detalle__encabezado">
+          <div class="bandeja-detalle__titulos">
+            <h2 class="bandeja-detalle__titulo">
+              <mat-icon aria-hidden="true">{{ iconoCanal(c.canal) }}</mat-icon>
+              {{ c.remitenteExterno }}
+            </h2>
+            <p class="bandeja-detalle__subtitulo">
+              {{ etiquetaCanal(c.canal) }} · {{ humanizar(c.estado) }}
+            </p>
+          </div>
+          <div class="bandeja-detalle__acciones">
+            @if (ventanaSeleccionada(); as v) {
+              <app-estado-chip
+                [etiqueta]="etiquetaVentana(v.estado)"
+                [tono]="tonoVentana(v.estado)"
+              />
+              <span class="bandeja-detalle__restante">{{ textoRestante(v) }}</span>
+            }
+            @if (puedeActualizar && c.estado !== 'cerrada') {
+              <button matIconButton [matMenuTriggerFor]="menu" aria-label="Acciones de la conversacion">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #menu="matMenu">
+                <button mat-menu-item type="button" (click)="asignarme()">
+                  <mat-icon>person_add</mat-icon> Asignarme
+                </button>
+                <button mat-menu-item type="button" (click)="abrirVinculacion()">
+                  <mat-icon>link</mat-icon> Vincular a cliente
+                </button>
+                <button mat-menu-item type="button" (click)="cerrarConversacion()">
+                  <mat-icon>done_all</mat-icon> Cerrar conversacion
+                </button>
+              </mat-menu>
+            }
+            <button matIconButton type="button" (click)="cerrarDetalle()" aria-label="Cerrar detalle">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </mat-card-header>
+
+        <mat-card-content>
+          <!-- Cliente vinculado / vinculacion (lead social, Req 5.1, 5.2, 5.5) -->
+          <div class="bandeja-vinculo">
+            @if (c.clienteId) {
+              @if (puedeVerCliente && nombreClienteVinculado(); as nombre) {
+                <a
+                  class="bandeja-vinculo__cliente"
+                  [routerLink]="['/empresa/comercial/clientes', c.clienteId]"
+                >
+                  <mat-icon aria-hidden="true">link</mat-icon>
+                  <span>Cliente vinculado: {{ nombre }}</span>
+                </a>
+              } @else {
+                <p class="bandeja-vinculo__cliente bandeja-vinculo__cliente--texto">
+                  <mat-icon aria-hidden="true">link</mat-icon>
+                  <span>Cliente vinculado</span>
+                </p>
+              }
+            }
+
+            @if (puedeActualizar && c.estado !== 'cerrada' && vinculando()) {
+              <form class="bandeja-vinculo__form" [formGroup]="formVinculo" (ngSubmit)="vincular()" novalidate>
+                <app-entity-select
+                  formControlName="clienteId"
+                  etiqueta="Cliente"
+                  ayuda="Busca por nombre o RFC para vincular esta conversacion."
+                  [obligatorio]="true"
+                  [buscador]="buscarCliente"
+                  [etiquetaDe]="etiquetaCliente"
+                  [detalleDe]="detalleCliente"
+                />
+                <div class="bandeja-vinculo__acciones">
+                  <button matButton type="submit" [disabled]="guardandoVinculo() || formVinculo.invalid">
+                    <mat-icon>link</mat-icon> Vincular
+                  </button>
+                  <button matButton type="button" (click)="cerrarVinculacion()">Cancelar</button>
+                </div>
+              </form>
+            }
+          </div>
+
+          <!-- Historial de mensajes -->
+          <app-state-container
+            [fase]="mensajes().fase"
+            [mensajeError]="mensajes().mensajeError"
+            mensajeVacio="Aun no hay mensajes en esta conversacion."
+            (reintentar)="seleccionar(c)"
+          >
+            <ol class="bandeja-mensajes">
+              @for (m of mensajes().datos ?? []; track m.id) {
+                <li
+                  class="bandeja-mensaje"
+                  [class.bandeja-mensaje--saliente]="m.direccion === 'saliente'"
+                >
+                  <div class="bandeja-mensaje__contenido">{{ m.contenido }}</div>
+                  <div class="bandeja-mensaje__meta">
+                    <span>{{ etiquetaTipoMensaje(m.tipo) }}</span>
+                    @if (m.esMarketing) {
+                      <span class="bandeja-mensaje__marketing">Marketing</span>
+                    }
+                    <span>
+                      {{ (m.enviadoEn ?? m.recibidoEn ?? m.createdAt) | date: 'dd/MM/yyyy HH:mm' }}
+                    </span>
+                    @if (m.estadoEntrega) {
+                      <span>{{ humanizar(m.estadoEntrega) }}</span>
+                    }
+                  </div>
+                </li>
+              }
+            </ol>
+          </app-state-container>
+
+          <!-- Compositor -->
+          @if (puedeEnviar && c.estado !== 'cerrada') {
+            <form class="bandeja-compositor" [formGroup]="formMensaje" (ngSubmit)="enviar()" novalidate>
+              @if (!admiteTextoLibre()) {
+                <p class="bandeja-aviso" role="status">
+                  <mat-icon aria-hidden="true">lock_clock</mat-icon>
+                  La ventana de servicio expiro. Fuera de las 24 h solo puedes responder con una
+                  plantilla aprobada.
+                </p>
+              }
+
+              <mat-button-toggle-group
+                aria-label="Tipo de mensaje"
+                [value]="formMensaje.controls.tipo.value"
+                (change)="cambiarTipo($event.value)"
+              >
+                <mat-button-toggle value="texto" [disabled]="!admiteTextoLibre()">
+                  Texto libre
+                </mat-button-toggle>
+                <mat-button-toggle value="plantilla">Plantilla</mat-button-toggle>
+              </mat-button-toggle-group>
+
+              @if (formMensaje.controls.tipo.value === 'plantilla') {
+                <mat-form-field appearance="outline">
+                  <mat-label>Plantilla aprobada</mat-label>
+                  <mat-select
+                    [value]="formMensaje.controls.plantillaId.value"
+                    (valueChange)="usarPlantilla($event)"
+                  >
+                    @for (p of plantillas(); track p.id) {
+                      <mat-option [value]="p.id">{{ p.nombre }}</mat-option>
+                    }
+                  </mat-select>
+                  @if (plantillas().length === 0) {
+                    <mat-hint>No hay plantillas aprobadas para este canal.</mat-hint>
+                  }
+                </mat-form-field>
+              }
+
+              <mat-form-field appearance="outline">
+                <mat-label>Mensaje</mat-label>
+                <textarea
+                  matInput
+                  rows="3"
+                  formControlName="contenido"
+                  [readonly]="formMensaje.controls.tipo.value === 'plantilla'"
+                ></textarea>
+                <mat-error>El contenido del mensaje es obligatorio.</mat-error>
+              </mat-form-field>
+
+              <div class="bandeja-compositor__pie">
+                <button matButton type="submit" [disabled]="enviando()">
+                  <mat-icon>send</mat-icon> Enviar
+                </button>
+              </div>
+            </form>
+          }
+        </mat-card-content>
+      </mat-card>
+    } @else {
+      <div class="bandeja-vacio">
+        <mat-icon aria-hidden="true">forum</mat-icon>
+        <p>Selecciona una conversacion para ver el historial y responder.</p>
+      </div>
+    }
+  </section>
+</div>

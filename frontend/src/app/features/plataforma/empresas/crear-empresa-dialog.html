@@ -1,0 +1,368 @@
+@if (creada(); as resultado) {
+  <h2 mat-dialog-title>Empresa creada</h2>
+  <mat-dialog-content>
+    <p>La empresa "{{ resultado.empresa.nombre }}" se creó correctamente.</p>
+    <p class="crear-empresa__aviso">
+      <mat-icon aria-hidden="true">key</mat-icon>
+      Guarda la contraseña temporal del administrador. Solo se muestra una vez:
+    </p>
+    <p class="crear-empresa__credencial">
+      <strong>Identificador:</strong> {{ resultado.adminIdentificador }}<br />
+      <strong>Contraseña temporal:</strong> <code>{{ resultado.adminPasswordTemporal }}</code>
+    </p>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button matButton="filled" type="button" (click)="cerrarConExito()">Entendido</button>
+  </mat-dialog-actions>
+} @else {
+  <h2 mat-dialog-title>Nueva empresa</h2>
+  <mat-dialog-content>
+    <form class="crear-empresa__form" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+      @if (error()) {
+        <p class="crear-empresa__error" role="alert">
+          <mat-icon aria-hidden="true">error_outline</mat-icon>
+          <span>{{ error() }}</span>
+        </p>
+      }
+      @if (sinGirosActivos()) {
+        <p class="crear-empresa__aviso-giros" role="alert">
+          <mat-icon aria-hidden="true">info</mat-icon>
+          No hay giros activos. Crea o activa un giro antes de dar de alta empresas.
+        </p>
+      }
+
+      <!-- Seccion: Identidad -->
+      <section class="crear-empresa__seccion">
+        <h3 class="crear-empresa__seccion-titulo">Identidad</h3>
+        <div class="crear-empresa__grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Razon social</mat-label>
+            <input matInput type="text" formControlName="nombre" required />
+            @if (formulario.controls.nombre.hasError('required') && formulario.controls.nombre.touched) {
+              <mat-error>La razon social es obligatoria.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre comercial</mat-label>
+            <input matInput type="text" formControlName="nombreComercial" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>RFC</mat-label>
+            <input
+              matInput
+              type="text"
+              formControlName="rfc"
+              required
+              maxlength="13"
+              (input)="normalizarRfc($event)"
+            />
+            <mat-hint>Ej.: ABC010101AB1</mat-hint>
+            @if (formulario.controls.rfc.hasError('required') && formulario.controls.rfc.touched) {
+              <mat-error>El RFC es obligatorio.</mat-error>
+            } @else if (formulario.controls.rfc.hasError('rfc') && formulario.controls.rfc.touched) {
+              <mat-error>El RFC no tiene un formato valido.</mat-error>
+            } @else if (formulario.controls.rfc.hasError('maxlength') && formulario.controls.rfc.touched) {
+              <mat-error>El RFC no puede exceder 13 caracteres.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Giro</mat-label>
+            <mat-select formControlName="giroId" required (selectionChange)="cambiarGiro($event.value)">
+              @for (giro of giros(); track giro.id) {
+                <mat-option [value]="giro.id">{{ giro.nombreVisible }}</mat-option>
+              }
+            </mat-select>
+            @if (formulario.controls.giroId.hasError('required') && formulario.controls.giroId.touched) {
+              <mat-error>Selecciona un giro.</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        @if (giroBaseSeleccionado()) {
+          <p class="crear-empresa__nota-giro-base" role="note">
+            <mat-icon aria-hidden="true">info</mat-icon>
+            <span>
+              Este giro solo incluye los módulos base; sus reglas de negocio específicas aún no
+              están disponibles.
+            </span>
+          </p>
+        }
+
+        <!-- Carga de logo del branding -->
+        <div class="crear-empresa__logo">
+          @if (logo(); as src) {
+            <img
+              class="crear-empresa__logo-preview"
+              [src]="src"
+              [alt]="'Vista previa del logo ' + (logoNombre() ?? '')"
+            />
+          } @else {
+            <span class="crear-empresa__logo-placeholder" aria-hidden="true">
+              <mat-icon>add_photo_alternate</mat-icon>
+            </span>
+          }
+          <div class="crear-empresa__logo-controles">
+            <span class="crear-empresa__logo-titulo">Logotipo de la empresa</span>
+            <span class="crear-empresa__logo-ayuda">PNG, JPG, SVG o WebP. Maximo 256 KB.</span>
+            <div class="crear-empresa__logo-botones">
+              <label class="crear-empresa__logo-boton">
+                <input
+                  type="file"
+                  class="crear-empresa__logo-input"
+                  accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                  aria-label="Cargar logo de la empresa"
+                  (change)="seleccionarLogo($event)"
+                />
+                <span matButton="outlined">
+                  <mat-icon aria-hidden="true">upload</mat-icon>
+                  {{ logo() ? 'Cambiar' : 'Cargar logo' }}
+                </span>
+              </label>
+              @if (logo()) {
+                <button matButton type="button" (click)="quitarLogo()">Quitar</button>
+              }
+            </div>
+            @if (logoError()) {
+              <p class="crear-empresa__error crear-empresa__error--inline" role="alert">
+                <mat-icon aria-hidden="true">error_outline</mat-icon>
+                <span>{{ logoError() }}</span>
+              </p>
+            }
+          </div>
+        </div>
+      </section>
+
+      <!-- Seccion: Contacto -->
+      <section class="crear-empresa__seccion">
+        <h3 class="crear-empresa__seccion-titulo">Contacto</h3>
+        <div class="crear-empresa__grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Correo de contacto</mat-label>
+            <input matInput type="email" formControlName="emailContacto" autocomplete="off" required />
+            <mat-hint>Se usa para el envío de la factura por correo.</mat-hint>
+            @if (formulario.controls.emailContacto.hasError('required') && formulario.controls.emailContacto.touched) {
+              <mat-error>El correo de contacto es obligatorio.</mat-error>
+            } @else if (formulario.controls.emailContacto.hasError('email') && formulario.controls.emailContacto.touched) {
+              <mat-error>Correo no válido.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Teléfono</mat-label>
+            <input
+              matInput
+              type="tel"
+              formControlName="telefono"
+              autocomplete="off"
+              inputmode="numeric"
+              maxlength="10"
+              (input)="soloDigitos($event)"
+            />
+            <mat-hint>10 dígitos</mat-hint>
+            @if (formulario.controls.telefono.hasError('telefono') && formulario.controls.telefono.touched) {
+              <mat-error>El teléfono debe tener 10 dígitos.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="crear-empresa__campo--ancho">
+            <mat-label>Sitio web</mat-label>
+            <input matInput type="url" formControlName="sitioWeb" autocomplete="off" placeholder="https://" />
+          </mat-form-field>
+        </div>
+      </section>
+
+      <!-- Seccion: Direccion -->
+      <section class="crear-empresa__seccion">
+        <h3 class="crear-empresa__seccion-titulo">Dirección</h3>
+        <app-address-autocomplete (direccionSeleccionada)="onDireccion($event)" />
+        <div class="crear-empresa__grid">
+          <mat-form-field appearance="outline" class="crear-empresa__campo--ancho">
+            <mat-label>Calle y número</mat-label>
+            <input matInput type="text" formControlName="direccionCalle" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Ciudad</mat-label>
+            <input matInput type="text" formControlName="direccionCiudad" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Estado</mat-label>
+            <input matInput type="text" formControlName="direccionEstado" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Código postal</mat-label>
+            <input matInput type="text" formControlName="direccionCp" inputmode="numeric" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>País</mat-label>
+            <input matInput type="text" formControlName="direccionPais" />
+          </mat-form-field>
+        </div>
+      </section>
+
+      <!-- Seccion: Contratacion (instrumento comercial excluyente) -->
+      <section class="crear-empresa__seccion">
+        <h3 class="crear-empresa__seccion-titulo">Contratación</h3>
+
+        <mat-radio-group
+          class="crear-empresa__tipo-instrumento"
+          aria-label="Tipo de contratación"
+          formControlName="tipoInstrumento"
+          (change)="cambiarTipoInstrumento($event.value)"
+        >
+          <mat-radio-button value="plan">Plan</mat-radio-button>
+          <mat-radio-button value="suscripcion">Suscripción</mat-radio-button>
+        </mat-radio-group>
+
+        <div class="crear-empresa__grid">
+          @if (tipoInstrumentoSeleccionado() === 'plan') {
+            <mat-form-field appearance="outline">
+              <mat-label>Plan</mat-label>
+              <mat-select formControlName="planId" required (selectionChange)="cambiarPlan($event.value)">
+                @for (plan of planes(); track plan.id) {
+                  <mat-option [value]="plan.id">{{ plan.nombre }}</mat-option>
+                }
+              </mat-select>
+              @if (formulario.controls.planId.hasError('required') && formulario.controls.planId.touched) {
+                <mat-error>Selecciona un plan.</mat-error>
+              }
+            </mat-form-field>
+          } @else {
+            <mat-form-field appearance="outline">
+              <mat-label>Paquete de suscripción</mat-label>
+              <mat-select
+                formControlName="paqueteSuscripcionId"
+                required
+                (selectionChange)="cambiarPaquete($event.value)"
+              >
+                @for (paquete of paquetes(); track paquete.id) {
+                  <mat-option [value]="paquete.id">{{ paquete.nombre }}</mat-option>
+                }
+              </mat-select>
+              @if (formulario.controls.paqueteSuscripcionId.hasError('required') && formulario.controls.paqueteSuscripcionId.touched) {
+                <mat-error>Selecciona un paquete de suscripción.</mat-error>
+              }
+            </mat-form-field>
+          }
+        </div>
+
+        @if (mostrarOtorgarPrueba()) {
+          <div class="crear-empresa__prueba">
+            <mat-checkbox formControlName="otorgarPrueba">
+              Otorgar periodo de prueba
+            </mat-checkbox>
+            <p class="crear-empresa__prueba-ayuda">
+              El paquete permite {{ paqueteSeleccionado()?.duracionPruebaMeses }}
+              {{ paqueteSeleccionado()?.duracionPruebaMeses === 1 ? 'mes' : 'meses' }}
+              de prueba.
+            </p>
+          </div>
+        }
+
+        @if (hayGiroAjenoEnInstrumento()) {
+          <p class="crear-empresa__aviso-giro-ajeno" role="alert">
+            <mat-icon aria-hidden="true">warning</mat-icon>
+            <span>
+              El instrumento incluye modulos especificos del giro
+              «{{ girosAjenosDelInstrumento().join(', ') }}», distinto al giro seleccionado
+              para la empresa. Verifica que corresponda.
+            </span>
+          </p>
+        }
+
+        @if (hayModulos()) {
+          <div class="crear-empresa__modulos">
+            <p class="crear-empresa__modulos-titulo">Módulos habilitados (opcional)</p>
+            <p class="crear-empresa__modulos-ayuda">
+              Por defecto se habilitan todos los módulos del plan. Puedes deseleccionar
+              para otorgar solo un subconjunto.
+            </p>
+            @if (avisoDependencia(); as aviso) {
+              <p class="crear-empresa__nota-giro-base" role="note" aria-live="polite">
+                <mat-icon aria-hidden="true">link</mat-icon>
+                <span>{{ aviso }}</span>
+              </p>
+            }
+            <div class="crear-empresa__grupos">
+              @for (grupo of grupos(); track grupo.giro) {
+                <div class="crear-empresa__grupo">
+                  <h4 class="crear-empresa__grupo-titulo">{{ grupo.titulo }}</h4>
+                  <div class="crear-empresa__grid crear-empresa__grid--checks">
+                    @for (modulo of grupo.modulos; track modulo.clave) {
+                      <div class="crear-empresa__modulo">
+                        <mat-checkbox
+                          [checked]="estaSeleccionado(modulo.clave)"
+                          [disabled]="estaBloqueado(modulo.clave)"
+                          [attr.aria-describedby]="estaBloqueado(modulo.clave) ? 'motivo-emp-' + modulo.clave : null"
+                          (change)="alternar(modulo.clave, $event.checked)"
+                        >
+                          {{ modulo.nombreVisible }}
+                        </mat-checkbox>
+                        @if (estaBloqueado(modulo.clave)) {
+                          <p
+                            class="crear-empresa__nota-giro-base crear-empresa__nota-bloqueado"
+                            role="note"
+                            [id]="'motivo-emp-' + modulo.clave"
+                          >
+                            <mat-icon aria-hidden="true">lock</mat-icon>
+                            <span>{{ motivoBloqueado(modulo.clave) }}</span>
+                          </p>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </section>
+
+      <!-- Seccion: Administrador inicial -->
+      <section class="crear-empresa__seccion">
+        <h3 class="crear-empresa__seccion-titulo">Administrador inicial</h3>
+        <div class="crear-empresa__grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Identificador</mat-label>
+            <input matInput type="text" formControlName="adminIdentificador" autocomplete="off" required />
+            <mat-hint>Correo o usuario de acceso del administrador.</mat-hint>
+            @if (formulario.controls.adminIdentificador.hasError('required') && formulario.controls.adminIdentificador.touched) {
+              <mat-error>El identificador es obligatorio.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Contraseña (opcional)</mat-label>
+            <input matInput type="password" formControlName="adminPassword" autocomplete="new-password" />
+            <mat-hint>Si se deja vacía, se genera una temporal.</mat-hint>
+            @if (formulario.controls.adminPassword.hasError('minlength') && formulario.controls.adminPassword.touched) {
+              <mat-error>Mínimo 8 caracteres.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="crear-empresa__campo--ancho">
+            <mat-label>Notas</mat-label>
+            <textarea matInput rows="3" formControlName="notas"></textarea>
+          </mat-form-field>
+        </div>
+      </section>
+    </form>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button matButton type="button" (click)="cancelar()">Cancelar</button>
+    <button
+      matButton="filled"
+      type="button"
+      (click)="guardar()"
+      [disabled]="guardando() || sinGirosActivos()"
+    >
+      Crear empresa
+    </button>
+  </mat-dialog-actions>
+}

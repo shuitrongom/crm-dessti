@@ -1,0 +1,263 @@
+.comercial-form {
+  margin-bottom: var(--ds-space-4);
+
+  &__acciones {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--ds-space-2);
+    margin-top: var(--ds-space-2);
+  }
+}
+
+.comercial-filtro {
+  width: 100%;
+  max-width: 420px;
+  margin-bottom: var(--ds-space-3);
+}
+
+.comercial-acciones-fila {
+  display: flex;
+  gap: var(--ds-space-1);
+  justify-content: flex-end;
+}
+
+// -----------------------------------------------------------------------------
+// Formulario seccionado (premium) con carga de foto
+// -----------------------------------------------------------------------------
+.producto-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-4);
+
+  &__seccion {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-2);
+  }
+
+  &__seccion-titulo {
+    margin: 0;
+    font-size: var(--ds-font-size-sm);
+    font-weight: var(--ds-font-weight-medium);
+    color: var(--ds-color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  // Texto de ayuda de la seccion "Precios por lista" (acceso directo a Listas).
+  &__precios-ayuda {
+    margin: 0;
+    font-size: var(--ds-font-size-sm);
+    color: var(--ds-color-text-muted);
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--ds-space-2) var(--ds-space-3);
+  }
+
+  &__campo-ancho {
+    grid-column: 1 / -1;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Carga de foto (archivo de imagen) con vista previa — patron de Branding
+// -----------------------------------------------------------------------------
+.producto-foto {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-4);
+  padding: var(--ds-space-3);
+  border: 1px dashed var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-surface-variant);
+
+  &__preview,
+  &__placeholder {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    inline-size: 72px;
+    block-size: 72px;
+    border: 1px solid var(--ds-color-border);
+    border-radius: var(--ds-radius-md);
+    background: var(--ds-color-surface);
+    object-fit: cover;
+    color: var(--ds-color-text-muted);
+
+    mat-icon {
+      font-size: 30px;
+      inline-size: 30px;
+      block-size: 30px;
+    }
+  }
+
+  &__controles {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-1);
+    min-inline-size: 0;
+  }
+
+  &__ayuda {
+    color: var(--ds-color-text-muted);
+    font-size: var(--ds-font-size-xs);
+  }
+
+  &__botones {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ds-space-2);
+    margin-block-start: var(--ds-space-1);
+  }
+
+  // El input de archivo se oculta pero permanece accesible: la etiqueta que lo
+  // envuelve actua como boton disparador.
+  &__boton {
+    position: relative;
+    display: inline-flex;
+    cursor: pointer;
+  }
+
+  &__input {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  &__error {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-2);
+    margin: var(--ds-space-1) 0 0;
+    color: var(--ds-color-error);
+    font-size: var(--ds-font-size-sm);
+
+    mat-icon {
+      flex: 0 0 auto;
+      font-size: 20px;
+      inline-size: 20px;
+      block-size: 20px;
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Miniatura de la foto en el listado
+// -----------------------------------------------------------------------------
+.producto-miniatura {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 40px;
+  block-size: 40px;
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-surface);
+  object-fit: cover;
+  vertical-align: middle;
+
+  &--vacia {
+    color: var(--ds-color-text-muted);
+    background: var(--ds-color-surface-variant);
+
+    mat-icon {
+      font-size: 22px;
+      inline-size: 22px;
+      block-size: 22px;
+    }
+  }
+}
+
+// =============================================================================
+// Tira de KPIs premium/enterprise (patron compartido del ambito Comercial)
+// -----------------------------------------------------------------------------
+// Mismo lenguaje visual que la tira del Pipeline (oportunidades). Solo tokens
+// del Sistema de Diseno (--ds-*) para respetar el branding por empresa.
+// =============================================================================
+
+.comercial-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--ds-space-3);
+  margin-bottom: var(--ds-space-4);
+}
+
+.comercial-kpi {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-3) var(--ds-space-4);
+  background: var(--ds-color-surface);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  box-shadow: var(--ds-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.06));
+
+  &__icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 44px;
+    block-size: 44px;
+    border-radius: var(--ds-radius-md);
+    background: var(--ds-color-primary-container, color-mix(in srgb, var(--ds-color-primary) 14%, transparent));
+    color: var(--ds-color-text-on-primary-container, var(--ds-color-primary));
+    flex: 0 0 auto;
+
+    mat-icon {
+      font-size: 24px;
+      inline-size: 24px;
+      block-size: 24px;
+    }
+  }
+
+  &__cuerpo {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  &__valor {
+    font-size: var(--ds-font-size-xl, 1.5rem);
+    font-weight: var(--ds-font-weight-bold, 700);
+    line-height: 1.15;
+    color: var(--ds-color-text);
+  }
+
+  &__etiqueta {
+    font-size: var(--ds-font-size-sm);
+    color: var(--ds-color-text-muted);
+    margin-top: 2px;
+  }
+
+  &--valor {
+    border-color: color-mix(in srgb, var(--ds-color-primary) 40%, var(--ds-color-border));
+
+    .comercial-kpi__icono {
+      background: var(--ds-color-primary);
+      color: var(--ds-color-text-on-primary, #fff);
+    }
+  }
+
+  &--exito {
+    .comercial-kpi__icono {
+      background: color-mix(in srgb, var(--ds-color-success, #2e7d4f) 16%, transparent);
+      color: var(--ds-color-success, #2e7d4f);
+    }
+  }
+}
+
+// Elevacion sutil del contenedor del listado (tabla de datos).
+:host ::ng-deep app-data-table .data-table__scroll {
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  box-shadow: var(--ds-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.06));
+  overflow: hidden;
+}

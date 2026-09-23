@@ -1,0 +1,154 @@
+// =============================================================================
+// Estilos del dialogo de alta de Giro (super_admin) (Req 9, 52, 53, 57)
+// -----------------------------------------------------------------------------
+// Formulario enterprise organizado en una seccion tipo tarjeta, sin
+// desbordamiento. Solo tokens del Sistema de Diseno (tema claro y oscuro).
+// =============================================================================
+
+.giro-dialog__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-4);
+  inline-size: 100%;
+  max-inline-size: 100%;
+  box-sizing: border-box;
+  padding-block-start: var(--ds-space-2);
+}
+
+// Texto introductorio.
+.giro-dialog__intro {
+  margin: 0;
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-sm);
+  line-height: var(--ds-line-height-base);
+}
+
+// Mensaje de error (misma ficha que crear-empresa).
+.giro-dialog__error {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  margin: 0;
+  padding: var(--ds-space-3);
+  border: 1px solid color-mix(in srgb, var(--ds-color-error) 32%, transparent);
+  border-radius: var(--ds-radius-sm);
+  background: color-mix(in srgb, var(--ds-color-error) 12%, transparent);
+  color: var(--ds-color-error);
+  font-size: var(--ds-font-size-sm);
+
+  mat-icon {
+    flex: 0 0 auto;
+    font-size: 20px;
+    inline-size: 20px;
+    block-size: 20px;
+  }
+}
+
+// Seccion-tarjeta del formulario.
+.giro-dialog__seccion {
+  margin: 0;
+  padding: var(--ds-space-4);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-surface);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-3);
+}
+
+.giro-dialog__seccion-titulo {
+  margin: 0 0 var(--ds-space-2);
+  padding-block-end: var(--ds-space-2);
+  border-block-end: 1px solid var(--ds-color-border);
+  font-size: var(--ds-font-size-xs);
+  font-weight: var(--ds-font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ds-color-text-muted);
+}
+
+// Cada campo ocupa todo el ancho.
+.giro-dialog__campo {
+  inline-size: 100%;
+
+  mat-icon[matPrefix] {
+    font-size: 20px;
+    inline-size: 20px;
+    block-size: 20px;
+    margin-inline: var(--ds-space-1) var(--ds-space-2);
+    color: var(--ds-color-text-muted);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Segundo estado del dialogo: panel informativo de completitud tras crear el
+// giro. Comunica que el giro nace "Base" (solo modulos base) y que sus reglas
+// de negocio especificas aun no estan programadas. Solo tokens del Sistema de
+// Diseno (tema claro y oscuro).
+// -----------------------------------------------------------------------------
+.giro-dialog__info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-4);
+  padding-block-start: var(--ds-space-2);
+}
+
+// Linea de exito con icono de confirmacion.
+.giro-dialog__info-exito {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  margin: 0;
+  font-size: var(--ds-font-size-md);
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-text);
+
+  mat-icon {
+    flex: 0 0 auto;
+    color: var(--ds-color-success);
+    font-size: 22px;
+    inline-size: 22px;
+    block-size: 22px;
+  }
+}
+
+// Panel-tarjeta con los parrafos explicativos.
+.giro-dialog__info-panel {
+  margin: 0;
+  padding: var(--ds-space-4);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-surface);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-3);
+}
+
+// Cada parrafo lleva un icono a la izquierda y texto alineado.
+.giro-dialog__info-parrafo {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ds-space-2);
+  margin: 0;
+  font-size: var(--ds-font-size-sm);
+  line-height: var(--ds-line-height-base);
+  color: var(--ds-color-text-muted);
+
+  mat-icon {
+    flex: 0 0 auto;
+    margin-block-start: 2px;
+    font-size: 20px;
+    inline-size: 20px;
+    block-size: 20px;
+    color: var(--ds-color-text-muted);
+  }
+
+  // Parrafo de advertencia: resalta que las reglas aun no estan programadas.
+  &--aviso {
+    color: var(--ds-color-text);
+
+    mat-icon {
+      color: var(--ds-color-warning);
+    }
+  }
+}

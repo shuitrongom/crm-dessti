@@ -1,0 +1,84 @@
+// =============================================================================
+// Estilos de Conexiones (Req 52, redes-sociales) — mobile-first, tokens --ds-*
+// =============================================================================
+
+.social-alta {
+  margin-block-end: var(--ds-space-5);
+}
+
+.social-alta__titulo {
+  margin: 0 0 var(--ds-space-3);
+  font-size: var(--ds-font-size-lg);
+  font-weight: var(--ds-font-weight-medium);
+}
+
+.social-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-space-2);
+
+  @media (min-width: 40rem) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.conexiones-conflicto {
+  margin: 0 0 var(--ds-space-3);
+  padding: var(--ds-space-2) var(--ds-space-3);
+  border-radius: var(--ds-radius-sm);
+  border: 1px solid color-mix(in srgb, var(--ds-color-error) 32%, transparent);
+  background: color-mix(in srgb, var(--ds-color-error) 12%, transparent);
+  color: var(--ds-color-error);
+  font-size: var(--ds-font-size-sm);
+}
+
+.conexiones-canal {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+
+  mat-icon {
+    color: var(--ds-color-text-muted);
+  }
+}
+
+.conexiones-estado {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--ds-space-1) var(--ds-space-2);
+  border-radius: var(--ds-radius-pill, 999px);
+  font-size: var(--ds-font-size-sm);
+  font-weight: var(--ds-font-weight-medium);
+
+  &--activa {
+    background: color-mix(in srgb, var(--ds-color-success) 16%, transparent);
+    color: var(--ds-color-success);
+  }
+
+  &--inactiva {
+    background: var(--ds-color-surface-variant);
+    color: var(--ds-color-text-muted);
+  }
+}
+
+.conexiones-vacio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-6) var(--ds-space-4);
+  text-align: center;
+}
+
+.conexiones-vacio__icono {
+  width: 3rem;
+  height: 3rem;
+  font-size: 3rem;
+  color: var(--ds-color-text-muted);
+}
+
+.conexiones-vacio__texto {
+  margin: 0;
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-md);
+}

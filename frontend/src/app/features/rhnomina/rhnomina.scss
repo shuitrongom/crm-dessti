@@ -1,0 +1,79 @@
+// =============================================================================
+// Estilos compartidos del modulo RH / Nomina (Req 52) — mobile-first, tokens
+// =============================================================================
+
+.rh-alta {
+  margin-block-end: var(--ds-space-5);
+}
+
+.rh-alta__titulo {
+  margin: 0 0 var(--ds-space-3);
+  font-size: var(--ds-font-size-lg);
+  font-weight: var(--ds-font-weight-medium);
+}
+
+.rh-mono {
+  font-family: var(--ds-font-mono, ui-monospace, monospace);
+  font-size: var(--ds-font-size-sm);
+}
+
+.rh-ayuda {
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-sm);
+}
+
+.rh-num {
+  font-variant-numeric: tabular-nums;
+}
+
+.rh-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-3);
+  margin-block-end: var(--ds-space-4);
+
+  mat-form-field {
+    min-width: 12rem;
+  }
+}
+
+.rh-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-space-2);
+
+  @media (min-width: 40rem) {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @media (min-width: 64rem) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+// Organigrama (arbol accesible con desangrado por nivel)
+.rh-organigrama {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rh-organigrama ul {
+  list-style: none;
+  margin: 0;
+  padding-inline-start: var(--ds-space-5);
+  border-inline-start: 1px solid var(--ds-color-border);
+}
+
+.rh-organigrama__nodo {
+  padding: var(--ds-space-1) 0;
+}
+
+.rh-organigrama__puesto {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  padding: var(--ds-space-1) var(--ds-space-3);
+  border-radius: var(--ds-radius-md, 8px);
+  background: var(--ds-color-surface-variant);
+}

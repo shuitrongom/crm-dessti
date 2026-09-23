@@ -1,0 +1,58 @@
+// =============================================================================
+// Estilos de Tableros personalizados (Req 52, 48) — mobile-first, tokens --ds-*
+// =============================================================================
+
+.tableros-form {
+  margin-block-end: var(--ds-space-5);
+
+  &__titulo {
+    margin: 0 0 var(--ds-space-3);
+    font-size: var(--ds-font-size-lg);
+    font-weight: var(--ds-font-weight-medium);
+  }
+
+  &__subtitulo {
+    margin: var(--ds-space-3) 0 var(--ds-space-2);
+    font-size: var(--ds-font-size-md);
+    font-weight: var(--ds-font-weight-medium);
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--ds-space-2);
+
+    @media (min-width: 40rem) {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  &__acciones {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--ds-space-2);
+    margin-top: var(--ds-space-3);
+  }
+}
+
+.tableros-widgets {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-2);
+}
+
+.tableros-widget {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-space-2);
+  align-items: center;
+
+  @media (min-width: 40rem) {
+    grid-template-columns: 2fr 2fr 1fr auto;
+  }
+}
+
+.tableros-ayuda {
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-sm);
+}

@@ -1,0 +1,172 @@
+// =============================================================================
+// Estilos del dialogo de edicion de Empresa (super_admin) (Req 24, 52, 53, 57)
+// -----------------------------------------------------------------------------
+// Reutiliza el mismo lenguaje visual del alta: secciones tipo "tarjeta" con
+// encabezado, rejilla responsive (1 col en movil, 2 en escritorio) y campo a
+// ancho completo. Sin desbordamiento horizontal; scroll solo vertical dentro de
+// mat-dialog-content. Solo tokens del Sistema de Diseno (tema claro y oscuro).
+// =============================================================================
+
+@use '../../../../styles/breakpoints' as bp;
+
+.editar-empresa__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-4);
+  min-inline-size: 0;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  box-sizing: border-box;
+  padding-block-start: var(--ds-space-2);
+}
+
+// -----------------------------------------------------------------------------
+// Mensajes
+// -----------------------------------------------------------------------------
+.editar-empresa__error {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  margin: 0;
+  padding: var(--ds-space-3);
+  border: 1px solid color-mix(in srgb, var(--ds-color-error) 32%, transparent);
+  border-radius: var(--ds-radius-sm);
+  background: color-mix(in srgb, var(--ds-color-error) 12%, transparent);
+  color: var(--ds-color-error);
+  font-size: var(--ds-font-size-sm);
+
+  mat-icon {
+    flex: 0 0 auto;
+    font-size: 20px;
+    inline-size: 20px;
+    block-size: 20px;
+  }
+
+  &--inline {
+    padding: var(--ds-space-2) var(--ds-space-3);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Secciones del formulario (tarjeta con encabezado)
+// -----------------------------------------------------------------------------
+.editar-empresa__seccion {
+  margin: 0;
+  padding: var(--ds-space-4);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-surface);
+  min-inline-size: 0;
+}
+
+.editar-empresa__seccion-titulo {
+  margin: 0 0 var(--ds-space-3);
+  padding-block-end: var(--ds-space-2);
+  border-block-end: 1px solid var(--ds-color-border);
+  font-size: var(--ds-font-size-xs);
+  font-weight: var(--ds-font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ds-color-text-muted);
+}
+
+// Rejilla responsive de campos: 1 columna en movil, 2 en escritorio.
+.editar-empresa__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-space-3) var(--ds-space-4);
+
+  @include bp.from('sm') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  mat-form-field {
+    min-inline-size: 0;
+    inline-size: 100%;
+  }
+}
+
+// Campo que ocupa las dos columnas (evita huerfanos en filas impares).
+.editar-empresa__campo--ancho {
+  @include bp.from('sm') {
+    grid-column: 1 / -1;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Carga de logo con vista previa (tarjeta interna)
+// -----------------------------------------------------------------------------
+.editar-empresa__logo {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-4);
+  margin-block-start: var(--ds-space-4);
+  padding: var(--ds-space-3);
+  border: 1px dashed var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-surface-variant);
+}
+
+.editar-empresa__logo-preview,
+.editar-empresa__logo-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  inline-size: 64px;
+  block-size: 64px;
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-surface);
+  object-fit: contain;
+  color: var(--ds-color-text-muted);
+
+  mat-icon {
+    font-size: 28px;
+    inline-size: 28px;
+    block-size: 28px;
+  }
+}
+
+.editar-empresa__logo-controles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-1);
+  min-inline-size: 0;
+}
+
+.editar-empresa__logo-titulo {
+  font-size: var(--ds-font-size-sm);
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-text);
+}
+
+.editar-empresa__logo-ayuda {
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-xs);
+}
+
+.editar-empresa__logo-botones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-2);
+  margin-block-start: var(--ds-space-1);
+}
+
+// El input de archivo se oculta pero permanece accesible: la etiqueta que lo
+// envuelve actua como boton disparador.
+.editar-empresa__logo-boton {
+  position: relative;
+  display: inline-flex;
+  cursor: pointer;
+}
+
+.editar-empresa__logo-input {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  opacity: 0;
+  cursor: pointer;
+}

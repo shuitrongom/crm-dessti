@@ -1,0 +1,7 @@
+stateDiagram-v2
+    [*] --> borrador
+    borrador --> programada
+    programada --> publicada : publicación Meta OK
+    programada --> fallida : publicación Meta falla
+    publicada --> [*]
+    fallida --> [*]

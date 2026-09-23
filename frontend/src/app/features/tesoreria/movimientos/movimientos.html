@@ -1,0 +1,41 @@
+<app-page-header
+  titulo="Movimientos bancarios"
+  subtitulo="Consulta los movimientos bancarios importados y su estado de conciliación."
+/>
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="No hay movimientos bancarios registrados."
+  (reintentar)="cargar()"
+>
+  <div class="tes-filtros">
+    <mat-form-field appearance="outline">
+      <mat-label>Conciliacion</mat-label>
+      <mat-select [value]="filtroEstado()" (valueChange)="aplicarFiltro($event)">
+        @for (opcion of estadosFiltro; track opcion.valor) {
+          <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="fecha" let-m>{{ m.fecha | date: 'dd/MM/yyyy' }}</ng-template>
+    <ng-template appCelda="descripcion" let-m>{{ m.descripcion ?? '-' }}</ng-template>
+    <ng-template appCelda="referencia" let-m><span class="tes-mono">{{ m.referencia ?? '-' }}</span></ng-template>
+    <ng-template appCelda="monto" let-m>
+      <span class="tes-num">{{ m.monto | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span>
+    </ng-template>
+    <ng-template appCelda="conciliacion" let-m>
+      <app-estado-chip [etiqueta]="humanizar(m.estadoConciliacion)" [tono]="tono(m.estadoConciliacion)" />
+    </ng-template>
+  </app-data-table>
+</app-state-container>

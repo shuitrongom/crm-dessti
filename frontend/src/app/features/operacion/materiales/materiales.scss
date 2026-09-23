@@ -1,0 +1,53 @@
+.operacion-form {
+  margin-bottom: var(--ds-space-4);
+
+  &__acciones {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--ds-space-2);
+    margin-top: var(--ds-space-2);
+  }
+}
+
+.operacion-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-3);
+  margin-bottom: var(--ds-space-3);
+
+  mat-form-field {
+    width: 100%;
+    max-width: 420px;
+  }
+}
+
+.operacion-acciones-fila {
+  display: flex;
+  gap: var(--ds-space-1);
+  justify-content: flex-end;
+}
+
+// Estado de stock del Material en la tabla: color-token + icono (no solo color,
+// WCAG). Mismo lenguaje visual que inventario-avanzado (estado de Almacen/lote):
+// "Stock bajo" con warning + icono; "Suficiente" con success + icono.
+.materiales-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-1);
+  font-weight: 600;
+
+  &--bajo {
+    color: var(--ds-color-warning, #b3760a);
+  }
+
+  &--suficiente {
+    color: var(--ds-color-success, #2e7d4f);
+  }
+}
+
+.materiales-estado-icono {
+  font-size: 1.125rem;
+  width: 1.125rem;
+  height: 1.125rem;
+}

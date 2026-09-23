@@ -1,0 +1,134 @@
+<app-page-header
+  titulo="Facturas CFDI"
+  subtitulo="Emite, timbra ante el PAC y cancela tus comprobantes fiscales digitales (CFDI)."
+>
+  @if (puedeCrear) {
+    <button acciones matButton="filled" type="button" (click)="alternarAlta()">
+      <mat-icon>{{ mostrarAlta() ? 'close' : 'add' }}</mat-icon>
+      {{ mostrarAlta() ? 'Cerrar' : 'Emitir factura' }}
+    </button>
+  }
+</app-page-header>
+
+@if (mostrarAlta() && puedeCrear) {
+  <mat-card appearance="outlined" class="fact-alta">
+    <mat-card-content>
+      <form [formGroup]="formAlta" (ngSubmit)="emitir()" novalidate>
+        <h2 class="fact-alta__titulo">Emitir factura</h2>
+        <div class="fact-form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Origen</mat-label>
+            <mat-select formControlName="origen">
+              <mat-option value="cotizacion">Cotizacion aprobada</mat-option>
+              <mat-option value="orden_fabricacion">Orden de fabricacion</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Identificador de origen</mat-label>
+            <input matInput formControlName="origenId" autocomplete="off" />
+            <mat-error>Indica el identificador de la cotizacion u orden.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>RFC receptor</mat-label>
+            <input matInput formControlName="receptorRfc" autocomplete="off" />
+            <mat-error>El RFC es obligatorio.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre / razon social</mat-label>
+            <input matInput formControlName="receptorNombre" autocomplete="off" />
+            <mat-error>El nombre es obligatorio.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Código postal</mat-label>
+            <input matInput formControlName="receptorCp" autocomplete="off" />
+            <mat-error>El código postal es obligatorio.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Regimen fiscal</mat-label>
+            <input matInput formControlName="receptorRegimenFiscal" autocomplete="off" />
+            <mat-error>El regimen fiscal es obligatorio.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Uso CFDI</mat-label>
+            <input matInput formControlName="usoCfdi" autocomplete="off" />
+            <mat-error>El uso de CFDI es obligatorio.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Tasa de retencion (0 a 1)</mat-label>
+            <input matInput type="number" min="0" max="1" step="0.01" formControlName="tasaRetencion" />
+          </mat-form-field>
+        </div>
+        <button matButton="filled" type="submit" [disabled]="guardando()">Emitir factura</button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="No hay facturas registradas."
+  (reintentar)="cargar()"
+>
+  <div class="fact-filtros">
+    <mat-form-field appearance="outline">
+      <mat-label>Estado</mat-label>
+      <mat-select [value]="filtroEstado()" (valueChange)="aplicarFiltro($event)">
+        @for (opcion of estadosFiltro; track opcion.valor) {
+          <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="receptor" let-f>
+      <div>{{ f.receptorNombre }}</div>
+      <div class="fact-ayuda">{{ f.receptorRfc }}</div>
+    </ng-template>
+    <ng-template appCelda="folio" let-f>
+      @if (f.folioFiscal) {
+        <span class="fact-mono">{{ f.folioFiscal }}</span>
+      } @else {
+        <span class="fact-ayuda">Sin timbrar</span>
+      }
+    </ng-template>
+    <ng-template appCelda="total" let-f>{{ f.total | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</ng-template>
+    <ng-template appCelda="estado" let-f>
+      <app-estado-chip [etiqueta]="humanizar(f.estado)" [tono]="tono(f.estado)" />
+    </ng-template>
+    <ng-template appCelda="timbrado" let-f>
+      {{ f.fechaTimbrado ? (f.fechaTimbrado | date: 'dd/MM/yyyy HH:mm') : '-' }}
+    </ng-template>
+    <ng-template appCelda="acciones" let-f>
+      @if (puedeTimbrar(f) || puedeCancelar(f)) {
+        <button matIconButton [matMenuTriggerFor]="menu" aria-label="Acciones de factura">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+          @if (puedeTimbrar(f)) {
+            <button mat-menu-item type="button" (click)="timbrar(f)">
+              <mat-icon>verified</mat-icon> Timbrar
+            </button>
+          }
+          @if (puedeCancelar(f)) {
+            @for (motivo of motivosSat; track motivo.clave) {
+              <button mat-menu-item type="button" (click)="cancelar(f, motivo.clave)">
+                <mat-icon>cancel</mat-icon> Cancelar ({{ motivo.clave }})
+              </button>
+            }
+          }
+        </mat-menu>
+      } @else {
+        <span class="fact-ayuda">-</span>
+      }
+    </ng-template>
+  </app-data-table>
+</app-state-container>

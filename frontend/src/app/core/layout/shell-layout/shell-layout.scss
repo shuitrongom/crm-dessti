@@ -1,0 +1,262 @@
+﻿@use '../../../../styles/breakpoints' as bp;
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+
+  &__barra {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    // Separacion sutil de la barra respecto al contenido.
+    box-shadow: var(--ds-shadow-sm);
+  }
+
+  &__cabecera {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-2);
+    width: 100%;
+  }
+
+  &__titulo {
+    font-size: var(--ds-font-size-lg);
+    font-weight: var(--ds-font-weight-medium);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__espaciador {
+    flex: 1 1 auto;
+  }
+
+  &__contenedor {
+    flex: 1 1 auto;
+  }
+
+  &__drawer {
+    width: 264px;
+    border-right: 1px solid var(--ds-color-border);
+    background: var(--ds-color-surface);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Encabezado de marca del drawer (logotipo textual Dess-TI)
+  // ---------------------------------------------------------------------------
+  &__marca {
+    display: flex;
+    align-items: center;
+    padding: var(--ds-space-4) var(--ds-space-5);
+    border-bottom: 1px solid var(--ds-color-border);
+  }
+
+  &__marca-logo {
+    font-family: var(--ds-font-family-heading);
+    font-size: var(--ds-font-size-xl);
+    font-weight: var(--ds-font-weight-bold);
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: var(--ds-color-text);
+  }
+
+  &__marca-acento {
+    color: var(--ds-color-primary);
+  }
+
+  // Nombre visible de la empresa (branding propio del tenant): se ajusta al
+  // ancho del drawer sin desbordar, respetando el color de texto del tema.
+  &__marca-empresa {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--ds-color-text);
+  }
+
+  // Logotipo de la empresa: se limita en alto para conservar el ritmo del
+  // encabezado y nunca desborda el ancho del drawer.
+  &__marca-imagen {
+    display: block;
+    max-block-size: 40px;
+    max-inline-size: 100%;
+    inline-size: auto;
+    block-size: auto;
+    object-fit: contain;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Navegacion lateral
+  // ---------------------------------------------------------------------------
+  &__nav {
+    padding: var(--ds-space-2);
+  }
+
+  // Grupo de seccion: separa visualmente cada bloque de enlaces. La MatNavList
+  // por grupo elimina su padding vertical por defecto para un ritmo uniforme.
+  &__grupo {
+    padding-block: 0;
+
+    & + & {
+      margin-top: var(--ds-space-2);
+      padding-top: var(--ds-space-2);
+      border-top: 1px solid var(--ds-color-border);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Seccion colapsable (acordeon)
+  // ---------------------------------------------------------------------------
+  // Encabezado accionable: <button> a ancho completo con titulo + chevron.
+  // Etiqueta discreta en mayusculas, interactivo (hover/focus) y accesible
+  // (aria-expanded en la plantilla).
+  &__seccion-boton {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ds-space-2);
+    inline-size: 100%;
+    margin: 0;
+    padding-inline: var(--ds-space-3);
+    padding-block: var(--ds-space-2);
+    border: 0;
+    border-radius: var(--ds-radius-md);
+    background: transparent;
+    color: var(--ds-color-text-muted);
+    font-family: inherit;
+    font-size: var(--ds-font-size-xs);
+    font-weight: var(--ds-font-weight-medium);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-align: start;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--ds-color-surface-variant);
+      color: var(--ds-color-text);
+    }
+
+    // Foco visible para operacion por teclado (WCAG 2.4.7).
+    &:focus-visible {
+      outline: 2px solid var(--ds-color-primary);
+      outline-offset: 2px;
+    }
+  }
+
+  &__seccion-titulo {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  // El chevron gira/cambia con el estado; tamano contenido para no dominar.
+  &__seccion-chevron {
+    flex: 0 0 auto;
+    inline-size: 20px;
+    block-size: 20px;
+    font-size: 20px;
+    color: var(--ds-color-text-muted);
+  }
+
+  // Lista de items de la seccion: sin padding vertical propio para conservar el
+  // ritmo del acordeon.
+  &__seccion-items {
+    padding-block: 0;
+  }
+
+  // Seccion que contiene la ruta activa: resalta su encabezado para orientar al
+  // Usuario incluso cuando la seccion esta colapsada.
+  &__grupo--activo &__seccion-boton {
+    color: var(--ds-color-primary);
+  }
+
+  &__grupo--activo &__seccion-chevron {
+    color: var(--ds-color-primary);
+  }
+
+  // Cada enlace ocupa una fila con esquinas redondeadas y aire vertical; el
+  // fondo hover usa la superficie variante del tema.
+  &__enlace {
+    border-radius: var(--ds-radius-md);
+    margin-block: var(--ds-space-1);
+
+    &:hover {
+      background: var(--ds-color-surface-variant);
+    }
+  }
+
+  &__enlace--activo {
+    // Resalta el enlace activo: contenedor primario, barra de acento a la
+    // izquierda y texto en color primario (no solo color: tambien negrita).
+    background: var(--ds-color-primary-container);
+    position: relative;
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset-block: var(--ds-space-2);
+      inset-inline-start: 0;
+      inline-size: 3px;
+      border-radius: var(--ds-radius-pill);
+      background: var(--ds-color-primary);
+    }
+
+    ::ng-deep .mdc-list-item__primary-text {
+      font-weight: var(--ds-font-weight-medium);
+      color: var(--ds-color-primary);
+    }
+
+    ::ng-deep .mat-icon {
+      color: var(--ds-color-primary);
+    }
+  }
+
+  &__sin-items {
+    padding: var(--ds-space-4);
+    color: var(--ds-color-text-muted);
+    font-size: var(--ds-font-size-sm);
+  }
+
+  &__usuario {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-2);
+    opacity: 1 !important;
+  }
+
+  &__usuario-nombre {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 220px;
+  }
+
+  // Avatar del boton de cuenta: iniciales legibles del Usuario sobre el
+  // contenedor primario, en lugar de un icono generico.
+  &__avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 32px;
+    block-size: 32px;
+    border-radius: var(--ds-radius-pill);
+    background: var(--ds-color-primary-container);
+    color: var(--ds-color-primary);
+    font-size: var(--ds-font-size-xs);
+    font-weight: var(--ds-font-weight-bold);
+    letter-spacing: 0.02em;
+  }
+
+  &__main {
+    display: block;
+    padding-block: var(--ds-space-5);
+    min-height: calc(100dvh - 64px);
+  }
+
+  @include bp.from('md') {
+    &__main {
+      padding-block: var(--ds-space-6);
+    }
+  }
+}
+

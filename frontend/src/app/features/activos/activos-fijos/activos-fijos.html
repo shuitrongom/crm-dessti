@@ -1,0 +1,114 @@
+<app-page-header
+  titulo="Activos fijos"
+  subtitulo="Registra los bienes de la empresa, calcula su depreciación por periodo y da de baja los que ya no están en uso."
+>
+  @if (puedeCrear) {
+    <button acciones matButton="filled" type="button" (click)="alternarAlta()">
+      <mat-icon>{{ mostrarAlta() ? 'close' : 'add' }}</mat-icon>
+      {{ mostrarAlta() ? 'Cerrar' : 'Nuevo activo' }}
+    </button>
+  }
+</app-page-header>
+
+@if (mostrarAlta() && puedeCrear) {
+  <mat-card appearance="outlined" class="activos-alta">
+    <mat-card-content>
+      <form [formGroup]="formAlta" (ngSubmit)="crear()" novalidate>
+        <h2 class="activos-alta__titulo">Nuevo activo fijo</h2>
+        <div class="activos-form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre</mat-label>
+            <input matInput formControlName="nombre" autocomplete="off" />
+            <mat-error>El nombre es obligatorio.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Costo (MXN)</mat-label>
+            <input matInput type="number" min="0.01" step="0.01" formControlName="costo" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha de adquisicion</mat-label>
+            <input matInput [matDatepicker]="pickerFechaAdquisicion" formControlName="fechaAdquisicion" />
+            <mat-datepicker-toggle matSuffix [for]="pickerFechaAdquisicion" />
+            <mat-datepicker #pickerFechaAdquisicion />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Vida util (meses)</mat-label>
+            <input matInput type="number" min="1" formControlName="vidaUtilMeses" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Metodo de depreciacion</mat-label>
+            <mat-select formControlName="metodoDepreciacion">
+              <mat-option value="linea_recta">Linea recta</mat-option>
+              <mat-option value="saldos_decrecientes">Saldos decrecientes</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Valor residual (MXN)</mat-label>
+            <input matInput type="number" min="0" step="0.01" formControlName="valorResidual" />
+          </mat-form-field>
+        </div>
+        <button matButton="filled" type="submit" [disabled]="guardando()">Registrar activo</button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="No hay activos fijos registrados."
+  (reintentar)="cargar()"
+>
+  <div class="activos-filtros">
+    <mat-form-field appearance="outline">
+      <mat-label>Estado</mat-label>
+      <mat-select [value]="filtroEstado()" (valueChange)="aplicarFiltro($event)">
+        @for (opcion of estadosFiltro; track opcion.valor) {
+          <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="nombre" let-a>
+      <div>{{ a.nombre }}</div>
+      <div class="activos-ayuda">{{ a.fechaAdquisicion | date: 'dd/MM/yyyy' }} · {{ a.vidaUtilMeses }} meses</div>
+    </ng-template>
+    <ng-template appCelda="costo" let-a><span class="activos-num">{{ a.costo | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span></ng-template>
+    <ng-template appCelda="metodo" let-a>{{ humanizar(a.metodoDepreciacion) }}</ng-template>
+    <ng-template appCelda="acumulada" let-a><span class="activos-num">{{ a.depreciacionAcumulada | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span></ng-template>
+    <ng-template appCelda="libros" let-a><span class="activos-num">{{ valorEnLibros(a) | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span></ng-template>
+    <ng-template appCelda="estado" let-a>
+      <app-estado-chip [etiqueta]="humanizar(a.estado)" [tono]="tono(a.estado)" />
+    </ng-template>
+    <ng-template appCelda="acciones" let-a>
+      @if ((puedeDepreciar || puedeBaja) && a.estado === 'activo') {
+        <button matIconButton [matMenuTriggerFor]="menu" aria-label="Acciones de activo">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+          @if (puedeDepreciar) {
+            <button mat-menu-item type="button" (click)="depreciar(a)">
+              <mat-icon>trending_down</mat-icon> Correr depreciacion
+            </button>
+          }
+          @if (puedeBaja) {
+            <button mat-menu-item type="button" (click)="darDeBaja(a)">
+              <mat-icon>archive</mat-icon> Dar de baja
+            </button>
+          }
+        </mat-menu>
+      } @else {
+        <span class="activos-ayuda">-</span>
+      }
+    </ng-template>
+  </app-data-table>
+</app-state-container>

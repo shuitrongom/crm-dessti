@@ -1,0 +1,250 @@
+<app-page-header titulo="Pipeline de oportunidades" subtitulo="Visualiza tu embudo de ventas: sigue cada oportunidad por etapa y estima el valor de tu cartera comercial.">
+  <div acciones>
+    @if (puedeCrear) {
+      <button matButton="filled" type="button" (click)="alternarFormulario()">
+        <mat-icon aria-hidden="true">add</mat-icon>
+        Nueva oportunidad
+      </button>
+    }
+  </div>
+</app-page-header>
+
+@if (formularioAbierto()) {
+  <mat-card appearance="outlined" class="comercial-form">
+    <mat-card-header>
+      <mat-card-title>Nueva oportunidad</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form class="ds-dialog-form" [formGroup]="form" (ngSubmit)="crear()" novalidate>
+        <app-entity-select
+          formControlName="clienteId"
+          etiqueta="Cliente"
+          ayuda="Busca por nombre o RFC y elige el cliente de la lista."
+          placeholder="Busca por nombre o RFC…"
+          [obligatorio]="true"
+          [buscador]="buscarCliente"
+          [etiquetaDe]="etiquetaCliente"
+          [detalleDe]="detalleCliente"
+        />
+        <mat-form-field appearance="outline">
+          <mat-label>Titulo</mat-label>
+          <input matInput type="text" formControlName="titulo" autocomplete="off" required />
+          @if (form.controls.titulo.hasError('required') && form.controls.titulo.touched) {
+            <mat-error>El titulo es obligatorio.</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Valor estimado</mat-label>
+          <input matInput type="number" formControlName="valorEstimado" min="0.01" step="0.01" required />
+          @if (form.controls.valorEstimado.invalid && form.controls.valorEstimado.touched) {
+            <mat-error>Ingresa un valor entre 0.01 y 999,999,999.99.</mat-error>
+          }
+        </mat-form-field>
+        <div class="comercial-form__acciones">
+          <button matButton type="button" (click)="alternarFormulario()" [disabled]="guardando()">
+            Cancelar
+          </button>
+          <button matButton="filled" type="submit" [disabled]="guardando()">Crear</button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+@if (canalObjetivo(); as objetivo) {
+  <mat-card appearance="outlined" class="comercial-form">
+    <mat-card-header>
+      <mat-card-title>Canal de venta de "{{ objetivo.titulo }}"</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form class="ds-dialog-form" [formGroup]="formCanal" (ngSubmit)="guardarCanal()" novalidate>
+        @if (canalesDisponibles().length === 0) {
+          <p class="pipeline__sin-canales" role="note">
+            <mat-icon aria-hidden="true">info</mat-icon>
+            <span>
+              Aun no hay canales de venta dados de alta.
+              @if (puedeCrearCanal) {
+                <a routerLink="/empresa/comercial/canales-venta">Da de alta un canal de venta</a>
+                para poder clasificar esta oportunidad.
+              } @else {
+                Pide a un administrador que los cree en Canales de venta.
+              }
+            </span>
+          </p>
+        }
+        <mat-form-field appearance="outline">
+          <mat-label>Canal de venta</mat-label>
+          <mat-select formControlName="canalId">
+            <mat-option value="">Sin canal</mat-option>
+            @for (canal of canalesDisponibles(); track canal.id) {
+              <mat-option [value]="canal.id">{{ canal.nombre }}</mat-option>
+            }
+          </mat-select>
+          <mat-hint>Clasifica la oportunidad por su via comercial (Directo, Referido, Redes...).</mat-hint>
+        </mat-form-field>
+        <div class="comercial-form__acciones">
+          <button matButton type="button" (click)="cerrarAsignarCanal()" [disabled]="guardando()">
+            Cancelar
+          </button>
+          <button matButton="filled" type="submit" [disabled]="guardando()">Guardar canal</button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+<!-- Tira de indicadores del embudo (patron enterprise: outcome-first). Solo
+     se muestra cuando hay Oportunidades cargadas para no distraer en vacio. -->
+@if (fase() === "ok") {
+  <section class="pipeline-kpis" aria-label="Indicadores del embudo de ventas">
+    <article class="pipeline-kpi pipeline-kpi--valor">
+      <span class="pipeline-kpi__icono" aria-hidden="true"><mat-icon>payments</mat-icon></span>
+      <span class="pipeline-kpi__cuerpo">
+        <span class="pipeline-kpi__valor">{{ valorPipeline() | currency: "MXN" : "symbol-narrow" : "1.0-0" }}</span>
+        <span class="pipeline-kpi__etiqueta">Valor del pipeline abierto</span>
+      </span>
+    </article>
+    <article class="pipeline-kpi">
+      <span class="pipeline-kpi__icono" aria-hidden="true"><mat-icon>filter_alt</mat-icon></span>
+      <span class="pipeline-kpi__cuerpo">
+        <span class="pipeline-kpi__valor">{{ totalAbiertas() }}</span>
+        <span class="pipeline-kpi__etiqueta">Oportunidades abiertas</span>
+      </span>
+    </article>
+    <article class="pipeline-kpi">
+      <span class="pipeline-kpi__icono" aria-hidden="true"><mat-icon>sell</mat-icon></span>
+      <span class="pipeline-kpi__cuerpo">
+        <span class="pipeline-kpi__valor">{{ ticketPromedio() | currency: "MXN" : "symbol-narrow" : "1.0-0" }}</span>
+        <span class="pipeline-kpi__etiqueta">Ticket promedio</span>
+      </span>
+    </article>
+    <article class="pipeline-kpi pipeline-kpi--exito">
+      <span class="pipeline-kpi__icono" aria-hidden="true"><mat-icon>emoji_events</mat-icon></span>
+      <span class="pipeline-kpi__cuerpo">
+        <span class="pipeline-kpi__valor">{{ tasaGanados() }}%</span>
+        <span class="pipeline-kpi__etiqueta">Tasa de ganados</span>
+      </span>
+    </article>
+  </section>
+}
+
+<div class="pipeline-filtros">
+  <mat-form-field appearance="outline" class="pipeline-filtros__canal">
+    <mat-label>Filtrar por canal de venta</mat-label>
+    <mat-select
+      [value]="filtroCanalId()"
+      (valueChange)="aplicarFiltroCanal($event)"
+      panelClass="pipeline-filtros__panel"
+    >
+      <mat-option value="">Todos los canales</mat-option>
+      @for (canal of canalesDisponibles(); track canal.id) {
+        <mat-option [value]="canal.id">{{ canal.nombre }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+</div>
+
+<app-state-container
+  [fase]="fase()"
+  [mensajeError]="mensajeError()"
+  mensajeVacio="Aun no hay oportunidades registradas."
+  (reintentar)="cargar()"
+>
+  <div class="pipeline" role="list">
+    @for (columna of columnas(); track columna.etapa) {
+      <section
+        class="pipeline__columna"
+        [class]="'pipeline__columna--' + columna.etapa"
+        role="listitem"
+        [attr.aria-label]="'Etapa ' + columna.etiqueta"
+      >
+        <header class="pipeline__cabecera">
+          <div class="pipeline__cabecera-titulo">
+            <span class="pipeline__punto" aria-hidden="true"></span>
+            <h2 class="pipeline__titulo">{{ columna.etiqueta }}</h2>
+            <span class="pipeline__contador">{{ columna.oportunidades.length }}</span>
+          </div>
+          <p class="pipeline__cabecera-valor">
+            {{ columna.valor | currency: "MXN" : "symbol-narrow" : "1.0-0" }}
+          </p>
+        </header>
+        <div class="pipeline__tarjetas">
+          @for (oportunidad of columna.oportunidades; track oportunidad.id) {
+            <article class="pipeline__tarjeta">
+              <h3 class="pipeline__tarjeta-titulo">{{ oportunidad.titulo }}</h3>
+              <p class="pipeline__tarjeta-valor">
+                {{ oportunidad.valorEstimado | currency: 'MXN' : 'symbol-narrow' }}
+              </p>
+
+              <!-- Cliente: enlace navegable a su Ficha 360 (Req 2.4, 7.1) -->
+              @if (puedeVerCliente && nombreCliente(oportunidad); as cliente) {
+                <a
+                  class="pipeline__tarjeta-cliente"
+                  [routerLink]="['/empresa/comercial/clientes', oportunidad.clienteId]"
+                >
+                  <mat-icon aria-hidden="true">person</mat-icon>
+                  {{ cliente }}
+                </a>
+              }
+
+              <!-- Canal de venta actual (sin exponer el UUID, Req 2.1) -->
+              @if (nombreCanal(oportunidad); as canal) {
+                <p class="pipeline__tarjeta-canal">
+                  <mat-icon aria-hidden="true">sell</mat-icon>
+                  <span>{{ canal }}</span>
+                </p>
+              }
+
+              <div class="pipeline__tarjeta-acciones">
+                @if (puedeCambiarEtapa && transicionesDe(oportunidad).length > 0) {
+                  <button matButton="tonal" type="button" [matMenuTriggerFor]="menu">
+                    Mover
+                    <mat-icon aria-hidden="true">arrow_drop_down</mat-icon>
+                  </button>
+                  <mat-menu #menu="matMenu">
+                    @for (destino of transicionesDe(oportunidad); track destino) {
+                      <button mat-menu-item type="button" (click)="cambiarEtapa(oportunidad, destino)">
+                        {{ etiquetaEtapa[destino] }}
+                      </button>
+                    }
+                  </mat-menu>
+                }
+                @if (puedeAsignarCanal) {
+                  <button
+                    matButton
+                    type="button"
+                    (click)="abrirAsignarCanal(oportunidad)"
+                    [attr.aria-label]="'Asignar canal de venta a ' + oportunidad.titulo"
+                  >
+                    <mat-icon aria-hidden="true">sell</mat-icon>
+                    {{ oportunidad.canalVentaId ? 'Cambiar canal' : 'Asignar canal' }}
+                  </button>
+                }
+                @if (puedeConvertir && oportunidad.etapa === 'ganado' && !oportunidad.cotizacionId) {
+                  <button matButton type="button" (click)="convertir(oportunidad)">
+                    <mat-icon aria-hidden="true">request_quote</mat-icon>
+                    Cotizar
+                  </button>
+                }
+                @if (oportunidad.cotizacionId) {
+                  <span class="pipeline__badge">Cotizada</span>
+                  @if (puedeVerCotizacion) {
+                    <a
+                      matButton
+                      [routerLink]="['/empresa/comercial/cotizaciones', oportunidad.cotizacionId]"
+                    >
+                      <mat-icon aria-hidden="true">description</mat-icon>
+                      Ver cotizacion
+                    </a>
+                  }
+                }
+              </div>
+            </article>
+          } @empty {
+            <p class="pipeline__vacio">Sin oportunidades.</p>
+          }
+        </div>
+      </section>
+    }
+  </div>
+</app-state-container>

@@ -1,0 +1,100 @@
+<app-page-header titulo="Órdenes de fabricación" subtitulo="Gestiona la producción con las órdenes de fabricación y da seguimiento a su estado.">
+  <div acciones>
+    @if (puedeCrear) {
+      <button matButton="filled" type="button" (click)="alternarFormulario()">
+        <mat-icon aria-hidden="true">add</mat-icon>
+        Generar orden
+      </button>
+    }
+  </div>
+</app-page-header>
+
+@if (formularioAbierto()) {
+  <mat-card appearance="outlined" class="operacion-form">
+    <mat-card-header>
+      <mat-card-title>Generar orden de fabricacion</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form class="ds-dialog-form" [formGroup]="form" (ngSubmit)="generar()" novalidate>
+        <mat-form-field appearance="outline">
+          <mat-label>Cotizacion aprobada (identificador)</mat-label>
+          <input matInput type="text" formControlName="cotizacionId" required />
+          <mat-hint>La cotizacion debe estar aprobada y con prueba de diseno aprobada.</mat-hint>
+          @if (form.controls.cotizacionId.hasError('required') && form.controls.cotizacionId.touched) {
+            <mat-error>La cotizacion es obligatoria.</mat-error>
+          }
+        </mat-form-field>
+        <div class="operacion-form__acciones">
+          <button matButton type="button" (click)="alternarFormulario()" [disabled]="guardando()">
+            Cancelar
+          </button>
+          <button matButton="filled" type="submit" [disabled]="guardando()">Generar</button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+<div class="operacion-filtros" [formGroup]="formFiltro">
+  <mat-form-field appearance="outline" class="operacion-filtro">
+    <mat-label>Filtrar por estado</mat-label>
+    <mat-select [value]="estado()" (valueChange)="cambiarFiltro($event)">
+      <mat-option value="">Todos</mat-option>
+      @for (opcion of estados; track opcion) {
+        <mat-option [value]="opcion">{{ etiquetaEstado(opcion) }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <app-entity-select
+    class="operacion-filtro"
+    formControlName="clienteId"
+    etiqueta="Filtrar por cliente"
+    placeholder="Busca por nombre…"
+    ayuda="Selecciona un cliente por nombre para filtrar."
+    [buscador]="buscarCliente"
+    [etiquetaDe]="etiquetaCliente"
+  />
+</div>
+
+<app-state-container
+  [fase]="fase()"
+  [mensajeError]="mensajeError()"
+  mensajeVacio="No hay ordenes de fabricacion para el filtro seleccionado."
+  (reintentar)="cargar()"
+>
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="ordenes()"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="onPagina($event)"
+  >
+    <ng-template appCelda="cliente" let-fila>{{ nombreCliente(fila.clienteId) }}</ng-template>
+    <ng-template appCelda="cotizacion" let-fila>{{ etiquetaCotizacion(fila) }}</ng-template>
+    <ng-template appCelda="estado" let-fila>
+      <app-chip-estado
+        [variante]="varianteEstado($any(fila).estado)"
+        [etiqueta]="etiquetaEstado($any(fila).estado)"
+      />
+    </ng-template>
+    <ng-template appCelda="acciones" let-fila>
+      @if (puedeCambiarEstado && transicionesDe(fila).length > 0) {
+        <button matButton="tonal" type="button" [matMenuTriggerFor]="menu">
+          Cambiar estado
+          <mat-icon aria-hidden="true">arrow_drop_down</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+          @for (destino of transicionesDe(fila); track destino) {
+            <button mat-menu-item type="button" (click)="cambiarEstado(fila, destino)">
+              {{ etiquetaEstado(destino) }}
+            </button>
+          }
+        </mat-menu>
+      } @else {
+        <span class="operacion-sin-acciones">—</span>
+      }
+    </ng-template>
+  </app-data-table>
+</app-state-container>

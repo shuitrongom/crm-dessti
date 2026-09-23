@@ -1,0 +1,103 @@
+// =============================================================================
+// Estilos de Inteligencia de negocio (Req 52, 48) — mobile-first, tokens --ds-*
+// =============================================================================
+
+.reportes-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-3);
+  margin-block-end: var(--ds-space-4);
+
+  mat-form-field {
+    flex: 1 1 10rem;
+    min-width: 8rem;
+  }
+}
+
+.inteligencia-leyenda {
+  margin: 0 0 var(--ds-space-4);
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-sm);
+}
+
+.reportes-area {
+  margin-block-end: var(--ds-space-5);
+
+  &__titulo {
+    margin: 0 0 var(--ds-space-3);
+    font-size: var(--ds-font-size-lg);
+    font-weight: var(--ds-font-weight-medium);
+  }
+}
+
+.inteligencia-indicadores {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-space-3);
+
+  @media (min-width: 40rem) {
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  }
+}
+
+.inteligencia-card {
+  &__etiqueta {
+    color: var(--ds-color-text-muted);
+    font-size: var(--ds-font-size-sm);
+  }
+
+  &__valor {
+    font-size: var(--ds-font-size-xl);
+    font-weight: var(--ds-font-weight-bold);
+    font-variant-numeric: tabular-nums;
+    margin-top: var(--ds-space-1);
+  }
+
+  &__unidad {
+    font-size: var(--ds-font-size-sm);
+    font-weight: var(--ds-font-weight-regular);
+    color: var(--ds-color-text-muted);
+  }
+
+  &__previo {
+    margin-top: var(--ds-space-2);
+    font-size: var(--ds-font-size-xs);
+    color: var(--ds-color-text-muted);
+  }
+}
+
+.inteligencia-delta {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-1);
+  margin-top: var(--ds-space-2);
+  font-weight: var(--ds-font-weight-medium);
+  font-variant-numeric: tabular-nums;
+
+  mat-icon {
+    font-size: 1.125rem;
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+
+  &__texto {
+    font-weight: var(--ds-font-weight-regular);
+    font-size: var(--ds-font-size-sm);
+    color: var(--ds-color-text-muted);
+  }
+
+  // El color acompana siempre al icono y al texto (nunca es unico portador).
+  &--subida {
+    color: var(--ds-color-success);
+  }
+
+  &--bajada {
+    color: var(--ds-color-error);
+  }
+
+  &--neutra,
+  &--ninguna {
+    color: var(--ds-color-text-muted);
+  }
+}

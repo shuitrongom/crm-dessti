@@ -1,0 +1,139 @@
+<app-page-header
+  titulo="Polizas contables"
+  subtitulo="Registra pólizas contables balanceadas (cargos iguales a abonos) y gestiona sus reversos."
+>
+  @if (puedeCrear) {
+    <button acciones matButton="filled" type="button" (click)="alternarAlta()">
+      <mat-icon>{{ mostrarAlta() ? 'close' : 'add' }}</mat-icon>
+      {{ mostrarAlta() ? 'Cerrar' : 'Nueva poliza' }}
+    </button>
+  }
+</app-page-header>
+
+@if (mostrarAlta() && puedeCrear) {
+  <mat-card appearance="outlined" class="cont-alta">
+    <mat-card-content>
+      <form [formGroup]="formAlta" (ngSubmit)="crear()" novalidate>
+        <h2 class="cont-alta__titulo">Nueva poliza</h2>
+        <div class="cont-form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha</mat-label>
+            <input matInput [matDatepicker]="pickerFecha" formControlName="fecha" />
+            <mat-datepicker-toggle matSuffix [for]="pickerFecha" />
+            <mat-datepicker #pickerFecha />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Tipo</mat-label>
+            <input matInput formControlName="tipo" autocomplete="off" />
+          </mat-form-field>
+        </div>
+        <mat-form-field appearance="outline">
+          <mat-label>Concepto</mat-label>
+          <input matInput formControlName="concepto" autocomplete="off" />
+        </mat-form-field>
+
+        <div formArrayName="renglones" class="cont-renglones">
+          @for (renglon of renglones.controls; track $index) {
+            <div class="cont-renglon" [formGroupName]="$index">
+              <mat-form-field appearance="outline">
+                <mat-label>Cuenta contable</mat-label>
+                <input matInput formControlName="cuentaContableId" autocomplete="off" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Cargo</mat-label>
+                <input matInput type="number" min="0" step="0.01" formControlName="cargo" (input)="recalcular()" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Abono</mat-label>
+                <input matInput type="number" min="0" step="0.01" formControlName="abono" (input)="recalcular()" />
+              </mat-form-field>
+              <button matIconButton type="button" aria-label="Quitar renglon" [disabled]="renglones.length <= 2" (click)="quitarRenglon($index)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          }
+        </div>
+
+        <div
+          class="cont-balance"
+          [class.cont-balance--balanceado]="balancePreview().balanceado"
+          [class.cont-balance--desbalanceado]="!balancePreview().balanceado"
+          aria-live="polite"
+        >
+          <span>Cargos (previo): {{ balancePreview().cargos | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span>
+          <span>Abonos (previo): {{ balancePreview().abonos | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span>
+          <span>{{ balancePreview().balanceado ? 'Balanceada (previsualizacion)' : 'Sin balancear (previsualizacion)' }}</span>
+        </div>
+
+        <div class="cont-filtros">
+          <button matButton type="button" (click)="agregarRenglon()">
+            <mat-icon>add</mat-icon> Agregar renglon
+          </button>
+          <button matButton="filled" type="submit" [disabled]="guardando()">Registrar poliza</button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="No hay polizas registradas."
+  (reintentar)="cargar()"
+>
+  <div class="cont-filtros">
+    <mat-form-field appearance="outline">
+      <mat-label>Desde</mat-label>
+      <input
+        matInput
+        [matDatepicker]="pickerDesde"
+        [value]="desde()"
+        (dateChange)="aplicarRango($event.value ?? '', hasta())"
+      />
+      <mat-datepicker-toggle matSuffix [for]="pickerDesde" />
+      <mat-datepicker #pickerDesde />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Hasta</mat-label>
+      <input
+        matInput
+        [matDatepicker]="pickerHasta"
+        [value]="hasta()"
+        (dateChange)="aplicarRango(desde(), $event.value ?? '')"
+      />
+      <mat-datepicker-toggle matSuffix [for]="pickerHasta" />
+      <mat-datepicker #pickerHasta />
+    </mat-form-field>
+  </div>
+
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="fecha" let-p>{{ p.fecha | date: 'dd/MM/yyyy' }}</ng-template>
+    <ng-template appCelda="tipo" let-p>{{ p.tipo }}</ng-template>
+    <ng-template appCelda="concepto" let-p>{{ p.concepto }}</ng-template>
+    <ng-template appCelda="cargos" let-p>{{ p.totalCargos | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</ng-template>
+    <ng-template appCelda="abonos" let-p>{{ p.totalAbonos | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</ng-template>
+    <ng-template appCelda="balance" let-p>
+      <app-estado-chip
+        [etiqueta]="esBalanceada(p) ? 'Balanceada' : 'Sin balancear'"
+        [tono]="esBalanceada(p) ? 'exito' : 'error'"
+      />
+    </ng-template>
+    <ng-template appCelda="acciones" let-p>
+      @if (puedeCrear && !p.polizaRevertidaId) {
+        <button matButton type="button" (click)="reversar(p)">
+          <mat-icon>undo</mat-icon> Reversar
+        </button>
+      } @else {
+        <span class="cont-ayuda">-</span>
+      }
+    </ng-template>
+  </app-data-table>
+</app-state-container>

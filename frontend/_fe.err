@@ -1,0 +1,104 @@
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'identificador' does not exist on type 'ShellLayout'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/core/layout/shell-layout/shell-layout.html:33:19:
+[37m      33 │           <span>{{ [32midentificador[37m() ?? 'Usuario' }}</span>
+         ╵                    [32m~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component ShellLayout.
+
+    src/app/core/layout/shell-layout/shell-layout.ts:43:15:
+[37m      43 │   templateUrl: [32m'./shell-layout.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'puedeRestablecer' does not exist on type 'PlataformaEmpresas'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/plataforma/empresas/empresas.html:125:34:
+[37m      125 │ ...(puedeCambiarEstado || [32mpuedeRestablecer[37m) && empresa.estado !==...
+          ╵                           [32m~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component PlataformaEmpresas.
+
+    src/app/features/plataforma/empresas/empresas.ts:83:15:
+[37m      83 │   templateUrl: [32m'./empresas.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'puedeRestablecer' does not exist on type 'PlataformaEmpresas'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/plataforma/empresas/empresas.html:148:15:
+[37m      148 │           @if ([32mpuedeRestablecer[37m) {
+          ╵                [32m~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component PlataformaEmpresas.
+
+    src/app/features/plataforma/empresas/empresas.ts:83:15:
+[37m      83 │   templateUrl: [32m'./empresas.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'restablecerPassword' does not exist on type 'PlataformaEmpresas'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/plataforma/empresas/empresas.html:149:57:
+[37m      149 │ ...t-menu-item type="button" (click)="[32mrestablecerPassword[37m(empresa)">
+          ╵                                       [32m~~~~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component PlataformaEmpresas.
+
+    src/app/features/plataforma/empresas/empresas.ts:83:15:
+[37m      83 │   templateUrl: [32m'./empresas.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'puedeRestablecer' does not exist on type 'PlataformaEmpresas'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/plataforma/empresas/empresas.html:125:34:
+[37m      125 │ ...(puedeCambiarEstado || [32mpuedeRestablecer[37m) && empresa.estado !==...
+          ╵                           [32m~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component PlataformaEmpresas.
+
+    src/app/features/plataforma/empresas/empresas.ts:84:15:
+[37m      84 │   templateUrl: [32m'./empresas.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'puedeRestablecer' does not exist on type 'PlataformaEmpresas'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/plataforma/empresas/empresas.html:148:15:
+[37m      148 │           @if ([32mpuedeRestablecer[37m) {
+          ╵                [32m~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component PlataformaEmpresas.
+
+    src/app/features/plataforma/empresas/empresas.ts:84:15:
+[37m      84 │   templateUrl: [32m'./empresas.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'restablecerPassword' does not exist on type 'PlataformaEmpresas'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/plataforma/empresas/empresas.html:149:57:
+[37m      149 │ ...t-menu-item type="button" (click)="[32mrestablecerPassword[37m(empresa)">
+          ╵                                       [32m~~~~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component PlataformaEmpresas.
+
+    src/app/features/plataforma/empresas/empresas.ts:84:15:
+[37m      84 │   templateUrl: [32m'./empresas.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'restablecerPassword' does not exist on type 'PlataformaEmpresas'.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/plataforma/empresas/empresas.html:149:57:
+[37m      149 │ ...t-menu-item type="button" (click)="[32mrestablecerPassword[37m(empresa)">
+          ╵                                       [32m~~~~~~~~~~~~~~~~~~~[0m
+
+  Error occurs in the template of component PlataformaEmpresas.
+
+    src/app/features/plataforma/empresas/empresas.ts:84:15:
+[37m      84 │   templateUrl: [32m'./empresas.html'[37m,
+         ╵                [32m~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m

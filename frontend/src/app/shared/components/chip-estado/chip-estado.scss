@@ -1,0 +1,49 @@
+// =============================================================================
+// Estilos de ChipEstado (Req 7.3, 7.4)
+// -----------------------------------------------------------------------------
+// Insignia compacta con fondo tenue derivado del token semántico y borde/acento
+// del propio token. El texto usa `--ds-color-text` para garantizar contraste AA
+// sobre el fondo tenue (mezcla ~15% del semántico con la superficie), tanto en
+// tema claro como oscuro (los tokens cambian por `data-theme`).
+//
+// Solo se emplean tokens ya definidos en `_tokens.scss`; el fondo tenue se
+// calcula con `color-mix` para no introducir nuevos valores de color.
+// =============================================================================
+
+.chip-estado {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--ds-space-1) var(--ds-space-2);
+  border-radius: var(--ds-radius-pill);
+  font-size: var(--ds-font-size-sm);
+  line-height: var(--ds-line-height-tight);
+  border: 1px solid transparent;
+  // El texto es el portador de significado; color legible sobre fondo tenue.
+  color: var(--ds-color-text);
+  background-color: var(--ds-color-surface-variant);
+
+  &[data-variante='exito'] {
+    background-color: color-mix(in srgb, var(--ds-color-success) 15%, var(--ds-color-surface));
+    border-color: var(--ds-color-success);
+  }
+
+  &[data-variante='advertencia'] {
+    background-color: color-mix(in srgb, var(--ds-color-warning) 15%, var(--ds-color-surface));
+    border-color: var(--ds-color-warning);
+  }
+
+  &[data-variante='error'] {
+    background-color: color-mix(in srgb, var(--ds-color-error) 15%, var(--ds-color-surface));
+    border-color: var(--ds-color-error);
+  }
+
+  &[data-variante='info'] {
+    background-color: color-mix(in srgb, var(--ds-color-info) 15%, var(--ds-color-surface));
+    border-color: var(--ds-color-info);
+  }
+
+  &[data-variante='neutro'] {
+    background-color: var(--ds-color-surface-variant);
+    border-color: var(--ds-color-text-muted);
+  }
+}

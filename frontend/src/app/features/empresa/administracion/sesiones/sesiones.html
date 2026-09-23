@@ -1,0 +1,59 @@
+<app-page-header
+  titulo="Sesiones"
+  subtitulo="Consulta las sesiones activas de las cuentas de tu empresa y revoca el acceso cuando lo necesites."
+/>
+
+<mat-card appearance="outlined" class="admin-consulta">
+  <mat-card-content>
+    <div class="sesiones__consulta">
+      <mat-form-field appearance="outline" class="sesiones__cuenta">
+        <mat-label>Cuenta</mat-label>
+        <mat-select
+          panelClass="sesiones__panel"
+          [value]="usuarioId()"
+          (selectionChange)="seleccionar($event.value)"
+        >
+          @for (cuenta of cuentas(); track cuenta.id) {
+            <mat-option [value]="cuenta.id">{{ etiquetaCuenta(cuenta) }}</mat-option>
+          }
+        </mat-select>
+        <mat-hint>Selecciona la cuenta para ver sus sesiones activas.</mat-hint>
+      </mat-form-field>
+
+      <button
+        matButton
+        type="button"
+        class="ds-boton-destructivo sesiones__revocar"
+        [disabled]="!haySeleccion()"
+        (click)="revocar()"
+      >
+        <mat-icon aria-hidden="true">block</mat-icon>
+        Revocar sesiones
+      </button>
+    </div>
+  </mat-card-content>
+</mat-card>
+
+@if (estado(); as st) {
+  <app-state-container
+    [fase]="st.fase"
+    [mensajeError]="st.mensajeError"
+    mensajeVacio="La cuenta no tiene sesiones activas."
+    (reintentar)="consultar()"
+  >
+    <app-data-table
+      [columnas]="columnas"
+      [filas]="st.datos ?? []"
+      [total]="total()"
+      [page]="page()"
+      [size]="size()"
+      (cambioPagina)="cambiarPagina($event)"
+    >
+      <ng-template appCelda="jti" let-sesion>
+        <code>{{ sesion.jti }}</code>
+      </ng-template>
+      <ng-template appCelda="emitidoEn" let-sesion>{{ sesion.emitidoEn | date: 'short' }}</ng-template>
+      <ng-template appCelda="expiraEn" let-sesion>{{ sesion.expiraEn | date: 'short' }}</ng-template>
+    </app-data-table>
+  </app-state-container>
+}

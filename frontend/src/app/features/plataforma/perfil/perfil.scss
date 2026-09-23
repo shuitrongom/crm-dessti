@@ -1,0 +1,230 @@
+// =============================================================================
+// Estilos de la vista "Mi perfil" (super_admin) (Req 52, 53, 57)
+// -----------------------------------------------------------------------------
+// Dos tarjetas en rejilla responsive (1 columna en movil, 2 desde md). Lista de
+// definiciones para los datos de la cuenta y formulario apilado para el cambio
+// de contrasena. Solo tokens del Sistema de Diseno; correcto en claro y oscuro.
+// =============================================================================
+
+@use '../../../../styles/breakpoints' as bp;
+
+.perfil {
+  &__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--ds-space-4);
+    align-items: start;
+
+    @include bp.from('md') {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  &__card {
+    min-width: 0;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Datos de la cuenta (lista de definiciones)
+  // ---------------------------------------------------------------------------
+  &__datos {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-4);
+    margin: 0;
+  }
+
+  &__dato {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-1);
+  }
+
+  &__etiqueta {
+    margin: 0;
+    color: var(--ds-color-text-muted);
+    font-size: var(--ds-font-size-xs);
+    font-weight: var(--ds-font-weight-medium);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  &__valor {
+    margin: 0;
+    color: var(--ds-color-text);
+    font-size: var(--ds-font-size-md);
+    word-break: break-word;
+  }
+
+  &__vacio {
+    color: var(--ds-color-text-muted);
+  }
+
+  &__rol {
+    text-transform: capitalize;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Formulario de cambio de contrasena (apilado)
+  // ---------------------------------------------------------------------------
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-2);
+
+    mat-form-field {
+      inline-size: 100%;
+    }
+  }
+
+  &__acciones {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: var(--ds-space-2);
+
+    @include bp.until('sm') {
+      button[matButton='filled'] {
+        inline-size: 100%;
+      }
+    }
+  }
+
+  &__spinner {
+    display: inline-block;
+    margin-inline-end: var(--ds-space-2);
+    vertical-align: middle;
+  }
+
+  // Aviso de error a nivel de formulario (tono de error accesible: icono+texto).
+  &__error {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-2);
+    margin: 0 0 var(--ds-space-2);
+    padding: var(--ds-space-3);
+    border-radius: var(--ds-radius-md);
+    background: color-mix(in srgb, var(--ds-color-error) 12%, transparent);
+    color: var(--ds-color-error);
+    font-size: var(--ds-font-size-sm);
+
+    .mat-icon {
+      flex: 0 0 auto;
+    }
+
+    &--inline {
+      padding: var(--ds-space-2) var(--ds-space-3);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Datos de mi empresa (admin_empresa)
+  // ---------------------------------------------------------------------------
+  // La tarjeta de empresa ocupa el ancho completo, debajo de la rejilla de dos
+  // columnas (perfil + contrasena).
+  &__card--empresa {
+    margin-top: var(--ds-space-4);
+  }
+
+  &__form-empresa {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-4);
+    min-inline-size: 0;
+  }
+
+  // Rejilla responsive de campos: 1 columna en movil, 2 desde sm.
+  &__grid-empresa {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--ds-space-3) var(--ds-space-4);
+
+    @include bp.from('sm') {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    mat-form-field {
+      min-inline-size: 0;
+      inline-size: 100%;
+    }
+  }
+
+  // Campo que ocupa las dos columnas.
+  &__campo--ancho {
+    @include bp.from('sm') {
+      grid-column: 1 / -1;
+    }
+  }
+
+  // Carga de logo con vista previa (tarjeta interna).
+  &__logo {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-4);
+    padding: var(--ds-space-3);
+    border: 1px dashed var(--ds-color-border);
+    border-radius: var(--ds-radius-md);
+    background: var(--ds-color-surface-variant);
+  }
+
+  &__logo-preview,
+  &__logo-placeholder {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    inline-size: 64px;
+    block-size: 64px;
+    border: 1px solid var(--ds-color-border);
+    border-radius: var(--ds-radius-md);
+    background: var(--ds-color-surface);
+    object-fit: contain;
+    color: var(--ds-color-text-muted);
+
+    mat-icon {
+      font-size: 28px;
+      inline-size: 28px;
+      block-size: 28px;
+    }
+  }
+
+  &__logo-controles {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-1);
+    min-inline-size: 0;
+  }
+
+  &__logo-titulo {
+    font-size: var(--ds-font-size-sm);
+    font-weight: var(--ds-font-weight-medium);
+    color: var(--ds-color-text);
+  }
+
+  &__logo-ayuda {
+    color: var(--ds-color-text-muted);
+    font-size: var(--ds-font-size-xs);
+  }
+
+  &__logo-botones {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ds-space-2);
+    margin-block-start: var(--ds-space-1);
+  }
+
+  &__logo-boton {
+    position: relative;
+    display: inline-flex;
+    cursor: pointer;
+  }
+
+  &__logo-input {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+}

@@ -1,0 +1,53 @@
+@use '../../../../styles/breakpoints' as bp;
+
+.page-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-3);
+  padding-block: var(--ds-space-4);
+  margin-bottom: var(--ds-space-4);
+  border-bottom: 1px solid var(--ds-color-border);
+
+  // Entrada sutil del encabezado de vista (Req 55). El reset global de
+  // prefers-reduced-motion neutraliza la duracion (Req 55.4).
+  animation: ds-aparecer var(--ds-duration-base) var(--ds-easing-standard) both;
+
+  // Acento de marca enterprise (Req 7.1, 7.2): barra vertical sutil a la
+  // izquierda del bloque de textos, basada en el token de color primario. Es
+  // puramente decorativa (no requiere marcado en el template) y respeta el
+  // modo claro/oscuro porque --ds-color-primary cambia con el tema. No altera
+  // el border-bottom del encabezado ni el layout responsive (flex column → row).
+  &__textos {
+    border-inline-start: 3px solid var(--ds-color-primary);
+    padding-inline-start: var(--ds-space-3);
+  }
+
+  &__titulo {
+    margin: 0;
+    font-size: var(--ds-font-size-xl);
+    font-weight: var(--ds-font-weight-medium);
+    line-height: var(--ds-line-height-tight);
+  }
+
+  &__subtitulo {
+    margin: var(--ds-space-1) 0 0;
+    color: var(--ds-color-text-muted);
+    font-size: var(--ds-font-size-sm);
+  }
+
+  &__acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ds-space-2);
+  }
+
+  @include bp.from('md') {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+
+    &__acciones {
+      justify-content: flex-end;
+    }
+  }
+}

@@ -1,0 +1,39 @@
+<mat-form-field appearance="outline" class="address-autocomplete__campo">
+  <mat-label>Buscar dirección</mat-label>
+  <mat-icon matPrefix aria-hidden="true">search</mat-icon>
+  <input
+    matInput
+    type="text"
+    autocomplete="off"
+    placeholder="Ej.: Toluca, Avenida Juarez 100"
+    [value]="texto()"
+    (input)="alEscribir($any($event.target).value)"
+    [matAutocomplete]="auto"
+    [attr.aria-busy]="buscando()"
+  />
+  @if (buscando()) {
+    <mat-progress-spinner matSuffix mode="indeterminate" diameter="20" aria-label="Buscando direcciones" />
+  }
+  <mat-hint>Empieza a escribir y elige una sugerencia para autocompletar.</mat-hint>
+</mat-form-field>
+
+<mat-autocomplete
+  #auto="matAutocomplete"
+  class="direccion-autocomplete-panel"
+  [displayWith]="mostrar"
+  (optionSelected)="alSeleccionar($event)"
+>
+  @if (buscando()) {
+    <mat-option disabled>Buscando…</mat-option>
+  } @else {
+    @for (sugerencia of resultados(); track sugerencia.etiqueta) {
+      <mat-option [value]="sugerencia">
+        <span class="address-autocomplete__opcion">{{ sugerencia.etiqueta }}</span>
+      </mat-option>
+    } @empty {
+      @if (sinResultados()) {
+        <mat-option disabled>Sin resultados.</mat-option>
+      }
+    }
+  }
+</mat-autocomplete>

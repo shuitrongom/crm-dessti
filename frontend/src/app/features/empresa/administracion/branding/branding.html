@@ -1,0 +1,155 @@
+<app-page-header
+  titulo="Branding"
+  subtitulo="Personaliza la identidad de tu empresa: nombre visible, logotipo y color principal de la plataforma."
+/>
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  (reintentar)="cargar()"
+>
+  <mat-card appearance="outlined" class="admin-branding">
+    <mat-card-content>
+      <form class="ds-dialog-form" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre visible</mat-label>
+          <input matInput type="text" formControlName="nombreVisible" [disabled]="!puedeActualizar" />
+        </mat-form-field>
+
+        <!-- Color de marca: selector libre, presets y previsualizacion en vivo -->
+        <fieldset class="admin-branding__color" [disabled]="!puedeActualizar">
+          <legend class="admin-branding__color-titulo">Color de marca</legend>
+          <p class="admin-branding__color-ayuda">
+            Elige un color primario; la interfaz se recolorea al instante para previsualizar el
+            resultado. Usa un preset o introduce un valor hexadecimal.
+          </p>
+
+          @if (puedeActualizar) {
+            <div class="admin-branding__color-controles">
+              <div class="admin-branding__color-selector">
+                <label class="admin-branding__color-selector-label" for="branding-color-selector">
+                  Selector de color
+                </label>
+                <input
+                  id="branding-color-selector"
+                  class="admin-branding__color-input"
+                  type="color"
+                  [value]="colorSelector()"
+                  (input)="formulario.controls.colorPrimario.setValue($any($event.target).value)"
+                />
+              </div>
+
+              <mat-form-field appearance="outline" class="admin-branding__color-hex">
+                <mat-label>Valor hexadecimal</mat-label>
+                <input
+                  matInput
+                  type="text"
+                  inputmode="text"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="#35507a"
+                  formControlName="colorPrimario"
+                  aria-describedby="branding-color-valor"
+                />
+                @if (colorInvalido()) {
+                  <mat-error>Usa un color hexadecimal valido con formato #RRGGBB.</mat-error>
+                }
+              </mat-form-field>
+            </div>
+
+            <p id="branding-color-valor" class="admin-branding__color-valor">
+              @if (colorVacio()) {
+                Color actual: Tema corporativo por defecto (sin color de marca).
+              } @else {
+                Color actual: {{ (formulario.controls.colorPrimario.value ?? '').trim() }}.
+              }
+            </p>
+
+            <div class="admin-branding__presets" role="group" aria-label="Presets de color de marca">
+              @for (preset of presets; track preset.hex) {
+                <button
+                  type="button"
+                  class="admin-branding__preset"
+                  [style.background]="preset.hex"
+                  [attr.aria-label]="preset.nombre + ' ' + preset.hex"
+                  [attr.aria-pressed]="(formulario.controls.colorPrimario.value ?? '').trim().toLowerCase() === preset.hex"
+                  (click)="seleccionarPreset(preset.hex)"
+                ></button>
+              }
+            </div>
+
+            <div class="admin-branding__color-acciones">
+              <button
+                matButton
+                type="button"
+                [disabled]="colorVacio()"
+                (click)="usarColorPorDefecto()"
+              >
+                Usar color por defecto
+              </button>
+            </div>
+          } @else {
+            <p class="admin-branding__color-valor">
+              @if (colorVacio()) {
+                Tema corporativo por defecto (sin color de marca).
+              } @else {
+                Color de marca: {{ (formulario.controls.colorPrimario.value ?? '').trim() }}.
+              }
+            </p>
+          }
+        </fieldset>
+
+        <!-- Carga de logotipo como archivo de imagen con vista previa -->
+        <div class="admin-branding__logo">
+          @if (logo(); as src) {
+            <img
+              class="admin-branding__logo-preview"
+              [src]="src"
+              [alt]="'Vista previa del logotipo ' + (logoNombre() ?? 'de la empresa')"
+            />
+          } @else {
+            <span class="admin-branding__logo-placeholder" aria-hidden="true">
+              <mat-icon>add_photo_alternate</mat-icon>
+            </span>
+          }
+          <div class="admin-branding__logo-controles">
+            <span class="admin-branding__logo-titulo">Logotipo de la empresa</span>
+            <span class="admin-branding__logo-ayuda">PNG, JPG, SVG o WebP. Maximo 1 MB.</span>
+            @if (puedeActualizar) {
+              <div class="admin-branding__logo-botones">
+                <label class="admin-branding__logo-boton">
+                  <input
+                    type="file"
+                    class="admin-branding__logo-input"
+                    accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                    aria-label="Cargar logotipo de la empresa"
+                    (change)="seleccionarLogo($event)"
+                  />
+                  <span matButton="outlined">
+                    <mat-icon aria-hidden="true">upload</mat-icon>
+                    {{ logo() ? 'Cambiar imagen' : 'Cargar imagen' }}
+                  </span>
+                </label>
+                @if (logo()) {
+                  <button matButton type="button" (click)="quitarLogo()">Quitar logo</button>
+                }
+              </div>
+            }
+            @if (logoError()) {
+              <p class="admin-branding__logo-error" role="alert">
+                <mat-icon aria-hidden="true">error_outline</mat-icon>
+                <span>{{ logoError() }}</span>
+              </p>
+            }
+          </div>
+        </div>
+
+        @if (puedeActualizar) {
+          <button matButton="filled" type="submit" [disabled]="guardando() || colorInvalido()">
+            Guardar branding
+          </button>
+        }
+      </form>
+    </mat-card-content>
+  </mat-card>
+</app-state-container>

@@ -1,0 +1,176 @@
+<app-page-header
+  titulo="Empleados"
+  subtitulo="Administra a tu personal: altas y bajas de empleados, sus contratos y las incidencias."
+>
+  @if (puedeCrear) {
+    <button acciones matButton="filled" type="button" (click)="alternarAlta()">
+      <mat-icon>{{ mostrarAlta() ? 'close' : 'add' }}</mat-icon>
+      {{ mostrarAlta() ? 'Cerrar' : 'Nuevo empleado' }}
+    </button>
+  }
+</app-page-header>
+
+@if (mostrarAlta() && puedeCrear) {
+  <mat-card appearance="outlined" class="rh-alta">
+    <mat-card-content>
+      <form [formGroup]="formAlta" (ngSubmit)="crear()" novalidate>
+        <h2 class="rh-alta__titulo">Alta de empleado y contrato</h2>
+        <div class="rh-form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre completo</mat-label>
+            <input matInput formControlName="nombre" autocomplete="off" />
+            <mat-error>El nombre es obligatorio.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>RFC (13)</mat-label>
+            <input matInput formControlName="rfc" maxlength="13" autocomplete="off" />
+            <mat-error>El RFC debe tener 13 caracteres.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>CURP (18)</mat-label>
+            <input matInput formControlName="curp" maxlength="18" autocomplete="off" />
+            <mat-error>La CURP debe tener 18 caracteres.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>NSS (11)</mat-label>
+            <input matInput formControlName="nss" maxlength="11" inputmode="numeric" autocomplete="off" />
+            <mat-error>El NSS debe tener 11 digitos.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha de ingreso</mat-label>
+            <input matInput [matDatepicker]="pickerFechaIngreso" formControlName="fechaIngreso" />
+            <mat-datepicker-toggle matSuffix [for]="pickerFechaIngreso" />
+            <mat-datepicker #pickerFechaIngreso />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Tipo de contrato</mat-label>
+            <input matInput formControlName="tipoContrato" autocomplete="off" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Salario diario (MXN)</mat-label>
+            <input matInput type="number" min="0.01" step="0.01" formControlName="salarioDiario" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Periodicidad</mat-label>
+            <mat-select formControlName="periodicidad">
+              <mat-option value="semanal">Semanal</mat-option>
+              <mat-option value="quincenal">Quincenal</mat-option>
+              <mat-option value="mensual">Mensual</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Inicio del contrato</mat-label>
+            <input matInput [matDatepicker]="pickerFechaInicio" formControlName="fechaInicio" />
+            <mat-datepicker-toggle matSuffix [for]="pickerFechaInicio" />
+            <mat-datepicker #pickerFechaInicio />
+          </mat-form-field>
+        </div>
+        <button matButton="filled" type="submit" [disabled]="guardando()">Dar de alta</button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+@if (seleccionado(); as emp) {
+  <mat-card appearance="outlined" class="rh-alta">
+    <mat-card-content>
+      <div class="rh-filtros" style="justify-content: space-between">
+        <h2 class="rh-alta__titulo">{{ emp.nombre }}</h2>
+        <button matIconButton type="button" aria-label="Cerrar detalle" (click)="cerrarDetalle()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <mat-tab-group>
+        <mat-tab label="Incidencias">
+          @if (puedeIncidencia) {
+            <form [formGroup]="formIncidencia" (ngSubmit)="registrarIncidencia()" novalidate>
+              <div class="rh-form-grid">
+                <mat-form-field appearance="outline">
+                  <mat-label>Periodo (AAAA-MM)</mat-label>
+                  <input matInput formControlName="periodoNomina" placeholder="2026-01" autocomplete="off" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Tipo</mat-label>
+                  <input matInput formControlName="tipo" autocomplete="off" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Cantidad</mat-label>
+                  <input matInput type="number" step="0.01" formControlName="cantidad" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Descripcion</mat-label>
+                  <input matInput formControlName="descripcion" autocomplete="off" />
+                </mat-form-field>
+              </div>
+              <button matButton="filled" type="submit">Registrar incidencia</button>
+            </form>
+          }
+          @if (incidencias().length > 0) {
+            <ul>
+              @for (inc of incidencias(); track inc.id) {
+                <li>{{ inc.periodoNomina }} · {{ inc.tipo }} · {{ inc.cantidad ?? '-' }} <span class="rh-ayuda">{{ inc.descripcion }}</span></li>
+              }
+            </ul>
+          } @else {
+            <p class="rh-ayuda">Sin incidencias registradas.</p>
+          }
+        </mat-tab>
+        <mat-tab label="Contratos">
+          @if (contratos().length > 0) {
+            <ul>
+              @for (c of contratos(); track c.id) {
+                <li>
+                  {{ c.tipo }} · {{ c.salarioDiario | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}/dia ·
+                  {{ c.periodicidad }} · desde {{ c.fechaInicio | date: 'dd/MM/yyyy' }}
+                  <app-estado-chip [etiqueta]="c.activo ? 'Vigente' : 'Inactivo'" [tono]="c.activo ? 'exito' : 'neutro'" />
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="rh-ayuda">Sin contratos en el historico.</p>
+          }
+        </mat-tab>
+      </mat-tab-group>
+    </mat-card-content>
+  </mat-card>
+}
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="No hay empleados registrados."
+  (reintentar)="cargar()"
+>
+  <div class="rh-filtros">
+    <mat-form-field appearance="outline">
+      <mat-label>Buscar por nombre</mat-label>
+      <input matInput [value]="filtroNombre()" (change)="aplicarFiltro($any($event.target).value)" autocomplete="off" />
+    </mat-form-field>
+  </div>
+
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="nombre" let-e>{{ e.nombre }}</ng-template>
+    <ng-template appCelda="rfc" let-e><span class="rh-mono">{{ e.rfc }}</span></ng-template>
+    <ng-template appCelda="ingreso" let-e>{{ e.fechaIngreso | date: 'dd/MM/yyyy' }}</ng-template>
+    <ng-template appCelda="estado" let-e>
+      <app-estado-chip [etiqueta]="e.activo ? 'Activo' : 'Baja'" [tono]="e.activo ? 'exito' : 'error'" />
+    </ng-template>
+    <ng-template appCelda="acciones" let-e>
+      <button matIconButton type="button" aria-label="Ver detalle" (click)="seleccionar(e)">
+        <mat-icon>visibility</mat-icon>
+      </button>
+      @if (puedeEliminar && e.activo) {
+        <button matIconButton type="button" aria-label="Dar de baja" (click)="darDeBaja(e)">
+          <mat-icon>person_off</mat-icon>
+        </button>
+      }
+    </ng-template>
+  </app-data-table>
+</app-state-container>

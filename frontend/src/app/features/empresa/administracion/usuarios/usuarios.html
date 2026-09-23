@@ -1,0 +1,109 @@
+<app-page-header
+  titulo="Usuarios"
+  subtitulo="Administra las cuentas de tu empresa: da de alta usuarios, edita sus roles y desactívalos cuando corresponda."
+>
+  <div acciones class="usuarios__acciones">
+    <mat-form-field appearance="outline" class="usuarios__busqueda">
+      <mat-label>Buscar</mat-label>
+      <mat-icon matPrefix aria-hidden="true">search</mat-icon>
+      <input
+        matInput
+        type="search"
+        placeholder="Buscar por nombre o correo…"
+        [value]="busqueda()"
+        (input)="cambiarBusqueda($any($event.target).value)"
+      />
+      @if (busqueda()) {
+        <button
+          matIconButton
+          matSuffix
+          type="button"
+          aria-label="Limpiar busqueda"
+          (click)="limpiarBusqueda()"
+        >
+          <mat-icon aria-hidden="true">close</mat-icon>
+        </button>
+      }
+    </mat-form-field>
+
+    @if (puedeCrear) {
+      <button matButton="filled" type="button" (click)="crear()">
+        <mat-icon aria-hidden="true">person_add</mat-icon>
+        Crear usuario
+      </button>
+    }
+  </div>
+</app-page-header>
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  [mensajeVacio]="mensajeVacio()"
+  (reintentar)="cargar()"
+>
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="nombre" let-usuario>
+      <div class="usuarios__persona">
+        <span class="usuarios__avatar" aria-hidden="true">{{ nombreDe(usuario).charAt(0) }}</span>
+        <span class="usuarios__nombre">{{ nombreDe(usuario) }}</span>
+      </div>
+    </ng-template>
+
+    <ng-template appCelda="identificador" let-usuario>
+      <span class="usuarios__identificador">{{ usuario.identificadorAcceso }}</span>
+    </ng-template>
+
+    <ng-template appCelda="roles" let-usuario>
+      @if (usuario.roles.length) {
+        <mat-chip-set aria-label="Roles asignados">
+          @for (rol of usuario.roles; track rol.id) {
+            <mat-chip>{{ rol.nombre }}</mat-chip>
+          }
+        </mat-chip-set>
+      } @else {
+        <span class="usuarios__sin-roles" aria-hidden="true">—</span>
+      }
+    </ng-template>
+
+    <ng-template appCelda="estado" let-usuario>
+      <mat-chip-set>
+        <mat-chip [class]="'usuarios__estado usuarios__estado--' + (usuario.activo ? 'activa' : 'inactiva')">
+          <span class="usuarios__estado-dot" aria-hidden="true"></span>
+          {{ usuario.activo ? 'Activa' : 'Inactiva' }}
+        </mat-chip>
+      </mat-chip-set>
+    </ng-template>
+
+    <ng-template appCelda="acciones" let-usuario>
+      @if (puedeActualizar) {
+        <button
+          matIconButton
+          type="button"
+          [attr.aria-label]="'Mas acciones para ' + nombreDe(usuario)"
+          [matMenuTriggerFor]="menuAcciones"
+        >
+          <mat-icon aria-hidden="true">more_vert</mat-icon>
+        </button>
+        <mat-menu #menuAcciones="matMenu">
+          <button mat-menu-item type="button" (click)="editar(usuario)">
+            <mat-icon aria-hidden="true">edit</mat-icon>
+            <span>Editar</span>
+          </button>
+          @if (usuario.activo) {
+            <button mat-menu-item type="button" class="usuarios__accion--desactivar" (click)="desactivar(usuario)">
+              <mat-icon aria-hidden="true">block</mat-icon>
+              <span>Desactivar</span>
+            </button>
+          }
+        </mat-menu>
+      }
+    </ng-template>
+  </app-data-table>
+</app-state-container>

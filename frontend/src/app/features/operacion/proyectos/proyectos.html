@@ -1,0 +1,74 @@
+<app-page-header titulo="Proyectos" subtitulo="Administra tus proyectos y sus sitios, y consulta el avance consolidado de cada uno.">
+  <div acciones>
+    @if (puedeCrear) {
+      <button matButton="filled" type="button" (click)="alternarFormulario()">
+        <mat-icon aria-hidden="true">add</mat-icon>
+        Nuevo proyecto
+      </button>
+    }
+  </div>
+</app-page-header>
+
+@if (formularioAbierto()) {
+  <mat-card appearance="outlined" class="operacion-form">
+    <mat-card-header>
+      <mat-card-title>Nuevo proyecto</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form class="ds-dialog-form" [formGroup]="form" (ngSubmit)="crear()" novalidate>
+        <mat-form-field appearance="outline">
+          <mat-label>Cliente (identificador)</mat-label>
+          <input matInput type="text" formControlName="clienteId" required />
+          @if (form.controls.clienteId.hasError('required') && form.controls.clienteId.touched) {
+            <mat-error>El cliente es obligatorio.</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre del proyecto</mat-label>
+          <input matInput type="text" formControlName="nombre" required />
+          @if (form.controls.nombre.hasError('required') && form.controls.nombre.touched) {
+            <mat-error>El nombre es obligatorio.</mat-error>
+          }
+        </mat-form-field>
+        <div class="operacion-form__acciones">
+          <button matButton type="button" (click)="alternarFormulario()" [disabled]="guardando()">
+            Cancelar
+          </button>
+          <button matButton="filled" type="submit" [disabled]="guardando()">Crear</button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+<mat-form-field appearance="outline" class="operacion-filtro">
+  <mat-label>Filtrar por cliente (identificador)</mat-label>
+  <input matInput type="search" [value]="clienteId()" (change)="filtrarPorCliente($any($event.target).value)" />
+  <mat-icon matSuffix aria-hidden="true">search</mat-icon>
+</mat-form-field>
+
+<app-state-container
+  [fase]="fase()"
+  [mensajeError]="mensajeError()"
+  mensajeVacio="No hay proyectos para el filtro seleccionado."
+  (reintentar)="cargar()"
+>
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="proyectos()"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="onPagina($event)"
+  >
+    <ng-template appCelda="nombre" let-fila>
+      <a [routerLink]="[fila.id]" class="operacion-enlace">{{ fila.nombre }}</a>
+    </ng-template>
+    <ng-template appCelda="clienteId" let-fila>{{ nombreCliente(fila.clienteId) }}</ng-template>
+    <ng-template appCelda="acciones" let-fila>
+      <a matIconButton [routerLink]="[fila.id]" aria-label="Ver detalle del proyecto">
+        <mat-icon aria-hidden="true">visibility</mat-icon>
+      </a>
+    </ng-template>
+  </app-data-table>
+</app-state-container>

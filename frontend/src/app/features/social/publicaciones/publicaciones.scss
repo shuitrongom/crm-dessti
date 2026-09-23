@@ -1,0 +1,76 @@
+// =============================================================================
+// Estilos de Publicaciones sociales (Req 52, 65) — mobile-first, tokens --ds-*
+// =============================================================================
+
+.social-alta {
+  margin-block-end: var(--ds-space-5);
+}
+
+.social-alta__titulo {
+  margin: 0 0 var(--ds-space-3);
+  font-size: var(--ds-font-size-lg);
+  font-weight: var(--ds-font-weight-medium);
+}
+
+.social-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-space-2);
+
+  @media (min-width: 40rem) {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  &__ancho {
+    @media (min-width: 40rem) {
+      grid-column: 1 / -1;
+    }
+  }
+}
+
+.social-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-3);
+  margin-block-end: var(--ds-space-4);
+
+  mat-form-field {
+    min-width: 12rem;
+  }
+}
+
+.social-contenido {
+  max-width: 32rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.social-ayuda {
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-sm);
+}
+
+.social-sin-cuentas {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  margin: 0 0 var(--ds-space-4);
+  padding: var(--ds-space-3);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-surface-variant);
+  color: var(--ds-color-text);
+  font-size: var(--ds-font-size-sm);
+
+  mat-icon {
+    flex: 0 0 auto;
+    color: var(--ds-color-text-muted);
+  }
+
+  a {
+    color: var(--ds-color-primary);
+    font-weight: var(--ds-font-weight-medium);
+  }
+}

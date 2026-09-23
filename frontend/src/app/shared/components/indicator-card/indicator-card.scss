@@ -1,0 +1,53 @@
+.indicator-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-1);
+  padding: var(--ds-space-4);
+  background: var(--ds-color-surface);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  box-shadow: var(--ds-shadow-sm);
+
+  &__etiqueta {
+    margin: 0;
+    color: var(--ds-color-text-muted);
+    font-size: var(--ds-font-size-sm);
+  }
+
+  &__valor {
+    margin: 0;
+    font-size: var(--ds-font-size-2xl);
+    font-weight: var(--ds-font-weight-bold);
+    line-height: var(--ds-line-height-tight);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__unidad {
+    font-size: var(--ds-font-size-sm);
+    font-weight: var(--ds-font-weight-regular);
+    color: var(--ds-color-text-muted);
+  }
+
+  &__comparativo {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ds-space-1);
+    margin: var(--ds-space-1) 0 0;
+    font-size: var(--ds-font-size-sm);
+    color: var(--ds-color-text-muted);
+
+    &--subida {
+      color: var(--ds-color-success);
+    }
+
+    &--bajada {
+      color: var(--ds-color-error);
+    }
+  }
+
+  &__icono {
+    font-size: 1.125rem;
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+}

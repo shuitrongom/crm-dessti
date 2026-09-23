@@ -1,0 +1,225 @@
+<app-page-header titulo="Empresas" subtitulo="Da de alta y administra el ciclo de vida de las empresas clientes de la plataforma.">
+  <div acciones class="empresas__acciones">
+    <mat-form-field appearance="outline" class="empresas__busqueda">
+      <mat-label>Buscar</mat-label>
+      <mat-icon matPrefix aria-hidden="true">search</mat-icon>
+      <input
+        matInput
+        type="search"
+        placeholder="Buscar por nombre o RFC…"
+        [value]="busqueda()"
+        (input)="cambiarBusqueda($any($event.target).value)"
+      />
+      @if (busqueda()) {
+        <button
+          matIconButton
+          matSuffix
+          type="button"
+          aria-label="Limpiar busqueda"
+          (click)="limpiarBusqueda()"
+        >
+          <mat-icon aria-hidden="true">close</mat-icon>
+        </button>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="empresas__filtro">
+      <mat-label>Estado</mat-label>
+      <mat-select
+        [value]="filtroEstado()"
+        (selectionChange)="cambiarFiltro($event.value)"
+      >
+        <mat-option [value]="null">Todos</mat-option>
+        <mat-option value="activa">Activa</mat-option>
+        <mat-option value="suspendida">Suspendida</mat-option>
+        <mat-option value="cancelada">Cancelada</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    @if (puedeCrear) {
+      <button matButton="filled" type="button" (click)="crear()">
+        <mat-icon aria-hidden="true">add</mat-icon>
+        Nueva empresa
+      </button>
+    }
+  </div>
+</app-page-header>
+
+<!-- Fila de indicadores KPI (conteos globales por estado). -->
+<section class="empresas__kpis" aria-label="Resumen de empresas">
+  <app-stat-card
+    etiqueta="Empresas totales"
+    [valor]="kpiTotal()"
+    icono="domain"
+    tono="info"
+    ayuda="Registradas en la plataforma"
+  />
+  <app-stat-card etiqueta="Activas" [valor]="kpiActivas()" icono="check_circle" tono="exito" />
+  <app-stat-card etiqueta="Suspendidas" [valor]="kpiSuspendidas()" icono="pause_circle" tono="advertencia" />
+  <app-stat-card etiqueta="Canceladas" [valor]="kpiCanceladas()" icono="cancel" tono="error" />
+</section>
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  [mensajeVacio]="mensajeVacio()"
+  (reintentar)="cargar()"
+>
+  <app-data-table
+    [columnas]="columnas()"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="nombre" let-empresa>
+      <div class="empresas__empresa">
+        @if (empresa.brandingLogo) {
+          <img
+            class="empresas__avatar-img"
+            [src]="empresa.brandingLogo"
+            [alt]="'Logo de ' + empresa.nombre"
+          />
+        } @else {
+          <span class="empresas__avatar" aria-hidden="true">{{ iniciales(empresa.nombre) }}</span>
+        }
+        <span class="empresas__empresa-textos">
+          <span class="empresas__empresa-nombre">{{ empresa.nombre }}</span>
+          <span class="empresas__empresa-rfc">{{ empresa.rfc }}</span>
+          @if (empresa.nombreComercial) {
+            <span class="empresas__empresa-comercial">{{ empresa.nombreComercial }}</span>
+          }
+        </span>
+      </div>
+    </ng-template>
+    <ng-template appCelda="giro" let-empresa>
+      <span class="empresas__giro">{{ nombreGiro(empresa.giroId) }}</span>
+    </ng-template>
+    <ng-template appCelda="plan" let-empresa>
+      <span class="empresas__plan">
+        <span class="empresas__plan-linea">
+          <span class="empresas__giro">{{ nombrePlan(empresa) }}</span>
+          @if (tipoInstrumentoEtiqueta(empresa); as tipo) {
+            <span
+              class="empresas__tipo"
+              [attr.aria-label]="'Tipo: ' + tipo"
+            >{{ tipo }}</span>
+          }
+        </span>
+        @if (empresa.planVigente) {
+          <mat-chip-set
+            [attr.aria-label]="'Estado de la suscripcion: ' + estadoMostradoEmpresa(empresa)"
+          >
+            <mat-chip [class]="'empresas__estado empresas__estado--' + estadoClaseEmpresa(empresa)">
+              <span class="empresas__estado-dot" aria-hidden="true"></span>
+              {{ estadoMostradoEmpresa(empresa) }}
+            </mat-chip>
+          </mat-chip-set>
+
+          <!-- Indicador compacto de vigencia: aviso "Por vencer" (solo si no
+               esta vencida) y dias restantes en texto discreto. Convierte el
+               estado por color + texto (WCAG AA) y nunca expone fechas crudas
+               como UUID. -->
+          @if (diasRestantesEmpresa(empresa) !== null) {
+            <span class="empresas__vigencia">
+              @if (empresa.planVigente.porVencer && !empresa.planVigente.vencida) {
+                <span
+                  class="empresas__por-vencer"
+                  [attr.aria-label]="'Aviso: por vencer'"
+                >
+                  <mat-icon aria-hidden="true">schedule</mat-icon>
+                  Por vencer
+                </span>
+              }
+              @if (!empresa.planVigente.vencida) {
+                @if (diasRestantesEmpresa(empresa)! > 0) {
+                  <span class="empresas__dias">{{ diasRestantesEmpresa(empresa) }} días</span>
+                } @else if (diasRestantesEmpresa(empresa) === 0) {
+                  <span class="empresas__dias">Vence hoy</span>
+                }
+              }
+            </span>
+          }
+        }
+      </span>
+    </ng-template>
+    <ng-template appCelda="contacto" let-empresa>
+      @if (empresa.emailContacto || empresa.telefono) {
+        <span class="empresas__contacto">
+          @if (empresa.emailContacto) {
+            <span class="empresas__contacto-linea">
+              <mat-icon aria-hidden="true">mail</mat-icon>
+              <span class="empresas__contacto-texto">{{ empresa.emailContacto }}</span>
+            </span>
+          }
+          @if (empresa.telefono) {
+            <span class="empresas__contacto-linea">
+              <mat-icon aria-hidden="true">call</mat-icon>
+              <span class="empresas__contacto-texto">{{ empresa.telefono }}</span>
+            </span>
+          }
+        </span>
+      } @else {
+        <span class="empresas__contacto-vacio" aria-hidden="true">—</span>
+      }
+    </ng-template>
+    <ng-template appCelda="estado" let-empresa>
+      <mat-chip-set>
+        <mat-chip [class]="'empresas__estado empresas__estado--' + empresa.estado">
+          <span class="empresas__estado-dot" aria-hidden="true"></span>
+          {{ etiquetaEstado(empresa.estado) }}
+        </mat-chip>
+      </mat-chip-set>
+    </ng-template>
+    <ng-template appCelda="acciones" let-empresa>
+      @if ((puedeEditar || puedeCambiarEstado || puedeRestablecer || puedeVerPlan) && empresa.estado !== 'cancelada') {
+        <button
+          matIconButton
+          type="button"
+          [attr.aria-label]="'Mas acciones para ' + empresa.nombre"
+          [matMenuTriggerFor]="menuAcciones"
+        >
+          <mat-icon aria-hidden="true">more_vert</mat-icon>
+        </button>
+        <mat-menu #menuAcciones="matMenu">
+          @if (puedeEditar) {
+            <button mat-menu-item type="button" (click)="editar(empresa)">
+              <mat-icon aria-hidden="true">edit</mat-icon>
+              <span>Editar empresa</span>
+            </button>
+          }
+          @if (puedeCambiarEstado) {
+            <button mat-menu-item type="button" (click)="cambiarGiro(empresa)">
+              <mat-icon aria-hidden="true">category</mat-icon>
+              <span>Cambiar giro</span>
+            </button>
+            @if (empresa.estado === 'activa') {
+              <button mat-menu-item type="button" class="empresas__accion--suspender" (click)="suspender(empresa)">
+                <mat-icon aria-hidden="true">pause_circle</mat-icon>
+                <span>Suspender</span>
+              </button>
+            } @else {
+              <button mat-menu-item type="button" class="empresas__accion--activar" (click)="activar(empresa)">
+                <mat-icon aria-hidden="true">play_circle</mat-icon>
+                <span>Activar</span>
+              </button>
+            }
+          }
+          @if (puedeVerPlan) {
+            <button mat-menu-item type="button" (click)="planSuscripcion(empresa)">
+              <mat-icon aria-hidden="true">workspace_premium</mat-icon>
+              <span>Plan y suscripción</span>
+            </button>
+          }
+          @if (puedeRestablecer) {
+            <button mat-menu-item type="button" (click)="restablecerPassword(empresa)">
+              <mat-icon aria-hidden="true">lock_reset</mat-icon>
+              <span>Restablecer contraseña de administrador</span>
+            </button>
+          }
+        </mat-menu>
+      }
+    </ng-template>
+  </app-data-table>
+</app-state-container>

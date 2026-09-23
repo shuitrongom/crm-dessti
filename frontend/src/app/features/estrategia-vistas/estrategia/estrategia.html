@@ -1,0 +1,288 @@
+<app-page-header
+  titulo="Estrategia"
+  subtitulo="Plan estratégico y OKR: esencia de la empresa, objetivos y resultados clave con su avance."
+>
+  @if (puedeCrearObjetivo) {
+    <button acciones matButton="filled" type="button" (click)="abrirCrearObjetivo()">
+      <mat-icon aria-hidden="true">add</mat-icon>
+      Crear objetivo
+    </button>
+  }
+</app-page-header>
+
+<!-- ==========================================================================
+     SECCIÓN A — Esencia (Misión, Visión y Valores)
+     ========================================================================== -->
+<section class="est-seccion" aria-labelledby="titulo-esencia">
+  <div class="est-seccion__cabecera">
+    <h2 id="titulo-esencia" class="est-seccion__titulo">Esencia (Misión, Visión y Valores)</h2>
+    @if (puedeEditarEsencia && !editandoEsencia() && esencia().fase !== 'cargando') {
+      <button matButton type="button" (click)="editarEsencia()">
+        <mat-icon aria-hidden="true">edit</mat-icon>
+        Editar
+      </button>
+    }
+  </div>
+
+  <app-state-container
+    [fase]="esencia().fase === 'vacio' ? 'ok' : esencia().fase"
+    [mensajeError]="esencia().mensajeError"
+    (reintentar)="cargarEsencia()"
+  >
+    @let esenciaData = esencia().datos;
+
+    @if (editandoEsencia()) {
+      <mat-card appearance="outlined">
+        <mat-card-content>
+          <form class="est-esencia-form" [formGroup]="formEsencia" (ngSubmit)="guardarEsencia()" novalidate>
+            <mat-form-field appearance="outline">
+              <mat-label>Misión</mat-label>
+              <textarea matInput rows="3" formControlName="mision"
+                placeholder="Razón de ser de la empresa"></textarea>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Visión</mat-label>
+              <textarea matInput rows="3" formControlName="vision"
+                placeholder="Aspiración a futuro"></textarea>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Valores</mat-label>
+              <textarea matInput rows="3" formControlName="valores"
+                placeholder="Principios que guían a la empresa"></textarea>
+            </mat-form-field>
+            <div class="est-esencia-form__acciones">
+              <button matButton type="button" (click)="cancelarEdicionEsencia()">Cancelar</button>
+              <button matButton="filled" type="submit" [disabled]="guardandoEsencia()">Guardar esencia</button>
+            </div>
+          </form>
+        </mat-card-content>
+      </mat-card>
+    } @else {
+      <div class="est-esencia">
+        <mat-card appearance="outlined" class="est-esencia__panel">
+          <mat-card-content>
+            <p class="est-esencia__etiqueta">
+              <mat-icon aria-hidden="true">explore</mat-icon>
+              <span>Misión</span>
+            </p>
+            @if (esenciaData?.mision) {
+              <p class="est-esencia__texto">{{ esenciaData?.mision }}</p>
+            } @else {
+              <p class="est-esencia__texto est-esencia__texto--vacio">No definida.</p>
+            }
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card appearance="outlined" class="est-esencia__panel">
+          <mat-card-content>
+            <p class="est-esencia__etiqueta">
+              <mat-icon aria-hidden="true">visibility</mat-icon>
+              <span>Visión</span>
+            </p>
+            @if (esenciaData?.vision) {
+              <p class="est-esencia__texto">{{ esenciaData?.vision }}</p>
+            } @else {
+              <p class="est-esencia__texto est-esencia__texto--vacio">No definida.</p>
+            }
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card appearance="outlined" class="est-esencia__panel">
+          <mat-card-content>
+            <p class="est-esencia__etiqueta">
+              <mat-icon aria-hidden="true">favorite</mat-icon>
+              <span>Valores</span>
+            </p>
+            @if (esenciaData?.valores) {
+              <p class="est-esencia__texto">{{ esenciaData?.valores }}</p>
+            } @else {
+              <p class="est-esencia__texto est-esencia__texto--vacio">No definidos.</p>
+            }
+          </mat-card-content>
+        </mat-card>
+      </div>
+    }
+  </app-state-container>
+</section>
+
+<!-- ==========================================================================
+     SECCIÓN COMERCIAL — Indicadores comerciales (apoyo a los OKR) (Req 6.1)
+     Solo visible si el Módulo 'comercial' está contratado y el Usuario tiene
+     permiso; en caso contrario se omite por completo (degradación sin romper).
+     Los indicadores se CALCULAN en el cliente a partir de las listas (mismo
+     enfoque que la Ficha 360); no se exponen UUIDs.
+     ========================================================================== -->
+@if (mostrarComercial()) {
+  <section class="est-seccion" aria-labelledby="titulo-comercial">
+    <h2 id="titulo-comercial" class="est-seccion__titulo">Indicadores comerciales</h2>
+    <p class="est-ayuda">
+      Actividad comercial que respalda tus objetivos estratégicos.
+    </p>
+    <div class="est-indicadores-comerciales">
+      @if (puedeVerPipeline()) {
+        <app-stat-card
+          icono="payments"
+          tono="exito"
+          etiqueta="Valor en pipeline"
+          [valor]="valorPipelineTexto()"
+          ayuda="Suma de oportunidades abiertas"
+        />
+        <app-stat-card
+          icono="trending_up"
+          tono="info"
+          etiqueta="Oportunidades abiertas"
+          [valor]="numOportunidadesAbiertas()"
+          ayuda="En etapas activas del pipeline"
+        />
+      }
+      @if (puedeVerCotizaciones()) {
+        <app-stat-card
+          icono="request_quote"
+          tono="neutro"
+          etiqueta="Cotizaciones"
+          [valor]="numCotizaciones()"
+          ayuda="Cotizaciones registradas"
+        />
+      }
+    </div>
+  </section>
+}
+
+<!-- ==========================================================================
+     SECCIÓN B — Objetivos estratégicos (OKR)
+     ========================================================================== -->
+<section class="est-seccion" aria-labelledby="titulo-objetivos">
+  <h2 id="titulo-objetivos" class="est-seccion__titulo">Objetivos estratégicos (OKR)</h2>
+
+  <app-state-container
+    [fase]="objetivos().fase === 'vacio' ? 'ok' : objetivos().fase"
+    [mensajeError]="objetivos().mensajeError"
+    (reintentar)="cargarObjetivos()"
+  >
+    @let lista = objetivos().datos ?? [];
+
+    <!-- Resumen de KPIs -->
+    @let kpi = resumen();
+    <div class="est-kpis" role="group" aria-label="Resumen de objetivos">
+      <div class="est-kpi">
+        <span class="est-kpi__valor">{{ kpi.total }}</span>
+        <span class="est-kpi__etiqueta">Objetivos</span>
+      </div>
+      <div class="est-kpi">
+        <span class="est-kpi__valor">{{ kpi.avancePromedio }}%</span>
+        <span class="est-kpi__etiqueta">Avance promedio</span>
+      </div>
+      <div class="est-kpi est-kpi--en_riesgo">
+        <span class="est-kpi__valor">{{ kpi.enRiesgo }}</span>
+        <span class="est-kpi__etiqueta">En riesgo</span>
+      </div>
+      <div class="est-kpi est-kpi--en_curso">
+        <span class="est-kpi__valor">{{ kpi.enCurso }}</span>
+        <span class="est-kpi__etiqueta">En curso</span>
+      </div>
+      <div class="est-kpi est-kpi--cumplido">
+        <span class="est-kpi__valor">{{ kpi.cumplido }}</span>
+        <span class="est-kpi__etiqueta">Cumplidos</span>
+      </div>
+    </div>
+
+    <mat-accordion class="est-objetivos">
+      @for (obj of lista; track obj.id) {
+        <mat-expansion-panel class="est-objetivo">
+          <mat-expansion-panel-header collapsedHeight="auto" expandedHeight="auto">
+            <mat-panel-title>
+              <div class="est-objetivo__cabecera">
+                <span class="est-objetivo__nombre">{{ obj.nombre }}</span>
+                <span class="est-objetivo__meta-linea">
+                  <mat-icon aria-hidden="true">person</mat-icon>{{ obj.responsable }}
+                  <span aria-hidden="true">·</span>
+                  <mat-icon aria-hidden="true">event</mat-icon>
+                  {{ obj.periodoInicio | date: 'mediumDate' }} – {{ obj.periodoFin | date: 'mediumDate' }}
+                </span>
+              </div>
+            </mat-panel-title>
+            <mat-panel-description class="est-objetivo__resumen">
+              <span class="est-num">{{ obj.avance }}%</span>
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+
+          <app-progress-badge [avance]="obj.avance" [estado]="obj.estadoDerivado" />
+
+          <p class="est-objetivo__meta">
+            <mat-icon aria-hidden="true">target</mat-icon>
+            <span><strong>Meta:</strong> {{ obj.meta }}</span>
+          </p>
+
+          <h3 class="est-subtitulo">Resultados clave</h3>
+          @if (obj.resultadosClave.length > 0) {
+            <div class="est-tabla" role="table" aria-label="Resultados clave del objetivo">
+              <div class="est-tabla__fila est-tabla__fila--cabecera" role="row">
+                <span role="columnheader">Descripción</span>
+                <span role="columnheader" class="est-num">Objetivo</span>
+                <span role="columnheader" class="est-num">Actual</span>
+                <span role="columnheader" class="est-num">Peso</span>
+                <span role="columnheader" class="est-num">Progreso</span>
+                @if (puedeActualizar) {
+                  <span role="columnheader">Actualizar</span>
+                }
+              </div>
+              @for (rc of obj.resultadosClave; track rc.id) {
+                <div class="est-tabla__fila" role="row">
+                  <span role="cell" class="est-tabla__desc">{{ rc.descripcion }}</span>
+                  <span role="cell" class="est-num">{{ rc.valorObjetivo | number: '1.0-4' }}</span>
+                  <span role="cell" class="est-num">{{ rc.valorActual | number: '1.0-4' }}</span>
+                  <span role="cell" class="est-num">{{ rc.peso | number: '1.0-2' }}</span>
+                  <span role="cell" class="est-num">
+                    {{ (rc.valorObjetivo ? (rc.valorActual / rc.valorObjetivo) * 100 : 0) | number: '1.0-0' }}%
+                  </span>
+                  @if (puedeActualizar) {
+                    <span role="cell" class="est-tabla__accion">
+                      <mat-form-field appearance="outline" class="est-tabla__campo">
+                        <mat-label>Nuevo valor</mat-label>
+                        <input matInput type="number" step="0.0001" #valorInput
+                          [attr.aria-label]="'Nuevo valor para ' + rc.descripcion" />
+                      </mat-form-field>
+                      <button matButton type="button"
+                        [attr.aria-label]="'Actualizar valor de ' + rc.descripcion"
+                        (click)="actualizarValor(rc.id, valorInput.value); valorInput.value = ''">
+                        Actualizar
+                      </button>
+                    </span>
+                  }
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="est-ayuda">Aún no hay resultados clave. Agrega de 3 a 5 métricas medibles para seguir el avance.</p>
+          }
+
+          @if (puedeActualizar) {
+            <div class="est-objetivo__acciones">
+              <button matButton type="button" (click)="abrirAgregarResultado(obj)">
+                <mat-icon aria-hidden="true">add</mat-icon>
+                Agregar resultado clave
+              </button>
+            </div>
+          }
+        </mat-expansion-panel>
+      } @empty {
+        <mat-card appearance="outlined" class="est-vacio">
+          <mat-card-content>
+            <mat-icon class="est-vacio__icono" aria-hidden="true">flag</mat-icon>
+            <h3 class="est-vacio__titulo">Aún no hay objetivos estratégicos</h3>
+            <p class="est-vacio__texto">
+              Un OKR combina un objetivo cualitativo y ambicioso con 3 a 5 resultados clave
+              medibles. Se revisa con una cadencia trimestral para mantener el rumbo.
+            </p>
+            @if (puedeCrearObjetivo) {
+              <button matButton="filled" type="button" (click)="abrirCrearObjetivo()">
+                <mat-icon aria-hidden="true">add</mat-icon>
+                Crear el primer objetivo
+              </button>
+            }
+          </mat-card-content>
+        </mat-card>
+      }
+    </mat-accordion>
+  </app-state-container>
+</section>

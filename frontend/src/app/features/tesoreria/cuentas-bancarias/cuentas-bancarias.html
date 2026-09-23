@@ -1,0 +1,156 @@
+<app-page-header
+  titulo="Cuentas bancarias"
+  subtitulo="Administra tus cuentas bancarias, importa los estados de cuenta y realiza la conciliación bancaria."
+>
+  @if (puedeCrear) {
+    <button acciones matButton="filled" type="button" (click)="alternarAlta()">
+      <mat-icon>{{ mostrarAlta() ? 'close' : 'add' }}</mat-icon>
+      {{ mostrarAlta() ? 'Cerrar' : 'Nueva cuenta' }}
+    </button>
+  }
+</app-page-header>
+
+@if (mostrarAlta() && puedeCrear) {
+  <mat-card appearance="outlined" class="tes-alta">
+    <mat-card-content>
+      <form [formGroup]="formCuenta" (ngSubmit)="crearCuenta()" novalidate>
+        <h2 class="tes-alta__titulo">Nueva cuenta bancaria</h2>
+        <div class="tes-form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre</mat-label>
+            <input matInput formControlName="nombre" autocomplete="off" />
+            <mat-error>El nombre es obligatorio.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Banco</mat-label>
+            <input matInput formControlName="banco" autocomplete="off" />
+            <mat-error>El banco es obligatorio.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>CLABE (18 digitos)</mat-label>
+            <input matInput formControlName="clabe" inputmode="numeric" autocomplete="off" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Moneda (ISO 4217)</mat-label>
+            <input matInput formControlName="moneda" maxlength="3" autocomplete="off" />
+          </mat-form-field>
+        </div>
+        <button matButton="filled" type="submit" [disabled]="guardando()">Crear cuenta</button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+@if (cuentaImportar(); as cuenta) {
+  <mat-card appearance="outlined" class="tes-alta">
+    <mat-card-content>
+      <form [formGroup]="formImport" (ngSubmit)="importarYConciliar()" novalidate>
+        <h2 class="tes-alta__titulo">Importar estado de cuenta · {{ cuenta.nombre }}</h2>
+        <div class="tes-form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Referencia del archivo</mat-label>
+            <input matInput formControlName="referenciaArchivo" autocomplete="off" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Periodo inicio</mat-label>
+            <input matInput [matDatepicker]="pickerPeriodoInicio" formControlName="periodoInicio" />
+            <mat-datepicker-toggle matSuffix [for]="pickerPeriodoInicio" />
+            <mat-datepicker #pickerPeriodoInicio />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Periodo fin</mat-label>
+            <input matInput [matDatepicker]="pickerPeriodoFin" formControlName="periodoFin" />
+            <mat-datepicker-toggle matSuffix [for]="pickerPeriodoFin" />
+            <mat-datepicker #pickerPeriodoFin />
+          </mat-form-field>
+        </div>
+
+        <div formArrayName="movimientos" class="tes-movimientos">
+          @for (mov of movimientos.controls; track $index) {
+            <div class="tes-movimiento" [formGroupName]="$index">
+              <mat-form-field appearance="outline">
+                <mat-label>Fecha</mat-label>
+                <input matInput [matDatepicker]="pickerMovFecha" formControlName="fecha" />
+                <mat-datepicker-toggle matSuffix [for]="pickerMovFecha" />
+                <mat-datepicker #pickerMovFecha />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Monto (+/-)</mat-label>
+                <input matInput type="number" step="0.01" formControlName="monto" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Referencia</mat-label>
+                <input matInput formControlName="referencia" autocomplete="off" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Descripcion</mat-label>
+                <input matInput formControlName="descripcion" autocomplete="off" />
+              </mat-form-field>
+              <button matIconButton type="button" aria-label="Quitar movimiento" [disabled]="movimientos.length <= 1" (click)="quitarMovimiento($index)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          }
+        </div>
+
+        <div class="tes-filtros">
+          <button matButton type="button" (click)="agregarMovimiento()">
+            <mat-icon>add</mat-icon> Agregar movimiento
+          </button>
+          <button matButton="filled" type="submit" [disabled]="guardando() || !puedeConciliar">
+            Importar y conciliar
+          </button>
+          <button matButton type="button" (click)="cancelarImportar()">Cerrar</button>
+        </div>
+
+        @if (ultimaConciliacion(); as c) {
+          <div
+            class="tes-diferencia"
+            [class.tes-diferencia--cero]="diferenciaEsCero(c)"
+            [class.tes-diferencia--distinta]="!diferenciaEsCero(c)"
+            aria-live="polite"
+          >
+            <mat-icon>{{ diferenciaEsCero(c) ? 'check_circle' : 'report_problem' }}</mat-icon>
+            <span>
+              Diferencia: {{ c.diferencia | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}
+              ({{ c.estado === 'completa' ? 'completa' : 'en proceso' }})
+            </span>
+          </div>
+        }
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="No hay cuentas bancarias registradas."
+  (reintentar)="cargar()"
+>
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="nombre" let-c>{{ c.nombre }}</ng-template>
+    <ng-template appCelda="banco" let-c>{{ c.banco }}</ng-template>
+    <ng-template appCelda="clabe" let-c><span class="tes-mono">{{ c.clabe ?? '-' }}</span></ng-template>
+    <ng-template appCelda="moneda" let-c>{{ c.moneda }}</ng-template>
+    <ng-template appCelda="estado" let-c>
+      <app-estado-chip [etiqueta]="c.activa ? 'Activa' : 'Inactiva'" [tono]="c.activa ? 'exito' : 'error'" />
+    </ng-template>
+    <ng-template appCelda="acciones" let-c>
+      @if (puedeConciliar && c.activa) {
+        <button matButton type="button" (click)="abrirImportar(c)">
+          <mat-icon>account_balance</mat-icon> Conciliar
+        </button>
+      } @else {
+        <span class="tes-ayuda">-</span>
+      }
+    </ng-template>
+  </app-data-table>
+</app-state-container>

@@ -1,0 +1,123 @@
+<app-page-header
+  titulo="Publicaciones sociales"
+  subtitulo="Programa y da seguimiento a tu contenido por canal según su estado: borrador, programada, publicada o fallida."
+>
+  @if (puedeCrear) {
+    <button acciones matButton="filled" type="button" [disabled]="!hayCuentas()" (click)="alternarAlta()">
+      <mat-icon>{{ mostrarAlta() ? 'close' : 'add' }}</mat-icon>
+      {{ mostrarAlta() ? 'Cerrar' : 'Nueva publicacion' }}
+    </button>
+  }
+</app-page-header>
+
+@if (!hayCuentas()) {
+  <p class="social-sin-cuentas" role="status">
+    <mat-icon aria-hidden="true">hub</mat-icon>
+    <span>
+      Aun no tienes cuentas conectadas. Conecta una en
+      <a routerLink="/empresa/social/conexiones">Conexiones</a> para poder publicar.
+    </span>
+  </p>
+}
+
+@if (mostrarAlta() && puedeCrear) {
+  <mat-card appearance="outlined" class="social-alta">
+    <mat-card-content>
+      <form [formGroup]="formAlta" (ngSubmit)="crear()" novalidate>
+        <h2 class="social-alta__titulo">Nueva publicacion</h2>
+        <div class="social-form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Cuenta de canal</mat-label>
+            <mat-select formControlName="cuentaCanalSocialId">
+              @for (cuenta of cuentas(); track cuenta.id) {
+                <mat-option [value]="cuenta.id">
+                  {{ cuenta.nombre }} ({{ etiquetaCanal(cuenta.canal) }})
+                </mat-option>
+              }
+            </mat-select>
+            <mat-error>Selecciona la cuenta emisora.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha programada</mat-label>
+            <input matInput type="datetime-local" formControlName="fechaProgramada" />
+            <mat-error>La fecha programada es obligatoria.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="social-form-grid__ancho">
+            <mat-label>Contenido</mat-label>
+            <textarea matInput rows="3" formControlName="contenido"></textarea>
+            <mat-error>El contenido es obligatorio.</mat-error>
+          </mat-form-field>
+        </div>
+        <button matButton="filled" type="submit" [disabled]="guardando()">Crear borrador</button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="No hay publicaciones. Conecta una cuenta en Conexiones y crea tu primera publicacion."
+  (reintentar)="cargar()"
+>
+  <div class="social-filtros">
+    <mat-form-field appearance="outline">
+      <mat-label>Canal</mat-label>
+      <mat-select [value]="filtroCanal()" (valueChange)="aplicarCanal($event)">
+        @for (opcion of canales; track opcion.valor) {
+          <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Estado</mat-label>
+      <mat-select [value]="filtroEstado()" (valueChange)="aplicarEstado($event)">
+        @for (opcion of estadosFiltro; track opcion.valor) {
+          <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="contenido" let-p>
+      <div class="social-contenido">{{ p.contenido }}</div>
+      @if (p.motivoFallo) {
+        <div class="social-ayuda">{{ p.motivoFallo }}</div>
+      }
+    </ng-template>
+    <ng-template appCelda="canal" let-p>{{ etiquetaCanal(p.canal) }}</ng-template>
+    <ng-template appCelda="programada" let-p>{{ p.fechaProgramada | date: 'dd/MM/yyyy HH:mm' }}</ng-template>
+    <ng-template appCelda="estado" let-p>
+      <app-estado-chip [etiqueta]="etiquetaEstado(p.estado)" [tono]="tono(p.estado)" />
+    </ng-template>
+    <ng-template appCelda="acciones" let-p>
+      @if (puedeCambiarEstado && (p.estado === 'borrador' || p.estado === 'programada')) {
+        <button matIconButton [matMenuTriggerFor]="menu" aria-label="Acciones de publicacion">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+          @if (p.estado === 'borrador') {
+            <button mat-menu-item type="button" (click)="programar(p)">
+              <mat-icon>schedule</mat-icon> Programar
+            </button>
+          }
+          @if (p.estado === 'programada') {
+            <button mat-menu-item type="button" (click)="publicar(p)">
+              <mat-icon>send</mat-icon> Publicar ahora
+            </button>
+          }
+        </mat-menu>
+      } @else {
+        <span class="social-ayuda">-</span>
+      }
+    </ng-template>
+  </app-data-table>
+</app-state-container>

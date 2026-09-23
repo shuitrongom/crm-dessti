@@ -1,0 +1,93 @@
+<app-page-header
+  titulo="Facturas de proveedor"
+  subtitulo="Concilia en tres vías la orden de compra, la recepción de materiales y la factura del proveedor antes de pagar."
+>
+  @if (puedeCrear) {
+    <button acciones matButton="filled" type="button" (click)="alternarAlta()">
+      <mat-icon>{{ mostrarAlta() ? 'close' : 'add' }}</mat-icon>
+      {{ mostrarAlta() ? 'Cerrar' : 'Registrar factura' }}
+    </button>
+  }
+</app-page-header>
+
+@if (mostrarAlta() && puedeCrear) {
+  <mat-card appearance="outlined" class="compras-alta">
+    <mat-card-content>
+      <form class="ds-dialog-form" [formGroup]="formAlta" (ngSubmit)="crear()" novalidate>
+        <h2 class="compras-alta__titulo">Registrar factura de proveedor</h2>
+        <mat-form-field appearance="outline">
+          <mat-label>Orden de compra (identificador)</mat-label>
+          <input matInput formControlName="ordenCompraId" autocomplete="off" />
+          <mat-error>Indica la orden de compra asociada.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Folio del proveedor</mat-label>
+          <input matInput formControlName="folioProveedor" autocomplete="off" />
+          <mat-error>Captura el folio de la factura del proveedor.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Monto (MXN)</mat-label>
+          <input matInput type="number" min="0.01" step="0.01" formControlName="monto" />
+          <mat-error>El monto debe ser mayor a cero.</mat-error>
+        </mat-form-field>
+        <button matButton="filled" type="submit" [disabled]="guardando()">Registrar factura</button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="No hay facturas de proveedor registradas."
+  (reintentar)="cargar()"
+>
+  <div class="compras-filtros">
+    <mat-form-field appearance="outline">
+      <mat-label>Estado</mat-label>
+      <mat-select [value]="filtroEstado()" (valueChange)="aplicarFiltro($event)">
+        @for (opcion of estadosFiltro; track opcion.valor) {
+          <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="folio" let-f>{{ f.folioProveedor }}</ng-template>
+    <ng-template appCelda="orden" let-f><span class="compras-mono">{{ f.ordenCompraId.slice(0, 8) }}</span></ng-template>
+    <ng-template appCelda="monto" let-f>{{ f.monto | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</ng-template>
+    <ng-template appCelda="estado" let-f>
+      <app-estado-chip [etiqueta]="humanizar(f.estado)" [tono]="tono(f.estado)" />
+    </ng-template>
+    <ng-template appCelda="fecha" let-f>{{ f.createdAt | date: 'dd/MM/yyyy' }}</ng-template>
+    <ng-template appCelda="acciones" let-f>
+      @if (puedeConciliar(f) || puedeAutorizar(f)) {
+        <button matIconButton [matMenuTriggerFor]="menu" aria-label="Acciones de factura">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+          @if (puedeConciliar(f)) {
+            <button mat-menu-item type="button" (click)="conciliar(f)">
+              <mat-icon>fact_check</mat-icon> Conciliar (3 vias)
+            </button>
+          }
+          @if (puedeAutorizar(f)) {
+            <button mat-menu-item type="button" (click)="autorizarPago(f)">
+              <mat-icon>payments</mat-icon> Autorizar pago
+            </button>
+          }
+        </mat-menu>
+      } @else {
+        <span class="compras-ayuda">-</span>
+      }
+    </ng-template>
+  </app-data-table>
+</app-state-container>

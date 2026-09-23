@@ -1,0 +1,91 @@
+<app-page-header
+  titulo="Detalle de orden de fabricación"
+  subtitulo="Consulta el detalle de la orden de fabricación: sus partidas y las acciones para cambiar su estado."
+>
+  <div acciones>
+    <a matButton routerLink=".." aria-label="Volver al listado de ordenes de fabricacion">
+      <mat-icon aria-hidden="true">arrow_back</mat-icon>
+      Volver
+    </a>
+  </div>
+</app-page-header>
+
+<app-state-container [fase]="fase()" [mensajeError]="mensajeError()" (reintentar)="cargar()">
+  @if (orden(); as o) {
+    <div class="of-detalle">
+      <mat-card appearance="outlined" class="ds-card-enterprise">
+        <mat-card-header>
+          <mat-card-title>Orden de {{ nombreCliente(o.clienteId) }}</mat-card-title>
+          <mat-card-subtitle>{{ origen(o) }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <dl class="of-detalle__datos">
+            <div class="of-detalle__dato">
+              <dt>Cliente</dt>
+              <dd>{{ nombreCliente(o.clienteId) }}</dd>
+            </div>
+            <div class="of-detalle__dato">
+              <dt>Estado</dt>
+              <dd>
+                <app-chip-estado
+                  [variante]="varianteEstado(o.estado)"
+                  [etiqueta]="etiquetaEstado(o.estado)"
+                />
+              </dd>
+            </div>
+            <div class="of-detalle__dato">
+              <dt>Origen</dt>
+              <dd>{{ origen(o) }}</dd>
+            </div>
+          </dl>
+        </mat-card-content>
+
+        @if (acciones().length > 0) {
+          <mat-card-actions>
+            @for (accion of acciones(); track accion.destino) {
+              <button
+                matButton="tonal"
+                type="button"
+                [class.ds-boton-destructivo]="accion.destructiva"
+                (click)="cambiarEstado(accion)"
+              >
+                {{ accion.etiqueta }}
+              </button>
+            }
+          </mat-card-actions>
+        }
+      </mat-card>
+
+      <mat-card appearance="outlined" class="ds-card-enterprise">
+        <mat-card-header>
+          <mat-card-title>Partidas</mat-card-title>
+          <mat-card-subtitle>Materiales y cantidades de la orden.</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          @if (o.partidas.length > 0) {
+            <table mat-table [dataSource]="o.partidas" class="of-detalle__tabla">
+              <ng-container matColumnDef="material">
+                <th mat-header-cell *matHeaderCellDef scope="col">Material</th>
+                <td mat-cell *matCellDef="let partida">{{ nombreMaterial(partida.materialId) }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="cantidad">
+                <th mat-header-cell *matHeaderCellDef scope="col" class="of-detalle__col-cantidad">
+                  Cantidad
+                </th>
+                <td mat-cell *matCellDef="let partida" class="of-detalle__col-cantidad">
+                  {{ partida.cantidad }}
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="columnasPartidas"></tr>
+              <tr mat-row *matRowDef="let fila; columns: columnasPartidas"></tr>
+            </table>
+          } @else {
+            <p class="of-detalle__vacio">Esta orden no tiene partidas registradas.</p>
+          }
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+</app-state-container>

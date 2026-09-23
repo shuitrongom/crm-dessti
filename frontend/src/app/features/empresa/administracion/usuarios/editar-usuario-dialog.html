@@ -1,0 +1,67 @@
+<h2 mat-dialog-title>Editar usuario</h2>
+<mat-dialog-content>
+  <form class="usuario-dialog__form" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+    @if (error()) {
+      <p class="usuario-dialog__error" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </p>
+    }
+
+    <!-- Seccion: Datos de la cuenta -->
+    <section class="usuario-dialog__seccion">
+      <h3 class="usuario-dialog__seccion-titulo">Datos de la cuenta</h3>
+      <div class="usuario-dialog__grid">
+        <mat-form-field appearance="outline" class="usuario-dialog__campo--ancho">
+          <mat-label>Correo / identificador de acceso</mat-label>
+          <input matInput type="email" [value]="identificador" disabled />
+          <mat-hint>El identificador de acceso no se modifica desde aqui.</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="usuario-dialog__campo--ancho">
+          <mat-label>Nombre para mostrar</mat-label>
+          <input matInput type="text" formControlName="nombreVisible" autocomplete="off" />
+          <mat-hint>Opcional. Como aparecera el usuario en la aplicacion.</mat-hint>
+          @if (formulario.controls.nombreVisible.hasError('maxlength') && formulario.controls.nombreVisible.touched) {
+            <mat-error>Maximo 200 caracteres.</mat-error>
+          }
+        </mat-form-field>
+      </div>
+    </section>
+
+    <!-- Seccion: Roles -->
+    <section class="usuario-dialog__seccion">
+      <h3 class="usuario-dialog__seccion-titulo">Roles</h3>
+      @if (sinRoles()) {
+        <p class="usuario-dialog__vacio" role="note">
+          <mat-icon aria-hidden="true">info</mat-icon>
+          <span>No hay roles disponibles para asignar en tu plan.</span>
+        </p>
+      } @else {
+        <p class="usuario-dialog__ayuda">Selecciona los roles que tendra la cuenta. Puedes dejarlo sin roles.</p>
+        <fieldset class="usuario-dialog__roles">
+          <legend class="usuario-dialog__roles-legend">Roles asignables</legend>
+          @for (rol of roles(); track rol.id) {
+            <label class="usuario-dialog__rol">
+              <mat-checkbox
+                [checked]="estaSeleccionado(rol.id)"
+                (change)="alternar(rol.id, $event.checked)"
+              >
+                <span class="usuario-dialog__rol-nombre">{{ rol.nombre }}</span>
+              </mat-checkbox>
+              @if (rol.descripcion) {
+                <span class="usuario-dialog__rol-descripcion">{{ rol.descripcion }}</span>
+              }
+            </label>
+          }
+        </fieldset>
+      }
+    </section>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancelar()">Cancelar</button>
+  <button matButton="filled" type="button" (click)="guardar()" [disabled]="guardando()">
+    Guardar cambios
+  </button>
+</mat-dialog-actions>

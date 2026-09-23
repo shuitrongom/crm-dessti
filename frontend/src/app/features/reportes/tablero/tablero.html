@@ -1,0 +1,49 @@
+<app-page-header
+  titulo="Tablero de indicadores"
+  subtitulo="Consulta los indicadores clave por área para el periodo que selecciones."
+>
+  @if (puedeExportar) {
+    <button acciones matButton type="button" [disabled]="exportando()" (click)="exportar()">
+      <mat-icon>download</mat-icon>
+      Exportar
+    </button>
+  }
+</app-page-header>
+
+<form class="reportes-filtros" [formGroup]="formFiltro" (ngSubmit)="consultar()" novalidate>
+  <mat-form-field appearance="outline">
+    <mat-label>Desde</mat-label>
+    <input matInput [matDatepicker]="pickerDesde" formControlName="desde" />
+    <mat-datepicker-toggle matSuffix [for]="pickerDesde" />
+    <mat-datepicker #pickerDesde />
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>Hasta</mat-label>
+    <input matInput [matDatepicker]="pickerHasta" formControlName="hasta" />
+    <mat-datepicker-toggle matSuffix [for]="pickerHasta" />
+    <mat-datepicker #pickerHasta />
+  </mat-form-field>
+  <button matButton="filled" type="submit">
+    <mat-icon>search</mat-icon> Consultar
+  </button>
+</form>
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="No hay indicadores para el periodo seleccionado."
+  (reintentar)="consultar()"
+>
+  @if (estado().datos; as tablero) {
+    @for (grupo of tablero.areas; track grupo.area) {
+      <section class="reportes-area" [attr.aria-label]="'Indicadores de ' + humanizarArea(grupo.area)">
+        <h2 class="reportes-area__titulo">{{ humanizarArea(grupo.area) }}</h2>
+        <div class="reportes-indicadores">
+          @for (indicador of grupo.indicadores; track indicador.clave) {
+            <app-indicator-card [indicador]="indicador" />
+          }
+        </div>
+      </section>
+    }
+  }
+</app-state-container>

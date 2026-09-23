@@ -1,0 +1,81 @@
+<app-page-header
+  titulo="Notas de credito"
+  subtitulo="Emite notas de crédito (CFDI de egreso) asociadas a tus facturas ya timbradas."
+>
+  @if (puedeCrear) {
+    <button acciones matButton="filled" type="button" (click)="alternarAlta()">
+      <mat-icon>{{ mostrarAlta() ? 'close' : 'add' }}</mat-icon>
+      {{ mostrarAlta() ? 'Cerrar' : 'Emitir nota' }}
+    </button>
+  }
+</app-page-header>
+
+@if (mostrarAlta() && puedeCrear) {
+  <mat-card appearance="outlined" class="fact-alta">
+    <mat-card-content>
+      <form class="ds-dialog-form" [formGroup]="formAlta" (ngSubmit)="emitir()" novalidate>
+        <h2 class="fact-alta__titulo">Emitir nota de credito</h2>
+        <mat-form-field appearance="outline">
+          <mat-label>Factura (identificador)</mat-label>
+          <input matInput formControlName="facturaId" autocomplete="off" />
+          <mat-error>Indica la factura timbrada asociada.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Monto (MXN)</mat-label>
+          <input matInput type="number" min="0.01" step="0.01" formControlName="monto" />
+          <mat-error>El monto debe ser mayor a cero.</mat-error>
+        </mat-form-field>
+        <button matButton="filled" type="submit" [disabled]="guardando()">Emitir nota</button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="No hay notas de credito registradas."
+  (reintentar)="cargar()"
+>
+  <div class="fact-filtros">
+    <mat-form-field appearance="outline">
+      <mat-label>Estado</mat-label>
+      <mat-select [value]="filtroEstado()" (valueChange)="aplicarFiltro($event)">
+        @for (opcion of estadosFiltro; track opcion.valor) {
+          <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="factura" let-n><span class="fact-mono">{{ n.facturaId.slice(0, 8) }}</span></ng-template>
+    <ng-template appCelda="monto" let-n>{{ n.monto | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</ng-template>
+    <ng-template appCelda="estado" let-n>
+      <app-estado-chip [etiqueta]="humanizar(n.estado)" [tono]="tono(n.estado)" />
+    </ng-template>
+    <ng-template appCelda="folio" let-n>
+      @if (n.folioFiscal) {
+        <span class="fact-mono">{{ n.folioFiscal }}</span>
+      } @else {
+        <span class="fact-ayuda">Sin timbrar</span>
+      }
+    </ng-template>
+    <ng-template appCelda="acciones" let-n>
+      @if (puedeTimbrar(n)) {
+        <button matButton type="button" (click)="timbrar(n)">
+          <mat-icon>verified</mat-icon> Timbrar
+        </button>
+      } @else {
+        <span class="fact-ayuda">-</span>
+      }
+    </ng-template>
+  </app-data-table>
+</app-state-container>

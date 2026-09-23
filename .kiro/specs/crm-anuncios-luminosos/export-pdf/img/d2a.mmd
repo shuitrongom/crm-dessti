@@ -1,0 +1,38 @@
+﻿erDiagram
+    EMPRESA ||--o{ CLIENTE : contiene
+    CLIENTE ||--o{ CONTACTO : tiene
+    CLIENTE ||--o{ OPORTUNIDAD : genera
+    OPORTUNIDAD ||--o| COTIZACION : "convierte (ganado)"
+    CLIENTE ||--o{ COTIZACION : recibe
+    COTIZACION ||--|{ PARTIDA_COTIZACION : detalla
+    COTIZACION ||--o{ PRUEBA_DISENO : versiona
+    COTIZACION ||--o| ORDEN_FABRICACION : "genera (aprobada)"
+    EMPRESA {
+        uuid id PK
+        string nombre
+        string rfc
+        string estado
+    }
+    CLIENTE {
+        uuid id PK
+        uuid tenant_id FK
+        string nombre
+        string rfc
+        boolean activo
+        bigint version
+    }
+    COTIZACION {
+        uuid id PK
+        uuid tenant_id FK
+        uuid cliente_id FK
+        string estado
+        numeric total
+        bigint version
+    }
+    PARTIDA_COTIZACION {
+        uuid id PK
+        uuid cotizacion_id FK
+        int cantidad
+        numeric precio_unitario
+        numeric subtotal
+    }
