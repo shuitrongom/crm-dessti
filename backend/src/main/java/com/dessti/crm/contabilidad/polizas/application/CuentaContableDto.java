@@ -15,10 +15,12 @@ import com.dessti.crm.contabilidad.polizas.domain.CuentaContable;
  * @param nombre     nombre descriptivo.
  * @param tipo       etiqueta del tipo contable.
  * @param naturaleza etiqueta de la naturaleza del saldo.
- * @param activa     {@code true} si la cuenta esta activa.
- * @param version    version para concurrencia optimista (Req 49).
- * @param createdAt  instante de alta (UTC).
- * @param updatedAt  instante de la ultima modificacion (UTC).
+ * @param activa             {@code true} si la cuenta esta activa.
+ * @param codigoAgrupadorSat codigo agrupador del SAT amarrado (Anexo 24), o
+ *                           {@code null} si la cuenta no esta amarrada.
+ * @param version            version para concurrencia optimista (Req 49).
+ * @param createdAt          instante de alta (UTC).
+ * @param updatedAt          instante de la ultima modificacion (UTC).
  */
 public record CuentaContableDto(
         UUID id,
@@ -27,6 +29,7 @@ public record CuentaContableDto(
         String tipo,
         String naturaleza,
         boolean activa,
+        String codigoAgrupadorSat,
         long version,
         Instant createdAt,
         Instant updatedAt) {
@@ -45,6 +48,7 @@ public record CuentaContableDto(
                 cuenta.getTipo().valorBd(),
                 cuenta.getNaturaleza().valorBd(),
                 cuenta.isActiva(),
+                cuenta.getCodigoAgrupadorSat(),
                 cuenta.getVersion(),
                 cuenta.getCreatedAt(),
                 cuenta.getUpdatedAt());

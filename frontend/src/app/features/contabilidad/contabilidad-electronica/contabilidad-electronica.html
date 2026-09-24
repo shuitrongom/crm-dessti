@@ -1,0 +1,117 @@
+<app-page-header
+  titulo="Contabilidad Electrónica (SAT)"
+  subtitulo="Genera y descarga los XML del Anexo 24: catálogo de cuentas, balanza de comprobación y pólizas del periodo. El envío al Buzón Tributario se realiza en el portal del SAT con el archivo descargado."
+/>
+
+<mat-card appearance="outlined" class="cont-alta">
+  <mat-card-content>
+    <form [formGroup]="formPeriodo" novalidate>
+      <div class="cont-filtros">
+        <mat-form-field appearance="outline">
+          <mat-label>Año</mat-label>
+          <input matInput type="number" formControlName="anio" min="2000" max="2999" />
+          <mat-error>Indica un año válido.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Mes</mat-label>
+          <mat-select formControlName="mes">
+            @for (m of meses; track m.valor) {
+              <mat-option [value]="m.valor">{{ m.etiqueta }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>Indica el mes.</mat-error>
+        </mat-form-field>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>
+
+@if (error()) {
+  <p class="ds-dialog-error" role="alert">{{ error() }}</p>
+}
+
+<div class="cont-indicadores">
+  <!-- Catálogo de cuentas -->
+  <mat-card appearance="outlined">
+    <mat-card-content>
+      <div class="cont-ayuda"><mat-icon aria-hidden="true">account_tree</mat-icon> Catálogo de cuentas</div>
+      <p class="cont-ce__desc">
+        Cuentas del catálogo amarradas al código agrupador del SAT. Debes amarrar cada cuenta
+        antes de exportar.
+      </p>
+      @if (previaCatalogo(); as p) {
+        <p class="cont-num"><strong>{{ p.cuentasAmarradas }}</strong> cuenta(s) amarrada(s) a exportar.</p>
+        @if (p.cuentasSinAmarrar.length > 0) {
+          <p class="cont-ce__chip cont-ce__chip--warn" role="status">
+            <mat-icon aria-hidden="true">warning</mat-icon>
+            {{ p.cuentasSinAmarrar.length }} cuenta(s) activa(s) sin amarrar:
+            {{ p.cuentasSinAmarrar.join(', ') }}
+          </p>
+        } @else {
+          <p class="cont-ce__chip cont-ce__chip--ok" role="status">
+            <mat-icon aria-hidden="true">check_circle</mat-icon>
+            Todas las cuentas activas están amarradas.
+          </p>
+        }
+      }
+      <div class="cont-ce__acciones">
+        <button matButton type="button" (click)="previewCatalogo()" [disabled]="estaCargando('preview-catalogo')">
+          Vista previa
+        </button>
+        <button matButton="filled" type="button" (click)="descargarCatalogo()" [disabled]="estaCargando('xml-catalogo')">
+          Descargar XML
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Balanza de comprobación -->
+  <mat-card appearance="outlined">
+    <mat-card-content>
+      <div class="cont-ayuda"><mat-icon aria-hidden="true">balance</mat-icon> Balanza de comprobación</div>
+      <p class="cont-ce__desc">Saldos y movimientos del periodo por cuenta, derivados de las pólizas.</p>
+      @if (previaBalanza(); as p) {
+        <p class="cont-num">{{ p.numeroCuentas }} cuenta(s) en el periodo.</p>
+        <p class="cont-num">Cargos: {{ p.totalDebe | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</p>
+        <p class="cont-num">Abonos: {{ p.totalHaber | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</p>
+        @if (p.cuadra) {
+          <p class="cont-ce__chip cont-ce__chip--ok" role="status">
+            <mat-icon aria-hidden="true">check_circle</mat-icon> La balanza cuadra.
+          </p>
+        } @else {
+          <p class="cont-ce__chip cont-ce__chip--warn" role="status">
+            <mat-icon aria-hidden="true">warning</mat-icon>
+            La balanza no cuadra: corrige las pólizas antes de exportar.
+          </p>
+        }
+      }
+      <div class="cont-ce__acciones">
+        <button matButton type="button" (click)="previewBalanza()" [disabled]="estaCargando('preview-balanza')">
+          Vista previa
+        </button>
+        <button matButton="filled" type="button" (click)="descargarBalanza()" [disabled]="estaCargando('xml-balanza')">
+          Descargar XML
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Pólizas del periodo -->
+  <mat-card appearance="outlined">
+    <mat-card-content>
+      <div class="cont-ayuda"><mat-icon aria-hidden="true">book</mat-icon> Pólizas del periodo</div>
+      <p class="cont-ce__desc">Detalle de los asientos del periodo para entrega a requerimiento del SAT.</p>
+      @if (previaPolizas(); as p) {
+        <p class="cont-num"><strong>{{ p.numeroPolizas }}</strong> póliza(s), {{ p.numeroTransacciones }} transacción(es).</p>
+      }
+      <div class="cont-ce__acciones">
+        <button matButton type="button" (click)="previewPolizas()" [disabled]="estaCargando('preview-polizas')">
+          Vista previa
+        </button>
+        <button matButton="filled" type="button" (click)="descargarPolizas()" [disabled]="estaCargando('xml-polizas')">
+          Descargar XML
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

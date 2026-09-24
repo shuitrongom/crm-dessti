@@ -61,6 +61,15 @@ public class CuentaContable extends TenantScopedEntity {
     @Column(name = "activa", nullable = false)
     private boolean activa;
 
+    /**
+     * Codigo agrupador del SAT (Apartado B del Anexo 24) al que se "amarra" la
+     * cuenta para la Contabilidad Electronica. Opcional (nulo = sin amarrar). La
+     * existencia del codigo en el catalogo oficial la valida la aplicacion; el
+     * dominio solo garantiza el formato no vacio al amarrar.
+     */
+    @Column(name = "codigo_agrupador_sat", length = 10)
+    private String codigoAgrupadorSat;
+
     protected CuentaContable() {
         // Requerido por JPA.
     }
@@ -113,6 +122,25 @@ public class CuentaContable extends TenantScopedEntity {
         this.setUpdatedBy(actor);
     }
 
+    /**
+     * Amarra la cuenta a un codigo agrupador del SAT (Apartado B del Anexo 24)
+     * para la Contabilidad Electronica. El codigo se normaliza (recorte). La
+     * existencia del codigo en el catalogo oficial la valida la capa de aplicacion
+     * antes de invocar este metodo; aqui solo se exige un codigo no vacio.
+     *
+     * @param codigo codigo agrupador del SAT; obligatorio y no vacio.
+     * @param actor  identificador de quien realiza el amarre (auditoria).
+     * @throws ReglaNegocioException si el codigo es nulo o vacio (422).
+     */
+    public void amarrarCodigoAgrupador(String codigo, String actor) {
+        if (codigo == null || codigo.isBlank()) {
+            throw new ReglaNegocioException(
+                    "Debe indicar el codigo agrupador del SAT a amarrar.");
+        }
+        this.codigoAgrupadorSat = codigo.strip();
+        this.setUpdatedBy(actor);
+    }
+
     public UUID getId() {
         return id;
     }
@@ -135,5 +163,13 @@ public class CuentaContable extends TenantScopedEntity {
 
     public boolean isActiva() {
         return activa;
+    }
+
+    /**
+     * @return el codigo agrupador del SAT amarrado, o {@code null} si la cuenta no
+     *         esta amarrada.
+     */
+    public String getCodigoAgrupadorSat() {
+        return codigoAgrupadorSat;
     }
 }

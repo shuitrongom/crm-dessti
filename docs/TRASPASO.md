@@ -2,6 +2,12 @@
 
 > Documento para continuar el trabajo en otra maquina/sesion. Pegar su contenido
 > como primer mensaje al retomar.
+>
+> **ESTADO MÁS RECIENTE (2026-09-23): ver `docs/TRASPASO-2026-09-23.md`.** Incluye el
+> nuevo bloque "Contabilidad Electrónica SAT (Anexo 24)" (migración **V71**, backend a
+> v71), correcciones a este documento (los tests de frontend usan **Vitest**; compilar
+> siempre con **JDK 21**; PostgreSQL local en **5432**), y cómo levantar el stack local.
+> Este archivo conserva el histórico de los bugs del tester y el proceso de despliegue.
 
 ## Que es
 CRM multi-tenant. Backend Spring Boot (Java 21, arquitectura hexagonal) + Frontend

@@ -65,6 +65,23 @@ export interface RegistrarPagoClienteRequest {
   aplicaciones: LineaAplicacionPago[];
 }
 
+// --- Catalogo de cuentas (Req 38.1) -----------------------------------------
+
+/** Cuenta del catalogo contable (CuentaContableDto). */
+export interface CuentaContable {
+  id: string;
+  codigo: string;
+  nombre: string;
+  tipo: string;
+  naturaleza: string;
+  activa: boolean;
+  /** Codigo agrupador del SAT amarrado (Anexo 24), o null si no esta amarrada. */
+  codigoAgrupadorSat: string | null;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // --- Polizas contables (Req 38) ---------------------------------------------
 
 /** Renglon de una poliza (MovimientoPolizaDto). */

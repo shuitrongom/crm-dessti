@@ -53,4 +53,23 @@ public interface PolizaContableRepository extends JpaRepository<PolizaContable, 
             @Param("hasta") LocalDate hasta,
             @Param("cuentaContableId") UUID cuentaContableId,
             Pageable pageable);
+
+    /**
+     * Lista TODAS las Polizas_Contables del tenant vigente cuya fecha cae en el
+     * periodo {@code [desde, hasta]} (ambos inclusivos), ordenadas por fecha e id de
+     * forma determinista, con sus renglones. Sirve a la Contabilidad Electronica
+     * (Anexo 24) para emitir el XML de polizas del periodo.
+     *
+     * @param desde fecha minima (inclusiva) de la poliza.
+     * @param hasta fecha maxima (inclusiva) de la poliza.
+     * @return las polizas del periodo, ordenadas por fecha e id.
+     */
+    @Query("""
+            SELECT DISTINCT p FROM PolizaContable p
+            WHERE p.fecha >= :desde AND p.fecha <= :hasta
+            ORDER BY p.fecha ASC, p.id ASC
+            """)
+    java.util.List<PolizaContable> listarPorPeriodo(
+            @Param("desde") LocalDate desde,
+            @Param("hasta") LocalDate hasta);
 }

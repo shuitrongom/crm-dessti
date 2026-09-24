@@ -359,6 +359,22 @@ export class NavigationService {
       visible: (a) => a.tienePermiso('poliza_contable', 'listar'),
     },
     {
+      etiqueta: 'Catálogo de cuentas',
+      ruta: '/empresa/contabilidad/catalogo-cuentas',
+      icono: 'account_tree',
+      seccion: 'Contabilidad y finanzas',
+      modulo: 'contabilidad',
+      visible: (a) => a.tienePermiso('cuenta_contable', 'listar'),
+    },
+    {
+      etiqueta: 'Contabilidad Electrónica (SAT)',
+      ruta: '/empresa/contabilidad/contabilidad-electronica',
+      icono: 'receipt_long',
+      seccion: 'Contabilidad y finanzas',
+      modulo: 'contabilidad',
+      visible: (a) => a.tienePermiso('contabilidad_electronica', 'leer'),
+    },
+    {
       etiqueta: 'Reportes financieros',
       ruta: '/empresa/contabilidad/reportes',
       icono: 'assessment',

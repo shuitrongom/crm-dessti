@@ -1,0 +1,65 @@
+<app-page-header
+  titulo="Catálogo de cuentas"
+  subtitulo="Consulta las cuentas contables y amárralas al código agrupador del SAT (Anexo 24) para la Contabilidad Electrónica."
+/>
+
+@if (error()) {
+  <p class="ds-dialog-error" role="alert">{{ error() }}</p>
+}
+
+<app-state-container
+  [fase]="cuentas().fase"
+  [mensajeError]="cuentas().mensajeError"
+  mensajeVacio="No hay cuentas en el catálogo."
+  (reintentar)="cargar()"
+>
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="cuentas().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="codigo" let-c>{{ c.codigo }}</ng-template>
+    <ng-template appCelda="nombre" let-c>{{ c.nombre }}</ng-template>
+    <ng-template appCelda="tipo" let-c>{{ c.tipo }}</ng-template>
+    <ng-template appCelda="agrupador" let-c>
+      @if (c.codigoAgrupadorSat) {
+        <span class="cont-mono">{{ c.codigoAgrupadorSat }}</span>
+      } @else {
+        <span class="cont-ayuda">Sin amarrar</span>
+      }
+    </ng-template>
+    <ng-template appCelda="acciones" let-c>
+      @if (editando() === c.id) {
+        <div class="cont-ce__amarre">
+          <mat-form-field appearance="outline" class="cont-ce__amarre-campo">
+            <mat-label>Código agrupador SAT</mat-label>
+            <input
+              matInput
+              [formControl]="controlAgrupador"
+              [matAutocomplete]="auto"
+              placeholder="Busca por código o nombre"
+            />
+            <mat-autocomplete #auto="matAutocomplete">
+              @for (op of opciones(); track op.codigo) {
+                <mat-option [value]="op.codigo">{{ op.codigo }} — {{ op.nombre }}</mat-option>
+              }
+            </mat-autocomplete>
+          </mat-form-field>
+          <button matButton="filled" type="button" (click)="confirmarAmarre(c)" [disabled]="guardando()">
+            Guardar
+          </button>
+          <button matButton type="button" (click)="cancelarAmarre()" [disabled]="guardando()">
+            Cancelar
+          </button>
+        </div>
+      } @else {
+        <button matButton type="button" (click)="iniciarAmarre(c)">
+          <mat-icon aria-hidden="true">link</mat-icon> Amarrar SAT
+        </button>
+      }
+    </ng-template>
+  </app-data-table>
+</app-state-container>

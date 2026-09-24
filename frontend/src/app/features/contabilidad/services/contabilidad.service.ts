@@ -19,6 +19,7 @@ import { Observable } from 'rxjs';
 import { ApiConfigService } from '../../../core/services/api-config.service';
 import { PaginaResponse } from '../../../core/models/pagina-response';
 import {
+  CuentaContable,
   CuentaPorCobrar,
   CuentaPorPagar,
   IngresosPeriodo,
@@ -73,6 +74,23 @@ export class ContabilidadService {
 
   registrarPago(request: RegistrarPagoClienteRequest): Observable<PagoCliente> {
     return this.http.post<PagoCliente>(this.api.url('/contabilidad/pagos-cliente'), request);
+  }
+
+  // --- Catalogo de cuentas (Req 38.1) ----------------------------------------
+
+  listarCuentasContables(
+    activa: boolean | null,
+    page = 0,
+    size = 20,
+  ): Observable<PaginaResponse<CuentaContable>> {
+    let params = new HttpParams().set('page', page).set('size', size);
+    if (activa !== null) {
+      params = params.set('activa', activa);
+    }
+    return this.http.get<PaginaResponse<CuentaContable>>(
+      this.api.url('/contabilidad/cuentas-contables'),
+      { params },
+    );
   }
 
   // --- Polizas contables (Req 38) --------------------------------------------

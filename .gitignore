@@ -12,6 +12,17 @@ tmp/
 out-tsc/
 coverage/
 
+# Archivos temporales de diagnostico y scripts locales de desarrollo (con
+# prefijo _), incluidos los de local-dev que contienen credenciales SOLO de
+# desarrollo (nunca versionar). Ver docs/TRASPASO-*.md para recrearlos.
+_*.txt
+_*.log
+_*.err
+local-dev/_*.ps1
+local-dev/_*.sql
+frontend/_*.txt
+frontend/_*.err
+
 # ==== Secretos (nunca versionar) ====
 *.env
 .env

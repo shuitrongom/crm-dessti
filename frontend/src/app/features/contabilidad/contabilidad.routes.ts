@@ -31,9 +31,23 @@ export const contabilidadRoutes: Routes = [
     loadComponent: () => import('./polizas/polizas').then((m) => m.ContabilidadPolizas),
   },
   {
+    path: 'catalogo-cuentas',
+    canActivate: [guardaPorPermiso('cuenta_contable', 'listar')],
+    loadComponent: () =>
+      import('./catalogo-cuentas/catalogo-cuentas').then((m) => m.ContabilidadCatalogoCuentas),
+  },
+  {
     path: 'reportes',
     canActivate: [guardaPorPermiso('reporte_financiero', 'leer')],
     loadComponent: () => import('./reportes/reportes').then((m) => m.ContabilidadReportes),
+  },
+  {
+    path: 'contabilidad-electronica',
+    canActivate: [guardaPorPermiso('contabilidad_electronica', 'leer')],
+    loadComponent: () =>
+      import('./contabilidad-electronica/contabilidad-electronica').then(
+        (m) => m.ContabilidadElectronica,
+      ),
   },
   { path: '', pathMatch: 'full', redirectTo: 'cuentas-por-cobrar' },
 ];

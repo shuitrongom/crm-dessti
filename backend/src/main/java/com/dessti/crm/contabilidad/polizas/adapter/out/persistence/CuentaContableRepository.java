@@ -63,4 +63,19 @@ public interface CuentaContableRepository extends JpaRepository<CuentaContable, 
     Page<CuentaContable> buscarConFiltros(
             @Param("activa") Boolean activa,
             Pageable pageable);
+
+    /**
+     * Lista TODAS las Cuentas_Contables del tenant vigente que cumplan el filtro de
+     * actividad, ordenadas por codigo, sin paginacion. Sirve a la Contabilidad
+     * Electronica (Anexo 24) para emitir el catalogo de cuentas completo del tenant.
+     *
+     * @param activa bandera de actividad a filtrar; {@code null} no filtra.
+     * @return las cuentas del tenant ordenadas por codigo.
+     */
+    @Query("""
+            SELECT c FROM CuentaContable c
+            WHERE (:activa IS NULL OR c.activa = :activa)
+            ORDER BY c.codigo ASC
+            """)
+    java.util.List<CuentaContable> listarTodasOrdenadas(@Param("activa") Boolean activa);
 }
