@@ -1,0 +1,51 @@
+<h2 mat-dialog-title>Canal de venta</h2>
+<mat-dialog-content class="asignar-canal__content">
+  <p class="asignar-canal__intro">
+    Oportunidad: <strong>{{ data.oportunidad.titulo }}</strong>
+  </p>
+
+  @if (error()) {
+    <p class="ds-form__note ds-form__note--warn" role="alert">
+      <mat-icon aria-hidden="true">error_outline</mat-icon>
+      <span>{{ error() }}</span>
+    </p>
+  }
+
+  @if (canales.length === 0) {
+    <p class="ds-form__note" role="note">
+      <mat-icon aria-hidden="true">info</mat-icon>
+      <span>
+        Aún no hay canales de venta dados de alta.
+        @if (puedeCrearCanal) {
+          <a routerLink="/empresa/comercial/canales-venta" mat-dialog-close
+            >Da de alta un canal de venta</a
+          >
+          para poder clasificar esta oportunidad.
+        } @else {
+          Pide a un administrador que los cree en Canales de venta.
+        }
+      </span>
+    </p>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+      <mat-form-field appearance="outline" class="asignar-canal__campo">
+        <mat-label>Canal de venta</mat-label>
+        <mat-select formControlName="canalId">
+          <mat-option value="">Sin canal</mat-option>
+          @for (canal of canales; track canal.id) {
+            <mat-option [value]="canal.id">{{ canal.nombre }}</mat-option>
+          }
+        </mat-select>
+        <mat-hint>Clasifica la oportunidad por su vía comercial (Directo, Referido, Redes…).</mat-hint>
+      </mat-form-field>
+    </form>
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancelar()" [disabled]="guardando()">Cancelar</button>
+  @if (canales.length > 0) {
+    <button matButton="filled" type="button" (click)="guardar()" [disabled]="guardando()">
+      Guardar canal
+    </button>
+  }
+</mat-dialog-actions>

@@ -1,0 +1,126 @@
+// =============================================================================
+// Estilos del dialogo "Usuarios de la empresa" (super_admin) (Req 52, 53, 57)
+// -----------------------------------------------------------------------------
+// Lista de cuentas de la Empresa con su identificador de acceso (login), nombre
+// visible, roles y estado (activo/inactivo), con boton de copiado por login.
+// Solo tokens del Sistema de Diseno; correcto en claro y oscuro.
+// =============================================================================
+
+.usuarios-emp {
+  &__intro {
+    margin: 0 0 var(--ds-space-3);
+    color: var(--ds-color-text);
+  }
+
+  // Estados de carga / vacio.
+  &__estado {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-2);
+    margin: var(--ds-space-2) 0;
+    color: var(--ds-color-text-muted);
+    font-size: var(--ds-font-size-sm);
+
+    mat-icon {
+      flex: 0 0 auto;
+    }
+  }
+
+  &__error {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-2);
+    margin: 0 0 var(--ds-space-3);
+    padding: var(--ds-space-3);
+    border: 1px solid color-mix(in srgb, var(--ds-color-error) 32%, transparent);
+    border-radius: var(--ds-radius-sm);
+    background: color-mix(in srgb, var(--ds-color-error) 12%, transparent);
+    color: var(--ds-color-error);
+    font-size: var(--ds-font-size-sm);
+
+    mat-icon {
+      flex: 0 0 auto;
+    }
+  }
+
+  &__lista {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--ds-space-3);
+    padding: var(--ds-space-3);
+    border: 1px solid var(--ds-color-border);
+    border-radius: var(--ds-radius-md);
+    background: var(--ds-color-surface-variant);
+
+    &--inactivo {
+      opacity: 0.7;
+    }
+  }
+
+  &__datos {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-1);
+    min-inline-size: 0;
+  }
+
+  &__login {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-2);
+    min-inline-size: 0;
+  }
+
+  &__codigo {
+    padding: var(--ds-space-1) var(--ds-space-2);
+    border: 1px solid var(--ds-color-border);
+    border-radius: var(--ds-radius-sm);
+    background: var(--ds-color-surface);
+    font-family: var(--ds-font-family-mono, monospace);
+    word-break: break-all;
+  }
+
+  &__nombre {
+    color: var(--ds-color-text);
+  }
+
+  &__roles {
+    color: var(--ds-color-text-muted);
+    font-size: var(--ds-font-size-sm);
+  }
+
+  &__estado-pill {
+    flex: 0 0 auto;
+    padding: var(--ds-space-1) var(--ds-space-2);
+    border-radius: var(--ds-radius-pill, 999px);
+    font-size: var(--ds-font-size-xs);
+    font-weight: var(--ds-font-weight-medium);
+    white-space: nowrap;
+
+    &--activo {
+      background: color-mix(in srgb, var(--ds-color-success) 16%, transparent);
+      color: var(--ds-color-success);
+    }
+
+    &--inactivo {
+      background: color-mix(in srgb, var(--ds-color-text-muted) 16%, transparent);
+      color: var(--ds-color-text-muted);
+    }
+  }
+
+  &__copiado {
+    margin: var(--ds-space-2) 0 0;
+    color: var(--ds-color-success);
+    font-size: var(--ds-font-size-sm);
+  }
+}

@@ -127,6 +127,27 @@ public class ServicioProductos {
     }
 
     /**
+     * Reactiva un Producto dado de baja (Req 59.6): marca {@code activo=true}. A
+     * diferencia de las demas operaciones, carga el Producto SIN exigir que este
+     * activo (de lo contrario nunca se podria reactivar). Un Producto de otro
+     * tenant o inexistente produce 404 (Req 23.3).
+     *
+     * @param productoId identificador del Producto.
+     * @return el DTO del Producto reactivado.
+     * @throws RecursoNoEncontradoException si no existe o es de otro tenant (404).
+     */
+    @Transactional
+    public ProductoDto reactivarProducto(UUID productoId) {
+        String actor = actorActual();
+        Producto producto = cargarProducto(productoId, actor);
+        producto.activar(actor);
+        Producto guardado = productoRepository.save(producto);
+        auditarProducto(actor, "actualizar", guardado.getId(),
+                "reactivacion del producto '" + guardado.getNombre() + "'");
+        return ProductoDto.de(guardado);
+    }
+
+    /**
      * Consulta puntual de un Producto activo del tenant (Req 4.3, 23.3).
      *
      * @param productoId identificador del Producto.
@@ -150,8 +171,25 @@ public class ServicioProductos {
      */
     @Transactional(readOnly = true)
     public Page<ProductoDto> listarProductos(String filtro, Pageable pageable) {
+        return listarProductos(filtro, Boolean.TRUE, pageable);
+    }
+
+    /**
+     * Listado paginado de Productos del tenant, filtrable por nombre y por estado
+     * (Req 59.6, 59.7). El parametro {@code activo} controla el estado:
+     * {@code true}=solo activos (comportamiento por defecto), {@code false}=solo
+     * inactivos (dados de baja), {@code null}=todos. Poder listar inactivos es lo
+     * que habilita reactivarlos desde la interfaz.
+     *
+     * @param filtro   subcadena a buscar en el nombre; {@code null}/blanco lista todos.
+     * @param activo   estado a filtrar; {@code null} lista todos los estados.
+     * @param pageable parametros de paginacion ya acotados (20/100).
+     * @return la pagina de Productos como DTOs.
+     */
+    @Transactional(readOnly = true)
+    public Page<ProductoDto> listarProductos(String filtro, Boolean activo, Pageable pageable) {
         String criterio = (filtro == null) ? "" : filtro.strip().toLowerCase(Locale.ROOT);
-        return productoRepository.buscarActivosPorNombre(criterio, pageable)
+        return productoRepository.buscarPorNombreYEstado(criterio, activo, pageable)
                 .map(ProductoDto::de);
     }
 
@@ -164,6 +202,22 @@ public class ServicioProductos {
             throw new RecursoNoEncontradoException("No se encontro el Producto solicitado.");
         }
         return productoRepository.findByIdAndActivoTrue(productoId)
+                .orElseGet(() -> {
+                    auditarAccesoCruzado(actor, RECURSO_PRODUCTO, productoId);
+                    throw new RecursoNoEncontradoException("No se encontro el Producto solicitado.");
+                });
+    }
+
+    /**
+     * Carga un Producto del tenant SIN exigir que este activo (para reactivarlo).
+     * Un Producto de otro tenant o inexistente se traduce a 404 y se audita el
+     * intento (Req 23.3).
+     */
+    private Producto cargarProducto(UUID productoId, String actor) {
+        if (productoId == null) {
+            throw new RecursoNoEncontradoException("No se encontro el Producto solicitado.");
+        }
+        return productoRepository.findById(productoId)
                 .orElseGet(() -> {
                     auditarAccesoCruzado(actor, RECURSO_PRODUCTO, productoId);
                     throw new RecursoNoEncontradoException("No se encontro el Producto solicitado.");

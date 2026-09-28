@@ -1,0 +1,52 @@
+<div class="cot-preview">
+  <div class="cot-preview__cabecera" mat-dialog-title>
+    <div class="cot-preview__titulo">
+      <mat-icon aria-hidden="true">picture_as_pdf</mat-icon>
+      <span>Vista previa{{ data.folio ? ' · ' + data.folio : '' }}</span>
+    </div>
+    <div class="cot-preview__acciones">
+      <button
+        matButton
+        type="button"
+        (click)="imprimir()"
+        [disabled]="cargando() || !!error()"
+      >
+        <mat-icon aria-hidden="true">print</mat-icon>
+        Imprimir
+      </button>
+      <button
+        matButton="filled"
+        type="button"
+        (click)="descargar()"
+        [disabled]="cargando() || !!error() || descargando()"
+      >
+        <mat-icon aria-hidden="true">download</mat-icon>
+        Descargar
+      </button>
+      <button matIconButton type="button" mat-dialog-close aria-label="Cerrar vista previa">
+        <mat-icon aria-hidden="true">close</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <mat-dialog-content class="cot-preview__body">
+    @if (cargando()) {
+      <div class="cot-preview__estado" role="status">
+        <mat-icon aria-hidden="true">hourglass_empty</mat-icon>
+        <span>Generando vista previa…</span>
+      </div>
+    } @else if (error()) {
+      <div class="cot-preview__estado cot-preview__estado--error" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+        <button matButton type="button" (click)="cargar()">Reintentar</button>
+      </div>
+    } @else if (pdfUrl(); as url) {
+      <iframe
+        class="cot-preview__iframe"
+        [src]="url"
+        title="Vista previa de la cotización"
+      ></iframe>
+    }
+  </mat-dialog-content>
+</div>

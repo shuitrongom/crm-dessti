@@ -76,16 +76,21 @@
     font-variant-numeric: tabular-nums;
   }
 
+  // Etiqueta y ayuda: SIEMPRE visibles y completas; hacen wrap sin truncarse.
   &__etiqueta {
     margin: 0;
     font-size: var(--ds-font-size-sm);
     color: var(--ds-color-text-muted);
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 
   &__ayuda {
     margin: 0;
     font-size: var(--ds-font-size-xs);
     color: var(--ds-color-text-muted);
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 }
 

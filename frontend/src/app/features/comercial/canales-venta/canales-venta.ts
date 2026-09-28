@@ -1,18 +1,20 @@
 // =============================================================================
-// Vista de Canales de venta (Req 63) — CRUD del catalogo
+// Vista de Canales de venta (Req 63) — listado + acciones (modales)
 // -----------------------------------------------------------------------------
-// Listado paginado (DataTable) con filtro por nombre, alta/edicion y baja logica.
-// Acciones gobernadas por permiso canal_venta:{...}.
+// Listado paginado (DataTable) con filtro por nombre. El alta/edicion de un canal
+// se hace en un MODAL animado (CanalVentaFormDialog), consistente con el resto de
+// la plataforma. La baja es logica con confirmacion. Los KPIs abren el modal
+// explicativo del indicador. Acciones gobernadas por canal_venta:{...}.
 // =============================================================================
 
 import { Component, computed, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
 
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../shared/components/state-container/state-container';
@@ -24,22 +26,26 @@ import {
 } from '../../../shared/components/data-table/data-table';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import {
+  IndicadorInfoDialog,
+  type DatosIndicadorInfo,
+} from '../../../shared/indicadores/indicador-info-dialog';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 import { FaseSolicitud } from '../../../shared/models/estado-solicitud';
 
 import { CanalesVentaService } from '../services/catalogo.service';
 import { CanalVenta } from '../models/comercial.models';
+import { CanalVentaFormDialog, CanalVentaFormDialogData } from './canal-venta-form-dialog';
 
 @Component({
   selector: 'app-comercial-canales-venta',
   imports: [
-    ReactiveFormsModule,
-    MatCardModule,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
     MatIconModule,
+    MatTooltipModule,
     PageHeader,
     StateContainer,
     KpiTile,
@@ -50,11 +56,11 @@ import { CanalVenta } from '../models/comercial.models';
   styleUrl: './canales-venta.scss',
 })
 export class ComercialCanalesVenta {
-  private readonly fb = inject(FormBuilder);
   private readonly service = inject(CanalesVentaService);
   private readonly confirm = inject(ConfirmDialogService);
   private readonly toast = inject(NotificacionesService);
   private readonly auth = inject(AuthService);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly puedeCrear = this.auth.tienePermiso('canal_venta', 'crear');
   protected readonly puedeActualizar = this.auth.tienePermiso('canal_venta', 'actualizar');
@@ -68,13 +74,6 @@ export class ComercialCanalesVenta {
   protected readonly size = signal(20);
   protected readonly filtro = signal('');
 
-  protected readonly guardando = signal(false);
-  protected readonly editandoId = signal<string | null>(null);
-  protected readonly formularioAbierto = signal(false);
-  protected readonly tituloFormulario = computed(() =>
-    this.editandoId() ? 'Editar canal de venta' : 'Nuevo canal de venta',
-  );
-
   /** Numero de Canales activos en la pagina cargada (indicador enterprise). */
   protected readonly canalesActivos = computed<number>(
     () => this.canales().filter((c) => c.activo).length,
@@ -85,11 +84,6 @@ export class ComercialCanalesVenta {
     { clave: 'descripcion', encabezado: 'Descripción' },
     { clave: 'acciones', encabezado: 'Acciones', alineacion: 'fin' },
   ];
-
-  protected readonly form = this.fb.nonNullable.group({
-    nombre: ['', [Validators.required, Validators.maxLength(100)]],
-    descripcion: ['', [Validators.maxLength(500)]],
-  });
 
   constructor() {
     this.cargar();
@@ -122,45 +116,50 @@ export class ComercialCanalesVenta {
     this.cargar();
   }
 
+  /** Abre el modal de alta de Canal y recarga si se creo. */
   nuevo(): void {
-    this.editandoId.set(null);
-    this.form.reset({ nombre: '', descripcion: '' });
-    this.formularioAbierto.set(true);
+    this.abrirFormulario();
   }
 
+  /** Abre el modal de edicion con los datos del Canal y recarga si cambio. */
   editar(canal: CanalVenta): void {
-    this.editandoId.set(canal.id);
-    this.form.reset({ nombre: canal.nombre, descripcion: canal.descripcion ?? '' });
-    this.formularioAbierto.set(true);
+    this.abrirFormulario(canal);
   }
 
-  cancelar(): void {
-    this.formularioAbierto.set(false);
-    this.editandoId.set(null);
-  }
-
-  guardar(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
-    const v = this.form.getRawValue();
-    const request = { nombre: v.nombre.trim(), descripcion: v.descripcion.trim() || null };
-    this.guardando.set(true);
-    const id = this.editandoId();
-    const peticion = id ? this.service.actualizar(id, request) : this.service.crear(request);
-    peticion.subscribe({
-      next: () => {
-        this.guardando.set(false);
-        this.toast.exito(id ? 'Canal actualizado.' : 'Canal creado.');
-        this.formularioAbierto.set(false);
-        this.editandoId.set(null);
+  /**
+   * Abre el modal de formulario de Canal (alta si no se pasa `canal`, edicion si
+   * se pasa) y recarga el listado cuando el dialogo confirma.
+   */
+  private abrirFormulario(canal?: CanalVenta): void {
+    const data: CanalVentaFormDialogData = { canal };
+    const ref = this.dialog.open(CanalVentaFormDialog, {
+      width: 'min(720px, 96vw)',
+      maxWidth: 'min(720px, 96vw)',
+      maxHeight: '92vh',
+      autoFocus: 'first-tabbable',
+      panelClass: 'ds-dialog-panel',
+      data,
+    });
+    ref.afterClosed().subscribe((guardado?: CanalVenta) => {
+      if (guardado) {
+        this.toast.exito(canal ? 'Canal actualizado.' : 'Canal creado.');
         this.cargar();
-      },
-      error: (e: HttpErrorResponse) => {
-        this.guardando.set(false);
-        this.toast.error(mensajeDeError(e));
-      },
+      }
+    });
+  }
+
+  /**
+   * Abre el dialogo explicativo de un indicador de canales de venta (¿qué es? /
+   * ¿cómo se calcula? / ¿por qué importa?). La clave debe coincidir con una del
+   * catalogo central de indicadores.
+   */
+  abrirInfoKpi(clave: string, etiqueta: string, valor: number, unidad: string): void {
+    const datos: DatosIndicadorInfo = { clave, etiqueta, valor, unidad };
+    this.dialog.open(IndicadorInfoDialog, {
+      data: datos,
+      width: '32rem',
+      maxWidth: '92vw',
+      autoFocus: false,
     });
   }
 

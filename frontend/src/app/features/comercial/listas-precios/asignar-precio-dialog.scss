@@ -1,0 +1,100 @@
+// =============================================================================
+// Estilos del dialogo de asignacion de precio (Req 59.3, 52, 57)
+// -----------------------------------------------------------------------------
+// Selector de producto + campo de precio en linea, y lista de precios ya
+// asignados. Solo tokens del Sistema de Diseno.
+// =============================================================================
+
+.asignar-precio__content {
+  padding-block: var(--ds-space-2);
+  min-inline-size: min(560px, 90vw);
+}
+
+.asignar-precio__intro {
+  margin: 0 0 var(--ds-space-3);
+  color: var(--ds-color-text);
+}
+
+.asignar-precio__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-2);
+}
+
+// Precio + boton "Asignar" en la misma fila (se apilan en pantallas estrechas).
+.asignar-precio__precio-fila {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ds-space-3);
+  flex-wrap: wrap;
+}
+
+.asignar-precio__precio {
+  flex: 1 1 220px;
+  min-inline-size: 0;
+}
+
+// -----------------------------------------------------------------------------
+// Precios ya asignados
+// -----------------------------------------------------------------------------
+.asignar-precio__asignados {
+  margin-top: var(--ds-space-4);
+  padding-top: var(--ds-space-3);
+  border-top: 1px solid var(--ds-color-border);
+}
+
+.asignar-precio__asignados-titulo {
+  margin: 0 0 var(--ds-space-2);
+  font-size: var(--ds-font-size-sm);
+  font-weight: var(--ds-font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ds-color-text-muted);
+}
+
+.asignar-precio__estado {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  margin: 0;
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-sm);
+
+  mat-icon {
+    flex: 0 0 auto;
+  }
+}
+
+.asignar-precio__lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-1);
+  max-block-size: 260px;
+  overflow-y: auto;
+}
+
+.asignar-precio__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-2) var(--ds-space-3);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-sm);
+  background: var(--ds-color-surface-variant);
+}
+
+.asignar-precio__item-producto {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.asignar-precio__item-precio {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-text);
+}

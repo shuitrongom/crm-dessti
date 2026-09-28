@@ -1,0 +1,11 @@
+// =============================================================================
+// Estilos del dialogo de alta/edicion de Cliente (Comercial) (Req 5, 52, 57)
+// -----------------------------------------------------------------------------
+// El layout (secciones two-pane, rejilla, ayudas, notas) lo aporta el "form
+// shell" compartido (styles/_form-shell.scss, clases ds-form*). Aqui solo el
+// aire del contenido del dialogo. Solo tokens del Sistema de Diseno.
+// =============================================================================
+
+.cliente-form__content {
+  padding-block: var(--ds-space-2);
+}

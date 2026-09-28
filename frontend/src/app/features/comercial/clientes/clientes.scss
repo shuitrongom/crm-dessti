@@ -1,97 +1,10 @@
 // =============================================================================
-// Estilos de la vista de Clientes (Req 5)
+// Estilos de la vista de Clientes (Req 5) — LISTADO
 // -----------------------------------------------------------------------------
-// El formulario de alta/edicion se organiza en secciones tipo "tarjeta" con
-// encabezado y una rejilla responsive (1 columna en movil, 2 en escritorio),
-// coherente con el dialogo de alta de Empresa. Solo tokens del Sistema de
-// Diseno (tema claro y oscuro), sin desbordamiento horizontal.
+// El alta/edicion vive en un modal (cliente-form-dialog). Aqui solo el buscador,
+// la tira de KPIs y el pulido del contenedor de la tabla. Solo tokens del
+// Sistema de Diseno (tema claro y oscuro), sin desbordamiento horizontal.
 // =============================================================================
-
-@use '../../../../styles/breakpoints' as bp;
-
-.cliente-form {
-  margin-bottom: var(--ds-space-4);
-}
-
-.cliente-form__cuerpo {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ds-space-4);
-  min-inline-size: 0;
-  inline-size: 100%;
-  box-sizing: border-box;
-}
-
-// Seccion (tarjeta con encabezado).
-.cliente-form__seccion {
-  margin: 0;
-  padding: var(--ds-space-4);
-  border: 1px solid var(--ds-color-border);
-  border-radius: var(--ds-radius-md);
-  background: var(--ds-color-surface);
-  min-inline-size: 0;
-}
-
-.cliente-form__seccion-titulo {
-  margin: 0 0 var(--ds-space-3);
-  padding-block-end: var(--ds-space-2);
-  border-block-end: 1px solid var(--ds-color-border);
-  font-size: var(--ds-font-size-xs);
-  font-weight: var(--ds-font-weight-medium);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--ds-color-text-muted);
-}
-
-// Rejilla responsive de campos: 1 columna en movil, 2 en escritorio.
-.cliente-form__grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--ds-space-3) var(--ds-space-4);
-
-  @include bp.from('sm') {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  mat-form-field {
-    min-inline-size: 0;
-    inline-size: 100%;
-  }
-}
-
-// Campo que ocupa las dos columnas (evita huerfanos en filas impares).
-.cliente-form__campo--ancho {
-  @include bp.from('sm') {
-    grid-column: 1 / -1;
-  }
-}
-
-// Error de nivel formulario (al menos un contacto).
-.cliente-form__error {
-  display: flex;
-  align-items: center;
-  gap: var(--ds-space-2);
-  margin: var(--ds-space-2) 0 0;
-  padding: var(--ds-space-2) var(--ds-space-3);
-  border: 1px solid color-mix(in srgb, var(--ds-color-error) 32%, transparent);
-  border-radius: var(--ds-radius-sm);
-  background: color-mix(in srgb, var(--ds-color-error) 12%, transparent);
-  color: var(--ds-color-error);
-  font-size: var(--ds-font-size-sm);
-
-  mat-icon {
-    flex: 0 0 auto;
-    font-size: 20px;
-    inline-size: 20px;
-    block-size: 20px;
-  }
-}
-
-.cliente-form__acciones {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--ds-space-2);
-}
 
 .comercial-filtro {
   width: 100%;
@@ -121,9 +34,8 @@
 // Tira de KPIs premium/enterprise (patron compartido del ambito Comercial)
 // -----------------------------------------------------------------------------
 // Mismo lenguaje visual que la tira del Pipeline (oportunidades): tarjetas
-// elevadas con icono en contenedor, valor prominente y etiqueta. Se apoya solo
-// en tokens del Sistema de Diseno (--ds-*) para respetar el branding por empresa;
-// los acentos semanticos (exito verde) usan el token --ds-color-success.
+// elevadas con icono, valor prominente y etiqueta. Solo tokens del Sistema de
+// Diseno (--ds-*) para respetar el branding por empresa.
 // =============================================================================
 
 .comercial-kpis {
@@ -132,9 +44,6 @@
   gap: var(--ds-space-3);
   margin-bottom: var(--ds-space-4);
 }
-
-// Las tarjetas de indicadores ahora usan el componente compartido <app-kpi-tile>
-// (mismo look premium que el resto del sistema). Aqui solo queda el grid contenedor.
 
 // Elevacion sutil del contenedor del listado (tabla de datos), coherente con las
 // tarjetas del Pipeline. Envuelve la tabla de app-data-table sin alterar su

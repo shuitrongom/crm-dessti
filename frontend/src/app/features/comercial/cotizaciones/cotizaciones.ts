@@ -14,6 +14,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
 
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../shared/components/state-container/state-container';
@@ -25,11 +27,16 @@ import {
 } from '../../../shared/components/data-table/data-table';
 import { EstadoChip } from '../../finanzas-comun/estado-chip/estado-chip';
 import { tonoDeEstado } from '../../finanzas-comun/tono-estado';
+import {
+  IndicadorInfoDialog,
+  type DatosIndicadorInfo,
+} from '../../../shared/indicadores/indicador-info-dialog';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 import { FaseSolicitud } from '../../../shared/models/estado-solicitud';
 
 import { CotizacionesService } from '../services/cotizaciones.service';
+import { CotizacionPreviewDialog, CotizacionPreviewDialogData } from './cotizacion-preview-dialog';
 import {
   Cotizacion,
   ETIQUETA_ESTADO_COTIZACION,
@@ -47,6 +54,7 @@ import {
     MatSelectModule,
     MatButtonModule,
     MatIconModule,
+    MatTooltipModule,
     DatePipe,
     PageHeader,
     StateContainer,
@@ -61,6 +69,7 @@ import {
 export class ComercialCotizaciones {
   private readonly service = inject(CotizacionesService);
   private readonly auth = inject(AuthService);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly puedeCrear = this.auth.tienePermiso('cotizacion', 'crear');
   protected readonly tonoEstado = tonoDeEstado;
@@ -144,5 +153,36 @@ export class ComercialCotizaciones {
     this.page.set(evento.page);
     this.size.set(evento.size);
     this.cargar();
+  }
+
+  /**
+   * Abre el dialogo explicativo de un indicador de cotizaciones (¿qué es? / ¿cómo
+   * se calcula? / ¿por qué importa?). La clave debe coincidir con una del catalogo
+   * central de indicadores.
+   */
+  abrirInfoKpi(clave: string, etiqueta: string, valor: number, unidad: string): void {
+    const datos: DatosIndicadorInfo = { clave, etiqueta, valor, unidad };
+    this.dialog.open(IndicadorInfoDialog, {
+      data: datos,
+      width: '32rem',
+      maxWidth: '92vw',
+      autoFocus: false,
+    });
+  }
+
+  /**
+   * Abre la vista previa imprimible del PDF de una Cotizacion en un modal, sin
+   * salir del listado. Desde ahi se puede imprimir o descargar el documento.
+   */
+  verPrevia(cotizacion: Cotizacion): void {
+    const data: CotizacionPreviewDialogData = { id: cotizacion.id, folio: cotizacion.folio };
+    this.dialog.open(CotizacionPreviewDialog, {
+      data,
+      width: 'min(960px, 96vw)',
+      maxWidth: 'min(960px, 96vw)',
+      maxHeight: '94vh',
+      panelClass: 'ds-dialog-panel',
+      autoFocus: false,
+    });
   }
 }

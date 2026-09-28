@@ -1,0 +1,118 @@
+<mat-dialog-content class="actividad-form__content">
+  <form class="ds-form" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+    <header class="ds-form__header">
+      <h2 class="ds-form__header-title" mat-dialog-title>{{ titulo() }}</h2>
+      <p class="ds-form__header-subtitle">{{ subtitulo() }}</p>
+    </header>
+
+    @if (error()) {
+      <p class="ds-form__note ds-form__note--warn" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </p>
+    }
+
+    @if (esEdicion) {
+      <!-- Contexto de solo lectura: el backend no permite cambiar tipo ni fechas
+           al editar; se muestran para no perder de vista de qué actividad se trata. -->
+      <p class="ds-form__note" role="note">
+        <mat-icon aria-hidden="true">info</mat-icon>
+        <span>{{ tipoLegible() }} · Programada para {{ fechaProgramadaLegible() }}</span>
+      </p>
+    }
+
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">
+          {{ esEdicion ? 'Detalle del seguimiento' : 'Datos de la actividad' }}
+        </h3>
+        <p class="ds-form__section-desc">
+          @if (esEdicion) {
+            Ajusta el asunto y la descripción del seguimiento.
+          } @else {
+            Tipo de interacción, asunto y una descripción opcional.
+          }
+        </p>
+      </div>
+
+      <div class="ds-form__section-body">
+        <div class="ds-form__grid">
+          @if (!esEdicion) {
+            <div class="ds-form__field">
+              <mat-form-field appearance="outline">
+                <mat-label>Tipo</mat-label>
+                <mat-select formControlName="tipo" required>
+                  @for (t of tiposActividad; track t.valor) {
+                    <mat-option [value]="t.valor">
+                      <mat-icon aria-hidden="true">{{ t.icono }}</mat-icon>
+                      {{ t.etiqueta }}
+                    </mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </div>
+          }
+
+          <div class="ds-form__field" [class.ds-form__field--full]="esEdicion">
+            <mat-form-field appearance="outline">
+              <mat-label>Asunto</mat-label>
+              <input matInput type="text" formControlName="asunto" autocomplete="off" maxlength="200" required />
+              @if (form.controls.asunto.hasError('required') && form.controls.asunto.touched) {
+                <mat-error>El asunto es obligatorio.</mat-error>
+              }
+              @if (form.controls.asunto.hasError('maxlength')) {
+                <mat-error>El asunto no puede exceder 200 caracteres.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field ds-form__field--full">
+            <mat-form-field appearance="outline">
+              <mat-label>Descripción (opcional)</mat-label>
+              <textarea matInput rows="3" formControlName="descripcion" maxlength="4000"></textarea>
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    @if (!esEdicion) {
+      <section class="ds-form__section">
+        <div class="ds-form__section-aside">
+          <h3 class="ds-form__section-title">Programación</h3>
+          <p class="ds-form__section-desc">
+            Cuándo se realiza y, si aplica, su fecha límite.
+          </p>
+        </div>
+
+        <div class="ds-form__section-body">
+          <div class="ds-form__grid">
+            <div class="ds-form__field">
+              <mat-form-field appearance="outline">
+                <mat-label>Fecha programada</mat-label>
+                <input matInput type="datetime-local" formControlName="fechaProgramada" required />
+                @if (form.controls.fechaProgramada.hasError('required') && form.controls.fechaProgramada.touched) {
+                  <mat-error>La fecha programada es obligatoria.</mat-error>
+                }
+              </mat-form-field>
+            </div>
+
+            <div class="ds-form__field">
+              <mat-form-field appearance="outline">
+                <mat-label>Vencimiento (opcional)</mat-label>
+                <input matInput type="datetime-local" formControlName="vencimiento" />
+              </mat-form-field>
+              <p class="ds-form__help">Fecha límite para dar por vencido el seguimiento.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    }
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancelar()" [disabled]="guardando()">Cancelar</button>
+  <button matButton="filled" type="button" (click)="guardar()" [disabled]="guardando() || form.invalid">
+    {{ esEdicion ? 'Guardar cambios' : 'Registrar actividad' }}
+  </button>
+</mat-dialog-actions>

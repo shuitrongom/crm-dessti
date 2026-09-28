@@ -14,6 +14,12 @@
   }
 }
 
+.comercial-acciones-fila {
+  display: flex;
+  gap: var(--ds-space-1);
+  justify-content: flex-end;
+}
+
 // =============================================================================
 // Tira de KPIs premium/enterprise (patron compartido del ambito Comercial)
 // -----------------------------------------------------------------------------

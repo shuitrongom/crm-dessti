@@ -39,10 +39,21 @@ export class ProductosService {
   private readonly http = inject(HttpClient);
   private readonly api = inject(ApiConfigService);
 
-  /** Lista Productos activos de forma paginada, filtrando por nombre (Req 59.7). */
-  listar(filtro: string | null, page: number, size: number): Observable<PaginaResponse<Producto>> {
+  /**
+   * Lista Productos de forma paginada, filtrando por nombre y por estado (Req 59.6,
+   * 59.7). `estado`: 'activo' (por defecto), 'inactivo' o 'todos'. Poder listar
+   * inactivos habilita reactivarlos desde la interfaz.
+   */
+  listar(
+    filtro: string | null,
+    page: number,
+    size: number,
+    estado: 'activo' | 'inactivo' | 'todos' = 'activo',
+  ): Observable<PaginaResponse<Producto>> {
+    let params = paramsFiltro(filtro, page, size);
+    params = params.set('estado', estado);
     return this.http.get<PaginaResponse<Producto>>(this.api.url('/productos'), {
-      params: paramsFiltro(filtro, page, size),
+      params,
     });
   }
 
@@ -64,6 +75,11 @@ export class ProductosService {
   /** Baja logica de un Producto (Req 59.6). */
   eliminar(id: string): Observable<Producto> {
     return this.http.delete<Producto>(this.api.url(`/productos/${id}`));
+  }
+
+  /** Reactiva un Producto dado de baja (Req 59.6). */
+  activar(id: string): Observable<Producto> {
+    return this.http.put<Producto>(this.api.url(`/productos/${id}/activar`), {});
   }
 }
 

@@ -726,6 +726,56 @@ public class ServicioEmpresas {
     }
 
     /**
+     * Lista las cuentas de Usuario de una Empresa para el {@code super_admin}
+     * (soporte): permite recuperar el identificador de acceso (login) de los
+     * Usuarios de un tenant cuando su Administrador_Empresa lo olvida. Devuelve
+     * datos de identidad/estado de cada cuenta (login, nombre visible, si esta
+     * activa y sus roles), nunca datos de negocio de la Empresa (Req 24.3) ni el
+     * hash de la contrasena (Req 11.3).
+     *
+     * <h2>Estrategia frente a la RLS</h2>
+     * <p>La tabla {@code usuario} se filtra por {@code tenant_id} de forma
+     * explicita (no lleva RLS de Hibernate), pero para operar de forma coherente
+     * con el resto de lecturas de plataforma que tocan tablas tenant-scoped se
+     * fija {@code app.current_tenant} a ESTA Empresa con
+     * {@link TenantSessionInitializer#applyTenant(UUID)} dentro de la misma
+     * transaccion de solo lectura (mismo patron probado que
+     * {@link #consultarEmpresa} y {@link #restablecerPasswordAdmin}). No debilita
+     * la seguridad: solo se ven las cuentas del tenant indicado.</p>
+     *
+     * <p>El identificador de acceso es UNICO GLOBAL, pero el aislamiento por
+     * Empresa se garantiza acotando la consulta por {@code tenant_id} en
+     * {@link UsuarioRepository#buscarPorTenant(UUID, String, Pageable)} con
+     * {@code q == null} (todas las cuentas del tenant). El resultado se ordena de
+     * forma estable por identificador de acceso para una salida determinista.</p>
+     *
+     * @param empresaId identificador de la Empresa cuyas cuentas se listan.
+     * @return las cuentas de la Empresa proyectadas a {@link UsuarioEmpresaDto},
+     *         ordenadas por identificador de acceso.
+     * @throws RecursoNoEncontradoException si la Empresa no existe (404).
+     */
+    @Transactional(readOnly = true)
+    public List<UsuarioEmpresaDto> listarUsuariosDeEmpresa(UUID empresaId) {
+        // La Empresa debe existir (404 si no). La tabla empresa no lleva RLS (V2).
+        Empresa empresa = cargar(empresaId);
+        UUID tenantId = empresa.getId();
+
+        // Coherencia con las demas lecturas de plataforma tenant-scoped: se fija
+        // el tenant destino dentro de esta transaccion de solo lectura.
+        tenantSession.applyTenant(tenantId);
+
+        // Sin busqueda (q = null): todas las cuentas del tenant. Una Empresa tiene
+        // pocas cuentas (acotadas por el max_usuarios del Plan), por lo que se
+        // recuperan sin paginar y se ordenan en memoria por login.
+        return usuarioRepository.buscarPorTenant(tenantId, null, Pageable.unpaged())
+                .getContent().stream()
+                .sorted(Comparator.comparing(Usuario::getIdentificadorAcceso,
+                        String.CASE_INSENSITIVE_ORDER))
+                .map(UsuarioEmpresaDto::de)
+                .toList();
+    }
+
+    /**
      * Listado paginado de Empresas, opcionalmente filtrado por estado y por una
      * busqueda textual (Req 24.5, Req 24).
      *

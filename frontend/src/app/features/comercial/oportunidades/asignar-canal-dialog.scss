@@ -1,0 +1,20 @@
+// =============================================================================
+// Estilos del dialogo de asignacion de canal de venta (Req 2.1, 63.1, 52, 57)
+// -----------------------------------------------------------------------------
+// Dialogo compacto: un unico selector de canal. Solo tokens del Sistema de
+// Diseno; las notas (info/aviso) reutilizan las clases ds-form__note.
+// =============================================================================
+
+.asignar-canal__content {
+  padding-block: var(--ds-space-2);
+}
+
+.asignar-canal__intro {
+  margin: 0 0 var(--ds-space-3);
+  color: var(--ds-color-text);
+}
+
+.asignar-canal__campo {
+  inline-size: 100%;
+  margin-block-start: var(--ds-space-2);
+}

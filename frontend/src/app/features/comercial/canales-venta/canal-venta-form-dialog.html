@@ -1,0 +1,57 @@
+<mat-dialog-content class="canal-venta-form__content">
+  <form class="ds-form" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+    <header class="ds-form__header">
+      <h2 class="ds-form__header-title" mat-dialog-title>{{ titulo() }}</h2>
+      <p class="ds-form__header-subtitle">{{ subtitulo() }}</p>
+    </header>
+
+    @if (error()) {
+      <p class="ds-form__note ds-form__note--warn" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </p>
+    }
+
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Datos del canal</h3>
+        <p class="ds-form__section-desc">
+          Nombre con el que identificas la vía de venta y una descripción opcional.
+        </p>
+      </div>
+
+      <div class="ds-form__section-body">
+        <div class="ds-form__grid">
+          <div class="ds-form__field ds-form__field--full">
+            <mat-form-field appearance="outline">
+              <mat-label>Nombre</mat-label>
+              <input matInput type="text" formControlName="nombre" autocomplete="off" maxlength="100" required />
+              @if (form.controls.nombre.hasError('required') && form.controls.nombre.touched) {
+                <mat-error>El nombre es obligatorio.</mat-error>
+              }
+              @if (form.controls.nombre.hasError('duplicado')) {
+                <mat-error>Ya existe un canal de venta activo con ese nombre.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field ds-form__field--full">
+            <mat-form-field appearance="outline">
+              <mat-label>Descripción (opcional)</mat-label>
+              <textarea matInput rows="3" formControlName="descripcion" maxlength="500"></textarea>
+            </mat-form-field>
+            <p class="ds-form__help">
+              Ejemplos: Venta directa, Referidos, Redes sociales, Marketplace.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancelar()" [disabled]="guardando()">Cancelar</button>
+  <button matButton="filled" type="button" (click)="guardar()" [disabled]="guardando() || form.invalid">
+    {{ esEdicion ? 'Guardar cambios' : 'Crear canal' }}
+  </button>
+</mat-dialog-actions>

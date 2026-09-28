@@ -1,16 +1,29 @@
+// =============================================================================
+// Estilos del Pipeline de Oportunidades (kanban premium) — Req 14, 63, 52, 57
+// -----------------------------------------------------------------------------
+// Tablero horizontal de columnas de ancho fijo con scroll-x; cada columna tiene
+// cabecera fija (etapa + total + forecast) y tarjetas con scroll-y interno. El
+// avance principal es por DRAG & DROP (CDK): las tarjetas se arrastran entre
+// columnas. Acento de color por etapa, tarjetas elevadas con microinteracciones
+// y badge de probabilidad por rango. Solo tokens del Sistema de Diseno (--ds-*),
+// por lo que respeta el branding por empresa inyectado en runtime.
+// =============================================================================
+
 @use '../../../../styles/breakpoints' as bp;
 
-.comercial-form {
+// -----------------------------------------------------------------------------
+// Tira de KPIs (usa el componente compartido app-kpi-tile)
+// -----------------------------------------------------------------------------
+.pipeline-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--ds-space-3);
   margin-bottom: var(--ds-space-4);
-
-  &__acciones {
-    display: flex;
-    justify-content: flex-end;
-    gap: var(--ds-space-2);
-    margin-top: var(--ds-space-2);
-  }
 }
 
+// -----------------------------------------------------------------------------
+// Filtro por canal
+// -----------------------------------------------------------------------------
 .pipeline-filtros {
   display: flex;
   flex-wrap: wrap;
@@ -23,6 +36,9 @@
   }
 }
 
+// -----------------------------------------------------------------------------
+// Tablero
+// -----------------------------------------------------------------------------
 .pipeline {
   // Movil: una columna apilada.
   display: flex;
@@ -31,251 +47,59 @@
 
   @include bp.from('md') {
     // Tablero horizontal (kanban): fila de columnas de ANCHO FIJO que se
-    // desplaza en horizontal. Se usa flex con flex:0 0 <ancho> (en lugar de
-    // grid-auto-columns) para garantizar que NINGUNA columna se comprima: el
-    // sintoma anterior era la primera columna aplastada con el titulo en
-    // vertical. Cada columna mantiene 300px y el contenedor hace scroll-x.
+    // desplaza en horizontal. flex:0 0 <ancho> evita que ninguna se comprima.
     flex-direction: row;
     align-items: flex-start;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
     padding-bottom: var(--ds-space-2);
-    // Guias de scroll por columna para un desplazamiento comodo.
     scroll-snap-type: x proximity;
   }
 
+  // --- Columna por etapa ----------------------------------------------------
   &__columna {
     background: var(--ds-color-surface-variant, var(--ds-color-surface));
     border: 1px solid var(--ds-color-border);
     border-radius: var(--ds-radius-md);
+    // El acento de color de etapa vive en la cabecera (fondo tintado); la
+    // columna solo lleva una fina linea superior del mismo color.
+    border-top: 3px solid var(--etapa-color, var(--ds-color-border));
     padding: var(--ds-space-3);
     min-width: 0;
 
     @include bp.from('md') {
-      // Ancho fijo e IN-comprimible: 300px por columna. flex-basis fija el
-      // ancho, flex-grow/shrink en 0 evitan que se estire o encoja.
       flex: 0 0 300px;
       max-width: 300px;
       scroll-snap-align: start;
-      // Cada columna gestiona su propia altura; las tarjetas hacen scroll
-      // vertical si la columna es muy larga, manteniendo la cabecera visible.
       max-height: calc(100vh - 320px);
       display: flex;
       flex-direction: column;
     }
   }
 
+  // Color por etapa expuesto como custom property para reutilizarlo (cabecera,
+  // punto, linea superior) sin repetir el valor en varios selectores.
+  &__columna--nuevo { --etapa-color: #64748b; }
+  &__columna--calificado { --etapa-color: #0e7490; }
+  &__columna--propuesta { --etapa-color: #7c3aed; }
+  &__columna--negociacion { --etapa-color: #b45309; }
+  &__columna--ganado { --etapa-color: #2e7d4f; }
+  &__columna--perdido { --etapa-color: #b91c1c; }
+
+  // --- Cabecera de columna (fija, con fondo tintado por etapa) ---------------
   &__cabecera {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: var(--ds-space-2);
-  }
-
-  &__titulo {
-    margin: 0;
-    font-size: var(--ds-font-size-md);
-    font-weight: var(--ds-font-weight-medium);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  &__contador {
-    background: var(--ds-color-primary);
-    color: var(--ds-color-on-primary, #fff);
-    border-radius: var(--ds-radius-full, 999px);
-    padding: 0 var(--ds-space-2);
-    font-size: var(--ds-font-size-sm);
-    min-width: 24px;
-    text-align: center;
-  }
-
-  &__tarjetas {
-    display: flex;
     flex-direction: column;
-    gap: var(--ds-space-2);
-
-    @include bp.from('md') {
-      // Las tarjetas hacen scroll vertical dentro de la columna, dejando la
-      // cabecera (etapa + total + forecast) siempre visible arriba.
-      overflow-y: auto;
-      overscroll-behavior-y: contain;
-      // Espacio para que la sombra/hover de las tarjetas no se recorte.
-      padding: 2px;
-      margin: -2px;
-    }
-  }
-
-  &__tarjeta {
-    background: var(--ds-color-surface);
-    border: 1px solid var(--ds-color-border);
-    border-radius: var(--ds-radius-sm, var(--ds-radius-md));
-    padding: var(--ds-space-3);
-    min-width: 0;
-    overflow-wrap: anywhere;
-  }
-
-  &__tarjeta-titulo {
-    margin: 0 0 var(--ds-space-1);
-    font-size: var(--ds-font-size-md);
-    overflow-wrap: anywhere;
-  }
-
-  &__tarjeta-valor {
-    margin: 0 0 var(--ds-space-2);
-    color: var(--ds-color-text-muted);
-    font-size: var(--ds-font-size-sm);
-  }
-
-  &__tarjeta-cliente {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ds-space-1);
-    margin: 0 0 var(--ds-space-1);
-    color: var(--ds-color-primary);
-    font-size: var(--ds-font-size-sm);
-    text-decoration: none;
-
-    mat-icon {
-      font-size: 18px;
-      inline-size: 18px;
-      block-size: 18px;
-    }
-
-    &:hover,
-    &:focus-visible {
-      text-decoration: underline;
-    }
-  }
-
-  &__tarjeta-canal {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ds-space-1);
-    margin: 0 0 var(--ds-space-2);
-    color: var(--ds-color-text-muted);
-    font-size: var(--ds-font-size-sm);
-
-    mat-icon {
-      font-size: 18px;
-      inline-size: 18px;
-      block-size: 18px;
-    }
-  }
-
-  &__tarjeta-acciones {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ds-space-1);
-    align-items: center;
-  }
-
-  &__badge {
-    font-size: var(--ds-font-size-sm);
-    color: var(--ds-color-primary);
-  }
-
-  &__vacio {
-    margin: 0;
-    color: var(--ds-color-text-muted);
-    font-size: var(--ds-font-size-sm);
-  }
-}
-
-// =============================================================================
-// Bloque premium/enterprise del Pipeline de ventas
-// -----------------------------------------------------------------------------
-// Tira de KPIs (outcome-first), encabezados de columna con valor agregado y
-// acento de color por etapa, y tarjetas de oportunidad elevadas con hover.
-// Todo se apoya en los tokens del Sistema de Diseno (--ds-*) para respetar el
-// branding por empresa (el color primario ya se inyecta en runtime).
-// =============================================================================
-
-.pipeline-kpis {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--ds-space-3);
-  margin-bottom: var(--ds-space-4);
-}
-
-.pipeline-kpi {
-  display: flex;
-  align-items: center;
-  gap: var(--ds-space-3);
-  padding: var(--ds-space-3) var(--ds-space-4);
-  background: var(--ds-color-surface);
-  border: 1px solid var(--ds-color-border);
-  border-radius: var(--ds-radius-md);
-  box-shadow: var(--ds-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.06));
-
-  &__icono {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    inline-size: 44px;
-    block-size: 44px;
-    border-radius: var(--ds-radius-md);
-    background: var(--ds-color-primary-container, color-mix(in srgb, var(--ds-color-primary) 14%, transparent));
-    color: var(--ds-color-text-on-primary-container, var(--ds-color-primary));
-    flex: 0 0 auto;
-
-    mat-icon {
-      font-size: 24px;
-      inline-size: 24px;
-      block-size: 24px;
-    }
-  }
-
-  &__cuerpo {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-  }
-
-  &__valor {
-    font-size: var(--ds-font-size-xl, 1.5rem);
-    font-weight: var(--ds-font-weight-bold, 700);
-    line-height: 1.15;
-    color: var(--ds-color-text);
-  }
-
-  &__etiqueta {
-    font-size: var(--ds-font-size-sm);
-    color: var(--ds-color-text-muted);
-    margin-top: 2px;
-  }
-
-  // El KPI de valor total resalta con el color de marca (borde e icono).
-  &--valor {
-    border-color: color-mix(in srgb, var(--ds-color-primary) 40%, var(--ds-color-border));
-
-    .pipeline-kpi__icono {
-      background: var(--ds-color-primary);
-      color: var(--ds-color-text-on-primary, #fff);
-    }
-  }
-
-  &--exito {
-    .pipeline-kpi__icono {
-      background: color-mix(in srgb, var(--ds-color-success, #2e7d4f) 16%, transparent);
-      color: var(--ds-color-success, #2e7d4f);
-    }
-  }
-}
-
-// --- Encabezado de columna enriquecido -------------------------------------
-.pipeline {
-  &__cabecera {
-    flex-direction: column;
-    align-items: stretch;
     gap: 4px;
-    // La cabecera no se comprime aunque las tarjetas hagan scroll debajo.
     flex: 0 0 auto;
-    padding-bottom: var(--ds-space-2);
-    margin-bottom: var(--ds-space-2);
-    border-bottom: 1px solid color-mix(in srgb, var(--ds-color-border) 70%, transparent);
+    margin: calc(-1 * var(--ds-space-3)) calc(-1 * var(--ds-space-3)) var(--ds-space-2);
+    padding: var(--ds-space-3);
+    border-bottom: 1px solid color-mix(in srgb, var(--etapa-color, var(--ds-color-border)) 30%, var(--ds-color-border));
+    // Tinte muy sutil del color de la etapa para dar identidad a la columna.
+    background: color-mix(in srgb, var(--etapa-color, transparent) 8%, transparent);
+    border-top-left-radius: var(--ds-radius-md);
+    border-top-right-radius: var(--ds-radius-md);
   }
 
   &__cabecera-titulo {
@@ -291,32 +115,78 @@
     color: var(--ds-color-text);
   }
 
+  &__cabecera-forecast {
+    margin-left: 0.35rem;
+    font-weight: var(--ds-font-weight-medium, 500);
+    color: var(--ds-color-primary);
+    white-space: nowrap;
+  }
+
   &__punto {
     inline-size: 10px;
     block-size: 10px;
-    border-radius: 999px;
-    background: var(--ds-color-border);
+    border-radius: var(--ds-radius-pill, 999px);
+    background: var(--etapa-color, var(--ds-color-border));
     flex: 0 0 auto;
   }
 
-  // Acento de color por etapa: barra superior + color del punto. Comunica el
-  // avance del embudo de un vistazo (frio -> calido -> exito/fracaso).
-  &__columna {
-    border-top: 3px solid var(--ds-color-border);
-    transition: box-shadow 0.15s ease;
+  &__titulo {
+    margin: 0;
+    font-size: var(--ds-font-size-md);
+    font-weight: var(--ds-font-weight-medium);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  &__columna--nuevo { border-top-color: #64748b; .pipeline__punto { background: #64748b; } }
-  &__columna--calificado { border-top-color: #0e7490; .pipeline__punto { background: #0e7490; } }
-  &__columna--propuesta { border-top-color: #7c3aed; .pipeline__punto { background: #7c3aed; } }
-  &__columna--negociacion { border-top-color: #b45309; .pipeline__punto { background: #b45309; } }
-  &__columna--ganado { border-top-color: #2e7d4f; .pipeline__punto { background: #2e7d4f; } }
-  &__columna--perdido { border-top-color: #b91c1c; .pipeline__punto { background: #b91c1c; } }
+  &__contador {
+    background: var(--etapa-color, var(--ds-color-primary));
+    color: #fff;
+    border-radius: var(--ds-radius-pill, 999px);
+    padding: 0 var(--ds-space-2);
+    font-size: var(--ds-font-size-sm);
+    font-weight: var(--ds-font-weight-medium);
+    min-width: 24px;
+    text-align: center;
+    margin-left: auto;
+  }
 
-  // --- Tarjeta de oportunidad elevada ---------------------------------------
+  // --- Lista de tarjetas (zona de drop, scroll-y interno) --------------------
+  &__tarjetas {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-2);
+    min-block-size: 40px;
+
+    @include bp.from('md') {
+      overflow-y: auto;
+      overscroll-behavior-y: contain;
+      padding: 2px;
+      margin: -2px;
+    }
+  }
+
+  // Resalte de la columna cuando se arrastra una tarjeta sobre ella.
+  &__tarjetas.cdk-drop-list-receiving,
+  &__tarjetas.cdk-drop-list-dragging {
+    border-radius: var(--ds-radius-sm);
+    outline: 2px dashed color-mix(in srgb, var(--etapa-color, var(--ds-color-primary)) 55%, transparent);
+    outline-offset: 2px;
+  }
+
+  // --- Tarjeta de oportunidad ------------------------------------------------
   &__tarjeta {
+    background: var(--ds-color-surface);
+    border: 1px solid var(--ds-color-border);
+    border-radius: var(--ds-radius-md);
+    padding: var(--ds-space-3);
+    min-width: 0;
+    overflow-wrap: anywhere;
     box-shadow: var(--ds-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.06));
-    transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+    transition:
+      box-shadow var(--ds-duration-fast, 120ms) var(--ds-easing-standard, ease),
+      transform var(--ds-duration-fast, 120ms) var(--ds-easing-standard, ease),
+      border-color var(--ds-duration-fast, 120ms) var(--ds-easing-standard, ease);
 
     &:hover {
       box-shadow: var(--ds-shadow-md, 0 4px 12px rgba(0, 0, 0, 0.1));
@@ -325,56 +195,122 @@
     }
   }
 
-  // El valor de la oportunidad pasa a ser el dato mas prominente de la tarjeta.
+  &__tarjeta-encabezado {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--ds-space-2);
+  }
+
+  &__tarjeta-titulo {
+    margin: 0 0 var(--ds-space-1);
+    font-size: var(--ds-font-size-md);
+    font-weight: var(--ds-font-weight-medium);
+    overflow-wrap: anywhere;
+  }
+
+  // Asa de arrastre: solo esta zona inicia el drag para no interferir con los
+  // botones/enlaces de la tarjeta.
+  &__arrastre {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    color: var(--ds-color-text-muted);
+    cursor: grab;
+    border-radius: var(--ds-radius-sm);
+
+    &:active {
+      cursor: grabbing;
+    }
+
+    mat-icon {
+      font-size: 20px;
+      inline-size: 20px;
+      block-size: 20px;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ds-color-focus-ring, var(--ds-color-primary));
+      outline-offset: 1px;
+    }
+  }
+
   &__tarjeta-valor {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--ds-space-2);
+    margin: 0 0 var(--ds-space-2);
     color: var(--ds-color-text);
     font-size: var(--ds-font-size-lg, 1.125rem);
     font-weight: var(--ds-font-weight-bold, 700);
   }
 
-  &__badge {
+  // Badge de probabilidad con color por rango (baja/media/alta). El % siempre
+  // se muestra (el color es refuerzo, no el unico portador de significado).
+  &__tarjeta-prob {
     display: inline-flex;
     align-items: center;
-    padding: 2px var(--ds-space-2);
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--ds-color-primary) 12%, transparent);
-    color: var(--ds-color-primary);
-    font-weight: var(--ds-font-weight-medium);
-  }
-}
-
-// -----------------------------------------------------------------------------
-// Forecast (Bloque C, V81): probabilidad por tarjeta, forecast por columna,
-// fecha de cierre y motivo de pérdida.
-// -----------------------------------------------------------------------------
-.pipeline {
-  &__cabecera-forecast {
-    margin-left: 0.35rem;
-    font-weight: var(--ds-font-weight-medium, 500);
-    color: var(--ds-color-primary);
-    white-space: nowrap;
-  }
-
-  &__tarjeta-prob {
-    display: inline-block;
-    margin-left: 0.5rem;
-    padding: 0.05rem 0.45rem;
-    border-radius: 999px;
+    padding: 0.05rem 0.5rem;
+    border-radius: var(--ds-radius-pill, 999px);
     font-size: var(--ds-font-size-xs, 0.72rem);
     font-weight: var(--ds-font-weight-bold, 700);
-    background: color-mix(in srgb, var(--ds-color-primary) 14%, transparent);
-    color: var(--ds-color-primary);
-    vertical-align: middle;
+
+    &--alta {
+      background: color-mix(in srgb, var(--ds-color-success, #2e7d4f) 16%, transparent);
+      color: var(--ds-color-success, #2e7d4f);
+    }
+    &--media {
+      background: color-mix(in srgb, var(--ds-color-warning, #b45309) 18%, transparent);
+      color: var(--ds-color-warning, #b45309);
+    }
+    &--baja {
+      background: color-mix(in srgb, var(--ds-color-text-muted) 16%, transparent);
+      color: var(--ds-color-text-muted);
+    }
   }
 
-  &__tarjeta-cierre,
+  // Meta (fecha, cliente, canal) en linea con iconos pequenos.
+  &__tarjeta-meta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-1);
+    margin-bottom: var(--ds-space-2);
+  }
+
+  &__tarjeta-metaitem {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ds-space-1);
+    color: var(--ds-color-text-muted);
+    font-size: var(--ds-font-size-sm);
+
+    mat-icon {
+      font-size: 18px;
+      inline-size: 18px;
+      block-size: 18px;
+      flex: 0 0 auto;
+    }
+  }
+
+  &__tarjeta-cliente {
+    color: var(--ds-color-primary);
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      text-decoration: underline;
+    }
+  }
+
   &__tarjeta-perdida {
     display: flex;
     align-items: center;
     gap: 0.25rem;
-    margin: 0.35rem 0 0;
+    margin: 0 0 var(--ds-space-2);
     font-size: 0.75rem;
-    color: var(--ds-color-text-muted);
+    color: var(--ds-color-error, #c62828);
 
     mat-icon {
       font-size: 0.95rem;
@@ -383,11 +319,59 @@
     }
   }
 
-  &__tarjeta-perdida {
-    color: #c62828;
+  &__tarjeta-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ds-space-1);
+  }
+
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px var(--ds-space-2);
+    border-radius: var(--ds-radius-pill, 999px);
+    background: color-mix(in srgb, var(--ds-color-primary) 12%, transparent);
+    color: var(--ds-color-primary);
+    font-weight: var(--ds-font-weight-medium);
+    font-size: var(--ds-font-size-xs);
+  }
+
+  &__vacio {
+    margin: 0;
+    padding: var(--ds-space-3);
+    color: var(--ds-color-text-muted);
+    font-size: var(--ds-font-size-sm);
+    text-align: center;
+  }
+
+  // Placeholder de arrastre: hueco punteado en la posicion destino.
+  &__placeholder {
+    block-size: 56px;
+    border: 2px dashed color-mix(in srgb, var(--ds-color-primary) 45%, transparent);
+    border-radius: var(--ds-radius-md);
+    background: color-mix(in srgb, var(--ds-color-primary) 6%, transparent);
   }
 }
 
-.pipeline-kpi--forecast .pipeline-kpi__icono mat-icon {
-  color: color-mix(in srgb, var(--mat-sys-primary, #3f51b5) 90%, #000);
+// -----------------------------------------------------------------------------
+// Estilos globales del CDK drag & drop (la tarjeta arrastrada se monta en body)
+// -----------------------------------------------------------------------------
+:host ::ng-deep .cdk-drag-preview {
+  border-radius: var(--ds-radius-md);
+  box-shadow: var(--ds-shadow-lg, 0 12px 28px rgba(0, 0, 0, 0.22));
+}
+
+:host ::ng-deep .cdk-drag-animating {
+  transition: transform var(--ds-duration-base, 200ms) var(--ds-easing-standard, cubic-bezier(0, 0, 0.2, 1));
+}
+
+:host ::ng-deep .pipeline__tarjeta.cdk-drag-dragging {
+  opacity: 0.85;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pipeline__tarjeta {
+    transition: none;
+  }
 }

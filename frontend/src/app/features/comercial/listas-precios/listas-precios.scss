@@ -1,13 +1,5 @@
-.comercial-form {
-  margin-bottom: var(--ds-space-4);
-
-  &__acciones {
-    display: flex;
-    justify-content: flex-end;
-    gap: var(--ds-space-2);
-    margin-top: var(--ds-space-2);
-  }
-}
+// El alta/edicion y la asignacion de precios viven en modales
+// (lista-form-dialog, asignar-precio-dialog); aqui solo el listado.
 
 .comercial-filtro {
   width: 100%;

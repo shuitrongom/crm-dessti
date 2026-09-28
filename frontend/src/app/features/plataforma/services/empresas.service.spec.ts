@@ -71,4 +71,19 @@ describe('EmpresasService', () => {
     expect(req.request.body).toEqual({ giroId: 'g2' });
     req.flush({ id: 'e1', giroId: 'g2' });
   });
+
+  it('listarUsuarios hace GET a /empresas/{id}/usuarios', () => {
+    service.listarUsuarios('e1').subscribe();
+    const req = http.expectOne('/api/v1/empresas/e1/usuarios');
+    expect(req.request.method).toBe('GET');
+    req.flush([
+      {
+        id: 'u1',
+        identificadorAcceso: 'admin@empresa.com',
+        nombreVisible: 'Admin',
+        activo: true,
+        roles: ['admin_empresa'],
+      },
+    ]);
+  });
 });

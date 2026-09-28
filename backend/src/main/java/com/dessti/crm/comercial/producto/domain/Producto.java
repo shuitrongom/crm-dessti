@@ -208,6 +208,18 @@ public class Producto extends TenantScopedEntity {
     }
 
     /**
+     * Reactiva un Producto dado de baja: marca {@code activo=true} (Req 59.6). Es
+     * idempotente. Permite volver a operar con un Producto retirado del catalogo
+     * sin perder su historico.
+     *
+     * @param actor identificador de quien reactiva, para {@code updated_by}.
+     */
+    public void activar(String actor) {
+        this.activo = true;
+        this.setUpdatedBy(actor);
+    }
+
+    /**
      * Indica si el Producto esta activo (no dado de baja logica, Req 59.6).
      *
      * @return {@code true} si el Producto esta activo.

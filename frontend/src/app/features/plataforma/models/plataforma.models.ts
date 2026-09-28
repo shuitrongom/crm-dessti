@@ -211,6 +211,25 @@ export interface ResetPasswordAdmin {
   passwordTemporal: string | null;
 }
 
+/**
+ * Cuenta de Usuario de una Empresa vista por el super_admin (GET
+ * /empresas/{id}/usuarios). Sirve para consultar el identificador de acceso
+ * (login) de los Usuarios de un tenant cuando su administrador lo olvida. Nunca
+ * expone la contrasena ni su hash (Req 11.3).
+ */
+export interface UsuarioEmpresa {
+  /** Identificador interno del Usuario. */
+  id: string;
+  /** Identificador de acceso (login) del Usuario. */
+  identificadorAcceso: string;
+  /** Nombre para mostrar; puede ser nulo. */
+  nombreVisible: string | null;
+  /** `true` si la cuenta puede iniciar sesion. */
+  activo: boolean;
+  /** Nombres de los roles asignados a la cuenta. */
+  roles: string[];
+}
+
 /** Resultado del alta de una Empresa; expone la contrasena temporal una unica vez (Req 24.2, 11.3). */
 export interface EmpresaCreada {
   empresa: Empresa;

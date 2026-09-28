@@ -55,6 +55,10 @@
           <!-- Toolbar de acciones enterprise -->
           <div class="cotizacion-detalle__acciones" role="group" aria-label="Acciones de la cotizacion">
             @if (puedeLeer) {
+              <button matButton="filled" type="button" (click)="verPrevia()">
+                <mat-icon aria-hidden="true">visibility</mat-icon>
+                Vista previa
+              </button>
               <button matButton="tonal" type="button" [disabled]="descargando()" (click)="descargarPdf()">
                 <mat-icon aria-hidden="true">picture_as_pdf</mat-icon>
                 Descargar PDF

@@ -436,6 +436,38 @@ a {
   }
 }
 
+// -----------------------------------------------------------------------------
+// Boton-tarjeta KPI (clic para abrir el modal explicativo del indicador)
+// -----------------------------------------------------------------------------
+// Envuelve una <app-kpi-tile> (u otra tarjeta) para hacerla clicable sin alterar
+// su aspecto: resetea el estilo nativo del boton, ocupa todo el ancho y expone un
+// anillo de foco accesible. Reutilizable en TODAS las pantallas con tarjetas KPI
+// (Oportunidades, Clientes, dashboards). El cursor y el foco comunican que es
+// interactiva; el hover/elevacion lo aporta la propia tarjeta.
+.kpi-boton {
+  display: block;
+  inline-size: 100%;
+  padding: 0;
+  border: 0;
+  margin: 0;
+  background: transparent;
+  text-align: inherit;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 14px; // coincide con el radio de la tarjeta para el anillo de foco
+
+  app-kpi-tile {
+    display: block;
+    block-size: 100%;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ds-color-focus-ring, var(--ds-color-primary));
+    outline-offset: 2px;
+  }
+}
+
 // Realce sutil de presion para botones e iconos (feedback tactil). Se aplica de
 // forma generica a botones de Material sin alterar su tema.
 .mat-mdc-button-base,

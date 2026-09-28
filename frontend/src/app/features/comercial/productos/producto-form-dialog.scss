@@ -1,0 +1,80 @@
+// =============================================================================
+// Estilos del dialogo de alta/edicion de Producto (Req 59, 52, 57)
+// -----------------------------------------------------------------------------
+// El layout (secciones two-pane, rejilla, ayudas, notas) lo aporta el "form
+// shell" compartido (styles/_form-shell.scss). Aqui solo el aire del contenido
+// y la carga de foto con vista previa. Solo tokens del Sistema de Diseno.
+// =============================================================================
+
+.producto-form__content {
+  padding-block: var(--ds-space-2);
+}
+
+// Carga de foto (archivo de imagen) con vista previa.
+.producto-foto {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-4);
+  padding: var(--ds-space-3);
+  border: 1px dashed var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-surface-variant);
+
+  &__preview,
+  &__placeholder {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    inline-size: 72px;
+    block-size: 72px;
+    border: 1px solid var(--ds-color-border);
+    border-radius: var(--ds-radius-md);
+    background: var(--ds-color-surface);
+    object-fit: cover;
+    color: var(--ds-color-text-muted);
+
+    mat-icon {
+      font-size: 30px;
+      inline-size: 30px;
+      block-size: 30px;
+    }
+  }
+
+  &__controles {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-1);
+    min-inline-size: 0;
+  }
+
+  &__ayuda {
+    color: var(--ds-color-text-muted);
+    font-size: var(--ds-font-size-xs);
+  }
+
+  &__botones {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ds-space-2);
+    margin-block-start: var(--ds-space-1);
+  }
+
+  // El input de archivo se oculta pero permanece accesible: la etiqueta que lo
+  // envuelve actua como boton disparador.
+  &__boton {
+    position: relative;
+    display: inline-flex;
+    cursor: pointer;
+  }
+
+  &__input {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+}

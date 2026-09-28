@@ -1,0 +1,10 @@
+// =============================================================================
+// Estilos del dialogo de alta/edicion de Lista de precios (Req 59, 52, 57)
+// -----------------------------------------------------------------------------
+// El layout lo aporta el "form shell" compartido (styles/_form-shell.scss). Aqui
+// solo el aire del contenido del dialogo. Solo tokens del Sistema de Diseno.
+// =============================================================================
+
+.lista-form__content {
+  padding-block: var(--ds-space-2);
+}

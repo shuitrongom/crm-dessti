@@ -3,22 +3,64 @@
   subtitulo="Tu agenda de interacciones y tareas de seguimiento comercial: prioriza pendientes y vencidas para no perder ninguna oportunidad."
 />
 
-<!-- Indicadores rápidos de la agenda -->
-<section class="agenda-resumen" aria-label="Resumen de la agenda">
-  <div class="agenda-kpi agenda-kpi--pendiente">
-    <mat-icon aria-hidden="true">pending_actions</mat-icon>
-    <div>
-      <span class="agenda-kpi__valor">{{ pendientes() }}</span>
-      <span class="agenda-kpi__etiqueta">Pendientes</span>
-    </div>
-  </div>
-  <div class="agenda-kpi agenda-kpi--vencida">
-    <mat-icon aria-hidden="true">warning</mat-icon>
-    <div>
-      <span class="agenda-kpi__valor">{{ vencidas() }}</span>
-      <span class="agenda-kpi__etiqueta">Vencidas</span>
-    </div>
-  </div>
+<!-- Indicadores reales del tenant (totales del backend, no de la pagina) -->
+<section class="agenda-kpis" aria-label="Resumen de la agenda">
+  <button
+    type="button"
+    class="kpi-boton"
+    (click)="abrirInfoKpi('actividades_pendientes', 'Pendientes', totalPendientes(), 'conteo')"
+    aria-label="Ver explicación de Pendientes"
+  >
+    <app-kpi-tile
+      etiqueta="Pendientes"
+      sublabel="Total del tenant"
+      icono="pending_actions"
+      tono="advertencia"
+      [valor]="totalPendientes()"
+    />
+  </button>
+  <button
+    type="button"
+    class="kpi-boton"
+    (click)="abrirInfoKpi('actividades_vencidas', 'Vencidas', totalVencidas(), 'conteo')"
+    aria-label="Ver explicación de Vencidas"
+  >
+    <app-kpi-tile
+      etiqueta="Vencidas"
+      sublabel="Requieren atención inmediata"
+      icono="warning"
+      tono="error"
+      [valor]="totalVencidas()"
+    />
+  </button>
+  <button
+    type="button"
+    class="kpi-boton"
+    (click)="abrirInfoKpi('actividades_completadas', 'Completadas', totalCompletadas(), 'conteo')"
+    aria-label="Ver explicación de Completadas"
+  >
+    <app-kpi-tile
+      etiqueta="Completadas"
+      sublabel="Seguimientos cerrados"
+      icono="task_alt"
+      tono="exito"
+      [valor]="totalCompletadas()"
+    />
+  </button>
+  <button
+    type="button"
+    class="kpi-boton"
+    (click)="abrirInfoKpi('actividades_canceladas', 'Canceladas', totalCanceladas(), 'conteo')"
+    aria-label="Ver explicación de Canceladas"
+  >
+    <app-kpi-tile
+      etiqueta="Canceladas"
+      sublabel="Seguimientos descartados"
+      icono="cancel"
+      tono="neutro"
+      [valor]="totalCanceladas()"
+    />
+  </button>
 </section>
 
 <!-- Filtros -->
@@ -43,7 +85,7 @@
     </mat-select>
   </mat-form-field>
 
-  <button mat-flat-button color="primary" type="submit">
+  <button matButton="filled" type="submit">
     <mat-icon aria-hidden="true">filter_alt</mat-icon>
     Filtrar
   </button>
@@ -56,71 +98,111 @@
   etiquetaCarga="Cargando actividades"
   (reintentar)="cargar()"
 >
-  <ul class="agenda-lista" aria-label="Actividades de seguimiento">
-    @for (a of actividades(); track a.id) {
-      <li
-        class="agenda-item"
-        [class.agenda-item--vencida]="esVencida(a)"
-        [class.agenda-item--completada]="a.estado === 'completada'"
-        [class.agenda-item--cancelada]="a.estado === 'cancelada'"
-      >
-        <div class="agenda-item__icono" [attr.data-tipo]="a.tipo">
-          <mat-icon aria-hidden="true">{{ iconoTipo[a.tipo] }}</mat-icon>
-        </div>
+  <!-- Agenda agrupada por urgencia (vencidas / hoy / proximas / …) -->
+  @for (grupo of grupos(); track grupo.clave) {
+    <section class="agenda-grupo" [attr.aria-label]="grupo.etiqueta">
+      <header class="agenda-grupo__cabecera" [class]="'agenda-grupo__cabecera--' + grupo.clave">
+        <mat-icon aria-hidden="true">{{ grupo.icono }}</mat-icon>
+        <h2 class="agenda-grupo__titulo">{{ grupo.etiqueta }}</h2>
+        <span class="agenda-grupo__contador">{{ grupo.actividades.length }}</span>
+      </header>
 
-        <div class="agenda-item__cuerpo">
-          <div class="agenda-item__encabezado">
-            <span class="agenda-item__tipo">{{ etiquetaTipo[a.tipo] }}</span>
-            <span
-              class="agenda-item__estado"
-              [class.agenda-item__estado--pendiente]="a.estado === 'pendiente'"
-              [class.agenda-item__estado--completada]="a.estado === 'completada'"
-              [class.agenda-item__estado--cancelada]="a.estado === 'cancelada'"
-            >
-              {{ etiquetaEstado[a.estado] }}
-            </span>
-            @if (esVencida(a)) {
-              <span class="agenda-item__vencida">
-                <mat-icon aria-hidden="true">warning</mat-icon>
-                Vencida
-              </span>
-            }
-          </div>
-          <p class="agenda-item__asunto">{{ a.asunto }}</p>
-          <div class="agenda-item__meta">
-            <span>
-              <mat-icon aria-hidden="true">event</mat-icon>
-              {{ a.fechaProgramada | date: 'medium' }}
-            </span>
-            @if (a.vencimiento) {
-              <span>
-                <mat-icon aria-hidden="true">schedule</mat-icon>
-                Vence: {{ a.vencimiento | date: 'short' }}
-              </span>
-            }
-            <a
-              class="agenda-item__cliente"
-              [routerLink]="['/empresa/comercial/clientes', a.clienteId]"
-            >
-              <mat-icon aria-hidden="true">person</mat-icon>
-              Ver cliente
-            </a>
-          </div>
-        </div>
-
-        @if (puedeActualizar && a.estado === 'pendiente') {
-          <button
-            mat-icon-button
-            type="button"
-            color="primary"
-            matTooltip="Completar"
-            aria-label="Completar actividad"
-            (click)="completar(a)"
+      <ul class="agenda-lista">
+        @for (a of grupo.actividades; track a.id) {
+          <li
+            class="agenda-item"
+            [class.agenda-item--vencida]="esVencida(a)"
+            [class.agenda-item--completada]="a.estado === 'completada'"
+            [class.agenda-item--cancelada]="a.estado === 'cancelada'"
           >
-            <mat-icon aria-hidden="true">check_circle</mat-icon>
-          </button>
+            <div class="agenda-item__icono" [attr.data-tipo]="a.tipo">
+              <mat-icon aria-hidden="true">{{ iconoTipo[a.tipo] }}</mat-icon>
+            </div>
+
+            <div class="agenda-item__cuerpo">
+              <div class="agenda-item__encabezado">
+                <span class="agenda-item__tipo">{{ etiquetaTipo[a.tipo] }}</span>
+                <span
+                  class="agenda-item__estado"
+                  [class.agenda-item__estado--pendiente]="a.estado === 'pendiente'"
+                  [class.agenda-item__estado--completada]="a.estado === 'completada'"
+                  [class.agenda-item__estado--cancelada]="a.estado === 'cancelada'"
+                >
+                  {{ etiquetaEstado[a.estado] }}
+                </span>
+                @if (esVencida(a)) {
+                  <span class="agenda-item__vencida">
+                    <mat-icon aria-hidden="true">warning</mat-icon>
+                    Vencida
+                  </span>
+                }
+              </div>
+              <p class="agenda-item__asunto">{{ a.asunto }}</p>
+              <div class="agenda-item__meta">
+                <span>
+                  <mat-icon aria-hidden="true">event</mat-icon>
+                  {{ a.fechaProgramada | date: 'medium' }}
+                </span>
+                @if (a.vencimiento) {
+                  <span>
+                    <mat-icon aria-hidden="true">schedule</mat-icon>
+                    Vence: {{ a.vencimiento | date: 'short' }}
+                  </span>
+                }
+                @if (a.completadaEn) {
+                  <span class="agenda-item__completada-en">
+                    <mat-icon aria-hidden="true">check</mat-icon>
+                    Completada: {{ a.completadaEn | date: 'short' }}
+                  </span>
+                }
+                @if (puedeVerCliente) {
+                  <a
+                    class="agenda-item__cliente"
+                    [routerLink]="['/empresa/comercial/clientes', a.clienteId]"
+                  >
+                    <mat-icon aria-hidden="true">person</mat-icon>
+                    Ver cliente
+                  </a>
+                }
+              </div>
+            </div>
+
+            @if (puedeActualizar && a.estado === 'pendiente') {
+              <div class="agenda-item__acciones">
+                <button
+                  matIconButton
+                  type="button"
+                  class="agenda-item__completar"
+                  matTooltip="Marcar como completada"
+                  aria-label="Completar actividad"
+                  (click)="completar(a)"
+                >
+                  <mat-icon aria-hidden="true">check_circle</mat-icon>
+                </button>
+                <button
+                  matIconButton
+                  type="button"
+                  [matMenuTriggerFor]="menu"
+                  matTooltip="Más acciones"
+                  aria-label="Más acciones de la actividad"
+                >
+                  <mat-icon aria-hidden="true">more_vert</mat-icon>
+                </button>
+                <mat-menu #menu="matMenu">
+                  <button mat-menu-item type="button" (click)="completar(a)">
+                    <mat-icon aria-hidden="true">check_circle</mat-icon>
+                    <span>Completar</span>
+                  </button>
+                  <button mat-menu-item type="button" (click)="cancelar(a)">
+                    <mat-icon aria-hidden="true">cancel</mat-icon>
+                    <span>Cancelar</span>
+                  </button>
+                </mat-menu>
+              </div>
+            }
+          </li>
         }
-      </li>
-    }
-  </ul>
+      </ul>
+    </section>
+  }
 </app-state-container>

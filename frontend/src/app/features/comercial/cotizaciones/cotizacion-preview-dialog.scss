@@ -1,0 +1,88 @@
+// =============================================================================
+// Estilos del dialogo de vista previa del PDF de una Cotizacion (Req 6, 52, 57)
+// -----------------------------------------------------------------------------
+// Modal amplio con cabecera de acciones (Imprimir / Descargar / Cerrar) y el PDF
+// embebido a ancho completo. Solo tokens del Sistema de Diseno.
+// =============================================================================
+
+.cot-preview {
+  display: flex;
+  flex-direction: column;
+  inline-size: min(920px, 94vw);
+  max-inline-size: 100%;
+
+  &__cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ds-space-3);
+    margin: 0;
+    padding: var(--ds-space-3) var(--ds-space-4);
+    border-bottom: 1px solid var(--ds-color-border);
+  }
+
+  &__titulo {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ds-space-2);
+    font-size: var(--ds-font-size-lg);
+    font-weight: var(--ds-font-weight-bold);
+    color: var(--ds-color-text);
+    min-inline-size: 0;
+
+    mat-icon {
+      color: var(--ds-color-error, #c62828);
+      flex: 0 0 auto;
+    }
+
+    span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  &__acciones {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ds-space-2);
+    flex: 0 0 auto;
+  }
+
+  &__body {
+    padding: 0;
+    // Alto util del visor: amplio pero acotado a la ventana.
+    block-size: min(78vh, 900px);
+    max-height: min(78vh, 900px);
+    background: var(--ds-color-surface-variant, #f2f2f5);
+  }
+
+  &__iframe {
+    inline-size: 100%;
+    block-size: 100%;
+    border: 0;
+    display: block;
+  }
+
+  &__estado {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ds-space-2);
+    block-size: 100%;
+    color: var(--ds-color-text-muted);
+    text-align: center;
+    padding: var(--ds-space-6);
+
+    mat-icon {
+      font-size: 40px;
+      inline-size: 40px;
+      block-size: 40px;
+    }
+
+    &--error {
+      color: var(--ds-color-error, #c62828);
+    }
+  }
+}

@@ -7,11 +7,13 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -28,6 +30,7 @@ import com.dessti.crm.platform.empresas.EmpresaDto;
 import com.dessti.crm.platform.empresas.EstadoEmpresa;
 import com.dessti.crm.platform.empresas.ServicioEmpresas;
 import com.dessti.crm.platform.empresas.ServicioSuscripciones;
+import com.dessti.crm.platform.empresas.UsuarioEmpresaDto;
 import com.dessti.crm.platform.error.RecursoNoEncontradoException;
 import com.dessti.crm.platform.error.ReglaNegocioException;
 import com.dessti.crm.platform.security.MethodSecurityConfig;
@@ -145,6 +148,46 @@ class EmpresaControllerTest {
                         .with(user("super_admin")).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"giroId\":\"" + nuevoGiroId + "\"}"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void listarUsuarios_conPermiso_devuelve200YLaLista() throws Exception {
+        UUID empresaId = UUID.randomUUID();
+        UUID usuarioId = UUID.randomUUID();
+        when(autorizador.tiene("empresa", "leer")).thenReturn(true);
+        when(servicioEmpresas.listarUsuariosDeEmpresa(eq(empresaId)))
+                .thenReturn(List.of(new UsuarioEmpresaDto(
+                        usuarioId, "admin@empresa.com", "Admin Empresa", true,
+                        List.of("admin_empresa"))));
+
+        mockMvc.perform(get("/empresas/{id}/usuarios", empresaId)
+                        .with(user("super_admin")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(usuarioId.toString()))
+                .andExpect(jsonPath("$[0].identificadorAcceso").value("admin@empresa.com"))
+                .andExpect(jsonPath("$[0].activo").value(true))
+                .andExpect(jsonPath("$[0].roles[0]").value("admin_empresa"));
+    }
+
+    @Test
+    void listarUsuarios_sinPermiso_devuelve403() throws Exception {
+        when(autorizador.tiene(anyString(), anyString())).thenReturn(false);
+
+        mockMvc.perform(get("/empresas/{id}/usuarios", UUID.randomUUID())
+                        .with(user("rol_empresa")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void listarUsuarios_empresaInexistente_devuelve404() throws Exception {
+        UUID empresaId = UUID.randomUUID();
+        when(autorizador.tiene("empresa", "leer")).thenReturn(true);
+        doThrow(new RecursoNoEncontradoException("Empresa inexistente"))
+                .when(servicioEmpresas).listarUsuariosDeEmpresa(eq(empresaId));
+
+        mockMvc.perform(get("/empresas/{id}/usuarios", empresaId)
+                        .with(user("super_admin")))
                 .andExpect(status().isNotFound());
     }
 

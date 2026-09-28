@@ -13,15 +13,43 @@
      listado cargo correctamente para no distraer en vacio. -->
 @if (fase() === "ok") {
   <section class="comercial-kpis" aria-label="Indicadores de cotizaciones">
-    <app-kpi-tile icono="payments" tono="primario" etiqueta="Valor cotizado"
-      sublabel="En esta página"
-      [valor]="valorPagina() | currency: monedaPorDefecto : 'symbol-narrow' : '1.0-0' : 'es-MX'" />
-    <app-kpi-tile icono="request_quote" tono="info" etiqueta="Cotizaciones"
-      sublabel="Total registradas" [valor]="total()" />
-    <app-kpi-tile icono="edit_note" tono="neutro" etiqueta="En borrador"
-      sublabel="En esta página" [valor]="cotizacionesBorrador()" />
-    <app-kpi-tile icono="send" tono="exito" etiqueta="Enviadas"
-      sublabel="En esta página" [valor]="cotizacionesEnviadas()" />
+    <button
+      type="button"
+      class="kpi-boton"
+      (click)="abrirInfoKpi('valor_cotizado', 'Valor cotizado', valorPagina(), monedaPorDefecto)"
+      aria-label="Ver explicación de Valor cotizado"
+    >
+      <app-kpi-tile icono="payments" tono="primario" etiqueta="Valor cotizado"
+        sublabel="En esta página"
+        [valor]="valorPagina() | currency: monedaPorDefecto : 'symbol-narrow' : '1.0-0' : 'es-MX'" />
+    </button>
+    <button
+      type="button"
+      class="kpi-boton"
+      (click)="abrirInfoKpi('cotizaciones_registradas', 'Cotizaciones', total(), 'conteo')"
+      aria-label="Ver explicación de Cotizaciones"
+    >
+      <app-kpi-tile icono="request_quote" tono="info" etiqueta="Cotizaciones"
+        sublabel="Total registradas" [valor]="total()" />
+    </button>
+    <button
+      type="button"
+      class="kpi-boton"
+      (click)="abrirInfoKpi('cotizaciones_borrador', 'En borrador', cotizacionesBorrador(), 'conteo')"
+      aria-label="Ver explicación de En borrador"
+    >
+      <app-kpi-tile icono="edit_note" tono="neutro" etiqueta="En borrador"
+        sublabel="En esta página" [valor]="cotizacionesBorrador()" />
+    </button>
+    <button
+      type="button"
+      class="kpi-boton"
+      (click)="abrirInfoKpi('cotizaciones_enviadas', 'Enviadas', cotizacionesEnviadas(), 'conteo')"
+      aria-label="Ver explicación de Enviadas"
+    >
+      <app-kpi-tile icono="send" tono="exito" etiqueta="Enviadas"
+        sublabel="En esta página" [valor]="cotizacionesEnviadas()" />
+    </button>
   </section>
 }
 
@@ -65,9 +93,25 @@
       {{ fila.total | currency: (fila.moneda || monedaPorDefecto) : 'symbol-narrow' : '1.2-2' : 'es-MX' }}
     </ng-template>
     <ng-template appCelda="acciones" let-fila>
-      <a matIconButton [routerLink]="[fila.id]" aria-label="Ver detalle de la cotización">
-        <mat-icon aria-hidden="true">visibility</mat-icon>
-      </a>
+      <div class="comercial-acciones-fila">
+        <button
+          matIconButton
+          type="button"
+          (click)="verPrevia(fila)"
+          matTooltip="Vista previa imprimible"
+          aria-label="Vista previa imprimible de la cotización"
+        >
+          <mat-icon aria-hidden="true">visibility</mat-icon>
+        </button>
+        <a
+          matIconButton
+          [routerLink]="[fila.id]"
+          matTooltip="Abrir detalle"
+          aria-label="Abrir detalle de la cotización"
+        >
+          <mat-icon aria-hidden="true">open_in_new</mat-icon>
+        </a>
+      </div>
     </ng-template>
   </app-data-table>
 </app-state-container>

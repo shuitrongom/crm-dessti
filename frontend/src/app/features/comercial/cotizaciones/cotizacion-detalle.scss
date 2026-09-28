@@ -9,6 +9,24 @@
     flex: 1 1 auto;
   }
 
+  // Cabecera de tarjeta (titulo + accion a la derecha): alineacion vertical,
+  // separacion entre el titulo y el boton, y aire respecto al contenido. El
+  // mat-card-header por defecto no reparte bien estos elementos, de ahi el
+  // ajuste explicito (evita que "Agregar partida" quede pegado al titulo).
+  mat-card-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ds-space-2) var(--ds-space-3);
+    margin-bottom: var(--ds-space-3);
+  }
+
+  mat-card-title {
+    margin: 0;
+    font-size: var(--ds-font-size-lg);
+    font-weight: var(--ds-font-weight-bold, 700);
+  }
+
   // Aviso informativo no intrusivo de datos fiscales incompletos (Req 3). Sigue
   // el patron de banners "info" del sistema de diseno (tokens, WCAG AA).
   &__aviso-fiscal {
@@ -51,8 +69,9 @@
 
   &__folio {
     margin: 0;
-    font-size: var(--ds-font-size-xl, var(--ds-font-size-lg));
+    font-size: var(--ds-font-size-2xl, var(--ds-font-size-xl));
     font-weight: var(--ds-font-weight-bold, 700);
+    letter-spacing: -0.01em;
   }
 
   &__meta,
@@ -132,39 +151,66 @@
 
   &__num {
     text-align: right;
+    font-variant-numeric: tabular-nums;
   }
 
+  &__iva-monto {
+    color: var(--ds-color-text-muted);
+    font-size: var(--ds-font-size-xs);
+  }
+
+  // Bloque de totales estilo "order summary": alineado a la derecha, con el total
+  // final resaltado en una tarjeta de acento para que sea el dato dominante.
   &__totales {
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
+    align-items: stretch;
     gap: var(--ds-space-1);
-    margin: var(--ds-space-3) 0 0;
+    margin: var(--ds-space-4) 0 0;
+    margin-inline-start: auto;
+    inline-size: 100%;
+    max-inline-size: 22rem;
 
     div {
       display: flex;
       gap: var(--ds-space-3);
       align-items: baseline;
+      justify-content: space-between;
+      padding-block: 2px;
     }
 
     dt {
       margin: 0;
       color: var(--ds-color-text-muted);
+      font-size: var(--ds-font-size-sm);
     }
 
     dd {
       margin: 0;
       min-width: 8rem;
       text-align: right;
+      font-variant-numeric: tabular-nums;
+      color: var(--ds-color-text);
     }
   }
 
   &__total {
-    font-size: var(--ds-font-size-md);
-    font-weight: var(--ds-font-weight-bold, 700);
+    margin-top: var(--ds-space-2);
+    padding: var(--ds-space-3) var(--ds-space-4) !important;
+    border-radius: var(--ds-radius-md);
+    background: var(--ds-color-accent-surface, color-mix(in srgb, var(--ds-color-primary) 10%, transparent));
+    border: 1px solid color-mix(in srgb, var(--ds-color-primary) 30%, transparent);
 
     dt {
       color: var(--ds-color-text);
+      font-size: var(--ds-font-size-md);
+      font-weight: var(--ds-font-weight-bold, 700);
+    }
+
+    dd {
+      font-size: var(--ds-font-size-xl);
+      font-weight: var(--ds-font-weight-bold, 700);
+      color: var(--ds-color-primary);
     }
   }
 
@@ -187,6 +233,30 @@
 
   &__tabla {
     width: 100%;
+    background: transparent;
+
+    // Cabecera con fondo sutil y tipografia de etiqueta para separar del cuerpo.
+    th.mat-mdc-header-cell {
+      background: var(--ds-color-surface-variant, transparent);
+      color: var(--ds-color-text-muted);
+      font-weight: var(--ds-font-weight-medium);
+      font-size: var(--ds-font-size-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    // Fila con separador tenue y realce sutil al pasar el cursor.
+    tr.mat-mdc-row {
+      transition: background var(--ds-duration-fast, 120ms) var(--ds-easing-standard, ease);
+
+      &:hover {
+        background: color-mix(in srgb, var(--ds-color-primary) 5%, transparent);
+      }
+    }
+
+    td.mat-mdc-cell {
+      color: var(--ds-color-text);
+    }
   }
 
   &__form-acciones {
@@ -229,5 +299,20 @@
   &__vacio {
     margin: 0;
     color: var(--ds-color-text-muted);
+  }
+
+  // Microinteraccion sutil de las tarjetas del detalle (elevacion al hover),
+  // coherente con el resto del sistema. Respeta prefers-reduced-motion.
+  mat-card {
+    transition:
+      box-shadow var(--ds-duration-fast, 120ms) var(--ds-easing-standard, ease),
+      transform var(--ds-duration-fast, 120ms) var(--ds-easing-standard, ease);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cotizacion-detalle mat-card,
+  .cotizacion-detalle__tabla tr.mat-mdc-row {
+    transition: none;
   }
 }

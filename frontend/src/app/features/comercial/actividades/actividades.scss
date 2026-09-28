@@ -1,88 +1,124 @@
 // =============================================================================
-// Estilos de la agenda de actividades de seguimiento (V79)
+// Estilos de la agenda de actividades de seguimiento (V79) — premium
+// -----------------------------------------------------------------------------
+// KPIs con el componente compartido app-kpi-tile; agenda agrupada por urgencia
+// (vencidas / hoy / proximas) con cabecera de color semantico; tarjetas de
+// actividad con icono por tipo, chip de estado y acciones. Solo tokens del
+// Sistema de Diseno (--ds-*), correcto en tema claro y oscuro.
 // =============================================================================
 
-.agenda-resumen {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin: 1rem 0;
-}
-
-.agenda-kpi {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.9rem 1.25rem;
-  border-radius: 0.9rem;
-  background: color-mix(in srgb, var(--mat-sys-surface-variant, #e7e9f0) 55%, transparent);
-  min-width: 180px;
-
-  mat-icon {
-    font-size: 1.8rem;
-    width: 1.8rem;
-    height: 1.8rem;
-  }
-
-  &__valor {
-    display: block;
-    font-size: 1.6rem;
-    font-weight: 700;
-    line-height: 1;
-  }
-
-  &__etiqueta {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    opacity: 0.7;
-  }
-
-  &--pendiente mat-icon,
-  &--pendiente .agenda-kpi__valor {
-    color: #b26a00;
-  }
-
-  &--vencida mat-icon,
-  &--vencida .agenda-kpi__valor {
-    color: #c62828;
-  }
+.agenda-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--ds-space-3);
+  margin: var(--ds-space-3) 0 var(--ds-space-4);
 }
 
 .agenda-filtros {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--ds-space-3);
   align-items: center;
   flex-wrap: wrap;
-  margin-bottom: 1rem;
+  margin-bottom: var(--ds-space-4);
 
   mat-form-field {
     flex: 0 1 220px;
   }
 }
 
+// -----------------------------------------------------------------------------
+// Grupo por urgencia
+// -----------------------------------------------------------------------------
+.agenda-grupo {
+  margin-bottom: var(--ds-space-4);
+
+  &__cabecera {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-2);
+    margin-bottom: var(--ds-space-2);
+    padding-bottom: var(--ds-space-1);
+    border-bottom: 1px solid var(--ds-color-border);
+    color: var(--grupo-color, var(--ds-color-text-muted));
+
+    mat-icon {
+      font-size: 20px;
+      inline-size: 20px;
+      block-size: 20px;
+    }
+
+    &--vencidas { --grupo-color: var(--ds-color-error, #c62828); }
+    &--hoy { --grupo-color: var(--ds-color-warning, #b26a00); }
+    &--proximas { --grupo-color: var(--ds-color-info, #1b6a8c); }
+    &--sin_fecha,
+    &--otras { --grupo-color: var(--ds-color-text-muted); }
+  }
+
+  &__titulo {
+    margin: 0;
+    font-size: var(--ds-font-size-sm);
+    font-weight: var(--ds-font-weight-bold, 700);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--grupo-color, var(--ds-color-text));
+  }
+
+  &__contador {
+    margin-left: auto;
+    min-width: 22px;
+    padding: 0 var(--ds-space-2);
+    border-radius: var(--ds-radius-pill, 999px);
+    background: color-mix(in srgb, var(--grupo-color, var(--ds-color-primary)) 16%, transparent);
+    color: var(--grupo-color, var(--ds-color-primary));
+    font-size: var(--ds-font-size-xs);
+    font-weight: var(--ds-font-weight-bold, 700);
+    text-align: center;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Lista y tarjeta de actividad
+// -----------------------------------------------------------------------------
 .agenda-lista {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: var(--ds-space-2);
 }
 
 .agenda-item {
   display: grid;
   grid-template-columns: auto 1fr auto;
-  gap: 0.85rem;
+  gap: var(--ds-space-3);
   align-items: center;
-  padding: 0.85rem 1rem;
-  border-radius: 0.75rem;
-  border: 1px solid color-mix(in srgb, var(--mat-sys-outline, #79747e) 22%, transparent);
-  background: var(--mat-sys-surface, #fff);
+  padding: var(--ds-space-3) var(--ds-space-4);
+  border-radius: var(--ds-radius-md);
+  border: 1px solid var(--ds-color-border);
+  background: var(--ds-color-surface);
+  box-shadow: var(--ds-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.06));
+  transition:
+    box-shadow var(--ds-duration-fast, 120ms) var(--ds-easing-standard, ease),
+    transform var(--ds-duration-fast, 120ms) var(--ds-easing-standard, ease),
+    border-color var(--ds-duration-fast, 120ms) var(--ds-easing-standard, ease);
+
+  &:hover {
+    box-shadow: var(--ds-shadow-md, 0 4px 12px rgba(0, 0, 0, 0.1));
+    transform: translateY(-1px);
+  }
 
   &--vencida {
-    border-color: color-mix(in srgb, #c62828 45%, transparent);
-    background: color-mix(in srgb, #c62828 5%, var(--mat-sys-surface, #fff));
+    border-color: color-mix(in srgb, var(--ds-color-error, #c62828) 45%, transparent);
+    background: color-mix(in srgb, var(--ds-color-error, #c62828) 5%, var(--ds-color-surface));
+  }
+
+  &--completada {
+    opacity: 0.75;
+
+    .agenda-item__asunto {
+      text-decoration: line-through;
+    }
   }
 
   &--cancelada {
@@ -94,19 +130,20 @@
   }
 
   &__icono {
-    width: 2.4rem;
-    height: 2.4rem;
+    inline-size: 2.4rem;
+    block-size: 2.4rem;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: color-mix(in srgb, var(--mat-sys-primary, #3f51b5) 14%, var(--mat-sys-surface, #fff));
-    color: var(--mat-sys-primary, #3f51b5);
+    background: color-mix(in srgb, var(--ds-color-primary) 14%, var(--ds-color-surface));
+    color: var(--ds-color-primary);
+    flex: 0 0 auto;
 
     mat-icon {
       font-size: 1.25rem;
-      width: 1.25rem;
-      height: 1.25rem;
+      inline-size: 1.25rem;
+      block-size: 1.25rem;
     }
 
     &[data-tipo='llamada'] { background: color-mix(in srgb, #1565c0 16%, #fff); color: #1565c0; }
@@ -123,19 +160,19 @@
   &__encabezado {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--ds-space-2);
     flex-wrap: wrap;
   }
 
   &__tipo {
-    font-weight: 600;
+    font-weight: var(--ds-font-weight-medium);
     font-size: 0.88rem;
   }
 
   &__estado {
     font-size: 0.68rem;
     padding: 0.1rem 0.5rem;
-    border-radius: 1rem;
+    border-radius: var(--ds-radius-pill, 999px);
     text-transform: uppercase;
     letter-spacing: 0.03em;
 
@@ -149,28 +186,29 @@
     align-items: center;
     gap: 0.2rem;
     font-size: 0.7rem;
-    color: #c62828;
-    font-weight: 600;
+    color: var(--ds-color-error, #c62828);
+    font-weight: var(--ds-font-weight-medium);
 
     mat-icon {
       font-size: 0.95rem;
-      width: 0.95rem;
-      height: 0.95rem;
+      inline-size: 0.95rem;
+      block-size: 0.95rem;
     }
   }
 
   &__asunto {
     margin: 0.3rem 0 0;
     font-size: 0.92rem;
+    overflow-wrap: anywhere;
   }
 
   &__meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.9rem;
+    gap: var(--ds-space-1) var(--ds-space-3);
     margin-top: 0.35rem;
     font-size: 0.75rem;
-    opacity: 0.8;
+    color: var(--ds-color-text-muted);
 
     span,
     a {
@@ -181,23 +219,49 @@
 
     mat-icon {
       font-size: 0.9rem;
-      width: 0.9rem;
-      height: 0.9rem;
+      inline-size: 0.9rem;
+      block-size: 0.9rem;
     }
   }
 
+  &__completada-en {
+    color: var(--ds-color-success, #2e7d32);
+  }
+
   &__cliente {
-    color: var(--mat-sys-primary, #3f51b5);
+    color: var(--ds-color-primary);
     text-decoration: none;
 
-    &:hover {
+    &:hover,
+    &:focus-visible {
       text-decoration: underline;
     }
+  }
+
+  &__acciones {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex: 0 0 auto;
+  }
+
+  &__completar {
+    color: var(--ds-color-success, #2e7d32);
   }
 }
 
 @media (max-width: 600px) {
   .agenda-filtros mat-form-field {
     flex: 1 1 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agenda-item {
+    transition: none;
+
+    &:hover {
+      transform: none;
+    }
   }
 }

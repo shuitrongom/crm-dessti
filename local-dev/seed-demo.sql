@@ -78,6 +78,9 @@ DECLARE
     v_fase         TEXT;
     materiales     UUID[];
     empleados      UUID[];
+    canales_venta  UUID[];
+    v_folio_seq    INT := 0;
+    v_anio         INT := EXTRACT(YEAR FROM CURRENT_DATE)::int;
 BEGIN
     -- ------------------------------------------------------------------
     -- 0) Detectar empresa (tenant) y fijar contexto RLS
@@ -117,7 +120,7 @@ BEGIN
             'movimiento_almacen','capa_costo','lote','existencia_almacen',
             'config_inventario_material','material','almacen',
             'actividad_comercial',
-            'partida_cotizacion','cotizacion','oportunidad','contacto','cliente',
+            'partida_cotizacion','cotizacion','oportunidad','canal_venta','contacto','cliente',
             'precio_producto','lista_precios','producto',
             'resultado_clave','objetivo_estrategico','esencia_empresa'];
         v_tabla TEXT;
@@ -228,6 +231,65 @@ BEGIN
         VALUES (v_tenant, v_lista, v_producto, (150 + (i * 137 % 12000))::numeric(18,2), v_actor);
     END LOOP;
 
+    -- ------------------------------------------------------------------
+    -- Listas de precios adicionales (Req 59.3): distinta prioridad, segmento y
+    -- vigencia para que la demo muestre varias listas y la logica de vigencia
+    -- (vigente / futura / vencida). A cada lista se le asignan precios de una
+    -- muestra de productos del tenant (con un factor por segmento).
+    -- ------------------------------------------------------------------
+    DECLARE
+        k               INT;
+        v_lista_id      UUID;
+        v_nombres       TEXT[]    := ARRAY['Lista mayoreo demo','Lista VIP demo','Lista temporada demo'];
+        v_segmentos     TEXT[]    := ARRAY['mayoreo','vip','temporada'];
+        v_prioridades   INT[]     := ARRAY[5, 10, 3];
+        -- Factor de precio por lista (mayoreo mas barato, VIP mas caro).
+        v_factores      NUMERIC[] := ARRAY[0.90, 1.15, 1.05];
+        -- Vigencia: mayoreo abierta; VIP con fin a 90 dias; temporada ya vencida.
+        v_inicios       DATE[]    := ARRAY[v_hoy - 30, v_hoy - 10, v_hoy - 120];
+        v_fines         DATE[]    := ARRAY[NULL::date, (v_hoy + 90)::date, (v_hoy - 30)::date];
+    BEGIN
+        FOR k IN 1..array_length(v_nombres, 1) LOOP
+            v_lista_id := gen_random_uuid();
+            INSERT INTO lista_precios
+                (id, tenant_id, nombre, segmento, prioridad, vigencia_inicio, vigencia_fin, activo, created_by)
+            VALUES (v_lista_id, v_tenant, v_nombres[k], v_segmentos[k], v_prioridades[k],
+                    v_inicios[k], v_fines[k], TRUE, v_actor);
+            -- Asigna precio a 20 productos aleatorios del tenant en cada lista.
+            INSERT INTO precio_producto (tenant_id, lista_precios_id, producto_id, precio, created_by)
+            SELECT v_tenant, v_lista_id, p.id,
+                   round(((300 + (random() * 9000)) * v_factores[k])::numeric, 2)::numeric(18,2), v_actor
+            FROM producto p
+            WHERE p.tenant_id = v_tenant AND p.created_by = v_actor
+            ORDER BY random() LIMIT 20;
+        END LOOP;
+    END;
+
+    -- ------------------------------------------------------------------
+    -- Canales de venta demo (V15, Req 63): vias comerciales tipicas para
+    -- clasificar oportunidades y cotizaciones. Se guardan sus ids para
+    -- asignarlos despues de forma variada. Idempotente por nombre activo.
+    -- ------------------------------------------------------------------
+    canales_venta := ARRAY[]::UUID[];
+    DECLARE
+        k               INT;
+        v_canal_id      UUID;
+        v_canales_nom   TEXT[] := ARRAY['Directo','Referido','Redes sociales','Marketplace','Distribuidor'];
+        v_canales_desc  TEXT[] := ARRAY[
+            'Venta directa del equipo comercial.',
+            'Cliente llegado por recomendacion de otro cliente.',
+            'Prospectos captados por redes sociales.',
+            'Ventas por plataformas de comercio electronico.',
+            'Ventas a traves de distribuidores o socios.'];
+    BEGIN
+        FOR k IN 1..array_length(v_canales_nom, 1) LOOP
+            v_canal_id := gen_random_uuid();
+            INSERT INTO canal_venta (id, tenant_id, nombre, descripcion, activo, created_by)
+            VALUES (v_canal_id, v_tenant, v_canales_nom[k], v_canales_desc[k], TRUE, v_actor);
+            canales_venta := array_append(canales_venta, v_canal_id);
+        END LOOP;
+    END;
+
     -- ==================================================================
     -- 3) INVENTARIO AVANZADO
     -- ==================================================================
@@ -298,10 +360,14 @@ BEGIN
             -- esperada en las etapas abiertas, y motivo de perdida en las perdidas.
             INSERT INTO oportunidad
                 (tenant_id, cliente_id, titulo, valor_estimado, etapa,
-                 responsable_usuario_id, probabilidad, fecha_cierre_esperada, motivo_perdida, created_by)
+                 responsable_usuario_id, canal_venta_id,
+                 probabilidad, fecha_cierre_esperada, motivo_perdida, created_by)
             VALUES (v_tenant, v_cliente, 'Oportunidad ' || i || '-' || j,
                     (8000 + ((i * 37 + j * 911) % 300000))::numeric(18,2), v_etapa,
                     CASE WHEN (i + j) % 2 = 0 THEN v_usuario ELSE NULL END,
+                    -- Canal de venta variado: ~4 de cada 5 llevan canal (el resto sin canal).
+                    CASE WHEN (i + j) % 5 = 0 THEN NULL
+                         ELSE canales_venta[1 + ((i + j) % array_length(canales_venta, 1))] END,
                     CASE v_etapa
                         WHEN 'nuevo' THEN 10 WHEN 'calificado' THEN 30
                         WHEN 'propuesta' THEN 50 WHEN 'negociacion' THEN 70
@@ -344,11 +410,25 @@ BEGIN
                 v_subtotal  := v_base_neta;
                 v_total     := v_subtotal - v_desc_glob + v_iva_part - v_ret_isr - v_ret_iva;
                 v_cotizacion := gen_random_uuid();
+                -- Folio legible consecutivo por anio (COT-<anio>-<nnnn>), igual que
+                -- el que asigna el backend al crear una cotizacion (V60), para que
+                -- la demo muestre folios reales en lugar del id truncado.
+                v_folio_seq := v_folio_seq + 1;
+                -- Fecha de emision escalonada (hoy menos algunos dias, para variedad)
+                -- y vigencia 30 dias despues, de modo que la demo muestre ambas fechas.
                 INSERT INTO cotizacion
-                    (id, tenant_id, cliente_id, estado, subtotal, descuento_global, iva,
-                     retencion_isr, retencion_iva, total, moneda, created_by)
-                VALUES (v_cotizacion, v_tenant, v_cliente, v_estado_cot, v_subtotal, v_desc_glob,
-                        v_iva_part, v_ret_isr, v_ret_iva, v_total, 'MXN', v_actor);
+                    (id, tenant_id, cliente_id, estado, folio, subtotal, descuento_global, iva,
+                     retencion_isr, retencion_iva, total, moneda, fecha_emision, valido_hasta,
+                     canal_venta_id, created_by)
+                VALUES (v_cotizacion, v_tenant, v_cliente, v_estado_cot,
+                        'COT-' || v_anio || '-' || lpad(v_folio_seq::text, 4, '0'),
+                        v_subtotal, v_desc_glob,
+                        v_iva_part, v_ret_isr, v_ret_iva, v_total, 'MXN',
+                        (CURRENT_DATE - ((i + j) % 20)),
+                        (CURRENT_DATE - ((i + j) % 20) + 30),
+                        CASE WHEN (i + j) % 4 = 0 THEN NULL
+                             ELSE canales_venta[1 + ((i + j) % array_length(canales_venta, 1))] END,
+                        v_actor);
                 INSERT INTO partida_cotizacion
                     (tenant_id, cotizacion_id, descripcion, cantidad, precio_unitario,
                      descuento, tasa_iva, importe_base, iva, subtotal, created_by)
@@ -393,6 +473,16 @@ BEGIN
             END;
         END LOOP;
     END LOOP;
+
+    -- Deja el contador de folios de cotizacion al dia (V60) para que las
+    -- cotizaciones creadas DESPUES desde la app continuen la numeracion sin
+    -- chocar con los folios sembrados. UPSERT sobre (tenant_id, anio).
+    IF v_folio_seq > 0 THEN
+        INSERT INTO cotizacion_folio_seq (tenant_id, anio, ultimo)
+        VALUES (v_tenant, v_anio, v_folio_seq)
+        ON CONFLICT (tenant_id, anio)
+        DO UPDATE SET ultimo = GREATEST(cotizacion_folio_seq.ultimo, EXCLUDED.ultimo);
+    END IF;
 
     -- ==================================================================
     -- 5) PRODUCCION

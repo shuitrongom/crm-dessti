@@ -137,6 +137,21 @@ public class ProductoController {
     }
 
     /**
+     * Reactiva un Producto dado de baja (Req 59.6). 200 OK con el
+     * {@link ProductoDto} reactivado; 404 si no existe o es de otro tenant. Se
+     * gobierna con el permiso de actualizacion (es una modificacion del recurso,
+     * no un alta).
+     *
+     * @param id identificador del Producto.
+     * @return 200 OK con el {@link ProductoDto} reactivado.
+     */
+    @PutMapping("/{id}/activar")
+    @PreAuthorize("@autorizador.moduloHabilitado('comercial') and @autorizador.tiene('producto','actualizar')")
+    public ResponseEntity<ProductoDto> activar(@PathVariable("id") UUID id) {
+        return ResponseEntity.ok(servicioProductos.reactivarProducto(id));
+    }
+
+    /**
      * Lista los Productos activos del tenant de forma paginada (20 por defecto,
      * 100 maximo) filtrando por nombre sin distinguir mayusculas (Req 59.7).
      *
@@ -149,9 +164,17 @@ public class ProductoController {
     @PreAuthorize("@autorizador.moduloHabilitado('comercial') and @autorizador.tiene('producto','listar')")
     public PaginaResponse<ProductoDto> listar(
             @RequestParam(name = "filtro", required = false) String filtro,
+            @RequestParam(name = "estado", required = false) String estado,
             @RequestParam(name = "page", required = false) Integer page,
             @RequestParam(name = "size", required = false) Integer size) {
         Pageable pageable = PageRequestFactory.acotando(page, size);
-        return PaginaResponse.de(servicioProductos.listarProductos(filtro, pageable));
+        // estado: "activo" (por defecto), "inactivo" o "todos". Un valor no
+        // reconocido cae al comportamiento por defecto (solo activos).
+        Boolean activo = switch (estado == null ? "" : estado.trim().toLowerCase()) {
+            case "inactivo" -> Boolean.FALSE;
+            case "todos" -> null;
+            default -> Boolean.TRUE;
+        };
+        return PaginaResponse.de(servicioProductos.listarProductos(filtro, activo, pageable));
     }
 }

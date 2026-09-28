@@ -2,37 +2,45 @@
 // Vista de Oportunidades / pipeline (Req 14, 63) — tablero por etapa (kanban)
 // -----------------------------------------------------------------------------
 // Presenta las Oportunidades agrupadas por etapa del embudo (nuevo -> ... ->
-// ganado/perdido). Cada tarjeta ofrece SOLO las transiciones validas segun la
-// maquina de estados (una transicion invalida no se muestra; el backend la
-// rechazaria con 409). Permite el alta y la conversion de una Oportunidad ganada
-// en Cotizacion (Req 14.5). Las acciones se gobiernan por permiso atomico.
+// ganado/perdido). El avance principal es por DRAG & DROP: arrastrar una tarjeta
+// a otra columna cambia su etapa, respetando la maquina de estados (una
+// transicion invalida se rechaza en el cliente y el backend la rechazaria con
+// 409). Como alternativa accesible, cada tarjeta ofrece un menu "Mover" con las
+// transiciones validas. El alta y la asignacion de canal se hacen en modales
+// animados. La conversion de una Oportunidad ganada en Cotizacion sigue
+// disponible (Req 14.5). Las acciones se gobiernan por permiso atomico.
 // =============================================================================
 
 import { Component, computed, inject, signal } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
+import {
+  CdkDragDrop,
+  DragDropModule,
+} from '@angular/cdk/drag-drop';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDialog } from '@angular/material/dialog';
 
-import { Observable, forkJoin, of } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../shared/components/state-container/state-container';
-import { EntitySelect } from '../../../shared/components/entity-select/entity-select';
+import { KpiTile } from '../../../shared/components/kpi-tile/kpi-tile';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import {
+  IndicadorInfoDialog,
+  type DatosIndicadorInfo,
+} from '../../../shared/indicadores/indicador-info-dialog';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
-import { PaginaResponse } from '../../../core/models/pagina-response';
 import { FaseSolicitud } from '../../../shared/models/estado-solicitud';
 
 import { OportunidadesService } from '../services/oportunidades.service';
@@ -45,9 +53,12 @@ import {
   ETIQUETA_ETAPA,
   EtapaOportunidad,
   Oportunidad,
+  TRANSICIONES_ETAPA,
   etapasDestino,
   valorPonderado,
 } from '../models/comercial.models';
+import { NuevaOportunidadDialog } from './nueva-oportunidad-dialog';
+import { AsignarCanalDialog, AsignarCanalDialogData } from './asignar-canal-dialog';
 
 /** Columna del tablero: una etapa con sus Oportunidades y su valor agregado. */
 interface ColumnaPipeline {
@@ -69,13 +80,11 @@ const ETAPAS_TERMINALES: ReadonlySet<EtapaOportunidad> = new Set<EtapaOportunida
 @Component({
   selector: 'app-comercial-oportunidades',
   imports: [
-    ReactiveFormsModule,
     CurrencyPipe,
     DatePipe,
     RouterLink,
-    MatCardModule,
+    DragDropModule,
     MatFormFieldModule,
-    MatInputModule,
     MatSelectModule,
     MatButtonModule,
     MatMenuModule,
@@ -83,13 +92,12 @@ const ETAPAS_TERMINALES: ReadonlySet<EtapaOportunidad> = new Set<EtapaOportunida
     MatTooltipModule,
     PageHeader,
     StateContainer,
-    EntitySelect,
+    KpiTile,
   ],
   templateUrl: './oportunidades.html',
   styleUrl: './oportunidades.scss',
 })
 export class ComercialOportunidades {
-  private readonly fb = inject(FormBuilder);
   private readonly service = inject(OportunidadesService);
   private readonly clientes = inject(ClientesService);
   private readonly canales = inject(CanalesVentaService);
@@ -97,6 +105,7 @@ export class ComercialOportunidades {
   private readonly toast = inject(NotificacionesService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly puedeCrear = this.auth.tienePermiso('oportunidad', 'crear');
   protected readonly puedeCambiarEtapa = this.auth.tienePermiso('oportunidad', 'cambiar_estado');
@@ -113,8 +122,6 @@ export class ComercialOportunidades {
   protected readonly fase = signal<FaseSolicitud>('cargando');
   protected readonly mensajeError = signal<string | undefined>(undefined);
   protected readonly oportunidades = signal<Oportunidad[]>([]);
-  protected readonly guardando = signal(false);
-  protected readonly formularioAbierto = signal(false);
   protected readonly etiquetaEtapa = ETIQUETA_ETAPA;
 
   /** Filtro por canal de venta seleccionado (id, o '' para todos). */
@@ -128,8 +135,8 @@ export class ComercialOportunidades {
   /** Mapa id -> nombre de cliente para mostrar/enlazar al cliente sin exponer el UUID. */
   protected readonly nombreClientePorId = signal<Map<string, string>>(new Map());
 
-  /** Oportunidad cuyo canal se esta asignando (o null cuando no hay dialogo abierto). */
-  protected readonly canalObjetivo = signal<Oportunidad | null>(null);
+  /** Ids de las columnas cdkDropList, para conectarlas entre si (drag & drop). */
+  protected readonly idsColumnas = ETAPAS_PIPELINE.map((etapa) => 'col-' + etapa);
 
   /** Agrupa las Oportunidades por etapa, respetando el orden del embudo, y
    * calcula el valor agregado de cada columna para el tablero (kanban premium). */
@@ -190,27 +197,6 @@ export class ComercialOportunidades {
     const total = this.oportunidades().length;
     return total === 0 ? 0 : Math.round((this.totalGanados() / total) * 100);
   });
-
-  protected readonly form = this.fb.nonNullable.group({
-    clienteId: ['', [Validators.required]],
-    titulo: ['', [Validators.required, Validators.maxLength(200)]],
-    valorEstimado: [0, [Validators.required, Validators.min(0.01), Validators.max(999999999.99)]],
-  });
-
-  /** Formulario del dialogo de asignacion de canal (canalId vacio = quitar canal). */
-  protected readonly formCanal = this.fb.nonNullable.group({
-    canalId: [''],
-  });
-
-  /** Busca Clientes por nombre/RFC para el selector (nunca se teclea el UUID). */
-  protected readonly buscarCliente = (filtro: string): Observable<PaginaResponse<Cliente>> =>
-    this.clientes.listar(filtro, 0, 20);
-
-  /** Etiqueta principal de un Cliente en el selector. */
-  protected readonly etiquetaCliente = (cliente: Cliente): string => cliente.nombre;
-
-  /** Detalle secundario (RFC) de un Cliente en el selector. */
-  protected readonly detalleCliente = (cliente: Cliente): string | null => cliente.rfc || null;
 
   constructor() {
     this.cargarCanales();
@@ -295,40 +281,61 @@ export class ComercialOportunidades {
     return etapasDestino(oportunidad.etapa);
   }
 
-  /** Abre/cierra el formulario de alta. */
-  alternarFormulario(): void {
-    this.formularioAbierto.update((v) => !v);
-    if (this.formularioAbierto()) {
-      this.form.reset({ clienteId: '', titulo: '', valorEstimado: 0 });
-    }
+  /**
+   * Rango de la probabilidad de cierre para colorear el badge (baja/media/alta),
+   * de modo que el forecast se lea de un vistazo. El significado no depende solo
+   * del color: el badge siempre muestra el porcentaje (Req 57).
+   */
+  /**
+   * Abre el dialogo explicativo de un indicador del pipeline (¿qué es? / ¿cómo
+   * se calcula? / ¿por qué importa?). La clave debe coincidir con una del
+   * catalogo central de indicadores para mostrar la explicacion correcta.
+   */
+  abrirInfoKpi(clave: string, etiqueta: string, valor: number, unidad: string): void {
+    const datos: DatosIndicadorInfo = { clave, etiqueta, valor, unidad };
+    this.dialog.open(IndicadorInfoDialog, {
+      data: datos,
+      width: '32rem',
+      maxWidth: '92vw',
+      autoFocus: false,
+    });
   }
 
-  /** Da de alta una Oportunidad en etapa nuevo (Req 14.1). */
-  crear(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
+  rangoProbabilidad(probabilidad: number): 'baja' | 'media' | 'alta' {
+    const p = Number(probabilidad) || 0;
+    if (p >= 70) {
+      return 'alta';
+    }
+    return p >= 40 ? 'media' : 'baja';
+  }
+
+  // ---------------------------------------------------------------------------
+  // Drag & drop entre columnas (avance principal del pipeline)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Maneja el drop de una tarjeta en una columna. Si cae en la MISMA etapa no
+   * hace nada. Si cae en otra, valida contra la maquina de estados
+   * ({@link TRANSICIONES_ETAPA}): una transicion invalida se avisa y se ignora
+   * (el backend la rechazaria con 409). Una transicion valida delega en
+   * {@link cambiarEtapa}, que pide el motivo cuando el destino es 'perdido'.
+   */
+  soltarEnColumna(evento: CdkDragDrop<EtapaOportunidad>, destino: EtapaOportunidad): void {
+    const oportunidad = evento.item.data as Oportunidad;
+    if (!oportunidad || oportunidad.etapa === destino) {
       return;
     }
-    const v = this.form.getRawValue();
-    this.guardando.set(true);
-    this.service
-      .crear({ clienteId: v.clienteId.trim(), titulo: v.titulo.trim(), valorEstimado: v.valorEstimado })
-      .subscribe({
-        next: () => {
-          this.guardando.set(false);
-          this.toast.exito('Oportunidad creada.');
-          this.formularioAbierto.set(false);
-          this.cargar();
-        },
-        error: (e: HttpErrorResponse) => {
-          this.guardando.set(false);
-          // El cliente se elige de una lista existente; un 404 aqui significa que
-          // dejo de existir (baja concurrente) desde que se cargo el selector.
-          const mensaje =
-            e.status === 404 ? 'El cliente seleccionado no existe.' : mensajeDeError(e);
-          this.toast.error(mensaje);
-        },
-      });
+    if (!this.puedeCambiarEtapa) {
+      return;
+    }
+    const permitidas = TRANSICIONES_ETAPA[oportunidad.etapa] ?? [];
+    if (!permitidas.includes(destino)) {
+      this.toast.info(
+        `No se puede mover de "${ETIQUETA_ETAPA[oportunidad.etapa]}" a "${ETIQUETA_ETAPA[destino]}".`,
+      );
+      return;
+    }
+    this.cambiarEtapa(oportunidad, destino);
   }
 
   /**
@@ -346,11 +353,35 @@ export class ComercialOportunidades {
       }
     }
     this.service.cambiarEtapa(oportunidad.id, etapa, motivo).subscribe({
-      next: () => {
+      next: (actualizada) => {
         this.toast.exito(`Oportunidad movida a "${ETIQUETA_ETAPA[etapa]}".`);
+        // Actualiza en memoria para un feedback inmediato tras el drag & drop.
+        this.oportunidades.update((items) =>
+          items.map((o) => (o.id === actualizada.id ? actualizada : o)),
+        );
+      },
+      error: (e: HttpErrorResponse) => {
+        this.toast.error(mensajeDeError(e));
+        // Recarga para revertir el estado visual si el backend rechazo el cambio.
         this.cargar();
       },
-      error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
+    });
+  }
+
+  /** Abre el modal de alta de Oportunidad y recarga el pipeline si se creo (Req 14.1). */
+  nuevaOportunidad(): void {
+    const ref = this.dialog.open(NuevaOportunidadDialog, {
+      width: 'min(620px, 96vw)',
+      maxWidth: 'min(620px, 96vw)',
+      maxHeight: '92vh',
+      autoFocus: 'first-tabbable',
+      panelClass: 'ds-dialog-panel',
+    });
+    ref.afterClosed().subscribe((creada?: Oportunidad) => {
+      if (creada) {
+        this.toast.exito('Oportunidad creada.');
+        this.cargar();
+      }
     });
   }
 
@@ -373,42 +404,34 @@ export class ComercialOportunidades {
     });
   }
 
-  /** Abre el dialogo para asignar/cambiar el canal de venta de una Oportunidad (Req 2.1). */
-  abrirAsignarCanal(oportunidad: Oportunidad): void {
-    this.canalObjetivo.set(oportunidad);
-    this.formCanal.reset({ canalId: oportunidad.canalVentaId ?? '' });
-  }
-
-  /** Cierra el dialogo de asignacion de canal sin guardar. */
-  cerrarAsignarCanal(): void {
-    this.canalObjetivo.set(null);
-  }
-
   /**
-   * Guarda el canal elegido en el dialogo invocando el endpoint existente
-   * (canalId vacio limpia el canal). Actualiza la Oportunidad en memoria sin
-   * recargar todo el pipeline (Req 2.1, 63.1).
+   * Abre el modal para asignar/cambiar el canal de venta de una Oportunidad
+   * (Req 2.1). Al confirmar, actualiza la Oportunidad en memoria sin recargar todo
+   * el pipeline.
    */
-  guardarCanal(): void {
-    const objetivo = this.canalObjetivo();
-    if (!objetivo || this.guardando()) {
-      return;
-    }
-    const canalId = this.formCanal.getRawValue().canalId || null;
-    this.guardando.set(true);
-    this.service.asignarCanalVenta(objetivo.id, canalId).subscribe({
-      next: (actualizada) => {
-        this.guardando.set(false);
+  asignarCanal(oportunidad: Oportunidad): void {
+    const data: AsignarCanalDialogData = {
+      oportunidad,
+      canales: this.canalesDisponibles(),
+      puedeCrearCanal: this.puedeCrearCanal,
+    };
+    const ref = this.dialog.open(AsignarCanalDialog, {
+      width: 'min(480px, 96vw)',
+      maxWidth: 'min(480px, 96vw)',
+      maxHeight: '92vh',
+      autoFocus: 'first-tabbable',
+      panelClass: 'ds-dialog-panel',
+      data,
+    });
+    ref.afterClosed().subscribe((actualizada?: Oportunidad) => {
+      if (actualizada) {
         this.oportunidades.update((items) =>
           items.map((o) => (o.id === actualizada.id ? actualizada : o)),
         );
-        this.canalObjetivo.set(null);
-        this.toast.exito(canalId ? 'Canal de venta asignado.' : 'Canal de venta retirado.');
-      },
-      error: (e: HttpErrorResponse) => {
-        this.guardando.set(false);
-        this.toast.error(mensajeDeError(e));
-      },
+        this.toast.exito(
+          actualizada.canalVentaId ? 'Canal de venta asignado.' : 'Canal de venta retirado.',
+        );
+      }
     });
   }
 }

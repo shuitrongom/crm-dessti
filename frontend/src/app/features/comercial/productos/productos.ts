@@ -1,23 +1,22 @@
 // =============================================================================
-// Vista de Productos (Req 59, V61) — catalogo con alta/edicion/baja
+// Vista de Productos (Req 59, V61) — catalogo (listado + acciones)
 // -----------------------------------------------------------------------------
-// Listado paginado (DataTable) con filtro por nombre y miniatura de la foto del
-// producto, y formulario reactivo de alta/edicion seccionado con carga de FOTO
-// (archivo de imagen leido como data-URI, con vista previa y opcion de quitar);
-// baja logica con confirmacion. Acciones gobernadas por permiso. La carga de
-// foto reutiliza el patron de Branding: valida tipo (image/*) y tamano (<= 1 MB)
-// en el cliente y guarda el data-URI en el control `foto`.
+// Listado paginado (DataTable) con filtro por nombre y por estado, miniatura de
+// la foto y chip activo/inactivo. El alta y la edicion se hacen en un MODAL
+// animado (ProductoFormDialog). Cada producto puede activarse o desactivarse
+// (baja/reactivacion logica) desde sus acciones. Los KPIs abren el modal
+// explicativo del indicador. Acciones gobernadas por permiso (deny-by-default).
 // =============================================================================
 
 import { Component, computed, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { RouterLink } from '@angular/router';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
 
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../shared/components/state-container/state-container';
@@ -30,26 +29,30 @@ import {
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
 import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
+import {
+  IndicadorInfoDialog,
+  type DatosIndicadorInfo,
+} from '../../../shared/indicadores/indicador-info-dialog';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 import { FaseSolicitud } from '../../../shared/models/estado-solicitud';
 
 import { ProductosService } from '../services/catalogo.service';
-import { Producto, ProductoRequest } from '../models/comercial.models';
+import { Producto } from '../models/comercial.models';
+import { ProductoFormDialog, ProductoFormDialogData } from './producto-form-dialog';
 
-/** Tamano maximo de la foto en bytes (1 MB, alineado con el limite del backend V61). */
-const MAX_FOTO_BYTES = 1024 * 1024;
+/** Estado del filtro del listado. */
+type FiltroEstado = 'activo' | 'inactivo' | 'todos';
 
 @Component({
   selector: 'app-comercial-productos',
   imports: [
-    ReactiveFormsModule,
-    RouterLink,
-    MatCardModule,
     MatFormFieldModule,
+    MatSelectModule,
     MatInputModule,
     MatButtonModule,
     MatIconModule,
+    MatTooltipModule,
     PageHeader,
     StateContainer,
     KpiTile,
@@ -60,23 +63,16 @@ const MAX_FOTO_BYTES = 1024 * 1024;
   styleUrl: './productos.scss',
 })
 export class ComercialProductos {
-  private readonly fb = inject(FormBuilder);
   private readonly service = inject(ProductosService);
   private readonly confirm = inject(ConfirmDialogService);
   private readonly toast = inject(NotificacionesService);
   private readonly overlay = inject(OperacionOverlayService);
   private readonly auth = inject(AuthService);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly puedeCrear = this.auth.tienePermiso('producto', 'crear');
   protected readonly puedeActualizar = this.auth.tienePermiso('producto', 'actualizar');
   protected readonly puedeEliminar = this.auth.tienePermiso('producto', 'eliminar');
-  /**
-   * Habilita la seccion "Precios por lista" que enlaza a Listas de precios, donde
-   * se gestionan los precios por producto. El backend no expone (aun) un endpoint
-   * para leer los precios de un producto en cada lista, por lo que se ofrece un
-   * acceso directo honesto en vez de inventar datos (Req 4.1, 4.3).
-   */
-  protected readonly puedeVerPrecios = this.auth.tienePermiso('lista_precios', 'listar');
 
   protected readonly fase = signal<FaseSolicitud>('cargando');
   protected readonly mensajeError = signal<string | undefined>(undefined);
@@ -85,48 +81,40 @@ export class ComercialProductos {
   protected readonly page = signal(0);
   protected readonly size = signal(20);
   protected readonly filtro = signal('');
+  /** Filtro por estado del listado (activo por defecto). */
+  protected readonly estado = signal<FiltroEstado>('activo');
 
-  protected readonly guardando = signal(false);
-  protected readonly editandoId = signal<string | null>(null);
-  protected readonly formularioAbierto = signal(false);
-  protected readonly tituloFormulario = computed(() =>
-    this.editandoId() ? 'Editar producto' : 'Nuevo producto',
-  );
-
-  /** Numero de Productos activos en la pagina cargada (indicador enterprise). */
-  protected readonly productosActivos = computed<number>(
-    () => this.productos().filter((p) => p.activo).length,
-  );
+  /**
+   * Totales REALES del catalogo (no de la pagina): se leen del totalElements de
+   * consultas de conteo por estado en el backend. Empiezan en null (— mientras
+   * cargan) y se refrescan tras cada alta/baja/reactivacion.
+   */
+  protected readonly totalActivos = signal<number | null>(null);
+  protected readonly totalInactivos = signal<number | null>(null);
+  /** Total del catalogo completo (activos + inactivos). */
+  protected readonly totalCatalogo = computed<number | null>(() => {
+    const a = this.totalActivos();
+    const inac = this.totalInactivos();
+    return a === null || inac === null ? null : a + inac;
+  });
 
   protected readonly columnas: ColumnaTabla[] = [
     { clave: 'foto', encabezado: 'Foto' },
     { clave: 'nombre', encabezado: 'Nombre' },
     { clave: 'unidad', encabezado: 'Unidad', ocultarEnMovil: true },
     { clave: 'descripcion', encabezado: 'Descripción', ocultarEnMovil: true },
+    { clave: 'estado', encabezado: 'Estado' },
     { clave: 'acciones', encabezado: 'Acciones', alineacion: 'fin' },
   ];
 
-  /** Data-URI o URL de la foto (vigente o recien seleccionada), o `null` si no hay. */
-  protected readonly foto = signal<string | null>(null);
-  /** Mensaje de error de la carga de la foto (tipo/tamano invalido). */
-  protected readonly fotoError = signal<string | null>(null);
-
-  protected readonly form = this.fb.nonNullable.group({
-    nombre: ['', [Validators.required, Validators.maxLength(200)]],
-    unidad: ['', [Validators.required, Validators.maxLength(50)]],
-    descripcion: ['', [Validators.required, Validators.maxLength(2000)]],
-    clienteMeta: [''],
-    alianzas: [''],
-    competencia: [''],
-  });
-
   constructor() {
     this.cargar();
+    this.cargarConteos();
   }
 
   cargar(): void {
     this.fase.set('cargando');
-    this.service.listar(this.filtro(), this.page(), this.size()).subscribe({
+    this.service.listar(this.filtro(), this.page(), this.size(), this.estado()).subscribe({
       next: (pagina) => {
         this.productos.set(pagina.content);
         this.total.set(pagina.totalElements);
@@ -139,8 +127,31 @@ export class ComercialProductos {
     });
   }
 
+  /**
+   * Recalcula los TOTALES reales del catalogo (activos e inactivos) del tenant,
+   * leyendo el totalElements de consultas de tamano 1 por estado. Independiente
+   * del filtro de la tabla, de modo que los KPIs no mienten cuando se filtra.
+   */
+  cargarConteos(): void {
+    this.service.listar(null, 0, 1, 'activo').subscribe({
+      next: (p) => this.totalActivos.set(p.totalElements),
+      error: () => this.totalActivos.set(null),
+    });
+    this.service.listar(null, 0, 1, 'inactivo').subscribe({
+      next: (p) => this.totalInactivos.set(p.totalElements),
+      error: () => this.totalInactivos.set(null),
+    });
+  }
+
   aplicarFiltro(valor: string): void {
     this.filtro.set(valor);
+    this.page.set(0);
+    this.cargar();
+  }
+
+  /** Cambia el filtro por estado (activo/inactivo/todos) y recarga. */
+  cambiarEstado(valor: FiltroEstado): void {
+    this.estado.set(valor);
     this.page.set(0);
     this.cargar();
   }
@@ -151,119 +162,60 @@ export class ComercialProductos {
     this.cargar();
   }
 
+  /** Abre el modal de alta de Producto y recarga si se creo (Req 59.1). */
   nuevo(): void {
-    this.editandoId.set(null);
-    this.form.reset({ nombre: '', unidad: '', descripcion: '', clienteMeta: '', alianzas: '', competencia: '' });
-    this.foto.set(null);
-    this.fotoError.set(null);
-    this.formularioAbierto.set(true);
+    this.abrirFormulario();
   }
 
+  /** Abre el modal de edicion con los datos del Producto y recarga si cambio. */
   editar(producto: Producto): void {
-    this.editandoId.set(producto.id);
-    this.form.reset({
-      nombre: producto.nombre,
-      unidad: producto.unidad,
-      descripcion: producto.descripcion,
-      clienteMeta: producto.clienteMeta ?? '',
-      alianzas: producto.alianzas ?? '',
-      competencia: producto.competencia ?? '',
-    });
-    this.foto.set(producto.foto ?? null);
-    this.fotoError.set(null);
-    this.formularioAbierto.set(true);
-  }
-
-  cancelar(): void {
-    this.formularioAbierto.set(false);
-    this.editandoId.set(null);
-    this.foto.set(null);
-    this.fotoError.set(null);
+    this.abrirFormulario(producto);
   }
 
   /**
-   * Carga la foto desde el input de archivo: valida que sea una imagen
-   * (type empieza por `image/`) y que no supere 1 MB, y la lee como data-URI
-   * (base64). Si la validacion falla, muestra un mensaje claro en espanol y NO
-   * modifica la foto actual. Reutiliza el patron de la carga de logo de Branding.
+   * Abre el modal de formulario de Producto (alta si no se pasa `producto`,
+   * edicion si se pasa) y recarga el listado cuando el dialogo confirma.
    */
-  seleccionarFoto(evento: Event): void {
-    this.fotoError.set(null);
-    const input = evento.target as HTMLInputElement;
-    const archivo = input.files?.[0];
-    if (!archivo) {
-      return;
-    }
-    if (!archivo.type.startsWith('image/')) {
-      this.fotoError.set('El archivo debe ser una imagen (PNG, JPG, WebP, etc.).');
-      input.value = '';
-      return;
-    }
-    if (archivo.size > MAX_FOTO_BYTES) {
-      this.fotoError.set('La foto supera el tamano maximo de 1 MB.');
-      input.value = '';
-      return;
-    }
-    const lector = new FileReader();
-    lector.onload = () => this.foto.set(String(lector.result));
-    lector.onerror = () => this.fotoError.set('No se pudo leer el archivo de la foto.');
-    lector.readAsDataURL(archivo);
-    // Permite volver a elegir el mismo archivo tras quitarlo.
-    input.value = '';
-  }
-
-  /** Quita la foto actual (se enviara `foto: null` al guardar). */
-  quitarFoto(): void {
-    this.foto.set(null);
-    this.fotoError.set(null);
-  }
-
-  guardar(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
-    const v = this.form.getRawValue();
-    const request: ProductoRequest = {
-      nombre: v.nombre.trim(),
-      unidad: v.unidad.trim(),
-      descripcion: v.descripcion.trim(),
-      clienteMeta: v.clienteMeta.trim() || null,
-      alianzas: v.alianzas.trim() || null,
-      competencia: v.competencia.trim() || null,
-      foto: this.foto(),
-    };
-    this.guardando.set(true);
-    const id = this.editandoId();
-    const peticion = id ? this.service.actualizar(id, request) : this.service.crear(request);
-    this.overlay
-      .ejecutar(peticion, {
-        tipo: id ? 'guardar' : 'crear',
-        textoProceso: id ? 'Guardando producto…' : 'Creando producto…',
-        textoExito: id ? 'Producto guardado' : 'Producto creado',
-      })
-      .subscribe({
-      next: () => {
-        this.guardando.set(false);
-        this.toast.exito(id ? 'Producto actualizado.' : 'Producto creado.');
-        this.formularioAbierto.set(false);
-        this.editandoId.set(null);
-        this.foto.set(null);
-        this.fotoError.set(null);
+  private abrirFormulario(producto?: Producto): void {
+    const data: ProductoFormDialogData = { producto };
+    const ref = this.dialog.open(ProductoFormDialog, {
+      width: 'min(920px, 96vw)',
+      maxWidth: 'min(920px, 96vw)',
+      maxHeight: '92vh',
+      autoFocus: 'first-tabbable',
+      panelClass: 'ds-dialog-panel',
+      data,
+    });
+    ref.afterClosed().subscribe((guardado?: Producto) => {
+      if (guardado) {
+        this.toast.exito(producto ? 'Producto actualizado.' : 'Producto creado.');
         this.cargar();
-      },
-      error: (e: HttpErrorResponse) => {
-        this.guardando.set(false);
-        this.toast.error(mensajeDeError(e));
-      },
+        this.cargarConteos();
+      }
     });
   }
 
-  async eliminar(producto: Producto): Promise<void> {
+  /**
+   * Abre el dialogo explicativo de un indicador del catalogo (¿qué es? / ¿cómo se
+   * calcula? / ¿por qué importa?). La clave debe coincidir con una del catalogo
+   * central de indicadores.
+   */
+  abrirInfoKpi(clave: string, etiqueta: string, valor: number, unidad: string): void {
+    const datos: DatosIndicadorInfo = { clave, etiqueta, valor, unidad };
+    this.dialog.open(IndicadorInfoDialog, {
+      data: datos,
+      width: '32rem',
+      maxWidth: '92vw',
+      autoFocus: false,
+    });
+  }
+
+  /** Da de baja logica un Producto con confirmacion (Req 59.6). */
+  async desactivar(producto: Producto): Promise<void> {
     const ok = await this.confirm.confirmar({
-      titulo: 'Dar de baja producto',
-      mensaje: `El producto "${producto.nombre}" quedara inactivo. Deseas continuar?`,
-      textoConfirmar: 'Dar de baja',
+      titulo: 'Desactivar producto',
+      mensaje: `El producto "${producto.nombre}" quedara inactivo y no se podra cotizar. Deseas continuar?`,
+      textoConfirmar: 'Desactivar',
       destructiva: true,
     });
     if (!ok) {
@@ -272,13 +224,32 @@ export class ComercialProductos {
     this.overlay
       .ejecutar(this.service.eliminar(producto.id), {
         tipo: 'eliminar',
-        textoProceso: 'Dando de baja…',
-        textoExito: 'Producto dado de baja',
+        textoProceso: 'Desactivando…',
+        textoExito: 'Producto desactivado',
       })
       .subscribe({
         next: () => {
-          this.toast.exito('Producto dado de baja.');
+          this.toast.exito('Producto desactivado.');
           this.cargar();
+          this.cargarConteos();
+        },
+        error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
+      });
+  }
+
+  /** Reactiva un Producto dado de baja (Req 59.6). */
+  activar(producto: Producto): void {
+    this.overlay
+      .ejecutar(this.service.activar(producto.id), {
+        tipo: 'guardar',
+        textoProceso: 'Activando…',
+        textoExito: 'Producto activado',
+      })
+      .subscribe({
+        next: () => {
+          this.toast.exito('Producto activado.');
+          this.cargar();
+          this.cargarConteos();
         },
         error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
       });

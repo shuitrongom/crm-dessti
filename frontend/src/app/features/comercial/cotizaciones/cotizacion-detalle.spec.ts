@@ -61,7 +61,11 @@ function cotizacion(): Cotizacion {
     oportunidadId: null,
     estado: 'borrador',
     subtotal: 1500,
-    total: 1500,
+    descuentoGlobal: 0,
+    iva: 240,
+    retencionIsr: 0,
+    retencionIva: 0,
+    total: 1740,
     partidas: [
       {
         id: 'p1',
@@ -69,6 +73,10 @@ function cotizacion(): Cotizacion {
         descripcion: 'Letrero luminoso',
         cantidad: 1,
         precioUnitario: 1500,
+        descuento: 0,
+        importeBase: 1500,
+        tasaIva: '16',
+        iva: 240,
         subtotal: 1500,
       },
     ],

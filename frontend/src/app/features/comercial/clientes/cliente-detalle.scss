@@ -124,3 +124,27 @@
   font-size: var(--ds-font-size-sm);
   color: var(--ds-color-text-muted);
 }
+
+// -----------------------------------------------------------------------------
+// Pulido visual premium (no altera la estructura): jerarquia y microinteracciones
+// -----------------------------------------------------------------------------
+
+// Los items de listas resumidas reaccionan sutilmente al hover para sugerir que
+// son navegables, sin cambiar su layout. Respeta prefers-reduced-motion.
+.ficha-item {
+  transition:
+    border-color var(--ds-motion-fast, 120ms) ease,
+    box-shadow var(--ds-motion-fast, 120ms) ease,
+    transform var(--ds-motion-fast, 120ms) ease;
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--ds-color-primary) 40%, var(--ds-color-border));
+    box-shadow: var(--ds-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.06));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ficha-item {
+    transition: none;
+  }
+}

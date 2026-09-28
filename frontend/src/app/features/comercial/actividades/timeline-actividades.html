@@ -1,7 +1,8 @@
 <!--
   Timeline de actividades de seguimiento. Se embebe en la ficha del Cliente y en
   el detalle de la Oportunidad. Solo se renderiza si el Usuario puede listar
-  actividades (deny-by-default).
+  actividades (deny-by-default). El alta y la edición se hacen en un MODAL
+  (ActividadFormDialog), no en formularios inline.
 -->
 @if (puedeListar) {
   <mat-card class="timeline-actividades" appearance="outlined">
@@ -16,14 +17,9 @@
         </div>
       </div>
       @if (puedeCrear) {
-        <button
-          mat-flat-button
-          color="primary"
-          type="button"
-          (click)="alternarFormulario()"
-        >
-          <mat-icon aria-hidden="true">{{ mostrarFormulario() ? 'close' : 'add' }}</mat-icon>
-          {{ mostrarFormulario() ? 'Cerrar' : 'Nueva actividad' }}
+        <button mat-flat-button color="primary" type="button" (click)="nueva()">
+          <mat-icon aria-hidden="true">add</mat-icon>
+          Nueva actividad
         </button>
       }
     </mat-card-header>
@@ -43,58 +39,6 @@
         <span class="kpi__etiqueta">Completadas</span>
       </div>
     </div>
-
-    <!-- Formulario de alta -->
-    @if (mostrarFormulario() && puedeCrear) {
-      <form class="timeline-actividades__form" [formGroup]="formulario" (ngSubmit)="crear()">
-        <div class="timeline-actividades__form-fila">
-          <mat-form-field appearance="outline" class="campo-tipo">
-            <mat-label>Tipo</mat-label>
-            <mat-select formControlName="tipo">
-              @for (t of tiposActividad; track t.valor) {
-                <mat-option [value]="t.valor">
-                  <mat-icon aria-hidden="true">{{ t.icono }}</mat-icon>
-                  {{ t.etiqueta }}
-                </mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="campo-asunto">
-            <mat-label>Asunto</mat-label>
-            <input matInput formControlName="asunto" maxlength="200" required />
-            @if (formulario.controls.asunto.hasError('required') && formulario.controls.asunto.touched) {
-              <mat-error>El asunto es obligatorio.</mat-error>
-            }
-          </mat-form-field>
-        </div>
-
-        <div class="timeline-actividades__form-fila">
-          <mat-form-field appearance="outline" class="campo-fecha">
-            <mat-label>Fecha programada</mat-label>
-            <input matInput type="datetime-local" formControlName="fechaProgramada" required />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="campo-fecha">
-            <mat-label>Vencimiento (opcional)</mat-label>
-            <input matInput type="datetime-local" formControlName="vencimiento" />
-          </mat-form-field>
-        </div>
-
-        <mat-form-field appearance="outline" class="campo-descripcion">
-          <mat-label>Descripción (opcional)</mat-label>
-          <textarea matInput formControlName="descripcion" rows="2" maxlength="4000"></textarea>
-        </mat-form-field>
-
-        <div class="timeline-actividades__form-acciones">
-          <button mat-button type="button" (click)="alternarFormulario()">Cancelar</button>
-          <button mat-flat-button color="primary" type="submit" [disabled]="formulario.invalid">
-            <mat-icon aria-hidden="true">save</mat-icon>
-            Registrar
-          </button>
-        </div>
-      </form>
-    }
 
     <!-- Línea de tiempo -->
     <app-state-container
@@ -135,61 +79,32 @@
                 }
               </div>
 
-              @if (editandoId() === a.id) {
-                <!-- Edición en línea de asunto/descripción -->
-                <form
-                  class="timeline__edicion"
-                  [formGroup]="formularioEdicion"
-                  (ngSubmit)="guardarEdicion(a)"
-                >
-                  <mat-form-field appearance="outline" class="campo-asunto">
-                    <mat-label>Asunto</mat-label>
-                    <input matInput formControlName="asunto" maxlength="200" required />
-                  </mat-form-field>
-                  <mat-form-field appearance="outline" class="campo-descripcion">
-                    <mat-label>Descripción</mat-label>
-                    <textarea matInput formControlName="descripcion" rows="2" maxlength="4000"></textarea>
-                  </mat-form-field>
-                  <div class="timeline__edicion-acciones">
-                    <button mat-button type="button" (click)="cancelarEdicion()">Cancelar</button>
-                    <button
-                      mat-flat-button
-                      color="primary"
-                      type="submit"
-                      [disabled]="formularioEdicion.invalid"
-                    >
-                      Guardar
-                    </button>
-                  </div>
-                </form>
-              } @else {
-                <p class="timeline__asunto">{{ a.asunto }}</p>
-                @if (a.descripcion) {
-                  <p class="timeline__descripcion">{{ a.descripcion }}</p>
-                }
-                <div class="timeline__fechas">
-                  <span>
-                    <mat-icon aria-hidden="true">event</mat-icon>
-                    {{ a.fechaProgramada | date: 'medium' }}
-                  </span>
-                  @if (a.vencimiento) {
-                    <span>
-                      <mat-icon aria-hidden="true">schedule</mat-icon>
-                      Vence: {{ a.vencimiento | date: 'medium' }}
-                    </span>
-                  }
-                  @if (a.completadaEn) {
-                    <span>
-                      <mat-icon aria-hidden="true">check_circle</mat-icon>
-                      Completada: {{ a.completadaEn | date: 'medium' }}
-                    </span>
-                  }
-                </div>
+              <p class="timeline__asunto">{{ a.asunto }}</p>
+              @if (a.descripcion) {
+                <p class="timeline__descripcion">{{ a.descripcion }}</p>
               }
+              <div class="timeline__fechas">
+                <span>
+                  <mat-icon aria-hidden="true">event</mat-icon>
+                  {{ a.fechaProgramada | date: 'medium' }}
+                </span>
+                @if (a.vencimiento) {
+                  <span>
+                    <mat-icon aria-hidden="true">schedule</mat-icon>
+                    Vence: {{ a.vencimiento | date: 'medium' }}
+                  </span>
+                }
+                @if (a.completadaEn) {
+                  <span>
+                    <mat-icon aria-hidden="true">check_circle</mat-icon>
+                    Completada: {{ a.completadaEn | date: 'medium' }}
+                  </span>
+                }
+              </div>
             </div>
 
             <!-- Acciones por actividad -->
-            @if ((puedeActualizar || puedeEliminar) && editandoId() !== a.id) {
+            @if (puedeActualizar || puedeEliminar) {
               <button
                 mat-icon-button
                 type="button"

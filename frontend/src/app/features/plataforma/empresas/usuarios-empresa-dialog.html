@@ -1,0 +1,69 @@
+<h2 mat-dialog-title>Usuarios de la empresa</h2>
+<mat-dialog-content>
+  <p class="usuarios-emp__intro">
+    Empresa: <strong>{{ data.empresaNombre }}</strong>
+  </p>
+
+  @if (cargando()) {
+    <p class="usuarios-emp__estado" role="status">
+      <mat-icon aria-hidden="true">hourglass_empty</mat-icon>
+      <span>Cargando usuarios…</span>
+    </p>
+  } @else if (error()) {
+    <p class="usuarios-emp__error" role="alert">
+      <mat-icon aria-hidden="true">error_outline</mat-icon>
+      <span>{{ error() }}</span>
+    </p>
+    <button matButton type="button" (click)="cargar()">Reintentar</button>
+  } @else if (usuarios().length === 0) {
+    <p class="usuarios-emp__estado" role="status">
+      <mat-icon aria-hidden="true">group_off</mat-icon>
+      <span>Esta empresa no tiene usuarios registrados.</span>
+    </p>
+  } @else {
+    <ul class="usuarios-emp__lista">
+      @for (u of usuarios(); track u.id) {
+        <li class="usuarios-emp__item" [class.usuarios-emp__item--inactivo]="!u.activo">
+          <div class="usuarios-emp__datos">
+            <span class="usuarios-emp__login">
+              <code class="usuarios-emp__codigo">{{ u.identificadorAcceso }}</code>
+              <button
+                matIconButton
+                type="button"
+                [attr.aria-label]="
+                  copiado() === u.identificadorAcceso
+                    ? 'Usuario copiado'
+                    : 'Copiar usuario ' + u.identificadorAcceso + ' al portapapeles'
+                "
+                (click)="copiar(u.identificadorAcceso)"
+              >
+                <mat-icon aria-hidden="true">{{
+                  copiado() === u.identificadorAcceso ? 'check' : 'content_copy'
+                }}</mat-icon>
+              </button>
+            </span>
+            @if (u.nombreVisible) {
+              <span class="usuarios-emp__nombre">{{ u.nombreVisible }}</span>
+            }
+            @if (u.roles.length) {
+              <span class="usuarios-emp__roles">{{ u.roles.join(', ') }}</span>
+            }
+          </div>
+          <span
+            class="usuarios-emp__estado-pill"
+            [class.usuarios-emp__estado-pill--activo]="u.activo"
+            [class.usuarios-emp__estado-pill--inactivo]="!u.activo"
+          >
+            {{ u.activo ? 'Activo' : 'Inactivo' }}
+          </span>
+        </li>
+      }
+    </ul>
+    @if (copiado()) {
+      <p class="usuarios-emp__copiado" role="status">Usuario copiado al portapapeles.</p>
+    }
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton="filled" type="button" mat-dialog-close>Cerrar</button>
+</mat-dialog-actions>

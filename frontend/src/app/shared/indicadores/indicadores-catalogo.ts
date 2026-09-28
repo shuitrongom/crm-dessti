@@ -57,6 +57,97 @@ const CATALOGO: Record<string, FichaIndicador> = {
     como: 'Se cuentan las oportunidades en etapas de prospección, propuesta y negociación.',
     porque: 'Mide el volumen de negocios que tu equipo está trabajando ahora mismo.',
   },
+  forecast_ponderado_pipeline: {
+    icono: 'online_prediction', tono: 'info', corta: 'Pronóstico realista de cierre',
+    que: 'Pronóstico de ventas que ajusta el valor de cada oportunidad por su probabilidad de cierre.',
+    como: 'Por cada oportunidad abierta se multiplica su valor estimado por su probabilidad (%) y se suman los resultados.',
+    porque: 'Es una estimación más realista que el valor total del pipeline: cuánto esperas cerrar de verdad.',
+  },
+  ticket_promedio_pipeline: {
+    icono: 'sell', tono: 'info', corta: 'Valor medio por oportunidad',
+    que: 'Valor promedio de cada oportunidad abierta en tu pipeline.',
+    como: 'Se divide el valor total del pipeline abierto entre el número de oportunidades abiertas.',
+    porque: 'Ayuda a dimensionar tus negocios típicos y a fijar metas por vendedor.',
+  },
+  tasa_ganados_pipeline: {
+    icono: 'emoji_events', tono: 'exito', corta: '% de oportunidades ganadas',
+    que: 'Porcentaje de oportunidades que terminaron en venta ganada.',
+    como: 'Oportunidades en etapa "ganado" divididas entre el total de oportunidades, en porcentaje.',
+    porque: 'Mide la efectividad de tu proceso comercial: qué tan seguido conviertes en venta.',
+  },
+  // ---- Productos (catálogo) ----
+  productos_total: {
+    icono: 'inventory_2', tono: 'primario', corta: 'Total en el catálogo',
+    que: 'Número total de productos y servicios registrados en tu catálogo, activos e inactivos.',
+    como: 'Se suman los productos activos y los dados de baja del tenant.',
+    porque: 'Refleja la amplitud de lo que has registrado para cotizar y vender.',
+  },
+  productos_activos: {
+    icono: 'check_circle', tono: 'exito', corta: 'Disponibles para vender',
+    que: 'Productos activos, disponibles para cotizar y vender.',
+    como: 'Se cuentan todos los productos del tenant marcados como activos.',
+    porque: 'Son los productos con los que puedes trabajar hoy; los inactivos quedan archivados.',
+  },
+  productos_inactivos: {
+    icono: 'inventory', tono: 'neutro', corta: 'Dados de baja',
+    que: 'Productos dados de baja (inactivos), que ya no se ofrecen para cotizar.',
+    como: 'Se cuentan todos los productos del tenant marcados como inactivos.',
+    porque: 'Conservan su historial y puedes reactivarlos cuando vuelvas a ofrecerlos.',
+  },
+
+  // ---- Canales de venta ----
+  canales_venta_total: {
+    icono: 'hub', tono: 'primario', corta: 'Total en el catálogo',
+    que: 'Número de canales de venta definidos (las vías por las que vende tu empresa).',
+    como: 'Se cuentan todos los canales de venta activos del tenant.',
+    porque: 'Clasificar oportunidades y cotizaciones por canal te permite medir de dónde vienen tus ventas.',
+  },
+  canales_venta_activos: {
+    icono: 'check_circle', tono: 'exito', corta: 'En uso',
+    que: 'Canales de venta activos, disponibles para clasificar oportunidades y cotizaciones.',
+    como: 'Se cuentan los canales de venta marcados como activos en la página cargada.',
+    porque: 'Son las vías comerciales con las que puedes trabajar hoy.',
+  },
+
+  // ---- Listas de precios ----
+  listas_precios_total: {
+    icono: 'sell', tono: 'primario', corta: 'Total en el catálogo',
+    que: 'Número de listas de precios definidas (por vigencia, prioridad y segmento).',
+    como: 'Se cuentan todas las listas de precios activas del tenant.',
+    porque: 'Cada lista fija el precio de tus productos según el segmento y la vigencia.',
+  },
+  listas_precios_vigentes: {
+    icono: 'event_available', tono: 'exito', corta: 'Aplican hoy',
+    que: 'Listas de precios cuya ventana de vigencia incluye la fecha de hoy.',
+    como: 'Se cuentan las listas activas cuya vigencia (inicio–fin) abarca la fecha actual.',
+    porque: 'Son las listas desde las que se sugiere el precio al cotizar en este momento.',
+  },
+
+  // ---- Clientes (cartera) ----
+  clientes_registrados: {
+    icono: 'groups', tono: 'primario', corta: 'Total en la cartera',
+    que: 'Número total de clientes registrados en tu cartera comercial.',
+    como: 'Se cuentan todos los clientes dados de alta en el sistema.',
+    porque: 'Refleja el tamaño de tu base de clientes: la base de tu negocio.',
+  },
+  clientes_activos: {
+    icono: 'verified_user', tono: 'exito', corta: 'Clientes vigentes',
+    que: 'Clientes que están activos (no dados de baja).',
+    como: 'Se cuentan los clientes marcados como activos.',
+    porque: 'Son tus clientes con los que puedes operar y facturar hoy.',
+  },
+  clientes_personas_morales: {
+    icono: 'domain', tono: 'info', corta: 'Empresas',
+    que: 'Clientes que son personas morales (empresas u organizaciones).',
+    como: 'Se cuentan los clientes cuyo tipo de persona es "moral".',
+    porque: 'Ayuda a entender la composición de tu cartera (empresas vs personas).',
+  },
+  clientes_personas_fisicas: {
+    icono: 'person', tono: 'neutro', corta: 'Personas físicas',
+    que: 'Clientes que son personas físicas (individuos).',
+    como: 'Se cuentan los clientes cuyo tipo de persona es "física".',
+    porque: 'Complementa el panorama de tu cartera junto con las personas morales.',
+  },
   oportunidades_ganadas: {
     icono: 'emoji_events', tono: 'exito', corta: 'Negocios cerrados con éxito',
     que: 'Oportunidades comerciales que cerraste ganando la venta.',
@@ -93,6 +184,12 @@ const CATALOGO: Record<string, FichaIndicador> = {
     como: 'Se cuentan las cotizaciones en estado "rechazada".',
     porque: 'Analizarlas ayuda a ajustar precios y propuestas.',
   },
+  valor_cotizado: {
+    icono: 'payments', tono: 'primario', corta: 'Monto cotizado a clientes',
+    que: 'Suma del total de las cotizaciones mostradas en la página actual.',
+    como: 'Se suman los totales (con IVA, descuentos y retenciones ya aplicados) de las cotizaciones visibles.',
+    porque: 'Estima el valor comercial que has puesto sobre la mesa: tu potencial de venta cotizado.',
+  },
   // Clave usada por la tarjeta "Cotizaciones" del RESUMEN COMERCIAL del home
   // (empresa-home), que se calcula en el cliente y NO proviene del tablero del
   // backend. No la emite ningun adaptador; existe a proposito para el modal del home.
@@ -101,6 +198,32 @@ const CATALOGO: Record<string, FichaIndicador> = {
     que: 'Total de cotizaciones registradas en el sistema, en cualquier estado.',
     como: 'Se cuentan todas las cotizaciones creadas (borrador, enviadas, aprobadas, rechazadas).',
     porque: 'Da una idea del volumen de actividad comercial de tu empresa.',
+  },
+
+  // ---- Actividades (agenda de seguimiento) ----
+  actividades_pendientes: {
+    icono: 'pending_actions', tono: 'advertencia', corta: 'Seguimientos por hacer',
+    que: 'Actividades de seguimiento (llamadas, correos, reuniones, tareas) que siguen pendientes.',
+    como: 'Se cuentan todas las actividades del tenant en estado "pendiente".',
+    porque: 'Es tu carga de trabajo comercial por atender: no dejar cabos sueltos con los clientes.',
+  },
+  actividades_vencidas: {
+    icono: 'warning', tono: 'error', corta: 'Requieren atención inmediata',
+    que: 'Actividades pendientes cuya fecha de vencimiento ya pasó.',
+    como: 'Se cuentan las actividades pendientes con vencimiento (o fecha programada) anterior a hoy.',
+    porque: 'Son compromisos atrasados con clientes: atenderlas evita perder oportunidades.',
+  },
+  actividades_completadas: {
+    icono: 'task_alt', tono: 'exito', corta: 'Seguimientos cerrados',
+    que: 'Actividades de seguimiento que ya se completaron.',
+    como: 'Se cuentan todas las actividades del tenant en estado "completada".',
+    porque: 'Refleja el trabajo de seguimiento efectivamente realizado.',
+  },
+  actividades_canceladas: {
+    icono: 'cancel', tono: 'neutro', corta: 'Seguimientos descartados',
+    que: 'Actividades de seguimiento que se cancelaron sin llegar a completarse.',
+    como: 'Se cuentan todas las actividades del tenant en estado "cancelada".',
+    porque: 'Muchas cancelaciones pueden indicar seguimientos mal planificados o que dejaron de ser relevantes.',
   },
 
   // ---- Produccion ----

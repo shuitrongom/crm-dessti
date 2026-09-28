@@ -1,0 +1,95 @@
+<mat-dialog-content class="lista-form__content">
+  <form class="ds-form" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+    <header class="ds-form__header">
+      <h2 class="ds-form__header-title" mat-dialog-title>{{ titulo() }}</h2>
+      <p class="ds-form__header-subtitle">{{ subtitulo() }}</p>
+    </header>
+
+    @if (error()) {
+      <p class="ds-form__note ds-form__note--warn" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </p>
+    }
+
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Datos de la lista</h3>
+        <p class="ds-form__section-desc">
+          Nombre, prioridad y segmento al que aplica la lista.
+        </p>
+      </div>
+
+      <div class="ds-form__section-body">
+        <div class="ds-form__grid">
+          <div class="ds-form__field ds-form__field--full">
+            <mat-form-field appearance="outline">
+              <mat-label>Nombre</mat-label>
+              <input matInput type="text" formControlName="nombre" autocomplete="off" maxlength="200" required />
+              @if (form.controls.nombre.hasError('required') && form.controls.nombre.touched) {
+                <mat-error>El nombre es obligatorio.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Prioridad</mat-label>
+              <input matInput type="number" formControlName="prioridad" min="0" step="1" required />
+            </mat-form-field>
+            <p class="ds-form__help">Mayor prioridad aplica primero al cotizar.</p>
+          </div>
+
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Segmento</mat-label>
+              <input matInput type="text" formControlName="segmento" autocomplete="off" />
+            </mat-form-field>
+            <p class="ds-form__help">Opcional (p. ej. mayoreo, VIP). Vacío = General.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Vigencia</h3>
+        <p class="ds-form__section-desc">
+          Periodo en que la lista aplica. Deja el fin vacío para vigencia abierta.
+        </p>
+      </div>
+
+      <div class="ds-form__section-body">
+        <div class="ds-form__grid">
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Vigencia inicio</mat-label>
+              <input matInput [matDatepicker]="pickerInicio" formControlName="vigenciaInicio" required />
+              <mat-datepicker-toggle matSuffix [for]="pickerInicio" />
+              <mat-datepicker #pickerInicio />
+              @if (form.controls.vigenciaInicio.hasError('required') && form.controls.vigenciaInicio.touched) {
+                <mat-error>La fecha de inicio es obligatoria.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Vigencia fin</mat-label>
+              <input matInput [matDatepicker]="pickerFin" formControlName="vigenciaFin" />
+              <mat-datepicker-toggle matSuffix [for]="pickerFin" />
+              <mat-datepicker #pickerFin />
+            </mat-form-field>
+            <p class="ds-form__help">Opcional. Vacío = vigencia abierta.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancelar()" [disabled]="guardando()">Cancelar</button>
+  <button matButton="filled" type="button" (click)="guardar()" [disabled]="guardando() || form.invalid">
+    {{ esEdicion ? 'Guardar cambios' : 'Crear lista' }}
+  </button>
+</mat-dialog-actions>

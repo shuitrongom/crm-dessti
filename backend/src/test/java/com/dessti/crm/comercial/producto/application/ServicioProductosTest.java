@@ -126,14 +126,14 @@ class ServicioProductosTest {
         Producto p = Producto.crear("Pantalla", "pieza", "desc", null, null, null, null, "ventas");
         Pageable pageable = PageRequest.of(0, 20);
         Page<Producto> pagina = new PageImpl<>(List.of(p), pageable, 1);
-        when(productoRepository.buscarActivosPorNombre(eq("pantalla"), any(Pageable.class)))
+        when(productoRepository.buscarPorNombreYEstado(eq("pantalla"), eq(Boolean.TRUE), any(Pageable.class)))
                 .thenReturn(pagina);
 
         Page<ProductoDto> resultado = servicio.listarProductos("  PANTALLA  ", pageable);
 
         assertThat(resultado.getContent()).hasSize(1);
         assertThat(resultado.getContent().get(0).nombre()).isEqualTo("Pantalla");
-        verify(productoRepository).buscarActivosPorNombre(eq("pantalla"), any(Pageable.class));
+        verify(productoRepository).buscarPorNombreYEstado(eq("pantalla"), eq(Boolean.TRUE), any(Pageable.class));
     }
 
     @Test

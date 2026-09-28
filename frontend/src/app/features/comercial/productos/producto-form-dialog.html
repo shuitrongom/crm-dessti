@@ -1,0 +1,165 @@
+<mat-dialog-content class="producto-form__content">
+  <form class="ds-form" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+    <header class="ds-form__header">
+      <h2 class="ds-form__header-title" mat-dialog-title>{{ titulo() }}</h2>
+      <p class="ds-form__header-subtitle">{{ subtitulo() }}</p>
+    </header>
+
+    @if (error()) {
+      <p class="ds-form__note ds-form__note--warn" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </p>
+    }
+
+    <!-- Sección: Foto (two-pane) -->
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Foto del producto</h3>
+        <p class="ds-form__section-desc">Una imagen ayuda a identificarlo al cotizar.</p>
+      </div>
+
+      <div class="ds-form__section-body">
+        <div class="producto-foto">
+          @if (foto(); as src) {
+            <img
+              class="producto-foto__preview"
+              [src]="src"
+              [alt]="form.controls.nombre.value.trim() || 'Vista previa del producto'"
+            />
+          } @else {
+            <span class="producto-foto__placeholder" aria-hidden="true">
+              <mat-icon>add_photo_alternate</mat-icon>
+            </span>
+          }
+          <div class="producto-foto__controles">
+            <span class="producto-foto__ayuda">Imagen (PNG, JPG, WebP). Máximo 1 MB.</span>
+            <div class="producto-foto__botones">
+              <label class="producto-foto__boton">
+                <input
+                  type="file"
+                  class="producto-foto__input"
+                  accept="image/*"
+                  aria-label="Cargar foto del producto"
+                  (change)="seleccionarFoto($event)"
+                />
+                <span matButton="outlined">
+                  <mat-icon aria-hidden="true">upload</mat-icon>
+                  {{ foto() ? 'Cambiar foto' : 'Cargar foto' }}
+                </span>
+              </label>
+              @if (foto()) {
+                <button matButton type="button" (click)="quitarFoto()">Quitar foto</button>
+              }
+            </div>
+            @if (fotoError()) {
+              <p class="ds-form__note ds-form__note--warn" role="alert">
+                <mat-icon aria-hidden="true">error_outline</mat-icon>
+                <span>{{ fotoError() }}</span>
+              </p>
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sección: Datos generales (two-pane) -->
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Datos generales</h3>
+        <p class="ds-form__section-desc">Nombre, unidad de medida y descripción del producto.</p>
+      </div>
+
+      <div class="ds-form__section-body">
+        <div class="ds-form__grid">
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Nombre</mat-label>
+              <input matInput type="text" formControlName="nombre" autocomplete="off" maxlength="200" required />
+              @if (form.controls.nombre.hasError('required') && form.controls.nombre.touched) {
+                <mat-error>El nombre es obligatorio.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Unidad de medida</mat-label>
+              <input matInput type="text" formControlName="unidad" autocomplete="off" maxlength="50" required />
+              @if (form.controls.unidad.hasError('required') && form.controls.unidad.touched) {
+                <mat-error>La unidad es obligatoria.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field ds-form__field--full">
+            <mat-form-field appearance="outline">
+              <mat-label>Descripción</mat-label>
+              <textarea matInput rows="2" formControlName="descripcion" maxlength="2000" required></textarea>
+              @if (form.controls.descripcion.hasError('required') && form.controls.descripcion.touched) {
+                <mat-error>La descripción es obligatoria.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sección: Datos comerciales (two-pane) -->
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Datos comerciales</h3>
+        <p class="ds-form__section-desc">Información opcional para orientar la venta.</p>
+      </div>
+
+      <div class="ds-form__section-body">
+        <div class="ds-form__grid">
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Cliente meta</mat-label>
+              <input matInput type="text" formControlName="clienteMeta" autocomplete="off" />
+            </mat-form-field>
+          </div>
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Alianzas</mat-label>
+              <input matInput type="text" formControlName="alianzas" autocomplete="off" />
+            </mat-form-field>
+          </div>
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Competencia</mat-label>
+              <input matInput type="text" formControlName="competencia" autocomplete="off" />
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sección: Precios por lista (solo edición) -->
+    @if (esEdicion && puedeVerPrecios) {
+      <section class="ds-form__section">
+        <div class="ds-form__section-aside">
+          <h3 class="ds-form__section-title">Precios por lista</h3>
+          <p class="ds-form__section-desc">Los precios se gestionan en cada lista de precios.</p>
+        </div>
+
+        <div class="ds-form__section-body">
+          <p class="ds-form__help">
+            Al cotizar, si eliges el producto sin capturar precio, se sugiere el de la lista vigente.
+          </p>
+          <a matButton="outlined" routerLink="/empresa/comercial/listas-precios" mat-dialog-close>
+            <mat-icon aria-hidden="true">sell</mat-icon>
+            Gestionar precios por lista
+          </a>
+        </div>
+      </section>
+    }
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancelar()" [disabled]="guardando()">Cancelar</button>
+  <button matButton="filled" type="button" (click)="guardar()" [disabled]="guardando() || form.invalid">
+    {{ esEdicion ? 'Guardar cambios' : 'Crear producto' }}
+  </button>
+</mat-dialog-actions>

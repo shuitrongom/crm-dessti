@@ -49,4 +49,36 @@ public interface ProductoRepository extends JpaRepository<Producto, UUID> {
               AND LOWER(p.nombre) LIKE CONCAT('%', :criterio, '%')
             """)
     Page<Producto> buscarActivosPorNombre(@Param("criterio") String criterio, Pageable pageable);
+
+    /**
+     * Busca un Producto por su identificador dentro del tenant vigente
+     * <strong>sin</strong> exigir que este activo. Sirve para la reactivacion de
+     * un Producto dado de baja (Req 59.6): a diferencia de
+     * {@link #findByIdAndActivoTrue(UUID)}, tambien resuelve Productos inactivos.
+     * Un Producto de otro tenant sigue sin resolverse (aislamiento, Req 23.3).
+     *
+     * @param id identificador del Producto.
+     * @return el Producto (activo o inactivo) del tenant, o vacio.
+     */
+    Optional<Producto> findById(UUID id);
+
+    /**
+     * Listado paginado de Productos del tenant vigente cuyo nombre contiene el
+     * criterio (sin distinguir mayusculas), filtrable por estado activo/inactivo
+     * o TODOS cuando {@code activo} es {@code null}. Extiende
+     * {@link #buscarActivosPorNombre(String, Pageable)} para poder mostrar y
+     * reactivar los Productos dados de baja (Req 59.6, 59.7).
+     *
+     * @param criterio subcadena a buscar en el nombre (en minusculas).
+     * @param activo   {@code true}=activos, {@code false}=inactivos, {@code null}=todos.
+     * @param pageable parametros de paginacion ya acotados (20/100).
+     * @return la pagina de Productos que cumplen el filtro.
+     */
+    @Query("""
+            SELECT p FROM Producto p
+            WHERE LOWER(p.nombre) LIKE CONCAT('%', :criterio, '%')
+              AND (:activo IS NULL OR p.activo = :activo)
+            """)
+    Page<Producto> buscarPorNombreYEstado(@Param("criterio") String criterio,
+                                          @Param("activo") Boolean activo, Pageable pageable);
 }

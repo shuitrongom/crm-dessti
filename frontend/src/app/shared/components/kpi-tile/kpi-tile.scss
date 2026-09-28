@@ -122,18 +122,25 @@
     color: var(--mat-sys-on-surface-variant, #49454f);
   }
 
+  // Descripcion de la tarjeta: SIEMPRE visible y completa. No se trunca ni con
+  // ellipsis ni con line-clamp; hace wrap y parte palabras largas si hace falta,
+  // de modo que la etiqueta nunca se pierde por estrecho que sea el contenedor.
   &__label {
     margin: 0;
     font-size: 0.74rem;
     font-weight: 500;
     color: var(--mat-sys-on-surface-variant, #49454f);
     line-height: 1.25;
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 
   &__sub {
     margin: 0;
     font-size: 0.68rem;
     color: var(--mat-sys-on-surface-variant, #49454f);
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 
   &__spark {

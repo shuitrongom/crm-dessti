@@ -9,41 +9,28 @@
   </div>
 </app-page-header>
 
-@if (formularioAbierto()) {
-  <mat-card appearance="outlined" class="comercial-form">
-    <mat-card-header>
-      <mat-card-title>{{ tituloFormulario() }}</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      <form class="ds-dialog-form" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
-        <mat-form-field appearance="outline">
-          <mat-label>Nombre</mat-label>
-          <input matInput type="text" formControlName="nombre" required />
-          @if (form.controls.nombre.hasError('required') && form.controls.nombre.touched) {
-            <mat-error>El nombre es obligatorio.</mat-error>
-          }
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Descripción (opcional)</mat-label>
-          <textarea matInput rows="2" formControlName="descripcion"></textarea>
-        </mat-form-field>
-        <div class="comercial-form__acciones">
-          <button matButton type="button" (click)="cancelar()" [disabled]="guardando()">Cancelar</button>
-          <button matButton="filled" type="submit" [disabled]="guardando()">Guardar</button>
-        </div>
-      </form>
-    </mat-card-content>
-  </mat-card>
-}
-
 <!-- Tira de indicadores (patron enterprise: outcome-first). Solo cuando el
      listado cargo correctamente para no distraer en vacio. -->
 @if (fase() === "ok") {
   <section class="comercial-kpis" aria-label="Indicadores de canales de venta">
-    <app-kpi-tile icono="hub" tono="primario" etiqueta="Canales de venta"
-      sublabel="Total en el catálogo" [valor]="total()" />
-    <app-kpi-tile icono="check_circle" tono="exito" etiqueta="Activos"
-      sublabel="En esta página" [valor]="canalesActivos()" />
+    <button
+      type="button"
+      class="kpi-boton"
+      (click)="abrirInfoKpi('canales_venta_total', 'Canales de venta', total(), 'conteo')"
+      aria-label="Ver explicación de Canales de venta"
+    >
+      <app-kpi-tile icono="hub" tono="primario" etiqueta="Canales de venta"
+        sublabel="Total en el catálogo" [valor]="total()" />
+    </button>
+    <button
+      type="button"
+      class="kpi-boton"
+      (click)="abrirInfoKpi('canales_venta_activos', 'Activos', canalesActivos(), 'conteo')"
+      aria-label="Ver explicación de Canales activos"
+    >
+      <app-kpi-tile icono="check_circle" tono="exito" etiqueta="Activos"
+        sublabel="En esta página" [valor]="canalesActivos()" />
+    </button>
   </section>
 }
 
@@ -72,7 +59,7 @@
     <ng-template appCelda="acciones" let-fila>
       <div class="comercial-acciones-fila">
         @if (puedeActualizar) {
-          <button matIconButton type="button" (click)="editar(fila)" aria-label="Editar canal">
+          <button matIconButton type="button" (click)="editar(fila)" matTooltip="Editar" aria-label="Editar canal">
             <mat-icon aria-hidden="true">edit</mat-icon>
           </button>
         }
@@ -82,6 +69,7 @@
             type="button"
             class="ds-boton-destructivo"
             (click)="eliminar(fila)"
+            matTooltip="Dar de baja"
             aria-label="Dar de baja canal"
           >
             <mat-icon aria-hidden="true">delete</mat-icon>

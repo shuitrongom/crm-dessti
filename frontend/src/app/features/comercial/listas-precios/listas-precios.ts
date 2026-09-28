@@ -1,28 +1,24 @@
 // =============================================================================
-// Vista de Listas de precios (Req 59) — CRUD + asignacion de precios
+// Vista de Listas de precios (Req 59) — listado + acciones (modales)
 // -----------------------------------------------------------------------------
-// Listado paginado (DataTable) con filtro por nombre, alta/edicion (vigencia,
-// prioridad, segmento), baja logica y asignacion del precio de un Producto en la
-// lista. Acciones gobernadas por permiso lista_precios:{...}.
+// Listado paginado (DataTable) con filtro por nombre. El alta/edicion de una
+// lista y la asignacion de precios se hacen en MODALES animados (ListaFormDialog,
+// AsignarPrecioDialog). La baja es logica con confirmacion. Los KPIs abren el
+// modal explicativo del indicador. Acciones gobernadas por lista_precios:{...}.
 // =============================================================================
 
 import { Component, computed, inject, signal } from '@angular/core';
-import { CurrencyPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-
-import { Observable } from 'rxjs';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
 
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../shared/components/state-container/state-container';
 import { KpiTile } from '../../../shared/components/kpi-tile/kpi-tile';
-import { EntitySelect } from '../../../shared/components/entity-select/entity-select';
 import {
   CeldaTablaDirective,
   ColumnaTabla,
@@ -30,42 +26,42 @@ import {
 } from '../../../shared/components/data-table/data-table';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import {
+  IndicadorInfoDialog,
+  type DatosIndicadorInfo,
+} from '../../../shared/indicadores/indicador-info-dialog';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
-import { PaginaResponse } from '../../../core/models/pagina-response';
 import { FaseSolicitud } from '../../../shared/models/estado-solicitud';
 
-import { ListasPreciosService, ProductosService } from '../services/catalogo.service';
-import { ListaPrecios, PrecioLista, Producto } from '../models/comercial.models';
+import { ListasPreciosService } from '../services/catalogo.service';
+import { ListaPrecios } from '../models/comercial.models';
+import { ListaFormDialog, ListaFormDialogData } from './lista-form-dialog';
+import { AsignarPrecioDialog, AsignarPrecioDialogData } from './asignar-precio-dialog';
 
 @Component({
   selector: 'app-comercial-listas-precios',
   imports: [
-    CurrencyPipe,
-    ReactiveFormsModule,
-    MatCardModule,
     MatFormFieldModule,
     MatInputModule,
-    MatDatepickerModule,
     MatButtonModule,
     MatIconModule,
+    MatTooltipModule,
     PageHeader,
     StateContainer,
     KpiTile,
     DataTable,
     CeldaTablaDirective,
-    EntitySelect,
   ],
   templateUrl: './listas-precios.html',
   styleUrl: './listas-precios.scss',
 })
 export class ComercialListasPrecios {
-  private readonly fb = inject(FormBuilder);
   private readonly service = inject(ListasPreciosService);
-  private readonly productos = inject(ProductosService);
   private readonly confirm = inject(ConfirmDialogService);
   private readonly toast = inject(NotificacionesService);
   private readonly auth = inject(AuthService);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly puedeCrear = this.auth.tienePermiso('lista_precios', 'crear');
   protected readonly puedeActualizar = this.auth.tienePermiso('lista_precios', 'actualizar');
@@ -78,30 +74,14 @@ export class ComercialListasPrecios {
   protected readonly size = signal(20);
   protected readonly filtro = signal('');
 
-  protected readonly guardando = signal(false);
-  protected readonly editandoId = signal<string | null>(null);
-  protected readonly formularioAbierto = signal(false);
-  /** Lista sobre la que se esta asignando un precio (o null). */
-  protected readonly asignandoPrecioA = signal<ListaPrecios | null>(null);
-  /** Precios ya asignados en la lista abierta (para confirmar visualmente el guardado). */
-  protected readonly preciosDeLista = signal<PrecioLista[]>([]);
-  protected readonly cargandoPrecios = signal(false);
-  protected readonly tituloFormulario = computed(() =>
-    this.editandoId() ? 'Editar lista de precios' : 'Nueva lista de precios',
-  );
-
   /**
    * Numero de Listas VIGENTES hoy en la pagina cargada: activas y cuya ventana de
-   * vigencia (inicio..fin, fin abierto si es null) incluye la fecha actual. Las
-   * fechas del DTO son ISO (YYYY-MM-DD), comparables lexicograficamente contra hoy.
+   * vigencia (inicio..fin, fin abierto si es null) incluye la fecha actual.
    */
   protected readonly listasVigentes = computed<number>(() => {
     const hoy = new Date().toISOString().slice(0, 10);
     return this.listas().filter(
-      (l) =>
-        l.activo &&
-        l.vigenciaInicio <= hoy &&
-        (l.vigenciaFin == null || l.vigenciaFin >= hoy),
+      (l) => l.activo && l.vigenciaInicio <= hoy && (l.vigenciaFin == null || l.vigenciaFin >= hoy),
     ).length;
   });
 
@@ -112,30 +92,6 @@ export class ComercialListasPrecios {
     { clave: 'vigencia', encabezado: 'Vigencia' },
     { clave: 'acciones', encabezado: 'Acciones', alineacion: 'fin' },
   ];
-
-  protected readonly form = this.fb.nonNullable.group({
-    nombre: ['', [Validators.required, Validators.maxLength(200)]],
-    prioridad: [0, [Validators.required]],
-    segmento: [''],
-    vigenciaInicio: ['', [Validators.required]],
-    vigenciaFin: [''],
-  });
-
-  protected readonly formPrecio = this.fb.nonNullable.group({
-    productoId: ['', [Validators.required]],
-    precio: [0, [Validators.required, Validators.min(0.01), Validators.max(999999999.99)]],
-  });
-
-  /** Busca Productos por nombre para el selector de asignacion (nunca UUID a mano). */
-  protected readonly buscarProducto = (filtro: string): Observable<PaginaResponse<Producto>> =>
-    this.productos.listar(filtro, 0, 20);
-
-  /** Etiqueta principal de un Producto en el selector. */
-  protected readonly etiquetaProducto = (producto: Producto): string => producto.nombre;
-
-  /** Detalle secundario (unidad) de un Producto en el selector. */
-  protected readonly detalleProducto = (producto: Producto): string | null =>
-    producto.unidad || null;
 
   constructor() {
     this.cargar();
@@ -168,62 +124,74 @@ export class ComercialListasPrecios {
     this.cargar();
   }
 
+  /** Abre el modal de alta de Lista y recarga si se creo. */
   nuevo(): void {
-    this.editandoId.set(null);
-    this.form.reset({ nombre: '', prioridad: 0, segmento: '', vigenciaInicio: '', vigenciaFin: '' });
-    this.formularioAbierto.set(true);
-    this.asignandoPrecioA.set(null);
+    this.abrirFormulario();
   }
 
+  /** Abre el modal de edicion con los datos de la Lista y recarga si cambio. */
   editar(lista: ListaPrecios): void {
-    this.editandoId.set(lista.id);
-    this.form.reset({
-      nombre: lista.nombre,
-      prioridad: lista.prioridad,
-      segmento: lista.segmento ?? '',
-      vigenciaInicio: lista.vigenciaInicio,
-      vigenciaFin: lista.vigenciaFin ?? '',
+    this.abrirFormulario(lista);
+  }
+
+  /**
+   * Abre el modal de formulario de Lista (alta si no se pasa `lista`, edicion si
+   * se pasa) y recarga el listado cuando el dialogo confirma.
+   */
+  private abrirFormulario(lista?: ListaPrecios): void {
+    const data: ListaFormDialogData = { lista };
+    const ref = this.dialog.open(ListaFormDialog, {
+      width: 'min(760px, 96vw)',
+      maxWidth: 'min(760px, 96vw)',
+      maxHeight: '92vh',
+      autoFocus: 'first-tabbable',
+      panelClass: 'ds-dialog-panel',
+      data,
     });
-    this.formularioAbierto.set(true);
-    this.asignandoPrecioA.set(null);
-  }
-
-  cancelar(): void {
-    this.formularioAbierto.set(false);
-    this.editandoId.set(null);
-  }
-
-  guardar(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
-    const v = this.form.getRawValue();
-    const request = {
-      nombre: v.nombre.trim(),
-      prioridad: Number(v.prioridad),
-      segmento: v.segmento.trim() || null,
-      vigenciaInicio: v.vigenciaInicio,
-      vigenciaFin: v.vigenciaFin || null,
-    };
-    this.guardando.set(true);
-    const id = this.editandoId();
-    const peticion = id ? this.service.actualizar(id, request) : this.service.definir(request);
-    peticion.subscribe({
-      next: () => {
-        this.guardando.set(false);
-        this.toast.exito(id ? 'Lista actualizada.' : 'Lista creada.');
-        this.formularioAbierto.set(false);
-        this.editandoId.set(null);
+    ref.afterClosed().subscribe((guardada?: ListaPrecios) => {
+      if (guardada) {
+        this.toast.exito(lista ? 'Lista actualizada.' : 'Lista creada.');
         this.cargar();
-      },
-      error: (e: HttpErrorResponse) => {
-        this.guardando.set(false);
-        this.toast.error(mensajeDeError(e));
-      },
+      }
     });
   }
 
+  /** Abre el modal para asignar precios a los productos de la lista. */
+  abrirAsignarPrecio(lista: ListaPrecios): void {
+    const data: AsignarPrecioDialogData = { lista };
+    const ref = this.dialog.open(AsignarPrecioDialog, {
+      width: 'min(620px, 96vw)',
+      maxWidth: 'min(620px, 96vw)',
+      maxHeight: '92vh',
+      autoFocus: 'first-tabbable',
+      panelClass: 'ds-dialog-panel',
+      data,
+    });
+    ref.afterClosed().subscribe((huboCambios?: boolean) => {
+      if (huboCambios) {
+        // Los precios no cambian las columnas del listado, pero se recarga por
+        // consistencia (p. ej. si se quiere reflejar conteos en el futuro).
+        this.cargar();
+      }
+    });
+  }
+
+  /**
+   * Abre el dialogo explicativo de un indicador de listas de precios (¿qué es? /
+   * ¿cómo se calcula? / ¿por qué importa?). La clave debe coincidir con una del
+   * catalogo central de indicadores.
+   */
+  abrirInfoKpi(clave: string, etiqueta: string, valor: number, unidad: string): void {
+    const datos: DatosIndicadorInfo = { clave, etiqueta, valor, unidad };
+    this.dialog.open(IndicadorInfoDialog, {
+      data: datos,
+      width: '32rem',
+      maxWidth: '92vw',
+      autoFocus: false,
+    });
+  }
+
+  /** Da de baja logica una Lista con confirmacion (Req 59). */
   async eliminar(lista: ListaPrecios): Promise<void> {
     const ok = await this.confirm.confirmar({
       titulo: 'Dar de baja lista de precios',
@@ -240,58 +208,6 @@ export class ComercialListasPrecios {
         this.cargar();
       },
       error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
-    });
-  }
-
-  /** Abre el panel de asignacion de precio para una lista. */
-  abrirAsignarPrecio(lista: ListaPrecios): void {
-    this.asignandoPrecioA.set(lista);
-    this.formPrecio.reset({ productoId: '', precio: 0 });
-    this.formularioAbierto.set(false);
-    this.cargarPreciosDeLista(lista.id);
-  }
-
-  /** Carga los precios ya asignados en la lista para mostrarlos bajo el formulario. */
-  private cargarPreciosDeLista(listaId: string): void {
-    this.cargandoPrecios.set(true);
-    this.service.listarPrecios(listaId).subscribe({
-      next: (precios) => {
-        this.preciosDeLista.set(precios);
-        this.cargandoPrecios.set(false);
-      },
-      error: () => {
-        this.preciosDeLista.set([]);
-        this.cargandoPrecios.set(false);
-      },
-    });
-  }
-
-  cerrarAsignarPrecio(): void {
-    this.asignandoPrecioA.set(null);
-  }
-
-  /** Asigna el precio de un Producto en la lista seleccionada (Req 59.3, 59.10). */
-  asignarPrecio(): void {
-    const lista = this.asignandoPrecioA();
-    if (!lista || this.formPrecio.invalid) {
-      this.formPrecio.markAllAsTouched();
-      return;
-    }
-    const v = this.formPrecio.getRawValue();
-    this.guardando.set(true);
-    this.service.asignarPrecio(lista.id, { productoId: v.productoId.trim(), precio: Number(v.precio) }).subscribe({
-      next: () => {
-        this.guardando.set(false);
-        this.toast.exito('Precio asignado.');
-        // Mantener el panel abierto y refrescar los precios de la lista para que
-        // el Usuario vea el precio recien guardado reflejado (bugfix #8).
-        this.formPrecio.reset({ productoId: '', precio: 0 });
-        this.cargarPreciosDeLista(lista.id);
-      },
-      error: (e: HttpErrorResponse) => {
-        this.guardando.set(false);
-        this.toast.error(mensajeDeError(e));
-      },
     });
   }
 }

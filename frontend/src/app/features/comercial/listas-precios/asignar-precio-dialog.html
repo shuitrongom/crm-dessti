@@ -1,0 +1,72 @@
+<h2 mat-dialog-title>Asignar precio</h2>
+<mat-dialog-content class="asignar-precio__content">
+  <p class="asignar-precio__intro">
+    Lista: <strong>{{ lista.nombre }}</strong>
+  </p>
+
+  @if (error()) {
+    <p class="ds-form__note ds-form__note--warn" role="alert">
+      <mat-icon aria-hidden="true">error_outline</mat-icon>
+      <span>{{ error() }}</span>
+    </p>
+  }
+
+  <form class="asignar-precio__form" [formGroup]="form" (ngSubmit)="asignar()" novalidate>
+    <app-entity-select
+      formControlName="productoId"
+      etiqueta="Producto"
+      ayuda="Busca por nombre y elige el producto de la lista."
+      placeholder="Busca por nombre…"
+      [obligatorio]="true"
+      [buscador]="buscarProducto"
+      [etiquetaDe]="etiquetaProducto"
+      [detalleDe]="detalleProducto"
+    />
+
+    <div class="asignar-precio__precio-fila">
+      <mat-form-field appearance="outline" class="asignar-precio__precio">
+        <mat-label>Precio</mat-label>
+        <span matTextPrefix>$&nbsp;</span>
+        <input matInput type="number" formControlName="precio" min="0.01" step="0.01" required />
+        <span matTextSuffix>MXN</span>
+        @if (form.controls.precio.invalid && form.controls.precio.touched) {
+          <mat-error>El precio debe estar entre 0.01 y 999,999,999.99.</mat-error>
+        }
+      </mat-form-field>
+      <button matButton="filled" type="submit" [disabled]="guardando()">
+        <mat-icon aria-hidden="true">add</mat-icon>
+        Asignar
+      </button>
+    </div>
+  </form>
+
+  <!-- Precios ya asignados en la lista -->
+  <div class="asignar-precio__asignados">
+    <h3 class="asignar-precio__asignados-titulo">Precios en esta lista</h3>
+    @if (cargandoPrecios()) {
+      <p class="asignar-precio__estado" role="status">
+        <mat-icon aria-hidden="true">hourglass_empty</mat-icon>
+        <span>Cargando precios…</span>
+      </p>
+    } @else if (precios().length === 0) {
+      <p class="asignar-precio__estado" role="status">
+        <mat-icon aria-hidden="true">info</mat-icon>
+        <span>Aún no hay precios asignados en esta lista.</span>
+      </p>
+    } @else {
+      <ul class="asignar-precio__lista">
+        @for (pp of precios(); track pp.productoId) {
+          <li class="asignar-precio__item">
+            <span class="asignar-precio__item-producto">{{ pp.productoNombre }}</span>
+            <span class="asignar-precio__item-precio">
+              {{ pp.precio | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}
+            </span>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton="filled" type="button" (click)="cerrar()">Listo</button>
+</mat-dialog-actions>

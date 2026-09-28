@@ -20,6 +20,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDialog } from '@angular/material/dialog';
 
 import { Observable } from 'rxjs';
 
@@ -38,6 +39,7 @@ import { FaseSolicitud } from '../../../shared/models/estado-solicitud';
 import { CotizacionesService } from '../services/cotizaciones.service';
 import { CanalesVentaService, ProductosService } from '../services/catalogo.service';
 import { EnviarCorreoDialogService } from './enviar-correo-dialog';
+import { CotizacionPreviewDialog, CotizacionPreviewDialogData } from './cotizacion-preview-dialog';
 import {
   CanalVenta,
   Cotizacion,
@@ -88,6 +90,7 @@ export class ComercialCotizacionDetalle implements OnInit {
   private readonly correoDialog = inject(EnviarCorreoDialogService);
   private readonly toast = inject(NotificacionesService);
   private readonly auth = inject(AuthService);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly puedeActualizar = this.auth.tienePermiso('cotizacion', 'actualizar');
   protected readonly puedeLeer = this.auth.tienePermiso('cotizacion', 'leer');
@@ -238,6 +241,26 @@ export class ComercialCotizacionDetalle implements OnInit {
     this.service.listarPruebas(this.id(), 0, 50).subscribe({
       next: (pagina) => this.pruebas.set(pagina.content),
       error: () => this.pruebas.set([]),
+    });
+  }
+
+  /**
+   * Abre la vista previa imprimible del PDF en un modal (Imprimir / Descargar),
+   * sin salir del detalle. Reutiliza el mismo dialogo que el listado.
+   */
+  verPrevia(): void {
+    const c = this.cotizacion();
+    if (!c) {
+      return;
+    }
+    const data: CotizacionPreviewDialogData = { id: c.id, folio: c.folio };
+    this.dialog.open(CotizacionPreviewDialog, {
+      data,
+      width: 'min(960px, 96vw)',
+      maxWidth: 'min(960px, 96vw)',
+      maxHeight: '94vh',
+      panelClass: 'ds-dialog-panel',
+      autoFocus: false,
     });
   }
 

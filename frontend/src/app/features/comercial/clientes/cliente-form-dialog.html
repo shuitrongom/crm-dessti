@@ -1,0 +1,243 @@
+<mat-dialog-content class="cliente-form__content">
+  <form class="ds-form" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+    <!-- Encabezado con contexto -->
+    <header class="ds-form__header">
+      <h2 class="ds-form__header-title" mat-dialog-title>{{ titulo() }}</h2>
+      <p class="ds-form__header-subtitle">{{ subtitulo() }}</p>
+    </header>
+
+    @if (error()) {
+      <p class="ds-form__note ds-form__note--warn" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </p>
+    }
+
+    <!-- Sección: Identificación (two-pane) -->
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Identificación</h3>
+        <p class="ds-form__section-desc">
+          Razón social o nombre, tipo de persona y RFC del cliente.
+        </p>
+      </div>
+
+      <div class="ds-form__section-body">
+        <div class="ds-form__grid">
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Nombre o razón social</mat-label>
+              <input matInput type="text" formControlName="nombre" autocomplete="off" required />
+              @if (form.controls.nombre.hasError('required') && form.controls.nombre.touched) {
+                <mat-error>El nombre es obligatorio.</mat-error>
+              } @else if (form.controls.nombre.hasError('maxlength') && form.controls.nombre.touched) {
+                <mat-error>El nombre admite máximo 200 caracteres.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Nombre comercial</mat-label>
+              <input matInput type="text" formControlName="nombreComercial" autocomplete="off" maxlength="200" />
+              @if (form.controls.nombreComercial.hasError('maxlength') && form.controls.nombreComercial.touched) {
+                <mat-error>El nombre comercial admite máximo 200 caracteres.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Tipo de persona</mat-label>
+              <mat-select formControlName="tipoPersona">
+                <mat-option value="">Sin especificar</mat-option>
+                @for (tipo of tiposPersona; track tipo.valor) {
+                  <mat-option [value]="tipo.valor">{{ tipo.etiqueta }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>RFC</mat-label>
+              <input
+                matInput
+                type="text"
+                formControlName="rfc"
+                autocomplete="off"
+                required
+                maxlength="13"
+                oninput="this.value = this.value.toUpperCase()"
+              />
+              @if (form.controls.rfc.hasError('required') && form.controls.rfc.touched) {
+                <mat-error>El RFC es obligatorio.</mat-error>
+              } @else if (form.controls.rfc.hasError('duplicado')) {
+                <mat-error>Ya existe un cliente con ese RFC.</mat-error>
+              } @else if (form.controls.rfc.hasError('rfc') && form.controls.rfc.touched) {
+                <mat-error>El RFC no tiene un formato válido (12 o 13 caracteres).</mat-error>
+              }
+            </mat-form-field>
+            <p class="ds-form__help">12 (moral) o 13 (física) caracteres. Ej.: ABC010101AB1</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sección: Contacto (two-pane) -->
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Contacto</h3>
+        <p class="ds-form__section-desc">
+          Al menos un correo o un teléfono para poder contactar al cliente.
+        </p>
+      </div>
+
+      <div class="ds-form__section-body">
+        <div class="ds-form__grid">
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Correo electrónico</mat-label>
+              <input matInput type="email" formControlName="email" autocomplete="off" maxlength="254" />
+              @if (form.controls.email.hasError('email') && form.controls.email.touched) {
+                <mat-error>El correo no tiene un formato válido.</mat-error>
+              } @else if (form.controls.email.hasError('maxlength') && form.controls.email.touched) {
+                <mat-error>El correo admite máximo 254 caracteres.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Teléfono</mat-label>
+              <input
+                matInput
+                type="tel"
+                formControlName="telefono"
+                autocomplete="off"
+                inputmode="numeric"
+                maxlength="10"
+              />
+              @if (form.controls.telefono.hasError('pattern') && form.controls.telefono.touched) {
+                <mat-error>El teléfono debe tener 10 dígitos.</mat-error>
+              }
+            </mat-form-field>
+            <p class="ds-form__help">10 dígitos.</p>
+          </div>
+
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Teléfono adicional</mat-label>
+              <input
+                matInput
+                type="tel"
+                formControlName="telefonoAdicional"
+                autocomplete="off"
+                inputmode="numeric"
+                maxlength="10"
+              />
+              @if (form.controls.telefonoAdicional.hasError('pattern') && form.controls.telefonoAdicional.touched) {
+                <mat-error>El teléfono debe tener 10 dígitos.</mat-error>
+              }
+            </mat-form-field>
+            <p class="ds-form__help">10 dígitos.</p>
+          </div>
+        </div>
+        @if (form.hasError('contacto') && form.touched) {
+          <p class="ds-form__note ds-form__note--warn" role="alert">
+            <mat-icon aria-hidden="true">error_outline</mat-icon>
+            <span>Proporcione al menos un correo o un teléfono.</span>
+          </p>
+        }
+      </div>
+    </section>
+
+    <!-- Sección: Dirección (two-pane) -->
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Dirección</h3>
+        <p class="ds-form__section-desc">
+          Busca la dirección para autocompletar los campos, o captúralos manualmente.
+        </p>
+      </div>
+
+      <div class="ds-form__section-body">
+        <app-address-autocomplete (direccionSeleccionada)="onDireccion($event)" />
+        <div class="ds-form__grid">
+          <div class="ds-form__field ds-form__field--full">
+            <mat-form-field appearance="outline">
+              <mat-label>Calle y número</mat-label>
+              <input matInput type="text" formControlName="direccionCalle" autocomplete="off" maxlength="200" />
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Ciudad</mat-label>
+              <input matInput type="text" formControlName="direccionCiudad" autocomplete="off" maxlength="120" />
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Estado</mat-label>
+              <input matInput type="text" formControlName="direccionEstado" autocomplete="off" maxlength="120" />
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Código postal</mat-label>
+              <input
+                matInput
+                type="text"
+                formControlName="direccionCp"
+                autocomplete="off"
+                inputmode="numeric"
+                maxlength="10"
+              />
+              @if (form.controls.direccionCp.hasError('pattern') && form.controls.direccionCp.touched) {
+                <mat-error>El código postal solo admite dígitos.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>País</mat-label>
+              <input matInput type="text" formControlName="direccionPais" autocomplete="off" maxlength="80" />
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sección: Notas (two-pane) -->
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Notas</h3>
+        <p class="ds-form__section-desc">
+          Información interna adicional sobre el cliente (opcional).
+        </p>
+      </div>
+
+      <div class="ds-form__section-body">
+        <div class="ds-form__grid">
+          <div class="ds-form__field ds-form__field--full">
+            <mat-form-field appearance="outline">
+              <mat-label>Notas</mat-label>
+              <textarea matInput rows="3" formControlName="notas" [maxlength]="maxNotas"></textarea>
+              <mat-hint align="end">{{ longitudNotas() }} / {{ maxNotas }}</mat-hint>
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+    </section>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancelar()" [disabled]="guardando()">Cancelar</button>
+  <button matButton="filled" type="button" (click)="guardar()" [disabled]="guardando() || form.invalid">
+    {{ esEdicion ? 'Guardar cambios' : 'Crear cliente' }}
+  </button>
+</mat-dialog-actions>

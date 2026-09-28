@@ -1,0 +1,73 @@
+<mat-dialog-content class="nueva-oportunidad__content">
+  <form class="ds-form" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+    <header class="ds-form__header">
+      <h2 class="ds-form__header-title" mat-dialog-title>Nueva oportunidad</h2>
+      <p class="ds-form__header-subtitle">
+        Registra una oportunidad en el pipeline. Nace en la etapa inicial del embudo.
+      </p>
+    </header>
+
+    @if (error()) {
+      <p class="ds-form__note ds-form__note--warn" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </p>
+    }
+
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Datos de la oportunidad</h3>
+        <p class="ds-form__section-desc">
+          El cliente y una estimación del valor comercial de esta oportunidad.
+        </p>
+      </div>
+
+      <div class="ds-form__section-body">
+        <div class="ds-form__grid">
+          <div class="ds-form__field ds-form__field--full">
+            <app-entity-select
+              formControlName="clienteId"
+              etiqueta="Cliente"
+              ayuda="Busca por nombre o RFC y elige el cliente de la lista."
+              placeholder="Busca por nombre o RFC…"
+              [obligatorio]="true"
+              [buscador]="buscarCliente"
+              [etiquetaDe]="etiquetaCliente"
+              [detalleDe]="detalleCliente"
+            />
+          </div>
+
+          <div class="ds-form__field ds-form__field--full">
+            <mat-form-field appearance="outline">
+              <mat-label>Título</mat-label>
+              <input matInput type="text" formControlName="titulo" autocomplete="off" maxlength="200" required />
+              @if (form.controls.titulo.hasError('required') && form.controls.titulo.touched) {
+                <mat-error>El título es obligatorio.</mat-error>
+              } @else if (form.controls.titulo.hasError('maxlength') && form.controls.titulo.touched) {
+                <mat-error>El título admite máximo 200 caracteres.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Valor estimado</mat-label>
+              <input matInput type="number" formControlName="valorEstimado" min="0.01" step="0.01" required />
+              <span matTextPrefix>$&nbsp;</span>
+              @if (form.controls.valorEstimado.invalid && form.controls.valorEstimado.touched) {
+                <mat-error>Ingresa un valor entre 0.01 y 999,999,999.99.</mat-error>
+              }
+            </mat-form-field>
+            <p class="ds-form__help">Monto estimado del negocio (MXN).</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancelar()" [disabled]="guardando()">Cancelar</button>
+  <button matButton="filled" type="button" (click)="guardar()" [disabled]="guardando() || form.invalid">
+    Crear oportunidad
+  </button>
+</mat-dialog-actions>

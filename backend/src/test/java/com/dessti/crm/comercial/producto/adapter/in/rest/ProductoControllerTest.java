@@ -10,6 +10,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -137,7 +138,7 @@ class ProductoControllerTest {
         when(autorizador.tiene("producto", "listar")).thenReturn(true);
         Pageable pageable = PageRequest.of(0, 20);
         Page<ProductoDto> pagina = new PageImpl<>(List.of(productoDto()), pageable, 1);
-        when(servicioProductos.listarProductos(any(), any(Pageable.class))).thenReturn(pagina);
+        when(servicioProductos.listarProductos(any(), any(), any(Pageable.class))).thenReturn(pagina);
 
         mockMvc.perform(get("/productos").param("filtro", "led").with(user("ventas")))
                 .andExpect(status().isOk())
@@ -159,6 +160,27 @@ class ProductoControllerTest {
         mockMvc.perform(delete("/productos/{id}", ID).with(user("ventas")).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.activo").value(false));
+    }
+
+    @Test
+    void activar_devuelve200_conProductoReactivado() throws Exception {
+        when(autorizador.tiene("producto", "actualizar")).thenReturn(true);
+        Instant ahora = Instant.parse("2024-01-01T00:00:00Z");
+        ProductoDto reactivado = new ProductoDto(ID, "Pantalla LED", "pieza", "desc",
+                null, null, null, null, true, 2L, ahora, ahora);
+        when(servicioProductos.reactivarProducto(ID)).thenReturn(reactivado);
+
+        mockMvc.perform(put("/productos/{id}/activar", ID).with(user("ventas")).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.activo").value(true));
+    }
+
+    @Test
+    void activar_devuelve403_cuandoFaltaPermiso() throws Exception {
+        when(autorizador.tiene(anyString(), anyString())).thenReturn(false);
+
+        mockMvc.perform(put("/productos/{id}/activar", ID).with(user("sin_permiso")).with(csrf()))
+                .andExpect(status().isForbidden());
     }
 
     @Test

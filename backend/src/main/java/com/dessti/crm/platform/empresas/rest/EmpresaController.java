@@ -1,5 +1,6 @@
 package com.dessti.crm.platform.empresas.rest;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Pageable;
@@ -26,6 +27,7 @@ import com.dessti.crm.platform.empresas.ResetPasswordAdminDto;
 import com.dessti.crm.platform.empresas.ServicioEmpresas;
 import com.dessti.crm.platform.empresas.ServicioSuscripciones;
 import com.dessti.crm.platform.empresas.SuscripcionDto;
+import com.dessti.crm.platform.empresas.UsuarioEmpresaDto;
 import com.dessti.crm.platform.tenant.TenantContext;
 import com.dessti.crm.platform.web.pagination.PageRequestFactory;
 import com.dessti.crm.platform.web.pagination.PaginaResponse;
@@ -49,6 +51,9 @@ import jakarta.validation.Valid;
  *   <li>{@code PUT /empresas/{id}/modulos} — edita el subconjunto de modulos
  *       habilitados de la Empresa sobre su Suscripcion activa (Req 25.4).</li>
  *   <li>{@code GET /empresas/{id}} — consulta una Empresa (Req 24.1).</li>
+ *   <li>{@code GET /empresas/{id}/usuarios} — lista las cuentas de Usuario de la
+ *       Empresa (login, estado y roles) para soporte del {@code super_admin}
+ *       cuando el Administrador_Empresa olvida su identificador de acceso.</li>
  *   <li>{@code GET /empresas} — lista paginada (20/100) filtrable por estado
  *       (Req 24.5).</li>
  * </ul>
@@ -350,6 +355,29 @@ public class EmpresaController {
     @PreAuthorize("@autorizador.tiene('empresa','leer')")
     public ResponseEntity<EmpresaDto> consultar(@PathVariable("id") UUID id) {
         return ResponseEntity.ok(servicioEmpresas.consultarEmpresa(id));
+    }
+
+    /**
+     * Lista las cuentas de Usuario de una Empresa para el {@code super_admin}
+     * (soporte): permite recuperar el identificador de acceso (login) de los
+     * Usuarios de un tenant cuando su Administrador_Empresa lo olvida.
+     *
+     * <p>Se protege con el permiso de plataforma {@code empresa:leer} (sembrado a
+     * {@code super_admin} en V5); ningun rol de empresa lo posee, por lo que Spring
+     * Security responde 403 a cualquier otro usuario. Una Empresa inexistente
+     * produce 404.</p>
+     *
+     * <p>Cada {@link UsuarioEmpresaDto} expone el identificador de acceso (login),
+     * el nombre visible, si la cuenta esta activa y sus roles; nunca el hash de la
+     * contrasena (Req 11.3) ni datos de negocio de la Empresa (Req 24.3).</p>
+     *
+     * @param id identificador de la Empresa cuyas cuentas se listan.
+     * @return 200 OK con la lista de cuentas de la Empresa, ordenada por login.
+     */
+    @GetMapping("/{id}/usuarios")
+    @PreAuthorize("@autorizador.tiene('empresa','leer')")
+    public ResponseEntity<List<UsuarioEmpresaDto>> listarUsuarios(@PathVariable("id") UUID id) {
+        return ResponseEntity.ok(servicioEmpresas.listarUsuariosDeEmpresa(id));
     }
 
     /**

@@ -24,6 +24,7 @@ import {
   ExportacionTenant,
   ResetPasswordAdmin,
   ResultadoEliminacionTenant,
+  UsuarioEmpresa,
 } from '../models/plataforma.models';
 
 /**
@@ -199,6 +200,16 @@ export class EmpresasService {
       this.api.url(`/empresas/${empresaId}/admin/reset-password`),
       body ?? {},
     );
+  }
+
+  /**
+   * Lista las cuentas de Usuario de una Empresa (GET /empresas/{id}/usuarios).
+   * Permite al super_admin recuperar el identificador de acceso (login) de los
+   * Usuarios de un tenant cuando su administrador lo olvida. Requiere el permiso
+   * `empresa:leer`. Devuelve 404 si la Empresa no existe.
+   */
+  listarUsuarios(empresaId: string): Observable<UsuarioEmpresa[]> {
+    return this.http.get<UsuarioEmpresa[]>(this.api.url(`/empresas/${empresaId}/usuarios`));
   }
 
   // --- Offboarding (Req 69) ---

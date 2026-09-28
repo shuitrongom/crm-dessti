@@ -173,7 +173,7 @@
       </mat-chip-set>
     </ng-template>
     <ng-template appCelda="acciones" let-empresa>
-      @if ((puedeEditar || puedeCambiarEstado || puedeRestablecer || puedeVerPlan) && empresa.estado !== 'cancelada') {
+      @if ((puedeEditar || puedeCambiarEstado || puedeRestablecer || puedeVerPlan || puedeVerUsuarios) && empresa.estado !== 'cancelada') {
         <button
           matIconButton
           type="button"
@@ -210,6 +210,12 @@
             <button mat-menu-item type="button" (click)="planSuscripcion(empresa)">
               <mat-icon aria-hidden="true">workspace_premium</mat-icon>
               <span>Plan y suscripción</span>
+            </button>
+          }
+          @if (puedeVerUsuarios) {
+            <button mat-menu-item type="button" (click)="verUsuarios(empresa)">
+              <mat-icon aria-hidden="true">group</mat-icon>
+              <span>Ver usuarios (login)</span>
             </button>
           }
           @if (puedeRestablecer) {

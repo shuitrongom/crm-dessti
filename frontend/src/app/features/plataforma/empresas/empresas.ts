@@ -64,6 +64,7 @@ import {
 import { CrearEmpresaDialog } from './crear-empresa-dialog';
 import { EditarEmpresaDialog, EditarEmpresaDialogData } from './editar-empresa-dialog';
 import { ResetPasswordDialog, ResetPasswordDialogData } from './reset-password-dialog';
+import { UsuariosEmpresaDialog, UsuariosEmpresaDialogData } from './usuarios-empresa-dialog';
 import { CambiarGiroDialog, CambiarGiroDialogData } from './cambiar-giro-dialog';
 import { PlanSuscripcionDialog, PlanSuscripcionDialogData } from './plan-suscripcion-dialog';
 
@@ -193,6 +194,12 @@ export class PlataformaEmpresas {
    * se reutiliza `empresa:crear` como predicado (deny-by-default).
    */
   protected readonly puedeRestablecer = this.auth.tienePermiso('empresa', 'crear');
+  /**
+   * Permiso para consultar las cuentas de Usuario de una Empresa (soporte de
+   * login olvidado). Reutiliza `empresa:leer`, que el backend concede al
+   * super_admin para consultar Empresas (deny-by-default).
+   */
+  protected readonly puedeVerUsuarios = this.auth.tienePermiso('empresa', 'leer');
   /**
    * Permiso de lectura de suscripciones. Gobierna la visibilidad de la columna
    * "Plan" del listado (y, mas adelante, la accion del panel "Plan y
@@ -501,6 +508,25 @@ export class PlataformaEmpresas {
       empresaNombre: empresa.nombre,
     };
     this.dialog.open(ResetPasswordDialog, {
+      width: 'min(560px, 96vw)',
+      maxHeight: '92vh',
+      autoFocus: 'first-tabbable',
+      panelClass: 'ds-dialog-panel',
+      data,
+    });
+  }
+
+  /**
+   * Abre el dialogo "Usuarios de la empresa": lista las cuentas del tenant con su
+   * identificador de acceso (login) para que el super_admin lo recupere cuando el
+   * administrador lo olvida. Es una consulta de solo lectura; no recarga la lista.
+   */
+  verUsuarios(empresa: Empresa): void {
+    const data: UsuariosEmpresaDialogData = {
+      empresaId: empresa.id,
+      empresaNombre: empresa.nombre,
+    };
+    this.dialog.open(UsuariosEmpresaDialog, {
       width: 'min(560px, 96vw)',
       maxHeight: '92vh',
       autoFocus: 'first-tabbable',

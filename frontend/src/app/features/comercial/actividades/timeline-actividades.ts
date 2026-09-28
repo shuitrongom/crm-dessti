@@ -8,29 +8,27 @@
 //
 // Presenta:
 //   - Una fila de indicadores de seguimiento (pendientes, vencidas, completadas).
-//   - Un formulario compacto de alta de actividad (tipo, asunto, fecha, etc.).
-//   - Una línea de tiempo cronológica (desc) con acciones por actividad:
-//     completar, cancelar, reprogramar, editar y eliminar.
+//   - Una línea de tiempo cronológica (desc) con acciones por actividad.
+//
+// El alta y la edición se hacen en un MODAL animado (ActividadFormDialog),
+// consistente con el resto de la plataforma; el resto de acciones (completar,
+// cancelar, eliminar) usan el overlay de operación premium.
 //
 // Gating por permiso (deny-by-default): el alta/edición requiere actividad:crear
 // / actividad:actualizar / actividad:eliminar; el timeline requiere
-// actividad:listar. Reutiliza el overlay de operación premium para el feedback.
-// No inventa endpoints: consume exclusivamente ActividadesService.
+// actividad:listar. No inventa endpoints: consume exclusivamente
+// ActividadesService.
 // =============================================================================
 
 import { Component, OnInit, computed, effect, inject, input, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatChipsModule } from '@angular/material/chips';
+import { MatDialog } from '@angular/material/dialog';
 
 import { StateContainer } from '../../../shared/components/state-container/state-container';
 import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
@@ -46,9 +44,8 @@ import {
   ETIQUETA_ESTADO_ACTIVIDAD,
   ETIQUETA_TIPO_ACTIVIDAD,
   ICONO_TIPO_ACTIVIDAD,
-  TIPOS_ACTIVIDAD,
-  TipoActividad,
 } from '../models/comercial.models';
+import { ActividadFormDialog, ActividadFormDialogData } from './actividad-form-dialog';
 
 /** Tamano de pagina del timeline (resumen amplio, no paginacion visible). */
 const TAMANO_TIMELINE = 100;
@@ -57,16 +54,11 @@ const TAMANO_TIMELINE = 100;
   selector: 'app-comercial-timeline-actividades',
   imports: [
     DatePipe,
-    ReactiveFormsModule,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
     MatMenuModule,
     MatTooltipModule,
-    MatChipsModule,
     StateContainer,
   ],
   templateUrl: './timeline-actividades.html',
@@ -83,7 +75,7 @@ export class TimelineActividades implements OnInit {
   private readonly overlay = inject(OperacionOverlayService);
   private readonly notificaciones = inject(NotificacionesService);
   private readonly auth = inject(AuthService);
-  private readonly fb = inject(FormBuilder);
+  private readonly dialog = inject(MatDialog);
 
   // Gating por permiso (deny-by-default, Req 3).
   protected readonly puedeListar = this.auth.tienePermiso('actividad', 'listar');
@@ -91,7 +83,6 @@ export class TimelineActividades implements OnInit {
   protected readonly puedeActualizar = this.auth.tienePermiso('actividad', 'actualizar');
   protected readonly puedeEliminar = this.auth.tienePermiso('actividad', 'eliminar');
 
-  protected readonly tiposActividad = TIPOS_ACTIVIDAD;
   protected readonly etiquetaTipo = ETIQUETA_TIPO_ACTIVIDAD;
   protected readonly etiquetaEstado = ETIQUETA_ESTADO_ACTIVIDAD;
   protected readonly iconoTipo = ICONO_TIPO_ACTIVIDAD;
@@ -99,27 +90,6 @@ export class TimelineActividades implements OnInit {
   protected readonly fase = signal<FaseSolicitud>('cargando');
   protected readonly error = signal<string | undefined>(undefined);
   protected readonly actividades = signal<Actividad[]>([]);
-
-  /** Controla la visibilidad del formulario de alta. */
-  protected readonly mostrarFormulario = signal(false);
-
-  /** Id de la actividad en edicion de asunto/descripcion (o null si ninguna). */
-  protected readonly editandoId = signal<string | null>(null);
-
-  /** Formulario de alta de actividad. La fecha usa datetime-local (hora local). */
-  protected readonly formulario = this.fb.nonNullable.group({
-    tipo: ['llamada' as TipoActividad, Validators.required],
-    asunto: ['', [Validators.required, Validators.maxLength(200)]],
-    descripcion: ['', Validators.maxLength(4000)],
-    fechaProgramada: [this.ahoraLocalInput(), Validators.required],
-    vencimiento: [''],
-  });
-
-  /** Formulario de edicion de asunto/descripcion (edicion en linea). */
-  protected readonly formularioEdicion = this.fb.nonNullable.group({
-    asunto: ['', [Validators.required, Validators.maxLength(200)]],
-    descripcion: ['', Validators.maxLength(4000)],
-  });
 
   // --- Indicadores de seguimiento (calculados en cliente) --------------------
 
@@ -173,51 +143,40 @@ export class TimelineActividades implements OnInit {
       });
   }
 
-  /** Abre/cierra el formulario de alta, restableciendo sus valores. */
-  alternarFormulario(): void {
-    const abierto = !this.mostrarFormulario();
-    this.mostrarFormulario.set(abierto);
-    if (abierto) {
-      this.formulario.reset({
-        tipo: 'llamada',
-        asunto: '',
-        descripcion: '',
-        fechaProgramada: this.ahoraLocalInput(),
-        vencimiento: '',
-      });
-    }
+  /** Abre el modal de alta de actividad y recarga el timeline si se creó. */
+  nueva(): void {
+    this.abrirFormulario();
   }
 
-  /** Registra una nueva actividad de seguimiento. */
-  crear(): void {
-    if (this.formulario.invalid || !this.puedeCrear) {
-      this.formulario.markAllAsTouched();
-      return;
-    }
-    const v = this.formulario.getRawValue();
-    const request = {
+  /** Abre el modal de edición con los datos de la actividad y recarga si cambió. */
+  editar(actividad: Actividad): void {
+    this.abrirFormulario(actividad);
+  }
+
+  /**
+   * Abre el modal de formulario de Actividad (alta si no se pasa `actividad`,
+   * edición si se pasa) y recarga el timeline cuando el diálogo confirma.
+   */
+  private abrirFormulario(actividad?: Actividad): void {
+    const data: ActividadFormDialogData = {
+      actividad,
       clienteId: this.clienteId(),
-      oportunidadId: this.oportunidadId() ?? undefined,
-      tipo: v.tipo,
-      asunto: v.asunto.trim(),
-      descripcion: v.descripcion.trim() || undefined,
-      fechaProgramada: this.aIso(v.fechaProgramada),
-      vencimiento: v.vencimiento ? this.aIso(v.vencimiento) : undefined,
+      oportunidadId: this.oportunidadId(),
     };
-    this.overlay
-      .ejecutar(this.actividadesService.crear(request), {
-        tipo: 'crear',
-        textoProceso: 'Registrando actividad…',
-        textoExito: 'Actividad registrada',
-      })
-      .subscribe({
-        next: () => {
-          this.notificaciones.exito('Actividad registrada en el historial.');
-          this.mostrarFormulario.set(false);
-          this.cargar();
-        },
-        error: (e: HttpErrorResponse) => this.notificaciones.error(mensajeDeError(e)),
-      });
+    const ref = this.dialog.open(ActividadFormDialog, {
+      width: 'min(720px, 96vw)',
+      maxWidth: 'min(720px, 96vw)',
+      maxHeight: '92vh',
+      autoFocus: 'first-tabbable',
+      panelClass: 'ds-dialog-panel',
+      data,
+    });
+    ref.afterClosed().subscribe((guardada?: Actividad) => {
+      if (guardada) {
+        this.notificaciones.exito(actividad ? 'Actividad actualizada.' : 'Actividad registrada en el historial.');
+        this.cargar();
+      }
+    });
   }
 
   /** Marca una actividad como completada. */
@@ -271,61 +230,8 @@ export class TimelineActividades implements OnInit {
       });
   }
 
-  /** Abre la edicion en linea de asunto/descripcion de una actividad. */
-  editar(actividad: Actividad): void {
-    this.editandoId.set(actividad.id);
-    this.formularioEdicion.reset({
-      asunto: actividad.asunto,
-      descripcion: actividad.descripcion ?? '',
-    });
-  }
-
-  /** Cancela la edicion en linea. */
-  cancelarEdicion(): void {
-    this.editandoId.set(null);
-  }
-
-  /** Guarda la edicion de asunto/descripcion de la actividad en edicion. */
-  guardarEdicion(actividad: Actividad): void {
-    if (this.formularioEdicion.invalid) {
-      this.formularioEdicion.markAllAsTouched();
-      return;
-    }
-    const v = this.formularioEdicion.getRawValue();
-    this.overlay
-      .ejecutar(
-        this.actividadesService.editar(actividad.id, {
-          asunto: v.asunto.trim(),
-          descripcion: v.descripcion.trim() || undefined,
-        }),
-        { tipo: 'guardar', textoProceso: 'Guardando…', textoExito: 'Actividad actualizada' },
-      )
-      .subscribe({
-        next: () => {
-          this.notificaciones.exito('Actividad actualizada.');
-          this.editandoId.set(null);
-          this.cargar();
-        },
-        error: (e: HttpErrorResponse) => this.notificaciones.error(mensajeDeError(e)),
-      });
-  }
-
   /** Indica si una actividad esta vencida (para resaltarla en el timeline). */
   protected esVencida(actividad: Actividad): boolean {
     return actividadVencida(actividad);
-  }
-
-  /** Convierte un valor de <input type="datetime-local"> a ISO-8601 (UTC). */
-  private aIso(valorLocal: string): string {
-    // El input datetime-local entrega 'YYYY-MM-DDTHH:mm' en hora local; el
-    // constructor Date lo interpreta como local y toISOString lo pasa a UTC.
-    return new Date(valorLocal).toISOString();
-  }
-
-  /** Valor 'YYYY-MM-DDTHH:mm' del instante actual en hora local para el input. */
-  private ahoraLocalInput(): string {
-    const ahora = new Date();
-    const offset = ahora.getTimezoneOffset() * 60000;
-    return new Date(ahora.getTime() - offset).toISOString().slice(0, 16);
   }
 }
