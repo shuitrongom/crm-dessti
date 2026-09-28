@@ -28,6 +28,7 @@ import {
   DataTable,
 } from '../../../shared/components/data-table/data-table';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 import {
@@ -68,6 +69,7 @@ export class RhNominaOrganizacion {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(RhNominaService);
   private readonly toast = inject(NotificacionesService);
+  private readonly overlay = inject(OperacionOverlayService);
   private readonly auth = inject(AuthService);
 
   protected readonly puedeCrearPuesto = this.auth.tienePermiso('puesto', 'crear');
@@ -154,12 +156,15 @@ export class RhNominaOrganizacion {
     }
     const v = this.formPuesto.getRawValue();
     this.guardandoPuesto.set(true);
-    this.service
-      .crearPuesto({
-        nombre: v.nombre,
-        descripcion: v.descripcion || null,
-        puestoSuperiorId: v.puestoSuperiorId || null,
-      })
+    this.overlay
+      .ejecutar(
+        this.service.crearPuesto({
+          nombre: v.nombre,
+          descripcion: v.descripcion || null,
+          puestoSuperiorId: v.puestoSuperiorId || null,
+        }),
+        { tipo: 'crear', textoProceso: 'Creando puesto…', textoExito: 'Puesto creado' },
+      )
       .subscribe({
         next: () => {
           this.guardandoPuesto.set(false);
@@ -218,13 +223,16 @@ export class RhNominaOrganizacion {
     }
     const v = this.formEval.getRawValue();
     this.guardandoEval.set(true);
-    this.service
-      .registrarEvaluacion({
-        empleadoId: v.empleadoId,
-        periodo: v.periodo,
-        calificacion: v.calificacion,
-        comentarios: v.comentarios || null,
-      })
+    this.overlay
+      .ejecutar(
+        this.service.registrarEvaluacion({
+          empleadoId: v.empleadoId,
+          periodo: v.periodo,
+          calificacion: v.calificacion,
+          comentarios: v.comentarios || null,
+        }),
+        { tipo: 'crear', textoProceso: 'Registrando evaluación…', textoExito: 'Evaluación registrada' },
+      )
       .subscribe({
         next: () => {
           this.guardandoEval.set(false);

@@ -45,3 +45,7 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+// El scorecard fiscal (KPIs + composicion + serie mensual) ahora usa por completo
+// los componentes compartidos <app-dashboard-section> + <app-kpi-tile>. Sus
+// estilos viven en esos componentes; aqui ya no se duplica nada del dashboard.

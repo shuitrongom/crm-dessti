@@ -13,34 +13,15 @@
      listado cargo correctamente para no distraer en vacio. -->
 @if (fase() === "ok") {
   <section class="comercial-kpis" aria-label="Indicadores de cotizaciones">
-    <article class="comercial-kpi comercial-kpi--valor">
-      <span class="comercial-kpi__icono" aria-hidden="true"><mat-icon>payments</mat-icon></span>
-      <span class="comercial-kpi__cuerpo">
-        <span class="comercial-kpi__valor">{{ valorPagina() | currency: monedaPorDefecto : "symbol-narrow" : "1.0-0" : "es-MX" }}</span>
-        <span class="comercial-kpi__etiqueta">Valor en esta página</span>
-      </span>
-    </article>
-    <article class="comercial-kpi">
-      <span class="comercial-kpi__icono" aria-hidden="true"><mat-icon>request_quote</mat-icon></span>
-      <span class="comercial-kpi__cuerpo">
-        <span class="comercial-kpi__valor">{{ total() }}</span>
-        <span class="comercial-kpi__etiqueta">Cotizaciones</span>
-      </span>
-    </article>
-    <article class="comercial-kpi">
-      <span class="comercial-kpi__icono" aria-hidden="true"><mat-icon>edit_note</mat-icon></span>
-      <span class="comercial-kpi__cuerpo">
-        <span class="comercial-kpi__valor">{{ cotizacionesBorrador() }}</span>
-        <span class="comercial-kpi__etiqueta">En borrador</span>
-      </span>
-    </article>
-    <article class="comercial-kpi comercial-kpi--exito">
-      <span class="comercial-kpi__icono" aria-hidden="true"><mat-icon>send</mat-icon></span>
-      <span class="comercial-kpi__cuerpo">
-        <span class="comercial-kpi__valor">{{ cotizacionesEnviadas() }}</span>
-        <span class="comercial-kpi__etiqueta">Enviadas</span>
-      </span>
-    </article>
+    <app-kpi-tile icono="payments" tono="primario" etiqueta="Valor cotizado"
+      sublabel="En esta página"
+      [valor]="valorPagina() | currency: monedaPorDefecto : 'symbol-narrow' : '1.0-0' : 'es-MX'" />
+    <app-kpi-tile icono="request_quote" tono="info" etiqueta="Cotizaciones"
+      sublabel="Total registradas" [valor]="total()" />
+    <app-kpi-tile icono="edit_note" tono="neutro" etiqueta="En borrador"
+      sublabel="En esta página" [valor]="cotizacionesBorrador()" />
+    <app-kpi-tile icono="send" tono="exito" etiqueta="Enviadas"
+      sublabel="En esta página" [valor]="cotizacionesEnviadas()" />
   </section>
 }
 

@@ -221,4 +221,15 @@ export class ComprasService {
       {},
     );
   }
+
+  /**
+   * Reabre una factura en discrepancia (la devuelve a 'registrada') para volver a
+   * conciliarla tras corregir la causa. POST /compras/facturas-proveedor/{id}/reabrir.
+   */
+  reabrirFactura(id: string): Observable<FacturaProveedor> {
+    return this.http.post<FacturaProveedor>(
+      this.api.url(`/compras/facturas-proveedor/${id}/reabrir`),
+      {},
+    );
+  }
 }

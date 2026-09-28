@@ -39,3 +39,102 @@
     margin-block-start: var(--ds-space-1);
   }
 }
+
+// -----------------------------------------------------------------------------
+// Nota de seguridad (explica que es una sesion y que hace revocar)
+// -----------------------------------------------------------------------------
+.sesiones__nota {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-4);
+  margin-block-end: var(--ds-space-4);
+  border-radius: 14px;
+  background:
+    radial-gradient(120% 120% at 0% 0%,
+      color-mix(in srgb, var(--ds-color-info, #1b6a8c) 12%, transparent) 0%, transparent 55%),
+    var(--mat-sys-surface, #fff);
+  border: 1px solid var(--mat-sys-outline-variant, #e2e0e8);
+
+  > mat-icon {
+    flex: none;
+    color: var(--ds-color-info, #1b6a8c);
+    font-size: 1.6rem;
+    inline-size: 1.6rem;
+    block-size: 1.6rem;
+  }
+}
+
+.sesiones__nota-titulo {
+  margin: 0 0 0.15rem;
+  font-weight: var(--ds-font-weight-bold);
+  color: var(--ds-color-text);
+}
+
+.sesiones__nota-texto {
+  margin: 0;
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-sm);
+  line-height: 1.5;
+}
+
+// -----------------------------------------------------------------------------
+// Celda de sesion: chip de dispositivo + jti corto
+// -----------------------------------------------------------------------------
+.sesiones__celda-sesion {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+}
+
+.sesiones__disp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 2.1rem;
+  block-size: 2.1rem;
+  flex: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--ds-color-primary),
+    color-mix(in srgb, var(--ds-color-primary) 55%, #ffffff));
+  color: #fff;
+
+  mat-icon { font-size: 1.2rem; inline-size: 1.2rem; block-size: 1.2rem; }
+}
+
+.sesiones__disp-titulo {
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-text);
+  font-size: var(--ds-font-size-sm);
+}
+
+.sesiones__jti {
+  font-family: var(--ds-font-mono, ui-monospace, monospace);
+  font-size: 0.72rem;
+  color: var(--ds-color-text-muted);
+}
+
+.sesiones__ayuda {
+  color: var(--ds-color-text-muted);
+  font-size: 0.72rem;
+}
+
+// Chip "Activa": punto verde + texto (el color no es el unico portador — Req 57).
+.sesiones__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.6rem;
+  border-radius: var(--ds-radius-pill);
+  background: color-mix(in srgb, var(--ds-color-success, #2e7d4f) 15%, transparent);
+  color: var(--ds-color-success, #2e7d4f);
+  font-size: 0.75rem;
+  font-weight: var(--ds-font-weight-bold);
+}
+
+.sesiones__punto {
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  border-radius: 50%;
+  background: var(--ds-color-success, #2e7d4f);
+}

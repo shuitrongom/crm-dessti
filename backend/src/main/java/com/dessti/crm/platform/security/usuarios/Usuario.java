@@ -61,6 +61,14 @@ public class Usuario {
     @Column(name = "tenant_id", updatable = false)
     private UUID tenantId;
 
+    /**
+     * Cliente asociado para el Portal del Cliente (Req 45, V77); {@code null} para el
+     * staff de la Empresa y el super_admin. Solo lo llevan los Usuarios de portal
+     * (rol {@code cliente_portal}) y acota su acceso al Portal.
+     */
+    @Column(name = "cliente_id", updatable = false)
+    private UUID clienteId;
+
     /** Identificador de acceso (login). UNICO GLOBAL segun la decision de V1. */
     @Column(name = "identificador_acceso", nullable = false, updatable = false)
     private String identificadorAcceso;
@@ -158,6 +166,20 @@ public class Usuario {
      */
     public static Usuario crear(UUID tenantId, String identificadorAcceso, String hashPassword,
                                 String nombreVisible, Set<Rol> roles, String actor) {
+        return crear(tenantId, identificadorAcceso, hashPassword, nombreVisible, roles, null, actor);
+    }
+
+    /**
+     * Crea una cuenta de Usuario activa, opcionalmente asociada a un Cliente para el
+     * Portal (Req 45). El {@code clienteId} solo lo llevan los Usuarios de portal
+     * (rol {@code cliente_portal}); el servicio valida la coherencia rol&harr;cliente.
+     *
+     * @param clienteId Cliente asociado para el Portal; {@code null} para staff.
+     * @return la cuenta lista para persistir.
+     * @throws ReglaNegocioException si el nombre visible excede su longitud maxima.
+     */
+    public static Usuario crear(UUID tenantId, String identificadorAcceso, String hashPassword,
+                                String nombreVisible, Set<Rol> roles, UUID clienteId, String actor) {
         if (tenantId == null) {
             throw new IllegalArgumentException("Un Usuario de empresa requiere tenant_id");
         }
@@ -170,6 +192,7 @@ public class Usuario {
         Usuario usuario = new Usuario();
         usuario.id = UUID.randomUUID();
         usuario.tenantId = tenantId;
+        usuario.clienteId = clienteId;
         usuario.identificadorAcceso = identificadorAcceso.strip();
         usuario.hashPassword = hashPassword;
         usuario.nombreVisible = normalizarNombreVisible(nombreVisible);
@@ -317,6 +340,14 @@ public class Usuario {
 
     public UUID getTenantId() {
         return tenantId;
+    }
+
+    /**
+     * @return el Cliente asociado para el Portal (Req 45), o {@code null} si el
+     *         Usuario no es de portal.
+     */
+    public UUID getClienteId() {
+        return clienteId;
     }
 
     public String getIdentificadorAcceso() {

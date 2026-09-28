@@ -178,6 +178,14 @@ export class NavigationService {
       visible: (a) => a.tienePermiso('oportunidad', 'listar'),
     },
     {
+      etiqueta: 'Actividades',
+      ruta: '/empresa/comercial/actividades',
+      icono: 'event_note',
+      seccion: 'Comercial (CRM)',
+      modulo: 'comercial',
+      visible: (a) => a.tienePermiso('actividad', 'listar'),
+    },
+    {
       etiqueta: 'Cotizaciones',
       ruta: '/empresa/comercial/cotizaciones',
       icono: 'request_quote',
@@ -255,8 +263,10 @@ export class NavigationService {
       seccion: 'Operación y producción',
       // Proyectos forma parte del Modulo operacion (no es clave propia).
       modulo: 'operacion',
-      // Vertical_Anuncios: permiso Y giro anuncios-luminosos (Req 9.2, 9.3).
-      visible: (a) => a.tienePermiso('proyecto', 'listar') && a.esGiro(GIRO_ANUNCIOS),
+      // COMUN a todos los giros: el backend de Proyectos (multi-sitio) no exige
+      // giro, solo modulo operacion + permiso. El giro anuncios usa las 4 fases
+      // derivadas; el resto de giros usan el avance multi-sitio editable (V78).
+      visible: (a) => a.tienePermiso('proyecto', 'listar'),
     },
     {
       etiqueta: 'Materiales',
@@ -280,6 +290,14 @@ export class NavigationService {
     // -------------------------------------------------------------------------
     // 5. Compras
     // -------------------------------------------------------------------------
+    {
+      etiqueta: 'Proveedores',
+      ruta: '/empresa/compras/proveedores',
+      icono: 'store',
+      seccion: 'Compras',
+      modulo: 'compras',
+      visible: (a) => a.tienePermiso('proveedor', 'listar'),
+    },
     {
       etiqueta: 'Compras',
       ruta: '/empresa/compras/requisiciones',
@@ -351,6 +369,14 @@ export class NavigationService {
       visible: (a) => a.tienePermiso('cuenta_por_pagar', 'listar'),
     },
     {
+      etiqueta: 'Programación de pagos',
+      ruta: '/empresa/contabilidad/programacion-pagos',
+      icono: 'event_repeat',
+      seccion: 'Contabilidad y finanzas',
+      modulo: 'contabilidad',
+      visible: (a) => a.tienePermiso('programacion_pago', 'listar'),
+    },
+    {
       etiqueta: 'Pólizas',
       ruta: '/empresa/contabilidad/polizas',
       icono: 'book',
@@ -375,9 +401,41 @@ export class NavigationService {
       visible: (a) => a.tienePermiso('contabilidad_electronica', 'leer'),
     },
     {
+      etiqueta: 'Cierre de periodo',
+      ruta: '/empresa/contabilidad/cierre-periodo',
+      icono: 'event_available',
+      seccion: 'Contabilidad y finanzas',
+      modulo: 'contabilidad',
+      visible: (a) => a.tienePermiso('periodo_contable', 'leer'),
+    },
+    {
       etiqueta: 'Reportes financieros',
       ruta: '/empresa/contabilidad/reportes',
       icono: 'assessment',
+      seccion: 'Contabilidad y finanzas',
+      modulo: 'contabilidad',
+      visible: (a) => a.tienePermiso('reporte_financiero', 'leer'),
+    },
+    {
+      etiqueta: 'Estados financieros',
+      ruta: '/empresa/contabilidad/estados-financieros',
+      icono: 'analytics',
+      seccion: 'Contabilidad y finanzas',
+      modulo: 'contabilidad',
+      visible: (a) => a.tienePermiso('estado_financiero', 'leer'),
+    },
+    {
+      etiqueta: 'Antigüedad de saldos',
+      ruta: '/empresa/contabilidad/antiguedad-saldos',
+      icono: 'hourglass_bottom',
+      seccion: 'Contabilidad y finanzas',
+      modulo: 'contabilidad',
+      visible: (a) => a.tienePermiso('cuenta_por_cobrar', 'leer') || a.tienePermiso('cuenta_por_pagar', 'leer'),
+    },
+    {
+      etiqueta: 'Estado de cuenta cliente',
+      ruta: '/empresa/contabilidad/estado-cuenta-cliente',
+      icono: 'contact_page',
       seccion: 'Contabilidad y finanzas',
       modulo: 'contabilidad',
       visible: (a) => a.tienePermiso('reporte_financiero', 'leer'),
@@ -386,12 +444,44 @@ export class NavigationService {
     // 8. Tesoreria
     // -------------------------------------------------------------------------
     {
-      etiqueta: 'Tesorería',
+      etiqueta: 'Flujo de caja',
+      ruta: '/empresa/tesoreria/flujo-caja',
+      icono: 'waterfall_chart',
+      seccion: 'Tesorería',
+      modulo: 'tesoreria',
+      visible: (a) => a.tienePermiso('movimiento_bancario', 'leer'),
+    },
+    {
+      etiqueta: 'Cuentas bancarias',
       ruta: '/empresa/tesoreria/cuentas-bancarias',
       icono: 'account_balance',
       seccion: 'Tesorería',
       modulo: 'tesoreria',
       visible: (a) => a.tienePermiso('cuenta_bancaria', 'listar'),
+    },
+    {
+      etiqueta: 'Movimientos bancarios',
+      ruta: '/empresa/tesoreria/movimientos',
+      icono: 'sync_alt',
+      seccion: 'Tesorería',
+      modulo: 'tesoreria',
+      visible: (a) => a.tienePermiso('movimiento_bancario', 'leer'),
+    },
+    {
+      etiqueta: 'Conciliaciones',
+      ruta: '/empresa/tesoreria/conciliaciones',
+      icono: 'rule',
+      seccion: 'Tesorería',
+      modulo: 'tesoreria',
+      visible: (a) => a.tienePermiso('conciliacion_bancaria', 'leer'),
+    },
+    {
+      etiqueta: 'Transferencias',
+      ruta: '/empresa/tesoreria/transferencias',
+      icono: 'swap_horiz',
+      seccion: 'Tesorería',
+      modulo: 'tesoreria',
+      visible: (a) => a.tienePermiso('transferencia_bancaria', 'listar'),
     },
     // -------------------------------------------------------------------------
     // 9. Activos fijos
@@ -544,6 +634,46 @@ export class NavigationService {
       modulo: 'reportes-bi',
       visible: (a) => a.tienePermiso('inteligencia_negocio', 'leer'),
     },
+    // -------------------------------------------------------------------------
+    // 16. Calidad / SGC ISO 9001 (COMUN a todos los giros: gating solo por
+    //     permiso, SIN `modulo` ni `esGiro`; el backend calidad no exige modulo
+    //     ni giro, solo permisos atomicos).
+    // -------------------------------------------------------------------------
+    {
+      etiqueta: 'Panel de calidad',
+      ruta: '/empresa/calidad/panel',
+      icono: 'verified_user',
+      seccion: 'Calidad (ISO 9001)',
+      visible: (a) => a.tienePermiso('calidad', 'leer'),
+    },
+    {
+      etiqueta: 'Quejas de cliente',
+      ruta: '/empresa/calidad/quejas',
+      icono: 'sentiment_dissatisfied',
+      seccion: 'Calidad (ISO 9001)',
+      visible: (a) => a.tienePermiso('queja_cliente', 'listar'),
+    },
+    {
+      etiqueta: 'No conformidades',
+      ruta: '/empresa/calidad/no-conformidades',
+      icono: 'rule',
+      seccion: 'Calidad (ISO 9001)',
+      visible: (a) => a.tienePermiso('no_conformidad', 'listar'),
+    },
+    {
+      etiqueta: 'Acciones correctivas',
+      ruta: '/empresa/calidad/acciones-correctivas',
+      icono: 'build_circle',
+      seccion: 'Calidad (ISO 9001)',
+      visible: (a) => a.tienePermiso('accion_correctiva', 'listar'),
+    },
+    {
+      etiqueta: 'Riesgos',
+      ruta: '/empresa/calidad/riesgos',
+      icono: 'gpp_maybe',
+      seccion: 'Calidad (ISO 9001)',
+      visible: (a) => a.tienePermiso('riesgo', 'listar'),
+    },
   ];
 
   /** Menu del ambito de portal del cliente (Req 45). */
@@ -582,6 +712,18 @@ export class NavigationService {
       etiqueta: 'Mis facturas',
       ruta: '/portal/facturas',
       icono: 'receipt_long',
+      visible: () => true,
+    },
+    {
+      etiqueta: 'Soporte',
+      ruta: '/portal/quejas',
+      icono: 'contact_support',
+      visible: () => true,
+    },
+    {
+      etiqueta: 'Mi perfil',
+      ruta: '/portal/perfil',
+      icono: 'person',
       visible: () => true,
     },
   ];

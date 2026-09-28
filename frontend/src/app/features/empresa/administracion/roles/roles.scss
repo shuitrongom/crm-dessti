@@ -1,11 +1,12 @@
 // =============================================================================
 // Estilos de la vista de Roles y permisos (admin_empresa) (Req 27, 28, 52, 57)
 // -----------------------------------------------------------------------------
-// Catalogo enterprise de roles asignables agrupados por modulo: cada grupo tiene
-// un encabezado con badge semantico (icono + texto, el color no es el unico
-// portador de significado) y una rejilla responsive de tarjetas de rol. Debajo,
-// un panel de referencia con los roles del Usuario. Solo tokens del Sistema de
-// Diseno; correcto en tema claro y oscuro.
+// Catalogo enterprise de roles asignables agrupados por modulo. Cada grupo tiene
+// un tono de color (accent) para diferenciarse visualmente; su encabezado lleva
+// un chip de icono con gradiente + badge. Las tarjetas de rol son clickeables
+// (abren un modal explicativo), con icono en gradiente, hover y foco accesible.
+// El color nunca es el unico portador de significado (icono + texto). Solo
+// tokens del Sistema de Diseno; correcto en tema claro y oscuro.
 // =============================================================================
 
 .roles__catalogo {
@@ -15,9 +16,20 @@
 }
 
 .roles__grupo {
+  --rol-accent: var(--ds-color-primary);
+
   display: flex;
   flex-direction: column;
   gap: var(--ds-space-3);
+
+  // Tonos por grupo (asignados ciclicamente en el componente).
+  &--admin { --rol-accent: var(--mat-sys-primary, #6750a4); }
+  &--m0 { --rol-accent: var(--ds-color-info, #1b6a8c); }
+  &--m1 { --rol-accent: var(--ds-color-success, #2e7d4f); }
+  &--m2 { --rol-accent: var(--ds-color-warning, #b3760a); }
+  &--m3 { --rol-accent: #8b5cf6; }
+  &--m4 { --rol-accent: #0ea5e9; }
+  &--m5 { --rol-accent: #e11d48; }
 }
 
 .roles__grupo-encabezado {
@@ -27,57 +39,157 @@
   gap: var(--ds-space-2) var(--ds-space-3);
 }
 
+// Chip de icono del grupo con gradiente del tono.
+.roles__grupo-icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  flex: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--rol-accent),
+    color-mix(in srgb, var(--rol-accent) 55%, #ffffff));
+  color: #fff;
+
+  .mat-icon {
+    font-size: 1.2rem;
+    inline-size: 1.2rem;
+    block-size: 1.2rem;
+  }
+}
+
 .roles__grupo-titulo {
   margin: 0;
   font-size: var(--ds-font-size-lg);
-  font-weight: var(--ds-font-weight-medium);
+  font-weight: var(--ds-font-weight-bold);
   color: var(--ds-color-text);
 }
 
-// Badge de modulo: icono + texto (nunca solo color) sobre contenedor tonal.
+// Badge de modulo (texto sobre contenedor tonal del grupo).
 .roles__badge {
   display: inline-flex;
   align-items: center;
-  gap: var(--ds-space-1);
-  padding: var(--ds-space-1) var(--ds-space-3);
+  padding: 0.1rem var(--ds-space-3);
+  border-radius: var(--ds-radius-pill);
+  background: color-mix(in srgb, var(--rol-accent) 14%, transparent);
+  color: var(--rol-accent);
+  font-size: 0.72rem;
+  font-weight: var(--ds-font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+// Conteo de roles del grupo (pastilla discreta a la derecha).
+.roles__grupo-conteo {
+  margin-inline-start: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 1.5rem;
+  block-size: 1.5rem;
+  padding-inline: 0.4rem;
   border-radius: var(--ds-radius-pill);
   background: var(--ds-color-surface-variant);
   color: var(--ds-color-text-muted);
-  font-size: var(--ds-font-size-sm);
-  font-weight: var(--ds-font-weight-medium);
-
-  .mat-icon {
-    inline-size: 1.125rem;
-    block-size: 1.125rem;
-    font-size: 1.125rem;
-  }
-
-  &--administracion {
-    background: var(--ds-color-primary-container);
-    color: var(--ds-color-primary);
-  }
+  font-size: 0.75rem;
+  font-weight: var(--ds-font-weight-bold);
+  font-variant-numeric: tabular-nums;
 }
 
 // Rejilla responsive de tarjetas de rol.
 .roles__tarjetas {
   display: grid;
-  gap: var(--ds-space-4);
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  gap: var(--ds-space-3);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
 }
 
+// Tarjeta de rol: <button> clickeable que abre el modal explicativo.
 .roles__tarjeta {
-  block-size: 100%;
+  --rol-accent: inherit;
+
+  // Reset de boton.
+  appearance: none;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  width: 100%;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1rem 1.1rem;
+  border-radius: 14px;
+  background:
+    radial-gradient(120% 120% at 100% 0%,
+      color-mix(in srgb, var(--rol-accent) 10%, transparent) 0%, transparent 55%),
+    var(--mat-sys-surface, #fff);
+  border: 1px solid var(--mat-sys-outline-variant, #e2e0e8);
+  border-top: 3px solid color-mix(in srgb, var(--rol-accent) 55%, transparent);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 22px rgba(16, 24, 40, 0.1);
+    border-color: color-mix(in srgb, var(--rol-accent) 40%, var(--mat-sys-outline-variant, #e2e0e8));
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--rol-accent);
+    outline-offset: 2px;
+  }
+
+  &:hover .roles__tarjeta-info,
+  &:focus-visible .roles__tarjeta-info {
+    opacity: 1;
+  }
+}
+
+.roles__tarjeta-icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--rol-accent),
+    color-mix(in srgb, var(--rol-accent) 55%, #ffffff));
+  color: #fff;
+  box-shadow: 0 3px 9px color-mix(in srgb, var(--rol-accent) 30%, transparent);
+
+  .mat-icon {
+    font-size: 1.3rem;
+    inline-size: 1.3rem;
+    block-size: 1.3rem;
+  }
+}
+
+.roles__tarjeta-info {
+  position: absolute;
+  top: 0.9rem;
+  inset-inline-end: 1rem;
+  color: var(--ds-color-text-muted);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  font-size: 1.1rem;
+  inline-size: 1.1rem;
+  block-size: 1.1rem;
 }
 
 .roles__tarjeta-nombre {
+  margin-block-start: 0.15rem;
   font-size: var(--ds-font-size-md);
-  font-weight: var(--ds-font-weight-medium);
+  font-weight: var(--ds-font-weight-bold);
   color: var(--ds-color-text);
 }
 
 .roles__tarjeta-descripcion {
   margin: 0;
   color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-sm);
+  line-height: 1.4;
 }
 
 .roles__sin-datos {
@@ -88,4 +200,11 @@
 .roles__referencia {
   display: block;
   margin-block-start: var(--ds-space-6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .roles__tarjeta {
+    transition: none;
+    &:hover { transform: none; }
+  }
 }

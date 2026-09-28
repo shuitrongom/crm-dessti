@@ -103,6 +103,33 @@ export interface TicketServicio {
   updatedAt: string;
 }
 
+/** Perfil del Cliente autenticado (PerfilClienteResumen). */
+export interface PerfilCliente {
+  clienteId: string;
+  nombre: string;
+  nombreComercial: string | null;
+  rfc: string;
+  email: string | null;
+  telefono: string | null;
+  direccionCiudad: string | null;
+  direccionEstado: string | null;
+  direccionCp: string | null;
+}
+
+/** Queja del Cliente levantada desde el portal (QuejaPortalResumen). */
+export interface QuejaPortal {
+  id: string;
+  descripcion: string;
+  /** registrada | vinculada | atendida. */
+  estado: string;
+  registradaEn: string;
+}
+
+/** Cuerpo de POST /portal/quejas (RegistrarQuejaPortalRequest). */
+export interface RegistrarQuejaPortalRequest {
+  descripcion: string;
+}
+
 /** Factura del Cliente (FacturaDto). */
 export interface Factura {
   id: string;

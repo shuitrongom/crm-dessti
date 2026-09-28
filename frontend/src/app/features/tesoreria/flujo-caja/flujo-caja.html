@@ -1,0 +1,98 @@
+<app-page-header
+  titulo="Flujo de caja"
+  subtitulo="Posición de liquidez y flujo del periodo: saldo, entradas, salidas y tendencia mensual."
+/>
+
+<form class="tes-filtros" [formGroup]="formFiltro" (ngSubmit)="consultar()" novalidate>
+  <mat-form-field appearance="outline">
+    <mat-label>Desde</mat-label>
+    <input matInput [matDatepicker]="pickerDesde" formControlName="desde" />
+    <mat-datepicker-toggle matSuffix [for]="pickerDesde" />
+    <mat-datepicker #pickerDesde />
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>Hasta</mat-label>
+    <input matInput [matDatepicker]="pickerHasta" formControlName="hasta" />
+    <mat-datepicker-toggle matSuffix [for]="pickerHasta" />
+    <mat-datepicker #pickerHasta />
+  </mat-form-field>
+  <button matButton="filled" type="submit">
+    <mat-icon>search</mat-icon> Consultar
+  </button>
+</form>
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="No hay movimientos bancarios en el periodo seleccionado."
+  (reintentar)="consultar()"
+>
+  @if (estado().datos; as f) {
+    <!-- Scorecard de liquidez + flujo mensual (patron dashboard reutilizable) -->
+    <app-dashboard-section layout="apilado">
+      <div kpis>
+        <app-kpi-tile
+          icono="account_balance"
+          tono="primario"
+          etiqueta="Saldo acumulado"
+          [valor]="f.saldoAcumulado | currency: 'MXN' : 'symbol-narrow' : '1.0-0' : 'es-MX'"
+        />
+        <app-kpi-tile
+          icono="south_west"
+          tono="exito"
+          etiqueta="Entradas del periodo"
+          [valor]="f.entradasPeriodo | currency: 'MXN' : 'symbol-narrow' : '1.0-0' : 'es-MX'"
+        />
+        <app-kpi-tile
+          icono="north_east"
+          tono="error"
+          etiqueta="Salidas del periodo"
+          [valor]="f.salidasPeriodo | currency: 'MXN' : 'symbol-narrow' : '1.0-0' : 'es-MX'"
+        />
+        <app-kpi-tile
+          [icono]="f.flujoNetoPeriodo >= 0 ? 'trending_up' : 'trending_down'"
+          [tono]="f.flujoNetoPeriodo >= 0 ? 'exito' : 'error'"
+          etiqueta="Flujo neto"
+          [valor]="f.flujoNetoPeriodo | currency: 'MXN' : 'symbol-narrow' : '1.0-0' : 'es-MX'"
+        />
+        <app-kpi-tile
+          icono="account_balance_wallet"
+          tono="info"
+          etiqueta="Cuentas activas"
+          [valor]="f.cuentasActivas"
+        />
+        <app-kpi-tile
+          icono="rule"
+          [tono]="f.partidasPorConciliar > 0 ? 'advertencia' : 'neutro'"
+          etiqueta="Por conciliar"
+          [valor]="f.partidasPorConciliar"
+        />
+      </div>
+      <div grafica class="dash-grafica">
+        <app-metric-chart
+          [datos]="[]"
+          tipo="gauge"
+          [porcentaje]="saludLiquidez()"
+          titulo="Salud de liquidez (neto / entradas)"
+        />
+      </div>
+      <div grafica class="dash-grafica">
+        <app-metric-chart
+          [datos]="puntos()"
+          tipo="area"
+          titulo="Flujo mensual (entradas vs salidas)"
+          nombreSerie="Entradas"
+          nombreComparativo="Salidas"
+        />
+      </div>
+      <div grafica class="dash-grafica">
+        <app-metric-chart
+          [datos]="netoMensual()"
+          tipo="area"
+          titulo="Flujo neto por mes"
+          nombreSerie="Neto"
+        />
+      </div>
+    </app-dashboard-section>
+  }
+</app-state-container>

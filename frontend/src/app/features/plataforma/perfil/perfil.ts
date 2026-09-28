@@ -40,6 +40,7 @@ import {
   DireccionAutocompletada,
 } from '../../../shared/components/address-autocomplete/address-autocomplete';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 import { PerfilService } from '../../../core/auth/perfil.service';
 import { telefonoValidator } from '../../../shared/validators/telefono.validator';
@@ -105,6 +106,7 @@ export class PlataformaPerfil {
   private readonly miEmpresaService = inject(MiEmpresaService);
   private readonly auth = inject(AuthService);
   private readonly toast = inject(NotificacionesService);
+  private readonly overlay = inject(OperacionOverlayService);
 
   /** Estado de carga del perfil (GET /auth/perfil). */
   protected readonly estado = signal<EstadoSolicitud<Perfil>>(cargando());
@@ -136,6 +138,18 @@ export class PlataformaPerfil {
   protected readonly ambitoLegible = computed<string>(() => {
     const perfil = this.estado().datos;
     return perfil && perfil.tenantId ? 'Empresa' : 'Plataforma';
+  });
+
+  /**
+   * Iniciales para el avatar de la tarjeta de cuenta: hasta dos letras derivadas
+   * del identificador (parte antes de la @ si es un correo). Fallback: "US".
+   */
+  protected readonly iniciales = computed<string>(() => {
+    const id = this.estado().datos?.identificador ?? '';
+    const base = id.includes('@') ? id.slice(0, id.indexOf('@')) : id;
+    const partes = base.split(/[\s._-]+/).filter(Boolean);
+    const letras = (partes.length >= 2 ? partes[0][0] + partes[1][0] : base.slice(0, 2)) || 'US';
+    return letras.toUpperCase();
   });
 
   protected readonly formulario = this.fb.nonNullable.group(
@@ -189,8 +203,14 @@ export class PlataformaPerfil {
     }
     this.enviando.set(true);
     const v = this.formulario.getRawValue();
-    this.perfilService
-      .cambiarPassword({ passwordActual: v.passwordActual, passwordNueva: v.passwordNueva })
+    this.overlay
+      .ejecutar(
+        this.perfilService.cambiarPassword({
+          passwordActual: v.passwordActual,
+          passwordNueva: v.passwordNueva,
+        }),
+        { tipo: 'guardar', textoProceso: 'Actualizando contraseña…', textoExito: 'Contraseña actualizada' },
+      )
       .subscribe({
         next: () => {
           this.enviando.set(false);
@@ -339,17 +359,23 @@ export class PlataformaPerfil {
       direccionPais: this.opcional(v.direccionPais),
       logo: this.logoEmpresa(),
     };
-    this.miEmpresaService.actualizarMiEmpresa(request).subscribe({
-      next: (empresa) => {
-        this.guardandoEmpresa.set(false);
-        this.logoEmpresa.set(empresa.brandingLogo ?? this.logoEmpresa());
-        this.toast.exito('Datos de empresa actualizados');
-      },
-      error: (e: HttpErrorResponse) => {
-        this.guardandoEmpresa.set(false);
-        this.toast.error(mensajeDeError(e));
-      },
-    });
+    this.overlay
+      .ejecutar(this.miEmpresaService.actualizarMiEmpresa(request), {
+        tipo: 'guardar',
+        textoProceso: 'Guardando datos de empresa…',
+        textoExito: 'Datos guardados',
+      })
+      .subscribe({
+        next: (empresa) => {
+          this.guardandoEmpresa.set(false);
+          this.logoEmpresa.set(empresa.brandingLogo ?? this.logoEmpresa());
+          this.toast.exito('Datos de empresa actualizados');
+        },
+        error: (e: HttpErrorResponse) => {
+          this.guardandoEmpresa.set(false);
+          this.toast.error(mensajeDeError(e));
+        },
+      });
   }
 }
 

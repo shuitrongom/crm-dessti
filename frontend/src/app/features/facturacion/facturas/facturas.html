@@ -70,6 +70,69 @@
   mensajeVacio="No hay facturas registradas."
   (reintentar)="cargar()"
 >
+  @if (hayDatos()) {
+    <!-- Dashboard fiscal: scorecard CFDI + composicion (patron reutilizable) -->
+    <app-dashboard-section layout="apilado">
+      <div kpis>
+        <app-kpi-tile
+          icono="receipt_long"
+          tono="primario"
+          etiqueta="Facturado timbrado"
+          [valor]="resumen().timbrado | currency: 'MXN' : 'symbol-narrow' : '1.0-0' : 'es-MX'"
+        />
+        <app-kpi-tile
+          icono="account_balance"
+          tono="info"
+          etiqueta="IVA trasladado"
+          [valor]="resumen().iva | currency: 'MXN' : 'symbol-narrow' : '1.0-0' : 'es-MX'"
+        />
+        <app-kpi-tile
+          icono="verified"
+          tono="exito"
+          etiqueta="CFDI timbrados"
+          [valor]="resumen().timbradas"
+        />
+        <app-kpi-tile
+          icono="edit_note"
+          tono="advertencia"
+          etiqueta="En borrador"
+          [valor]="resumen().borradores"
+        />
+        <app-kpi-tile
+          icono="cancel"
+          tono="error"
+          etiqueta="Canceladas"
+          [valor]="resumen().canceladas"
+        />
+      </div>
+      <div grafica class="dash-grafica">
+        <app-metric-chart
+          [datos]="[]"
+          tipo="gauge"
+          [porcentaje]="porcentajeTimbrado()"
+          titulo="Comprobantes timbrados"
+        />
+      </div>
+      <div grafica class="dash-grafica">
+        <app-metric-chart
+          [datos]="composicionEstados()"
+          tipo="dona"
+          titulo="Comprobantes por estado"
+        />
+      </div>
+      @if (facturacionPorMes().length > 0) {
+        <div grafica class="dash-grafica">
+          <app-metric-chart
+            [datos]="facturacionPorMes()"
+            tipo="area"
+            titulo="Facturación timbrada por mes"
+            nombreSerie="Timbrado (MXN)"
+          />
+        </div>
+      }
+    </app-dashboard-section>
+  }
+
   <div class="fact-filtros">
     <mat-form-field appearance="outline">
       <mat-label>Estado</mat-label>

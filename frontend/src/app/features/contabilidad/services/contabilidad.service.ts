@@ -19,13 +19,22 @@ import { Observable } from 'rxjs';
 import { ApiConfigService } from '../../../core/services/api-config.service';
 import { PaginaResponse } from '../../../core/models/pagina-response';
 import {
+  AntiguedadSaldos,
+  AntiguedadSaldosProveedor,
+  BalanceGeneral,
+  BalanzaComprobacion,
+  CrearCuentaContableRequest,
+  CrearProgramacionPagoRequest,
   CuentaContable,
   CuentaPorCobrar,
   CuentaPorPagar,
+  EstadoCuentaCliente,
+  EstadoResultados,
   IngresosPeriodo,
   IvaPeriodo,
   PagoCliente,
   PolizaContable,
+  ProgramacionPago,
   RegistrarPagoClienteRequest,
   RegistrarPolizaRequest,
 } from '../models/contabilidad.models';
@@ -93,6 +102,13 @@ export class ContabilidadService {
     );
   }
 
+  crearCuentaContable(request: CrearCuentaContableRequest): Observable<CuentaContable> {
+    return this.http.post<CuentaContable>(
+      this.api.url('/contabilidad/cuentas-contables'),
+      request,
+    );
+  }
+
   // --- Polizas contables (Req 38) --------------------------------------------
 
   listarPolizas(
@@ -156,6 +172,30 @@ export class ContabilidadService {
     );
   }
 
+  // --- Programación de pagos (Req 42.2, 42.6) --------------------------------
+
+  listarProgramacionesPago(
+    cuentaPorPagarId: string | null,
+    page = 0,
+    size = 20,
+  ): Observable<PaginaResponse<ProgramacionPago>> {
+    let params = new HttpParams().set('page', page).set('size', size);
+    if (cuentaPorPagarId) {
+      params = params.set('cuentaPorPagarId', cuentaPorPagarId);
+    }
+    return this.http.get<PaginaResponse<ProgramacionPago>>(
+      this.api.url('/contabilidad/programaciones-pago'),
+      { params },
+    );
+  }
+
+  crearProgramacionPago(request: CrearProgramacionPagoRequest): Observable<ProgramacionPago> {
+    return this.http.post<ProgramacionPago>(
+      this.api.url('/contabilidad/programaciones-pago'),
+      request,
+    );
+  }
+
   // --- Reportes financieros (Req 39) — solo lectura --------------------------
 
   reporteIngresos(
@@ -201,5 +241,85 @@ export class ContabilidadService {
       this.api.url('/contabilidad/reportes/libro-polizas'),
       { params },
     );
+  }
+
+  /** Antigüedad de saldos (aging) de CxC, agrupada por cliente (Req 36.5). */
+  agingCxC(clienteId: string | null): Observable<AntiguedadSaldos> {
+    let params = new HttpParams();
+    if (clienteId) {
+      params = params.set('clienteId', clienteId);
+    }
+    return this.http.get<AntiguedadSaldos>(
+      this.api.url('/contabilidad/cuentas-por-cobrar/aging'),
+      { params },
+    );
+  }
+
+  /** Antigüedad de saldos (aging) de CxP, agrupada por proveedor (Req 42.5). */
+  agingCxP(proveedorId: string | null): Observable<AntiguedadSaldosProveedor> {
+    let params = new HttpParams();
+    if (proveedorId) {
+      params = params.set('proveedorId', proveedorId);
+    }
+    return this.http.get<AntiguedadSaldosProveedor>(
+      this.api.url('/contabilidad/cuentas-por-pagar/aging'),
+      { params },
+    );
+  }
+
+  /** Estado de cuenta por cliente: detalle de CxC del periodo (Req 39.1). */
+  estadoCuentaCliente(
+    clienteId: string,
+    desde: string | null,
+    hasta: string | null,
+  ): Observable<EstadoCuentaCliente> {
+    let params = new HttpParams().set('clienteId', clienteId);
+    if (desde) {
+      params = params.set('desde', desde);
+    }
+    if (hasta) {
+      params = params.set('hasta', hasta);
+    }
+    return this.http.get<EstadoCuentaCliente>(
+      this.api.url('/contabilidad/reportes/estado-cuenta-cliente'),
+      { params },
+    );
+  }
+
+  // --- Estados financieros (Req 47) — solo lectura ---------------------------
+
+  balanceGeneral(desde: string | null, hasta: string | null): Observable<BalanceGeneral> {
+    return this.http.get<BalanceGeneral>(
+      this.api.url('/contabilidad/estados-financieros/balance-general'),
+      { params: this.rangoParams(desde, hasta) },
+    );
+  }
+
+  estadoResultados(desde: string | null, hasta: string | null): Observable<EstadoResultados> {
+    return this.http.get<EstadoResultados>(
+      this.api.url('/contabilidad/estados-financieros/estado-resultados'),
+      { params: this.rangoParams(desde, hasta) },
+    );
+  }
+
+  balanzaComprobacion(
+    desde: string | null,
+    hasta: string | null,
+  ): Observable<BalanzaComprobacion> {
+    return this.http.get<BalanzaComprobacion>(
+      this.api.url('/contabilidad/estados-financieros/balanza-comprobacion'),
+      { params: this.rangoParams(desde, hasta) },
+    );
+  }
+
+  private rangoParams(desde: string | null, hasta: string | null): HttpParams {
+    let params = new HttpParams();
+    if (desde) {
+      params = params.set('desde', desde);
+    }
+    if (hasta) {
+      params = params.set('hasta', hasta);
+    }
+    return params;
   }
 }

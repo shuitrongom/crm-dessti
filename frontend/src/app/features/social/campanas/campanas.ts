@@ -27,6 +27,7 @@ import {
   DataTable,
 } from '../../../shared/components/data-table/data-table';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 import {
@@ -65,6 +66,7 @@ export class Campanas {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(CampanasService);
   private readonly toast = inject(NotificacionesService);
+  private readonly overlay = inject(OperacionOverlayService);
   private readonly auth = inject(AuthService);
 
   protected readonly puedeCrear = this.auth.tienePermiso('campana_publicitaria', 'crear');
@@ -157,14 +159,17 @@ export class Campanas {
     }
     const v = this.formAlta.getRawValue();
     this.guardando.set(true);
-    this.service
-      .crear({
-        nombre: v.nombre,
-        canal: (v.canal || null) as CampanaPublicitaria['canal'],
-        presupuesto: v.presupuesto,
-        fechaInicio: v.fechaInicio,
-        fechaFin: v.fechaFin,
-      })
+    this.overlay
+      .ejecutar(
+        this.service.crear({
+          nombre: v.nombre,
+          canal: (v.canal || null) as CampanaPublicitaria['canal'],
+          presupuesto: v.presupuesto,
+          fechaInicio: v.fechaInicio,
+          fechaFin: v.fechaFin,
+        }),
+        { tipo: 'crear', textoProceso: 'Creando campaña…', textoExito: 'Campaña creada' },
+      )
       .subscribe({
         next: () => {
           this.guardando.set(false);

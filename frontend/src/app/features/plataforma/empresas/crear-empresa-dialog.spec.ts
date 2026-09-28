@@ -172,6 +172,9 @@ describe('CrearEmpresaDialog', () => {
       .expectOne((r) => r.url === '/api/v1/plataforma/giros' && r.params.get('activo') === 'true')
       .flush({ content: giros, page: 0, size: 100, totalElements: giros.length, totalPages: 1 });
     http.expectOne('/api/v1/plataforma/modulos').flush([]);
+    // Mapa de dependencias entre modulos (falla suave): se responde vacio para no
+    // dejar la peticion pendiente en http.verify().
+    http.expectOne('/api/v1/plataforma/dependencias-modulos').flush({});
     fixture.detectChanges();
   }
 
@@ -227,7 +230,7 @@ describe('CrearEmpresaDialog', () => {
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(texto).toContain('Identidad');
     expect(texto).toContain('Contacto');
-    expect(texto).toContain('Direccion');
+    expect(texto).toContain('Dirección');
     // La antigua seccion "Plan y modulos" se reestructuro en "Contratación"
     // (instrumento comercial excluyente Plan|Suscripción + modulos del mismo).
     expect(texto).toContain('Contratación');
@@ -337,6 +340,7 @@ describe('CrearEmpresaDialog', () => {
       { clave: 'comercial', nombreVisible: 'Comercial (CRM)', giro: null, catalogoModuloId: 'c1', precio: 1500, monedaCodigo: 'MXN' },
       { clave: 'operacion', nombreVisible: 'Operacion', giro: 'anuncios-luminosos', catalogoModuloId: 'c2', precio: 800, monedaCodigo: 'MXN' },
     ]);
+    http.expectOne('/api/v1/plataforma/dependencias-modulos').flush({});
     fixture.detectChanges();
 
     const c = componenteDe() as unknown as {
@@ -380,6 +384,7 @@ describe('CrearEmpresaDialog', () => {
       { clave: 'comercial', nombreVisible: 'Comercial (CRM)', giro: null, catalogoModuloId: 'c1', precio: 1500, monedaCodigo: 'MXN' },
       { clave: 'operacion', nombreVisible: 'Operacion', giro: 'anuncios-luminosos', catalogoModuloId: 'c2', precio: 800, monedaCodigo: 'MXN' },
     ]);
+    http.expectOne('/api/v1/plataforma/dependencias-modulos').flush({});
     fixture.detectChanges();
 
     const c = componenteDe() as unknown as {

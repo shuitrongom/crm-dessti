@@ -124,33 +124,87 @@
   &__color-controles {
     display: flex;
     flex-wrap: wrap;
-    align-items: flex-start;
+    align-items: center;
     gap: var(--ds-space-4);
+    margin-block-start: var(--ds-space-2);
   }
 
-  &__color-selector {
+  // Swatch premium: muestra grande circular con el color actual, anillo de acento
+  // y un glow sutil. Es una <label> que envuelve el <input type="color"> nativo,
+  // asi que al hacer clic abre el selector visual del sistema (rueda/HSV).
+  &__swatch {
+    --swatch: #374151;
+
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ds-space-3);
+    padding: var(--ds-space-2) var(--ds-space-4) var(--ds-space-2) var(--ds-space-2);
+    border-radius: var(--ds-radius-pill);
+    border: 1px solid var(--ds-color-border);
+    background: var(--ds-color-surface);
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 22px rgba(16, 24, 40, 0.12);
+      border-color: color-mix(in srgb, var(--swatch) 45%, var(--ds-color-border));
+    }
+
+    &:focus-within {
+      outline: 2px solid var(--swatch);
+      outline-offset: 2px;
+    }
+  }
+
+  // Circulo de color con doble anillo (glow) — el corazon del selector.
+  &__swatch-visor {
+    inline-size: 3rem;
+    block-size: 3rem;
+    flex: none;
+    border-radius: 50%;
+    background: var(--swatch);
+    border: 3px solid var(--ds-color-surface);
+    box-shadow:
+      0 0 0 2px color-mix(in srgb, var(--swatch) 55%, transparent),
+      0 4px 14px color-mix(in srgb, var(--swatch) 45%, transparent);
+  }
+
+  &__swatch-texto {
     display: flex;
     flex-direction: column;
-    gap: var(--ds-space-1);
+    line-height: 1.2;
   }
 
-  &__color-selector-label {
+  &__swatch-titulo {
     font-size: var(--ds-font-size-xs);
     color: var(--ds-color-text-muted);
   }
 
+  &__swatch-valor {
+    font-family: var(--ds-font-mono, ui-monospace, monospace);
+    font-size: var(--ds-font-size-sm);
+    font-weight: var(--ds-font-weight-bold);
+    color: var(--ds-color-text);
+    text-transform: uppercase;
+  }
+
+  // El input nativo se superpone invisible sobre el swatch (dispara el picker).
   &__color-input {
-    inline-size: 56px;
-    block-size: 40px;
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    opacity: 0;
+    border: 0;
     padding: 0;
-    border: 1px solid var(--ds-color-border);
-    border-radius: var(--ds-radius-sm);
-    background: var(--ds-color-surface);
     cursor: pointer;
   }
 
   &__color-hex {
-    min-inline-size: 200px;
+    min-inline-size: 260px;
+    flex: 1 1 260px;
   }
 
   &__color-valor {
@@ -159,23 +213,43 @@
     font-size: var(--ds-font-size-xs);
   }
 
+  // Presets como circulos (mas "color picker" premium) con check al seleccionar.
   &__presets {
     display: flex;
     flex-wrap: wrap;
     gap: var(--ds-space-2);
+    margin-block-start: var(--ds-space-1);
   }
 
   &__preset {
-    inline-size: 32px;
-    block-size: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 2rem;
+    block-size: 2rem;
     padding: 0;
-    border: 1px solid var(--ds-color-border);
-    border-radius: var(--ds-radius-sm);
+    border: 2px solid var(--ds-color-surface);
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px var(--ds-color-border);
+    color: #fff;
     cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
 
-    &[aria-pressed='true'] {
-      outline: 2px solid var(--ds-color-focus-ring);
-      outline-offset: 2px;
+    mat-icon {
+      font-size: 1.1rem;
+      inline-size: 1.1rem;
+      block-size: 1.1rem;
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+    }
+
+    &:hover {
+      transform: scale(1.12);
+    }
+
+    &--activo {
+      box-shadow:
+        0 0 0 2px var(--ds-color-surface),
+        0 0 0 4px var(--ds-color-text);
     }
 
     &:focus-visible {
@@ -188,5 +262,6 @@
     display: flex;
     flex-wrap: wrap;
     gap: var(--ds-space-2);
+    margin-block-start: var(--ds-space-2);
   }
 }

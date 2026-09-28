@@ -1,0 +1,105 @@
+<app-page-header
+  titulo="Programación de pagos"
+  subtitulo="Planifica cuándo y cuánto pagar a tus proveedores. Programa pagos sobre las cuentas por pagar con saldo."
+>
+  @if (puedeCrear) {
+    <button acciones matButton="filled" type="button" (click)="mostrarForm() ? cancelar() : abrirForm()">
+      <mat-icon>{{ mostrarForm() ? 'close' : 'event' }}</mat-icon>
+      {{ mostrarForm() ? 'Cerrar' : 'Programar pago' }}
+    </button>
+  }
+</app-page-header>
+
+@if (mostrarForm() && puedeCrear) {
+  <mat-card appearance="outlined" class="cont-alta">
+    <mat-card-content>
+      <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+        <h2 class="cont-alta__titulo">Nueva programación de pago</h2>
+        <div class="cont-form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Cuenta por pagar</mat-label>
+            <mat-select
+              formControlName="cuentaPorPagarId"
+              (valueChange)="alSeleccionarCxp($event)"
+            >
+              @for (cxp of cxpPendientes(); track cxp.id) {
+                <mat-option [value]="cxp.id">
+                  {{ cxp.facturaProveedorId.slice(0, 8) }} · saldo
+                  {{ cxp.saldo | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}
+                </mat-option>
+              }
+            </mat-select>
+            <mat-error>Selecciona una cuenta por pagar.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha programada</mat-label>
+            <input matInput [matDatepicker]="pickerFecha" formControlName="fechaProgramada" />
+            <mat-datepicker-toggle matSuffix [for]="pickerFecha" />
+            <mat-datepicker #pickerFecha />
+            <mat-error>La fecha es obligatoria.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Monto</mat-label>
+            <input matInput type="number" step="0.01" min="0.01" formControlName="monto" />
+            <mat-error>El monto debe ser mayor que cero.</mat-error>
+          </mat-form-field>
+        </div>
+        <div class="cont-ce__acciones">
+          <button matButton="filled" type="submit" [disabled]="guardando()">Programar pago</button>
+          <button matButton type="button" (click)="cancelar()">Cancelar</button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="No hay pagos programados. Programa el primero desde el botón superior."
+  (reintentar)="cargar()"
+>
+  @if ((estado().datos ?? []).length > 0) {
+    <div class="cont-resumen" role="status" aria-live="polite">
+      <div class="cont-resumen__kpi">
+        <mat-icon aria-hidden="true">schedule</mat-icon>
+        <div>
+          <span class="cont-resumen__valor">{{ resumen().pendientes }}</span>
+          <span class="cont-resumen__etiqueta">Pagos pendientes de aplicar</span>
+        </div>
+      </div>
+      <div class="cont-resumen__kpi">
+        <mat-icon aria-hidden="true">payments</mat-icon>
+        <div>
+          <span class="cont-resumen__valor">
+            {{ resumen().montoPendiente | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}
+          </span>
+          <span class="cont-resumen__etiqueta">Monto programado pendiente</span>
+        </div>
+      </div>
+    </div>
+  }
+
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="fechaProgramada" let-p>{{ p.fechaProgramada | date: 'dd/MM/yyyy' }}</ng-template>
+    <ng-template appCelda="cuenta" let-p>
+      <span class="cont-mono">{{ etiquetaCxp(p.cuentaPorPagarId) }}</span>
+    </ng-template>
+    <ng-template appCelda="monto" let-p>
+      <span class="cont-num">{{ p.monto | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span>
+    </ng-template>
+    <ng-template appCelda="estado" let-p>
+      <app-estado-chip
+        [etiqueta]="p.aplicada ? 'Aplicada' : 'Programada'"
+        [tono]="p.aplicada ? 'exito' : 'info'"
+      />
+    </ng-template>
+  </app-data-table>
+</app-state-container>

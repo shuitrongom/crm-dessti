@@ -9,6 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -19,6 +20,8 @@ import com.dessti.crm.operacion.proyecto.application.CrearProyectoCommand;
 import com.dessti.crm.operacion.proyecto.application.ProyectoDto;
 import com.dessti.crm.operacion.proyecto.application.ServicioProyectos;
 import com.dessti.crm.operacion.proyecto.application.SitioDto;
+import com.dessti.crm.operacion.proyecto.domain.FaseSitioGenerica;
+import com.dessti.crm.platform.error.ReglaNegocioException;
 import com.dessti.crm.platform.web.pagination.PageRequestFactory;
 import com.dessti.crm.platform.web.pagination.PaginaResponse;
 
@@ -115,6 +118,62 @@ public class ProyectoController {
         SitioDto dto = servicioProyectos.agregarSitio(
                 new AgregarSitioCommand(id, request.nombre(), request.direccion()));
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
+    }
+
+    /**
+     * Actualiza la fase operativa generica de un Sitio de un Proyecto multi-sitio
+     * (Req 3.2), avanzando el despliegue sitio por sitio para giros que no son
+     * anuncios. Devuelve el Proyecto detallado (variante multi-sitio) tras el cambio.
+     * 404 si el Proyecto o el Sitio no son accesibles; 409 si la transicion de fase
+     * es invalida; 422 si la etiqueta de fase es desconocida.
+     *
+     * @param id      identificador del Proyecto.
+     * @param sitioId identificador del Sitio.
+     * @param request fase destino y nota opcional.
+     * @return 200 OK con el {@link ProyectoDto} detallado multi-sitio.
+     */
+    @PutMapping("/{id}/sitios/{sitioId}/avance")
+    @PreAuthorize("@autorizador.moduloHabilitado('operacion') and @autorizador.tiene('proyecto','actualizar')")
+    public ResponseEntity<ProyectoDto> avanzarAvanceSitio(
+            @PathVariable("id") UUID id,
+            @PathVariable("sitioId") UUID sitioId,
+            @Valid @RequestBody ActualizarAvanceSitioRequest request) {
+        FaseSitioGenerica destino = interpretarFase(request.fase());
+        return ResponseEntity.ok(servicioProyectos.avanzarAvanceSitio(
+                id, sitioId, destino, request.nota(), request.evidenciaUrl()));
+    }
+
+    /**
+     * Corrige (incluido RETROCESO) la fase operativa de un Sitio de un Proyecto
+     * multi-sitio (Req 3.2). Operacion administrativa sensible: exige
+     * {@code proyecto:cambiar_estado} (sembrado en V78 para admin_empresa y gerente),
+     * a diferencia del avance normal que usa {@code proyecto:actualizar}. Permite ir a
+     * cualquier fase para deshacer avances marcados por error. 404 si el Proyecto o el
+     * Sitio no son accesibles; 422 si la etiqueta de fase es desconocida.
+     *
+     * @param id      identificador del Proyecto.
+     * @param sitioId identificador del Sitio.
+     * @param request fase destino, nota (motivo) y evidencia opcional.
+     * @return 200 OK con el {@link ProyectoDto} detallado multi-sitio.
+     */
+    @PutMapping("/{id}/sitios/{sitioId}/correccion-fase")
+    @PreAuthorize("@autorizador.moduloHabilitado('operacion') and @autorizador.tiene('proyecto','cambiar_estado')")
+    public ResponseEntity<ProyectoDto> corregirAvanceSitio(
+            @PathVariable("id") UUID id,
+            @PathVariable("sitioId") UUID sitioId,
+            @Valid @RequestBody ActualizarAvanceSitioRequest request) {
+        FaseSitioGenerica destino = interpretarFase(request.fase());
+        return ResponseEntity.ok(servicioProyectos.corregirAvanceSitio(
+                id, sitioId, destino, request.nota(), request.evidenciaUrl()));
+    }
+
+    /** Interpreta la etiqueta de fase, traduciendo un valor desconocido a 422. */
+    private static FaseSitioGenerica interpretarFase(String etiqueta) {
+        try {
+            return FaseSitioGenerica.desdeValorBd(etiqueta);
+        } catch (IllegalArgumentException ex) {
+            throw new ReglaNegocioException("La fase indicada no es valida: " + etiqueta + ".");
+        }
     }
 
     /**

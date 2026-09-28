@@ -106,6 +106,14 @@ public class Cliente extends TenantScopedEntity {
     @Column(name = "activo", nullable = false)
     private boolean activo;
 
+    /**
+     * Usuario propietario/vendedor asignado al Cliente (V81); {@code null} si no
+     * se ha asignado. La existencia del Usuario en el tenant la verifica la capa
+     * de aplicacion antes de asignarlo.
+     */
+    @Column(name = "propietario_usuario_id")
+    private UUID propietarioUsuarioId;
+
     protected Cliente() {
         // Requerido por JPA.
     }
@@ -276,6 +284,20 @@ public class Cliente extends TenantScopedEntity {
     }
 
     /**
+     * Asigna o limpia el Usuario propietario/vendedor del Cliente (V81). La
+     * existencia del Usuario en el tenant la verifica la capa de aplicacion antes
+     * de invocar este metodo; un {@code null} desasigna el propietario.
+     *
+     * @param propietarioUsuarioId identificador del Usuario propietario; {@code null}
+     *                             para desasignar.
+     * @param actor                identificador de quien asigna, para {@code updated_by}.
+     */
+    public void asignarPropietario(UUID propietarioUsuarioId, String actor) {
+        this.propietarioUsuarioId = propietarioUsuarioId;
+        this.setUpdatedBy(actor);
+    }
+
+    /**
      * Indica si el Cliente esta activo (no dado de baja logica, Req 5.9).
      *
      * @return {@code true} si el Cliente esta activo.
@@ -342,5 +364,10 @@ public class Cliente extends TenantScopedEntity {
 
     public boolean isActivo() {
         return activo;
+    }
+
+    /** Usuario propietario/vendedor asignado; {@code null} si no se asigno (V81). */
+    public UUID getPropietarioUsuarioId() {
+        return propietarioUsuarioId;
     }
 }

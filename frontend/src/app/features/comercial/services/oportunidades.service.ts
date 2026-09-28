@@ -18,6 +18,7 @@ import { Observable } from 'rxjs';
 import { ApiConfigService } from '../../../core/services/api-config.service';
 import { PaginaResponse } from '../../../core/models/pagina-response';
 import {
+  AjustarForecastRequest,
   ConversionCotizacion,
   EtapaOportunidad,
   Oportunidad,
@@ -69,9 +70,24 @@ export class OportunidadesService {
     return this.http.post<Oportunidad>(this.api.url('/oportunidades'), request);
   }
 
-  /** Cambia la etapa de una Oportunidad segun la maquina de estados (Req 14.3). */
-  cambiarEtapa(id: string, etapa: EtapaOportunidad): Observable<Oportunidad> {
-    return this.http.put<Oportunidad>(this.api.url(`/oportunidades/${id}/etapa`), { etapa });
+  /**
+   * Cambia la etapa de una Oportunidad segun la maquina de estados (Req 14.3).
+   * Al pasar a 'perdido' el backend exige un motivo de perdida (V81).
+   */
+  cambiarEtapa(
+    id: string,
+    etapa: EtapaOportunidad,
+    motivoPerdida?: string | null,
+  ): Observable<Oportunidad> {
+    return this.http.put<Oportunidad>(this.api.url(`/oportunidades/${id}/etapa`), {
+      etapa,
+      motivoPerdida: motivoPerdida ?? null,
+    });
+  }
+
+  /** Ajusta el forecast (probabilidad y fecha esperada de cierre) de una Oportunidad (V81). */
+  ajustarForecast(id: string, request: AjustarForecastRequest): Observable<Oportunidad> {
+    return this.http.put<Oportunidad>(this.api.url(`/oportunidades/${id}/forecast`), request);
   }
 
   /** Asigna el Usuario responsable de una Oportunidad (Req 14.2). */

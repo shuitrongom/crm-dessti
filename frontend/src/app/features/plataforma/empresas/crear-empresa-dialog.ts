@@ -45,6 +45,8 @@ import {
   AddressAutocomplete,
   DireccionAutocompletada,
 } from '../../../shared/components/address-autocomplete/address-autocomplete';
+import { SelectableCard } from '../../../shared/components/selectable-card/selectable-card';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 
 /** Tipos MIME de imagen admitidos para el logo del branding. */
 const TIPOS_LOGO = ['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp'];
@@ -70,6 +72,7 @@ type TipoInstrumento = 'plan' | 'suscripcion';
     MatCheckboxModule,
     MatRadioModule,
     AddressAutocomplete,
+    SelectableCard,
   ],
   templateUrl: './crear-empresa-dialog.html',
   styleUrl: './crear-empresa-dialog.scss',
@@ -81,6 +84,7 @@ export class CrearEmpresaDialog {
   private readonly paquetesService = inject(PaquetesSuscripcionService);
   private readonly girosService = inject(GirosService);
   private readonly dialogRef = inject(MatDialogRef<CrearEmpresaDialog, EmpresaCreada>);
+  private readonly overlay = inject(OperacionOverlayService);
 
   protected readonly guardando = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -556,13 +560,15 @@ export class CrearEmpresaDialog {
     this.error.set(null);
     if (this.formulario.invalid) {
       this.formulario.markAllAsTouched();
+      this.error.set('Revisa los campos obligatorios marcados antes de continuar.');
       return;
     }
     this.guardando.set(true);
     const v = this.formulario.getRawValue();
     const esPlan = v.tipoInstrumento === 'plan';
-    this.empresasService
-      .crear({
+    this.overlay
+      .ejecutar(
+        this.empresasService.crear({
         nombre: v.nombre.trim(),
         giroId: v.giroId,
         rfc: v.rfc.trim().toUpperCase(),
@@ -583,14 +589,16 @@ export class CrearEmpresaDialog {
         direccionEstado: this.opcional(v.direccionEstado),
         direccionCp: this.opcional(v.direccionCp),
         direccionPais: this.opcional(v.direccionPais),
-        notas: this.opcional(v.notas),
-        logo: this.logo() ?? undefined,
-      })
+          notas: this.opcional(v.notas),
+          logo: this.logo() ?? undefined,
+        }),
+        { tipo: 'crear', textoProceso: 'Creando empresa…', textoExito: 'Empresa creada' },
+      )
       .subscribe({
         next: (creada) => {
           this.guardando.set(false);
           if (creada.adminPasswordTemporal) {
-            // Se muestra la contrasena temporal una unica vez (Req 11.3).
+            // Tras la animación de éxito se muestra la contraseña temporal una única vez (Req 11.3).
             this.creada.set(creada);
           } else {
             this.dialogRef.close(creada);

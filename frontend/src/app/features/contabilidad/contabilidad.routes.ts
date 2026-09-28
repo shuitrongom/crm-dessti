@@ -26,6 +26,14 @@ export const contabilidadRoutes: Routes = [
       import('./cuentas-por-pagar/cuentas-por-pagar').then((m) => m.ContabilidadCuentasPorPagar),
   },
   {
+    path: 'programacion-pagos',
+    canActivate: [guardaPorPermiso('programacion_pago', 'listar')],
+    loadComponent: () =>
+      import('./programacion-pagos/programacion-pagos').then(
+        (m) => m.ContabilidadProgramacionPagos,
+      ),
+  },
+  {
     path: 'polizas',
     canActivate: [guardaPorPermiso('poliza_contable', 'listar')],
     loadComponent: () => import('./polizas/polizas').then((m) => m.ContabilidadPolizas),
@@ -37,9 +45,39 @@ export const contabilidadRoutes: Routes = [
       import('./catalogo-cuentas/catalogo-cuentas').then((m) => m.ContabilidadCatalogoCuentas),
   },
   {
+    path: 'cierre-periodo',
+    canActivate: [guardaPorPermiso('periodo_contable', 'leer')],
+    loadComponent: () =>
+      import('./cierre-periodo/cierre-periodo').then((m) => m.ContabilidadCierrePeriodo),
+  },
+  {
     path: 'reportes',
     canActivate: [guardaPorPermiso('reporte_financiero', 'leer')],
     loadComponent: () => import('./reportes/reportes').then((m) => m.ContabilidadReportes),
+  },
+  {
+    path: 'estados-financieros',
+    canActivate: [guardaPorPermiso('estado_financiero', 'leer')],
+    loadComponent: () =>
+      import('./estados-financieros/estados-financieros').then(
+        (m) => m.ContabilidadEstadosFinancieros,
+      ),
+  },
+  {
+    path: 'antiguedad-saldos',
+    canActivate: [guardaPorPermiso('cuenta_por_cobrar', 'leer')],
+    loadComponent: () =>
+      import('./antiguedad-saldos/antiguedad-saldos').then(
+        (m) => m.ContabilidadAntiguedadSaldos,
+      ),
+  },
+  {
+    path: 'estado-cuenta-cliente',
+    canActivate: [guardaPorPermiso('reporte_financiero', 'leer')],
+    loadComponent: () =>
+      import('./estado-cuenta-cliente/estado-cuenta-cliente').then(
+        (m) => m.ContabilidadEstadoCuentaCliente,
+      ),
   },
   {
     path: 'contabilidad-electronica',

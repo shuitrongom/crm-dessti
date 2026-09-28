@@ -15,27 +15,28 @@ import com.dessti.crm.platform.statemachine.MaquinaEstados;
  *       registrada (Req 33.1).</li>
  *   <li>{@link #CONCILIADA} — la Conciliacion_Tres_Vias resulto satisfactoria; la
  *       factura queda habilitada para pago (Req 33.5).</li>
- *   <li>{@link #DISCREPANCIA} — estado <strong>final</strong>: la conciliacion
- *       detecto una discrepancia de cantidad o de precio fuera de tolerancia; no se
- *       autoriza el pago (Req 33.4).</li>
+ *   <li>{@link #DISCREPANCIA} — la conciliacion detecto una discrepancia de
+ *       cantidad o de precio fuera de tolerancia; no se autoriza el pago
+ *       (Req 33.4). Es <strong>recuperable</strong>: puede REABRIRSE a
+ *       {@code registrada} para reintentar la conciliacion tras corregir.</li>
  *   <li>{@link #PAGADA} — estado <strong>final</strong>: pago autorizado desde una
  *       factura conciliada (Req 33.7).</li>
  * </ul>
  *
- * <h2>Transiciones permitidas (Req 33.6)</h2>
+ * <h2>Transiciones permitidas (Req 33.6 + mejora enterprise de reapertura)</h2>
  * <pre>
- *   registrada -&gt; conciliada | discrepancia
- *   conciliada -&gt; pagada
- *   (pagada, discrepancia: finales, sin salida)
+ *   registrada   -&gt; conciliada | discrepancia
+ *   conciliada   -&gt; pagada
+ *   discrepancia -&gt; registrada        (reapertura para re-conciliar)
+ *   (pagada: final, sin salida)
  * </pre>
  *
- * <p>El Req 33.6 lista <em>unicamente</em> estas tres transiciones; por tanto
- * {@link #DISCREPANCIA} es <strong>terminal</strong> (no vuelve a
- * {@code conciliada}). Una re-conciliacion tras corregir la discrepancia
- * requeriria RE-REGISTRAR la factura (nuevo registro en estado
- * {@code registrada}); se documenta como trabajo futuro y no se habilita aqui para
- * no introducir transiciones fuera del Req 33.6. Cualquier otra transicion —incluida
- * cualquiera que parta de un estado final— es invalida y el dominio la rechaza con
+ * <p>A las tres transiciones del Req 33.6 se anade {@code discrepancia -> registrada}
+ * (mejora enterprise): una factura marcada en discrepancia se puede REABRIR a
+ * {@code registrada} para reintentar la Conciliacion_Tres_Vias tras corregir la
+ * recepcion, la orden o el folio, sin re-registrarla desde cero. El unico estado
+ * <strong>terminal</strong> es {@link #PAGADA}. Cualquier otra transicion —incluida
+ * cualquiera que parta de {@code pagada}— es invalida y el dominio la rechaza con
  * {@link com.dessti.crm.platform.error.TransicionInvalidaException} (409),
  * conservando el estado actual sin modificarlo (Req 33.7).</p>
  *
@@ -61,15 +62,20 @@ public enum EstadoFacturaProveedor {
     PAGADA("pagada");
 
     /**
-     * Maquina de estados pura de la Factura_Proveedor (Req 33.6). Se construye una
-     * sola vez y es inmutable. Los estados finales {@link #PAGADA} y
-     * {@link #DISCREPANCIA} no declaran transiciones salientes, por lo que la
-     * maquina los trata como finales automaticamente.
+     * Maquina de estados pura de la Factura_Proveedor (Req 33.6 + reapertura de
+     * discrepancia). Se construye una sola vez y es inmutable. El unico estado
+     * final es {@link #PAGADA} (sin transiciones salientes); {@link #DISCREPANCIA}
+     * es recuperable via {@code discrepancia -> registrada}.
      */
     private static final MaquinaEstados<EstadoFacturaProveedor> MAQUINA =
             MaquinaEstados.<EstadoFacturaProveedor>builder(EstadoFacturaProveedor.class)
                     .permitir(REGISTRADA, CONCILIADA, DISCREPANCIA)
                     .permitir(CONCILIADA, PAGADA)
+                    // Discrepancia RECUPERABLE (mejora enterprise): tras corregir la
+                    // recepcion/orden o el folio, la factura puede REABRIRSE a
+                    // 'registrada' para volver a intentar la Conciliacion_Tres_Vias,
+                    // en lugar de exigir re-registrarla desde cero.
+                    .permitir(DISCREPANCIA, REGISTRADA)
                     .construir();
 
     private final String valorBd;
@@ -112,8 +118,9 @@ public enum EstadoFacturaProveedor {
     }
 
     /**
-     * Indica si este estado es <strong>final</strong> (pagada o discrepancia) y por
-     * tanto no admite ninguna transicion posterior (Req 33.6).
+     * Indica si este estado es <strong>final</strong> (solo {@link #PAGADA}) y por
+     * tanto no admite ninguna transicion posterior. {@link #DISCREPANCIA} NO es
+     * final: puede reabrirse a {@code registrada}.
      *
      * @return {@code true} si es un estado final.
      */

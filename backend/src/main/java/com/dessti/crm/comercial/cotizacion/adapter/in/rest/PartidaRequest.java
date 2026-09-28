@@ -9,6 +9,7 @@ import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 /**
@@ -28,6 +29,9 @@ import jakarta.validation.constraints.Size;
  * @param descripcion    descripcion de la partida; obligatoria (1..500).
  * @param cantidad       cantidad; entero en [1, 999,999] (Req 6.3, 6.4).
  * @param precioUnitario precio unitario; opcional, en [0.01, 999,999,999.99].
+ * @param descuento      descuento (monto) de la partida; opcional, &ge; 0 (V80).
+ * @param tasaIva        etiqueta de la tasa de IVA ({@code 16}/{@code 8}/{@code 0}/
+ *                       {@code exento}); opcional, por defecto 16% (V80).
  */
 public record PartidaRequest(
         UUID productoId,
@@ -36,5 +40,11 @@ public record PartidaRequest(
         @DecimalMin(value = "0.01")
         @DecimalMax(value = "999999999.99")
         @Digits(integer = 9, fraction = 2)
-        BigDecimal precioUnitario) {
+        BigDecimal precioUnitario,
+        @DecimalMin(value = "0.00")
+        @DecimalMax(value = "999999999.99")
+        @Digits(integer = 9, fraction = 2)
+        BigDecimal descuento,
+        @Pattern(regexp = "16|8|0|exento", message = "La tasa de IVA debe ser 16, 8, 0 o exento.")
+        String tasaIva) {
 }

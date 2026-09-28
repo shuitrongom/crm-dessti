@@ -43,6 +43,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 import { provideFechaIsoDatepicker } from '../../../shared/date/provide-fecha-iso';
 import { PlanesService } from '../services/planes.service';
 import { SuscripcionesService } from '../services/suscripciones.service';
@@ -97,6 +98,7 @@ export class PlanSuscripcionDialog {
   private readonly dialog = inject(MatDialog);
   private readonly confirm = inject(ConfirmDialogService);
   private readonly toast = inject(NotificacionesService);
+  private readonly overlay = inject(OperacionOverlayService);
   private readonly dialogRef = inject(MatDialogRef<PlanSuscripcionDialog, boolean>);
   protected readonly data = inject<PlanSuscripcionDialogData>(MAT_DIALOG_DATA);
 
@@ -404,17 +406,23 @@ export class PlanSuscripcionDialog {
       return;
     }
     this.procesando.set(true);
-    this.suscripcionesService.activar(sub.id).subscribe({
-      next: () => {
-        this.procesando.set(false);
-        this.toast.exito('Suscripcion activada.');
-        this.marcarCambioYRecargar();
-      },
-      error: (e: HttpErrorResponse) => {
-        this.procesando.set(false);
-        this.toast.error(mensajeDeError(e));
-      },
-    });
+    this.overlay
+      .ejecutar(this.suscripcionesService.activar(sub.id), {
+        tipo: 'procesar',
+        textoProceso: 'Activando suscripción…',
+        textoExito: 'Suscripción activada',
+      })
+      .subscribe({
+        next: () => {
+          this.procesando.set(false);
+          this.toast.exito('Suscripcion activada.');
+          this.marcarCambioYRecargar();
+        },
+        error: (e: HttpErrorResponse) => {
+          this.procesando.set(false);
+          this.toast.error(mensajeDeError(e));
+        },
+      });
   }
 
   /** Suspende la suscripcion vigente (POST /suscripciones/{id}/suspender) (Req 7.3). */
@@ -424,17 +432,23 @@ export class PlanSuscripcionDialog {
       return;
     }
     this.procesando.set(true);
-    this.suscripcionesService.suspender(sub.id).subscribe({
-      next: () => {
-        this.procesando.set(false);
-        this.toast.exito('Suscripcion suspendida.');
-        this.marcarCambioYRecargar();
-      },
-      error: (e: HttpErrorResponse) => {
-        this.procesando.set(false);
-        this.toast.error(mensajeDeError(e));
-      },
-    });
+    this.overlay
+      .ejecutar(this.suscripcionesService.suspender(sub.id), {
+        tipo: 'procesar',
+        textoProceso: 'Suspendiendo suscripción…',
+        textoExito: 'Suscripción suspendida',
+      })
+      .subscribe({
+        next: () => {
+          this.procesando.set(false);
+          this.toast.exito('Suscripcion suspendida.');
+          this.marcarCambioYRecargar();
+        },
+        error: (e: HttpErrorResponse) => {
+          this.procesando.set(false);
+          this.toast.error(mensajeDeError(e));
+        },
+      });
   }
 
   /**
@@ -458,17 +472,23 @@ export class PlanSuscripcionDialog {
       return;
     }
     this.procesando.set(true);
-    this.suscripcionesService.cancelar(sub.id).subscribe({
-      next: () => {
-        this.procesando.set(false);
-        this.toast.exito('Suscripción cancelada.');
-        this.marcarCambioYRecargar();
-      },
-      error: (e: HttpErrorResponse) => {
-        this.procesando.set(false);
-        this.toast.error(mensajeDeError(e));
-      },
-    });
+    this.overlay
+      .ejecutar(this.suscripcionesService.cancelar(sub.id), {
+        tipo: 'eliminar',
+        textoProceso: 'Cancelando suscripción…',
+        textoExito: 'Suscripción cancelada',
+      })
+      .subscribe({
+        next: () => {
+          this.procesando.set(false);
+          this.toast.exito('Suscripción cancelada.');
+          this.marcarCambioYRecargar();
+        },
+        error: (e: HttpErrorResponse) => {
+          this.procesando.set(false);
+          this.toast.error(mensajeDeError(e));
+        },
+      });
   }
 
   /**
@@ -483,17 +503,23 @@ export class PlanSuscripcionDialog {
       return;
     }
     this.procesando.set(true);
-    this.suscripcionesService.activarFacturacion(sub.id, {}).subscribe({
-      next: () => {
-        this.procesando.set(false);
-        this.toast.exito('Facturación activada.');
-        this.marcarCambioYRecargar();
-      },
-      error: (e: HttpErrorResponse) => {
-        this.procesando.set(false);
-        this.toast.error(mensajeDeError(e));
-      },
-    });
+    this.overlay
+      .ejecutar(this.suscripcionesService.activarFacturacion(sub.id, {}), {
+        tipo: 'procesar',
+        textoProceso: 'Activando facturación…',
+        textoExito: 'Facturación activada',
+      })
+      .subscribe({
+        next: () => {
+          this.procesando.set(false);
+          this.toast.exito('Facturación activada.');
+          this.marcarCambioYRecargar();
+        },
+        error: (e: HttpErrorResponse) => {
+          this.procesando.set(false);
+          this.toast.error(mensajeDeError(e));
+        },
+      });
   }
 
   /**
@@ -533,18 +559,24 @@ export class PlanSuscripcionDialog {
     }
     const { nuevaVigenciaFin } = this.formularioExtender.getRawValue();
     this.procesando.set(true);
-    this.suscripcionesService.extenderPrueba(sub.id, { nuevaVigenciaFin }).subscribe({
-      next: () => {
-        this.procesando.set(false);
-        this.extendiendoPrueba.set(false);
-        this.toast.exito('Periodo de prueba extendido.');
-        this.marcarCambioYRecargar();
-      },
-      error: (e: HttpErrorResponse) => {
-        this.procesando.set(false);
-        this.toast.error(mensajeDeError(e));
-      },
-    });
+    this.overlay
+      .ejecutar(this.suscripcionesService.extenderPrueba(sub.id, { nuevaVigenciaFin }), {
+        tipo: 'guardar',
+        textoProceso: 'Extendiendo prueba…',
+        textoExito: 'Prueba extendida',
+      })
+      .subscribe({
+        next: () => {
+          this.procesando.set(false);
+          this.extendiendoPrueba.set(false);
+          this.toast.exito('Periodo de prueba extendido.');
+          this.marcarCambioYRecargar();
+        },
+        error: (e: HttpErrorResponse) => {
+          this.procesando.set(false);
+          this.toast.error(mensajeDeError(e));
+        },
+      });
   }
 
   /** Marca que hubo cambio (para refrescar el listado al cerrar) y recarga el panel. */

@@ -63,6 +63,7 @@ class ServicioUsuariosTest {
     private RegistroSesionesPort registroSesiones;
     private LimiteUsuariosPort limiteUsuarios;
     private com.dessti.crm.platform.security.rbac.ModulosHabilitadosPort modulosHabilitados;
+    private ClienteExistentePort clienteExistente;
     private ServicioUsuarios servicio;
 
     @BeforeEach
@@ -74,6 +75,7 @@ class ServicioUsuariosTest {
         registroSesiones = mock(RegistroSesionesPort.class);
         limiteUsuarios = mock(LimiteUsuariosPort.class);
         modulosHabilitados = mock(com.dessti.crm.platform.security.rbac.ModulosHabilitadosPort.class);
+        clienteExistente = mock(ClienteExistentePort.class);
         // Por defecto la Empresa tiene cupo en su Plan (Req 25.3): las pruebas
         // que ejercen el limite lo sobrescriben explicitamente.
         when(limiteUsuarios.puedeCrearUsuario(any())).thenReturn(true);
@@ -86,7 +88,7 @@ class ServicioUsuariosTest {
                 "redes-sociales"));
         servicio = new ServicioUsuarios(
                 usuarioRepository, rolRepository, passwordEncoder, auditoria,
-                registroSesiones, limiteUsuarios, modulosHabilitados);
+                registroSesiones, limiteUsuarios, modulosHabilitados, clienteExistente);
         TenantContext.set(TENANT);
     }
 
@@ -445,5 +447,84 @@ class ServicioUsuariosTest {
 
         assertThat(dto.roles()).extracting(UsuarioDto.RolAsignadoDto::nombre).containsExactly("ventas");
         verify(usuarioRepository).save(any());
+    }
+
+    // -----------------------------------------------------------------
+    // Req 45: alta de Usuario del Portal (rol cliente_portal + Cliente)
+    // -----------------------------------------------------------------
+
+    @Test
+    @DisplayName("Crea un Usuario del Portal con rol cliente_portal y Cliente activo del tenant (Req 45)")
+    void creaUsuarioPortalConCliente() {
+        UUID rolId = UUID.randomUUID();
+        Rol portal = rol(rolId, "cliente_portal", null); // rol externo predefinido (tenant NULL)
+        when(rolRepository.findById(rolId)).thenReturn(Optional.of(portal));
+        when(usuarioRepository.existsByIdentificadorAcceso("cliente@acme")).thenReturn(false);
+        when(passwordEncoder.encode("secreto-123")).thenReturn("$2a$hash");
+        when(usuarioRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        UUID clienteId = UUID.randomUUID();
+        when(clienteExistente.existeClienteActivo(clienteId)).thenReturn(true);
+
+        var comando = new CrearUsuarioCommand(
+                "cliente@acme", "secreto-123", "Contacto ACME", Set.of(rolId), clienteId);
+
+        UsuarioDto dto = servicio.crearUsuario(comando);
+
+        assertThat(dto.identificadorAcceso()).isEqualTo("cliente@acme");
+        ArgumentCaptor<Usuario> usuarioCaptor = ArgumentCaptor.forClass(Usuario.class);
+        verify(usuarioRepository).save(usuarioCaptor.capture());
+        assertThat(usuarioCaptor.getValue().getClienteId()).isEqualTo(clienteId);
+    }
+
+    @Test
+    @DisplayName("Rechaza (422) un Usuario con rol cliente_portal sin Cliente asociado (Req 45)")
+    void rechazaPortalSinCliente() {
+        UUID rolId = UUID.randomUUID();
+        Rol portal = rol(rolId, "cliente_portal", null);
+        when(rolRepository.findById(rolId)).thenReturn(Optional.of(portal));
+
+        var comando = new CrearUsuarioCommand(
+                "cliente@acme", "secreto-123", null, Set.of(rolId), null);
+
+        assertThatThrownBy(() -> servicio.crearUsuario(comando))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("Cliente");
+
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Rechaza (404) un Usuario del Portal cuyo Cliente no existe o es de otro tenant (Req 45)")
+    void rechazaPortalConClienteInexistente() {
+        UUID rolId = UUID.randomUUID();
+        Rol portal = rol(rolId, "cliente_portal", null);
+        when(rolRepository.findById(rolId)).thenReturn(Optional.of(portal));
+        UUID clienteId = UUID.randomUUID();
+        when(clienteExistente.existeClienteActivo(clienteId)).thenReturn(false);
+
+        var comando = new CrearUsuarioCommand(
+                "cliente@acme", "secreto-123", null, Set.of(rolId), clienteId);
+
+        assertThatThrownBy(() -> servicio.crearUsuario(comando))
+                .isInstanceOf(RecursoNoEncontradoException.class);
+
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Rechaza (422) asociar un Cliente a un Usuario de staff (sin rol cliente_portal) (Req 45)")
+    void rechazaClienteEnUsuarioStaff() {
+        UUID rolId = UUID.randomUUID();
+        Rol ventas = rol(rolId, "ventas", null);
+        when(rolRepository.findById(rolId)).thenReturn(Optional.of(ventas));
+
+        var comando = new CrearUsuarioCommand(
+                "jperez", "secreto-123", null, Set.of(rolId), UUID.randomUUID());
+
+        assertThatThrownBy(() -> servicio.crearUsuario(comando))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("cliente_portal");
+
+        verify(usuarioRepository, never()).save(any());
     }
 }

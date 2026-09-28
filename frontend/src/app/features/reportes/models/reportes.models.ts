@@ -64,6 +64,22 @@ export interface FiltroInteligencia {
   dimension?: string | null;
 }
 
+/**
+ * Insights ejecutivos en lenguaje natural del consolidado (InsightsDto, suite BI+IA).
+ * El backend los redacta con el proveedor de IA cuando esta configurado o con un
+ * generador heuristico determinista de respaldo (degradacion gracil); `generadoPorIa`
+ * lo distingue para mostrarlo con transparencia.
+ */
+export interface InsightsBi {
+  generadoEn: string;
+  desde: string | null;
+  hasta: string | null;
+  area: string | null;
+  resumenEjecutivo: string;
+  hallazgos: string[];
+  generadoPorIa: boolean;
+}
+
 /** Widget de un tablero personalizado (WidgetTableroDto). */
 export interface WidgetTablero {
   id: string;

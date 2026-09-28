@@ -83,7 +83,7 @@ class OportunidadControllerTest {
     private static OportunidadDto oportunidadDto(String etapa) {
         Instant ahora = Instant.parse("2024-01-01T00:00:00Z");
         return new OportunidadDto(ID, CLIENTE, "Anuncio corporativo", new BigDecimal("15000.00"),
-                etapa, null, null, null, 0L, ahora, ahora);
+                etapa, null, null, null, 10, null, null, 0L, ahora, ahora);
     }
 
     @Test

@@ -21,6 +21,7 @@ import { MatIconModule } from '@angular/material/icon';
 
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../shared/components/state-container/state-container';
+import { KpiTile } from '../../../shared/components/kpi-tile/kpi-tile';
 import {
   CeldaTablaDirective,
   ColumnaTabla,
@@ -28,6 +29,7 @@ import {
 } from '../../../shared/components/data-table/data-table';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 import { FaseSolicitud } from '../../../shared/models/estado-solicitud';
@@ -50,6 +52,7 @@ const MAX_FOTO_BYTES = 1024 * 1024;
     MatIconModule,
     PageHeader,
     StateContainer,
+    KpiTile,
     DataTable,
     CeldaTablaDirective,
   ],
@@ -61,6 +64,7 @@ export class ComercialProductos {
   private readonly service = inject(ProductosService);
   private readonly confirm = inject(ConfirmDialogService);
   private readonly toast = inject(NotificacionesService);
+  private readonly overlay = inject(OperacionOverlayService);
   private readonly auth = inject(AuthService);
 
   protected readonly puedeCrear = this.auth.tienePermiso('producto', 'crear');
@@ -232,7 +236,13 @@ export class ComercialProductos {
     this.guardando.set(true);
     const id = this.editandoId();
     const peticion = id ? this.service.actualizar(id, request) : this.service.crear(request);
-    peticion.subscribe({
+    this.overlay
+      .ejecutar(peticion, {
+        tipo: id ? 'guardar' : 'crear',
+        textoProceso: id ? 'Guardando producto…' : 'Creando producto…',
+        textoExito: id ? 'Producto guardado' : 'Producto creado',
+      })
+      .subscribe({
       next: () => {
         this.guardando.set(false);
         this.toast.exito(id ? 'Producto actualizado.' : 'Producto creado.');
@@ -259,12 +269,18 @@ export class ComercialProductos {
     if (!ok) {
       return;
     }
-    this.service.eliminar(producto.id).subscribe({
-      next: () => {
-        this.toast.exito('Producto dado de baja.');
-        this.cargar();
-      },
-      error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
-    });
+    this.overlay
+      .ejecutar(this.service.eliminar(producto.id), {
+        tipo: 'eliminar',
+        textoProceso: 'Dando de baja…',
+        textoExito: 'Producto dado de baja',
+      })
+      .subscribe({
+        next: () => {
+          this.toast.exito('Producto dado de baja.');
+          this.cargar();
+        },
+        error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
+      });
   }
 }

@@ -68,3 +68,20 @@
   gap: var(--ds-space-4);
   margin-block-end: var(--ds-space-4);
 }
+
+// Celdas de la tabla de Proveedores.
+.proveedor-nombre {
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-text);
+}
+
+.proveedor-contacto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-inline-size: 0;
+
+  span {
+    overflow-wrap: anywhere;
+  }
+}

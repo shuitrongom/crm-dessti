@@ -1,0 +1,263 @@
+// OperacionOverlay — feedback animado de operaciones. Overlay central bloqueante:
+// fase "proceso" (spinner + halo + ícono contextual), fase "éxito" (check dibujado
+// + destello). Solo tokens del Sistema de Diseño. Respeta prefers-reduced-motion.
+
+:host {
+  display: contents;
+}
+
+.ds-opov__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1400; // por encima de diálogos de Material
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, #0b1220 42%, transparent);
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--ds-duration-base) var(--ds-easing-standard),
+    visibility var(--ds-duration-base) var(--ds-easing-standard);
+}
+
+.ds-opov__backdrop--visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.ds-opov__panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ds-space-4);
+  min-inline-size: 220px;
+  max-inline-size: min(360px, 90vw);
+  padding: var(--ds-space-6);
+  border-radius: var(--ds-radius-lg);
+  // Superficie con gradiente sutil + un acento de color de marca arriba (look tech).
+  background:
+    radial-gradient(120% 90% at 50% -10%,
+      color-mix(in srgb, var(--ds-color-primary) 14%, transparent) 0%,
+      transparent 60%),
+    var(--ds-color-surface);
+  border: 1px solid color-mix(in srgb, var(--ds-color-primary) 22%, var(--ds-color-border));
+  box-shadow:
+    var(--ds-shadow-lg),
+    0 0 0 1px color-mix(in srgb, var(--ds-color-primary) 10%, transparent),
+    0 0 32px color-mix(in srgb, var(--ds-color-primary) 18%, transparent);
+  transform: translateY(8px) scale(0.98);
+  animation: ds-opov-entrar var(--ds-duration-base) var(--ds-easing-standard) both;
+}
+
+// Ícono central (contenedor circular).
+.ds-opov__icono {
+  position: relative;
+  inline-size: 64px;
+  block-size: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--ds-radius-pill);
+}
+
+.ds-opov__icono--proceso {
+  // Núcleo con gradiente de marca (efecto "reactor" tecnológico).
+  background:
+    radial-gradient(circle at 50% 45%,
+      color-mix(in srgb, var(--ds-color-primary) 30%, transparent) 0%,
+      color-mix(in srgb, var(--ds-color-primary) 12%, transparent) 60%,
+      transparent 100%),
+    var(--ds-color-primary-container);
+}
+
+.ds-opov__icono--exito {
+  background: color-mix(in srgb, var(--ds-color-success) 18%, transparent);
+}
+
+// Anillo giratorio exterior: degradado cónico (estela luminosa) que gira rápido.
+.ds-opov__spinner {
+  position: absolute;
+  inset: -4px;
+  border-radius: var(--ds-radius-pill);
+  // El anillo se dibuja con una máscara para que solo se vea el borde, con la
+  // estela cónica del color de marca desvaneciéndose (look de HUD futurista).
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%,
+    color-mix(in srgb, var(--ds-color-primary) 15%, transparent) 35%,
+    var(--ds-color-primary) 100%
+  );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+  animation: ds-opov-girar 0.9s linear infinite;
+}
+
+// Segundo anillo (órbita interior) que gira en SENTIDO CONTRARIO y más lento:
+// da la sensación de un sistema orbital/tecnológico. Es un punto luminoso que
+// recorre una órbita punteada.
+.ds-opov__orbita {
+  position: absolute;
+  inset: 6px;
+  border-radius: var(--ds-radius-pill);
+  border: 1px dashed color-mix(in srgb, var(--ds-color-primary) 30%, transparent);
+  animation: ds-opov-girar-inv 2.4s linear infinite;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset-block-start: -3px;
+    inset-inline-start: 50%;
+    inline-size: 6px;
+    block-size: 6px;
+    border-radius: var(--ds-radius-pill);
+    background: var(--ds-color-primary);
+    box-shadow: 0 0 8px 2px color-mix(in srgb, var(--ds-color-primary) 60%, transparent);
+    transform: translateX(-50%);
+  }
+}
+
+.ds-opov__glifo {
+  color: var(--ds-color-primary);
+  font-size: 28px;
+  inline-size: 28px;
+  block-size: 28px;
+  // Glow tecnológico alrededor del glifo + latido sutil.
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--ds-color-primary) 55%, transparent));
+  animation: ds-opov-latido 1.4s var(--ds-easing-standard) infinite;
+}
+
+// Halo que respira detrás del anillo mientras procesa.
+.ds-opov__halo {
+  position: absolute;
+  inset: -8px;
+  border-radius: var(--ds-radius-pill);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--ds-color-primary) 22%, transparent) 0%,
+    transparent 70%
+  );
+  animation: ds-opov-respirar 1.8s var(--ds-easing-standard) infinite;
+}
+
+// Check de éxito dibujado (círculo + palomita con stroke-dashoffset).
+.ds-opov__check {
+  inline-size: 40px;
+  block-size: 40px;
+  animation: ds-opov-pop var(--ds-duration-base) var(--ds-easing-emphasized) both;
+}
+
+.ds-opov__check-circulo {
+  stroke: var(--ds-color-success);
+  stroke-width: 2.5;
+  stroke-dasharray: 151; // circunferencia aprox (2*pi*24)
+  stroke-dashoffset: 151;
+  animation: ds-opov-trazar var(--ds-duration-slow) var(--ds-easing-standard) forwards;
+}
+
+.ds-opov__check-trazo {
+  stroke: var(--ds-color-success);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 40;
+  stroke-dashoffset: 40;
+  animation: ds-opov-trazar var(--ds-duration-base) var(--ds-easing-emphasized) 0.28s forwards;
+}
+
+// Destello radial que se expande al confirmar el éxito.
+.ds-opov__destello {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--ds-radius-pill);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--ds-color-success) 40%, transparent) 0%,
+    transparent 70%
+  );
+  animation: ds-opov-destellar var(--ds-duration-slow)
+    var(--ds-easing-decelerate, var(--ds-easing-standard)) forwards;
+}
+
+.ds-opov__texto {
+  margin: 0;
+  font-size: var(--ds-font-size-md);
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-text);
+  text-align: center;
+}
+
+// -----------------------------------------------------------------------------
+// Animaciones
+// -----------------------------------------------------------------------------
+@keyframes ds-opov-entrar {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes ds-opov-girar {
+  to { transform: rotate(360deg); }
+}
+
+// Giro en sentido contrario (órbita interior).
+@keyframes ds-opov-girar-inv {
+  to { transform: rotate(-360deg); }
+}
+
+@keyframes ds-opov-latido {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+
+@keyframes ds-opov-pop {
+  0% { opacity: 0; transform: scale(0.3); }
+  60% { transform: scale(1.12); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes ds-opov-respirar {
+  0%, 100% { opacity: 0.5; transform: scale(0.92); }
+  50% { opacity: 1; transform: scale(1.08); }
+}
+
+// Trazado compartido por círculo y palomita del check.
+@keyframes ds-opov-trazar {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes ds-opov-destellar {
+  0% { opacity: 0.9; transform: scale(0.4); }
+  100% { opacity: 0; transform: scale(1.6); }
+}
+
+// Reducción de movimiento (Req 55.4): sin giros/pulsos; feedback estático visible.
+@media (prefers-reduced-motion: reduce) {
+  .ds-opov__panel,
+  .ds-opov__spinner,
+  .ds-opov__orbita,
+  .ds-opov__glifo,
+  .ds-opov__halo,
+  .ds-opov__destello,
+  .ds-opov__check,
+  .ds-opov__check-circulo,
+  .ds-opov__check-trazo {
+    animation: none !important;
+  }
+  .ds-opov__backdrop {
+    transition: none !important;
+  }
+  .ds-opov__halo,
+  .ds-opov__destello,
+  .ds-opov__orbita {
+    display: none;
+  }
+  .ds-opov__panel {
+    transform: none;
+  }
+  .ds-opov__check-circulo,
+  .ds-opov__check-trazo {
+    stroke-dashoffset: 0 !important;
+  }
+}

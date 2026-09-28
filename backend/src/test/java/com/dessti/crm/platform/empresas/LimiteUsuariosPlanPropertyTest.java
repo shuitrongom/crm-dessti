@@ -213,8 +213,10 @@ class LimiteUsuariosPlanPropertyTest {
         when(usuarioRepository.save(any(Usuario.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
+        var clienteExistente =
+                mock(com.dessti.crm.platform.security.usuarios.ClienteExistentePort.class);
         return new ServicioUsuarios(usuarioRepository, rolRepository, passwordEncoder,
-                auditoria, registroSesiones, limiteUsuarios, modulosHabilitados);
+                auditoria, registroSesiones, limiteUsuarios, modulosHabilitados, clienteExistente);
     }
 
     @AfterTry

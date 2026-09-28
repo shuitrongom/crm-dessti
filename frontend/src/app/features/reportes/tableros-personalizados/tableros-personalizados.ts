@@ -27,6 +27,7 @@ import {
 } from '../../../shared/components/data-table/data-table';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 import {
@@ -66,6 +67,7 @@ export class TablerosPersonalizados {
   private readonly service = inject(InteligenciaNegocioService);
   private readonly confirm = inject(ConfirmDialogService);
   private readonly toast = inject(NotificacionesService);
+  private readonly overlay = inject(OperacionOverlayService);
   private readonly auth = inject(AuthService);
 
   protected readonly puedeGestionar = this.auth.tienePermiso('inteligencia_negocio', 'gestionar');
@@ -180,7 +182,13 @@ export class TablerosPersonalizados {
     const peticion = id
       ? this.service.actualizarTablero(id, request)
       : this.service.crearTablero(request);
-    peticion.subscribe({
+    this.overlay
+      .ejecutar(peticion, {
+        tipo: id ? 'guardar' : 'crear',
+        textoProceso: id ? 'Guardando tablero…' : 'Creando tablero…',
+        textoExito: id ? 'Tablero guardado' : 'Tablero creado',
+      })
+      .subscribe({
       next: () => {
         this.guardando.set(false);
         this.toast.exito(id ? 'Tablero actualizado.' : 'Tablero creado.');
@@ -205,12 +213,18 @@ export class TablerosPersonalizados {
     if (!ok) {
       return;
     }
-    this.service.eliminarTablero(t.id).subscribe({
-      next: () => {
-        this.toast.exito('Tablero eliminado.');
-        this.cargar();
-      },
-      error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
-    });
+    this.overlay
+      .ejecutar(this.service.eliminarTablero(t.id), {
+        tipo: 'eliminar',
+        textoProceso: 'Eliminando tablero…',
+        textoExito: 'Tablero eliminado',
+      })
+      .subscribe({
+        next: () => {
+          this.toast.exito('Tablero eliminado.');
+          this.cargar();
+        },
+        error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
+      });
   }
 }

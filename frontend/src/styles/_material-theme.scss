@@ -23,6 +23,9 @@ html {
       theme-type: color-scheme,
     ),
     typography: Roboto,
-    density: 0,
+    // Densidad -1: controles (form-fields, inputs, botones) mas compactos que la
+    // densidad estandar (0), para un look enterprise sin campos "enormes". Aplica
+    // de forma consistente a TODO el proyecto (Req 52).
+    density: -1,
   ));
 }

@@ -1,0 +1,34 @@
+<article class="kpi-tile" [class]="claseTono()">
+  <div class="kpi-tile__top">
+    <span class="kpi-tile__icon" aria-hidden="true">
+      <mat-icon>{{ icono() }}</mat-icon>
+    </span>
+    @if (deltaPorcentaje() !== null && tendencia() !== 'neutra') {
+      <span class="kpi-tile__delta" [class]="'kpi-tile__delta--' + tonoDelta()">
+        <mat-icon aria-hidden="true">{{ iconoDelta() }}</mat-icon>
+        {{ deltaPorcentaje()! >= 0 ? '+' : '' }}{{ deltaPorcentaje()! | number: '1.0-1' : 'es-MX' }}%
+      </span>
+    }
+  </div>
+
+  <p class="kpi-tile__value">
+    @if (prefijo()) {
+      <span class="kpi-tile__afijo">{{ prefijo() }}</span>
+    }
+    <span class="kpi-tile__number">{{ valor() ?? '—' }}</span>
+    @if (sufijo()) {
+      <span class="kpi-tile__afijo">{{ sufijo() }}</span>
+    }
+  </p>
+
+  <p class="kpi-tile__label">{{ etiqueta() }}</p>
+  @if (sublabel()) {
+    <p class="kpi-tile__sub">{{ sublabel() }}</p>
+  }
+
+  @if (haySparkline()) {
+    <div class="kpi-tile__spark">
+      <app-metric-chart [datos]="sparkline()!" tipo="sparkline" />
+    </div>
+  }
+</article>

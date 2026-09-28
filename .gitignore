@@ -20,6 +20,7 @@ _*.log
 _*.err
 local-dev/_*.ps1
 local-dev/_*.sql
+local-dev/_*.cmd
 frontend/_*.txt
 frontend/_*.err
 

@@ -21,10 +21,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { PageHeader } from '../../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../../shared/components/state-container/state-container';
 import { NotificacionesService } from '../../../../shared/services/notificaciones.service';
+import { OperacionOverlayService } from '../../../../shared/components/operacion-overlay/operacion-overlay';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../../core/services/error-mensajes';
 import { TematizacionService } from '../../../../core/services/tematizacion.service';
-import { esHexValido } from '../../../../core/theming/color-utils';
+import { esHexValido, aHex6 } from '../../../../core/theming/color-utils';
 import {
   EstadoSolicitud,
   cargando,
@@ -90,6 +91,7 @@ export class AdminBranding {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(BrandingService);
   private readonly toast = inject(NotificacionesService);
+  private readonly overlay = inject(OperacionOverlayService);
   private readonly auth = inject(AuthService);
   private readonly tematizacion = inject(TematizacionService);
 
@@ -133,7 +135,9 @@ export class AdminBranding {
    */
   protected readonly colorInvalido = computed(() => {
     const valor = (this.colorValor() ?? '').trim();
-    return valor !== '' && !esHexValido(valor);
+    // Invalido solo si no esta vacio y NO se puede interpretar como color
+    // (admite hex 3/6, rgb y rgba; el vacio significa "usar Tema_Corporativo").
+    return valor !== '' && aHex6(valor) === null;
   });
 
   /**
@@ -142,8 +146,9 @@ export class AdminBranding {
    * para no romper el control nativo (el texto hex es la fuente de verdad).
    */
   protected readonly colorSelector = computed(() => {
-    const valor = (this.colorValor() ?? '').trim();
-    return esHexValido(valor) ? valor.toLowerCase() : '#374151';
+    // Normaliza cualquier formato admitido a #RRGGBB para el <input type="color">;
+    // ante valor vacio/invalido cae a un neutro (el texto es la fuente de verdad).
+    return aHex6((this.colorValor() ?? '').trim()) ?? '#374151';
   });
 
   constructor() {
@@ -152,10 +157,11 @@ export class AdminBranding {
     // preset, si es un hex valido se previsualiza; si es invalido no se toca la
     // paleta vigente (Req 1.4); si se vacia se restaura el Tema_Corporativo.
     this.controlColor.valueChanges.subscribe((valor) => {
-      const hex = (valor ?? '').trim();
-      if (hex === '') {
+      const entrada = (valor ?? '').trim();
+      const hex = aHex6(entrada);
+      if (entrada === '') {
         this.tematizacion.limpiar();
-      } else if (esHexValido(hex)) {
+      } else if (hex) {
         this.tematizacion.previsualizar(hex);
       }
     });
@@ -255,15 +261,19 @@ export class AdminBranding {
     this.guardando.set(true);
     const valores = this.formulario.getRawValue();
     const nombreVisible = valores.nombreVisible.trim();
-    const colorHex = valores.colorPrimario.trim();
-    // Color a persistir: hex valido en minusculas, o `null` para limpiarlo (Req 1.7).
-    const colorPrimario = esHexValido(colorHex) ? colorHex.toLowerCase() : null;
-    this.service
-      .actualizar({
-        nombreVisible: nombreVisible ? nombreVisible : null,
-        logo: this.logo(),
-        colorPrimario,
-      })
+    const colorEntrada = valores.colorPrimario.trim();
+    // El backend persiste #RRGGBB. Se normaliza cualquier formato admitido
+    // (hex, rgb, rgba) a hex; vacio/invalido -> null para limpiarlo (Req 1.7).
+    const colorPrimario = aHex6(colorEntrada);
+    this.overlay
+      .ejecutar(
+        this.service.actualizar({
+          nombreVisible: nombreVisible ? nombreVisible : null,
+          logo: this.logo(),
+          colorPrimario,
+        }),
+        { tipo: 'guardar', textoProceso: 'Guardando branding…', textoExito: 'Branding guardado' },
+      )
       .subscribe({
         next: (b) => {
           this.guardando.set(false);

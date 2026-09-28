@@ -24,29 +24,122 @@
     min-width: 0;
   }
 
-  // ---------------------------------------------------------------------------
-  // Datos de la cuenta (lista de definiciones)
-  // ---------------------------------------------------------------------------
-  &__datos {
+  // Titulo de tarjeta con chip de icono (encabezado premium consistente).
+  &__card-titulo {
     display: flex;
-    flex-direction: column;
-    gap: var(--ds-space-4);
-    margin: 0;
+    align-items: center;
+    gap: var(--ds-space-2);
   }
 
-  &__dato {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ds-space-1);
+  &__card-icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 2rem;
+    block-size: 2rem;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--ds-color-primary),
+      color-mix(in srgb, var(--ds-color-primary) 55%, #ffffff));
+    color: #fff;
+
+    mat-icon { font-size: 1.15rem; inline-size: 1.15rem; block-size: 1.15rem; }
   }
 
+  // ---------------------------------------------------------------------------
+  // Hero de la tarjeta de cuenta: avatar de iniciales + identificador + ambito
+  // ---------------------------------------------------------------------------
+  // La tarjeta de cuenta usa hero + bloque de roles propios (sin mat-card-content),
+  // por eso se le da su propio padding coherente.
+  &__card--cuenta {
+    padding: var(--ds-space-4);
+  }
+
+  &__cuenta-hero {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-3);
+    padding-block-end: var(--ds-space-4);
+    margin-block-end: var(--ds-space-4);
+    border-block-end: 1px solid var(--ds-color-border);
+  }
+
+  &__avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    inline-size: 3.5rem;
+    block-size: 3.5rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--ds-color-primary),
+      color-mix(in srgb, var(--ds-color-primary) 50%, #ffffff));
+    color: #fff;
+    font-weight: var(--ds-font-weight-bold);
+    font-size: 1.25rem;
+    letter-spacing: 0.02em;
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--ds-color-primary) 40%, transparent);
+  }
+
+  &__cuenta-id {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+  }
+
+  &__cuenta-etiqueta {
+    color: var(--ds-color-text-muted);
+    font-size: var(--ds-font-size-xs);
+    font-weight: var(--ds-font-weight-medium);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  &__cuenta-nombre {
+    font-size: var(--ds-font-size-lg);
+    font-weight: var(--ds-font-weight-bold);
+    color: var(--ds-color-text);
+    line-height: 1.2;
+    word-break: break-word;
+  }
+
+  &__cuenta-sub {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: var(--ds-color-text-muted);
+    font-size: var(--ds-font-size-sm);
+
+    mat-icon { font-size: 1rem; inline-size: 1rem; block-size: 1rem; }
+  }
+
+  // Bloque de roles dentro de la tarjeta de cuenta.
+  &__cuenta-roles {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-2);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Etiqueta y valor reutilizables (usados en el bloque de roles de la cuenta)
+  // ---------------------------------------------------------------------------
   &__etiqueta {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
     margin: 0;
     color: var(--ds-color-text-muted);
     font-size: var(--ds-font-size-xs);
     font-weight: var(--ds-font-weight-medium);
     letter-spacing: 0.06em;
     text-transform: uppercase;
+
+    mat-icon {
+      font-size: 1rem;
+      inline-size: 1rem;
+      block-size: 1rem;
+      color: var(--ds-color-primary);
+    }
   }
 
   &__valor {

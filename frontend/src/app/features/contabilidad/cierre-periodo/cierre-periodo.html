@@ -1,0 +1,115 @@
+<app-page-header
+  titulo="Cierre de periodo contable"
+  subtitulo="Cierra cada mes para proteger la información ya declarada: un periodo cerrado no admite nuevas pólizas ni reversos. La reapertura queda registrada con su motivo para auditoría."
+/>
+
+<mat-card appearance="outlined" class="cont-alta">
+  <mat-card-content>
+    <form [formGroup]="formAnio" (ngSubmit)="consultar()" novalidate>
+      <div class="cont-filtros">
+        <mat-form-field appearance="outline">
+          <mat-label>Año</mat-label>
+          <input matInput type="number" formControlName="anio" min="2000" max="2100" />
+          <mat-error>Indica un año válido (2000–2100).</mat-error>
+        </mat-form-field>
+        <button matButton="filled" type="submit" [disabled]="cargando()">Consultar</button>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>
+
+@if (error()) {
+  <p class="ds-dialog-error" role="alert">{{ error() }}</p>
+}
+@if (aviso()) {
+  <p class="cont-ce__chip cont-ce__chip--ok" role="status">
+    <mat-icon aria-hidden="true">check_circle</mat-icon> {{ aviso() }}
+  </p>
+}
+
+@if (cargando()) {
+  <p role="status">Cargando periodos…</p>
+} @else {
+  <div class="cont-indicadores" role="list" aria-label="Periodos mensuales del año">
+    @for (p of periodos(); track p.mes) {
+      <mat-card appearance="outlined" role="listitem">
+        <mat-card-content>
+          <div class="cont-ayuda">
+            <mat-icon aria-hidden="true">calendar_month</mat-icon> {{ nombreMes(p.mes) }} {{ p.anio }}
+          </div>
+
+          @if (estaCerrado(p)) {
+            <p class="cont-ce__chip cont-ce__chip--warn" role="status">
+              <mat-icon aria-hidden="true">lock</mat-icon> Cerrado
+            </p>
+            @if (p.fechaCierre) {
+              <p class="cont-num">
+                Cerrado el {{ p.fechaCierre | date: 'd/MM/y HH:mm' : undefined : 'es-MX' }}
+                @if (p.cerradoPor) { por {{ p.cerradoPor }} }
+              </p>
+            }
+          } @else {
+            <p class="cont-ce__chip cont-ce__chip--ok" role="status">
+              <mat-icon aria-hidden="true">lock_open</mat-icon> Abierto
+            </p>
+            @if (p.motivoReapertura) {
+              <p class="cont-num">
+                Reabierto
+                @if (p.fechaReapertura) { el {{ p.fechaReapertura | date: 'd/MM/y HH:mm' : undefined : 'es-MX' }} }
+                @if (p.reabiertoPor) { por {{ p.reabiertoPor }} }
+                — motivo: {{ p.motivoReapertura }}
+              </p>
+            }
+          }
+
+          <div class="cont-ce__acciones">
+            @if (estaCerrado(p)) {
+              @if (reabriendoMes() === p.mes) {
+                <form
+                  [formGroup]="formReapertura"
+                  (ngSubmit)="confirmarReapertura(p.mes)"
+                  novalidate
+                  class="cont-reapertura"
+                >
+                  <mat-form-field appearance="outline">
+                    <mat-label>Motivo de la reapertura</mat-label>
+                    <input
+                      matInput
+                      formControlName="motivo"
+                      maxlength="500"
+                      [attr.aria-label]="'Motivo de la reapertura de ' + nombreMes(p.mes) + ' ' + p.anio"
+                    />
+                    <mat-error>El motivo es obligatorio.</mat-error>
+                  </mat-form-field>
+                  <button matButton="filled" type="submit" [disabled]="accion('reabrir', p.mes)">
+                    Confirmar reapertura
+                  </button>
+                  <button matButton type="button" (click)="cancelarReapertura()">Cancelar</button>
+                </form>
+              } @else {
+                <button
+                  matButton
+                  type="button"
+                  (click)="iniciarReapertura(p.mes)"
+                  [attr.aria-label]="'Reabrir ' + nombreMes(p.mes) + ' ' + p.anio"
+                >
+                  <mat-icon aria-hidden="true">lock_open</mat-icon> Reabrir
+                </button>
+              }
+            } @else {
+              <button
+                matButton="filled"
+                type="button"
+                (click)="cerrar(p.mes)"
+                [disabled]="accion('cerrar', p.mes)"
+                [attr.aria-label]="'Cerrar ' + nombreMes(p.mes) + ' ' + p.anio"
+              >
+                <mat-icon aria-hidden="true">lock</mat-icon> Cerrar
+              </button>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+    }
+  </div>
+}

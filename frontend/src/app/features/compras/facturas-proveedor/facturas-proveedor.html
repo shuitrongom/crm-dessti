@@ -69,7 +69,7 @@
     </ng-template>
     <ng-template appCelda="fecha" let-f>{{ f.createdAt | date: 'dd/MM/yyyy' }}</ng-template>
     <ng-template appCelda="acciones" let-f>
-      @if (puedeConciliar(f) || puedeAutorizar(f)) {
+      @if (puedeConciliar(f) || puedeAutorizar(f) || puedeReabrir(f)) {
         <button matIconButton [matMenuTriggerFor]="menu" aria-label="Acciones de factura">
           <mat-icon>more_vert</mat-icon>
         </button>
@@ -82,6 +82,11 @@
           @if (puedeAutorizar(f)) {
             <button mat-menu-item type="button" (click)="autorizarPago(f)">
               <mat-icon>payments</mat-icon> Autorizar pago
+            </button>
+          }
+          @if (puedeReabrir(f)) {
+            <button mat-menu-item type="button" (click)="reabrir(f)">
+              <mat-icon>restart_alt</mat-icon> Reabrir para reconciliar
             </button>
           }
         </mat-menu>

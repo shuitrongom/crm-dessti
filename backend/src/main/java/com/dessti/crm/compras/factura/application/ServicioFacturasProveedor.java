@@ -219,6 +219,36 @@ public class ServicioFacturasProveedor {
     }
 
     /**
+     * Reabre una Factura_Proveedor marcada en discrepancia, devolviendola a
+     * {@code registrada} para reintentar la Conciliacion_Tres_Vias tras corregir la
+     * causa (recepcion faltante, orden o folio). Mejora enterprise de recuperacion:
+     * evita re-registrar la factura desde cero. Solo se permite desde el estado
+     * {@code discrepancia}.
+     *
+     * @param facturaId identificador de la factura a reabrir.
+     * @return el DTO de la factura en estado {@code registrada}.
+     * @throws RecursoNoEncontradoException si no es accesible (404).
+     * @throws ReglaNegocioException si la factura no esta en discrepancia (422); una
+     *         factura registrada/conciliada/pagada no se reabre.
+     */
+    @Transactional
+    public FacturaProveedorDto reabrir(UUID facturaId) {
+        String actor = actorActual();
+        FacturaProveedor factura = cargar(facturaId, actor);
+        if (factura.getEstado() != EstadoFacturaProveedor.DISCREPANCIA) {
+            throw new ReglaNegocioException(
+                    "solo se puede reabrir una Factura_Proveedor en estado 'discrepancia'.");
+        }
+        EstadoFacturaProveedor anterior = factura.getEstado();
+        factura.cambiarEstado(EstadoFacturaProveedor.REGISTRADA, actor);
+        FacturaProveedor guardada = facturaRepository.save(factura);
+        auditar(actor, "cambiar_estado", guardada.getId(),
+                "factura_proveedor reabierta desde discrepancia para re-conciliar",
+                anterior.valorBd(), EstadoFacturaProveedor.REGISTRADA.valorBd());
+        return FacturaProveedorDto.de(guardada);
+    }
+
+    /**
      * Consulta puntual de una Factura_Proveedor del tenant (Req 23.3).
      *
      * @param facturaId identificador de la factura.

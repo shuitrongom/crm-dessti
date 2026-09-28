@@ -1,25 +1,27 @@
 // =============================================================================
 // Vista de Inteligencia de Negocio consolidada (Req 48)
 // -----------------------------------------------------------------------------
-// Analisis consolidado de solo lectura por area con comparativos de periodo:
-// muestra el valor actual, el valor del periodo anterior, la variacion absoluta
-// y la variacion porcentual con una tendencia accesible (icono + texto, no solo
-// color). Filtros por periodo, area y dimension. Exportacion si hay permiso.
+// Dashboard ejecutivo: un copiloto de IA arriba (resumen + hallazgos) y, debajo,
+// los indicadores por area como tarjetas KPI premium con comparativo del periodo
+// anterior integrado. Filtros por periodo, area y dimension. Exportacion si hay
+// permiso. Los insights de IA se cargan en paralelo y su fallo no bloquea la vista.
 // =============================================================================
 
 import { Component, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { DecimalPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../shared/components/state-container/state-container';
+import { IndicatorCard } from '../../../shared/components/indicator-card/indicator-card';
+import { MetricChart, type MetricPoint } from '../../../shared/components/metric-chart/metric-chart';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
@@ -30,24 +32,27 @@ import {
   conError,
 } from '../../../shared/models/estado-solicitud';
 
+import { Scorecard } from '../scorecard/scorecard';
 import { InteligenciaNegocioService } from '../services/inteligencia-negocio.service';
-import { Indicador, InteligenciaNegocio } from '../models/reportes.models';
-import { Comparativo, comparativoDe } from '../comparativo';
+import { IndicadoresArea, InsightsBi, InteligenciaNegocio } from '../models/reportes.models';
 import { humanizarArea } from '../areas-etiquetas';
 
 @Component({
   selector: 'app-inteligencia',
   imports: [
     ReactiveFormsModule,
-    DecimalPipe,
-    MatCardModule,
     MatButtonModule,
     MatIconModule,
     MatFormFieldModule,
     MatInputModule,
     MatDatepickerModule,
+    MatProgressSpinnerModule,
+    MatTooltipModule,
     PageHeader,
     StateContainer,
+    IndicatorCard,
+    MetricChart,
+    Scorecard,
   ],
   templateUrl: './inteligencia.html',
   styleUrl: './inteligencia.scss',
@@ -64,6 +69,11 @@ export class Inteligencia {
   protected readonly estado = signal<EstadoSolicitud<InteligenciaNegocio>>(cargando());
   protected readonly exportando = signal(false);
 
+  /** Insights de IA: se cargan en paralelo y no bloquean el consolidado. */
+  protected readonly insights = signal<InsightsBi | null>(null);
+  protected readonly insightsCargando = signal(false);
+  protected readonly insightsError = signal<string | null>(null);
+
   protected readonly formFiltro = this.fb.nonNullable.group({
     desde: [''],
     hasta: [''],
@@ -75,14 +85,94 @@ export class Inteligencia {
     this.consultar();
   }
 
-  /** Comparativo derivado (tendencia, porcentaje, icono, texto) de un indicador. */
-  comparativo(indicador: Indicador): Comparativo {
-    return comparativoDe(indicador);
+  /** Puntos para la grafica de un area (etiqueta, valor actual y comparativo). */
+  puntos(grupo: IndicadoresArea): MetricPoint[] {
+    return grupo.indicadores.map((i) => ({
+      etiqueta: i.etiqueta,
+      valor: i.valor,
+      comparativo: i.comparativo,
+      unidad: i.unidad,
+    }));
   }
 
-  /** Clase de tono de la tendencia para el estilo (acompana siempre al texto). */
-  claseTendencia(indicador: Indicador): string {
-    return `inteligencia-delta--${comparativoDe(indicador).tendencia}`;
+  /**
+   * Elige la visualizacion del area: dona cuando son varios conteos comparables
+   * (distribucion) y no hay comparativo; barras en el resto (mejor para comparar
+   * actual vs anterior o magnitudes monetarias).
+   */
+  tipoGrafica(grupo: IndicadoresArea): 'dona' | 'barras' {
+    const hayComparativo = grupo.indicadores.some((i) => i.comparativo != null);
+    const todosConteo = grupo.indicadores.every((i) => (i.unidad ?? '').toLowerCase() === 'conteo');
+    if (!hayComparativo && todosConteo && grupo.indicadores.length >= 3) {
+      return 'dona';
+    }
+    return 'barras';
+  }
+
+  /** Indicador principal (KPI destacado) de un area: el de mayor valor absoluto. */
+  indicadorPrincipal(grupo: IndicadoresArea) {
+    return grupo.indicadores.reduce(
+      (mejor, actual) => (Math.abs(actual.valor) > Math.abs(mejor.valor) ? actual : mejor),
+      grupo.indicadores[0],
+    );
+  }
+
+  /**
+   * Porcentaje 0..100 del gauge del area: si el indicador principal tiene
+   * comparativo, es su cumplimiento (valor/comparativo); si no, su peso relativo
+   * frente a la suma del area. Acotado a [0, 100].
+   */
+  porcentajeGauge(grupo: IndicadoresArea): number {
+    const principal = this.indicadorPrincipal(grupo);
+    if (!principal) {
+      return 0;
+    }
+    if (principal.comparativo && principal.comparativo !== 0) {
+      const pct = (principal.valor / Math.abs(principal.comparativo)) * 100;
+      return Math.max(0, Math.min(100, Math.round(pct)));
+    }
+    const total = grupo.indicadores.reduce((a, i) => a + Math.abs(i.valor), 0);
+    if (total === 0) {
+      return 0;
+    }
+    return Math.max(0, Math.min(100, Math.round((Math.abs(principal.valor) / total) * 100)));
+  }
+
+  /** Puntos del gauge: solo el indicador principal (etiqueta para el centro). */
+  puntoGauge(grupo: IndicadoresArea): MetricPoint[] {
+    const principal = this.indicadorPrincipal(grupo);
+    return principal
+      ? [{ etiqueta: principal.etiqueta, valor: principal.valor, unidad: principal.unidad }]
+      : [];
+  }
+
+  /** Tono semantico de un hallazgo, derivado de su prefijo ("Al alza", etc.). */
+  tonoHallazgo(hallazgo: string): 'alza' | 'baja' | 'alerta' | 'neutro' {
+    const h = hallazgo.toLowerCase();
+    if (h.startsWith('alerta:')) {
+      return 'alerta';
+    }
+    if (h.startsWith('al alza:')) {
+      return 'alza';
+    }
+    if (h.startsWith('a la baja:')) {
+      return 'baja';
+    }
+    return 'neutro';
+  }
+
+  /** Icono de Material Symbols acorde al tono del hallazgo (acompana al color). */
+  iconoHallazgo(hallazgo: string): string {
+    switch (this.tonoHallazgo(hallazgo)) {
+      case 'alza':
+        return 'trending_up';
+      case 'baja':
+        return 'trending_down';
+      case 'alerta':
+        return 'warning';
+      default:
+        return 'insights';
+    }
   }
 
   private filtroActual() {
@@ -101,6 +191,28 @@ export class Inteligencia {
       next: (datos) => this.estado.set(conDatos(datos, (datos.areas?.length ?? 0) === 0)),
       error: (e: HttpErrorResponse) => this.estado.set(conError(mensajeDeError(e))),
     });
+    this.consultarInsights();
+  }
+
+  /**
+   * Solicita los insights de IA del periodo. Se ejecuta en paralelo al consolidado
+   * y su fallo no rompe la vista: se muestra un mensaje discreto y el consolidado
+   * (tarjetas KPI) sigue disponible.
+   */
+  consultarInsights(): void {
+    this.insightsCargando.set(true);
+    this.insightsError.set(null);
+    this.service.insights(this.filtroActual()).subscribe({
+      next: (datos) => {
+        this.insights.set(datos);
+        this.insightsCargando.set(false);
+      },
+      error: (e: HttpErrorResponse) => {
+        this.insights.set(null);
+        this.insightsError.set(mensajeDeError(e));
+        this.insightsCargando.set(false);
+      },
+    });
   }
 
   exportar(): void {
@@ -115,7 +227,7 @@ export class Inteligencia {
         enlace.download = 'inteligencia-negocio.json';
         enlace.click();
         URL.revokeObjectURL(url);
-        this.toast.exito('Analisis exportado.');
+        this.toast.exito('Análisis exportado.');
       },
       error: (e: HttpErrorResponse) => {
         this.exportando.set(false);

@@ -1,0 +1,30 @@
+<app-page-header
+  titulo="Mi perfil"
+  subtitulo="Consulta los datos de tu cuenta. Si necesitas actualizarlos, levanta una solicitud desde Soporte."
+/>
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="No se encontraron datos de tu perfil."
+  (reintentar)="cargar()"
+>
+  @if (estado().datos; as p) {
+    <mat-card appearance="outlined">
+      <mat-card-content>
+        <dl class="portal-perfil">
+          <div><dt>Nombre / Razón social</dt><dd>{{ p.nombre }}</dd></div>
+          @if (p.nombreComercial) {
+            <div><dt>Nombre comercial</dt><dd>{{ p.nombreComercial }}</dd></div>
+          }
+          <div><dt>RFC</dt><dd>{{ p.rfc }}</dd></div>
+          <div><dt>Correo</dt><dd>{{ p.email ?? '—' }}</dd></div>
+          <div><dt>Teléfono</dt><dd>{{ p.telefono ?? '—' }}</dd></div>
+          <div><dt>Ciudad</dt><dd>{{ p.direccionCiudad ?? '—' }}</dd></div>
+          <div><dt>Estado</dt><dd>{{ p.direccionEstado ?? '—' }}</dd></div>
+          <div><dt>C.P.</dt><dd>{{ p.direccionCp ?? '—' }}</dd></div>
+        </dl>
+      </mat-card-content>
+    </mat-card>
+  }
+</app-state-container>

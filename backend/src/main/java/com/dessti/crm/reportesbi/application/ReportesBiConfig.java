@@ -1,9 +1,15 @@
 package com.dessti.crm.reportesbi.application;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
+import com.dessti.crm.reportesbi.adapter.out.ia.GeneradorInsightsHeuristico;
+import com.dessti.crm.reportesbi.adapter.out.ia.GeneradorInsightsHttpAdapter;
+import com.dessti.crm.reportesbi.adapter.out.ia.IaProperties;
+import com.dessti.crm.reportesbi.adapter.out.indicadores.IndicadorActivoFijoVacio;
 import com.dessti.crm.reportesbi.adapter.out.indicadores.IndicadorComercialVacio;
 import com.dessti.crm.reportesbi.adapter.out.indicadores.IndicadorComprasVacio;
 import com.dessti.crm.reportesbi.adapter.out.indicadores.IndicadorCxpVacio;
@@ -18,6 +24,7 @@ import com.dessti.crm.reportesbi.adapter.out.indicadores.IndicadorProduccionVaci
 import com.dessti.crm.reportesbi.adapter.out.indicadores.IndicadorRhNominaVacio;
 import com.dessti.crm.reportesbi.adapter.out.indicadores.IndicadorSocialVacio;
 import com.dessti.crm.reportesbi.adapter.out.indicadores.IndicadorTesoreriaVacio;
+import com.dessti.crm.reportesbi.application.indicadores.IndicadorActivoFijoPort;
 import com.dessti.crm.reportesbi.application.indicadores.IndicadorComercialPort;
 import com.dessti.crm.reportesbi.application.indicadores.IndicadorComprasPort;
 import com.dessti.crm.reportesbi.application.indicadores.IndicadorCxpPort;
@@ -32,6 +39,7 @@ import com.dessti.crm.reportesbi.application.indicadores.IndicadorProduccionPort
 import com.dessti.crm.reportesbi.application.indicadores.IndicadorRhNominaPort;
 import com.dessti.crm.reportesbi.application.indicadores.IndicadorSocialPort;
 import com.dessti.crm.reportesbi.application.indicadores.IndicadorTesoreriaPort;
+import com.dessti.crm.reportesbi.application.ia.GeneradorInsightsPort;
 
 /**
  * Configuracion del modulo reportes-bi (Req 22, 48).
@@ -51,7 +59,49 @@ import com.dessti.crm.reportesbi.application.indicadores.IndicadorTesoreriaPort;
  * dependencias del agregador queda limpio y el modulo compila de forma aislada.</p>
  */
 @Configuration
+@EnableConfigurationProperties(IaProperties.class)
 public class ReportesBiConfig {
+
+    /**
+     * Generador de insights <strong>heuristico determinista</strong>. Siempre presente en
+     * el contexto: es el respaldo de degradacion gracil del adaptador HTTP y la
+     * implementacion que se usa cuando el proveedor de IA no esta configurado. No depende
+     * de la red ni de credenciales.
+     *
+     * @return el generador heuristico de insights.
+     */
+    @Bean
+    public GeneradorInsightsHeuristico generadorInsightsHeuristico() {
+        return new GeneradorInsightsHeuristico();
+    }
+
+    /**
+     * Generador de insights <strong>principal</strong> ({@link GeneradorInsightsPort}):
+     * el adaptador HTTP con el heuristico como respaldo. Se marca {@link Primary @Primary}
+     * para resolver sin ambiguedad la inyeccion del puerto (existen dos beans que lo
+     * implementan: este y el {@link GeneradorInsightsHeuristico}). No se condiciona por
+     * propiedad, para evitar la ambiguedad de {@code @ConditionalOnProperty} con un
+     * placeholder vacio ({@code ${IA_URL:}}).
+     *
+     * <p>La decision de llamar o no al proveedor la toma el propio adaptador en tiempo de
+     * ejecucion: si {@link IaProperties#estaConfigurado()} es {@code false} (falta url o
+     * api-key) o la llamada falla, degrada de forma gracil al heuristico sin tocar la red.
+     * Asi el arranque y las pruebas funcionan sin configurar la IA, y la IA real se activa
+     * con solo proveer {@code IA_URL}/{@code IA_API_KEY}.</p>
+     *
+     * @param propiedades  configuracion del proveedor ({@code crm.ia.*}).
+     * @param heuristico   generador heuristico usado como respaldo.
+     * @param objectMapper mapeador de JSON de la aplicacion.
+     * @return el adaptador HTTP como {@link GeneradorInsightsPort} principal.
+     */
+    @Bean
+    @Primary
+    public GeneradorInsightsPort generadorInsights(
+            IaProperties propiedades,
+            GeneradorInsightsHeuristico heuristico,
+            com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
+        return new GeneradorInsightsHttpAdapter(propiedades, heuristico, objectMapper);
+    }
 
     /**
      * Indicadores comerciales por defecto (vacios) si no hay adaptador concreto.
@@ -207,5 +257,17 @@ public class ReportesBiConfig {
     @ConditionalOnMissingBean(IndicadorSocialPort.class)
     public IndicadorSocialPort indicadorSocialPorDefecto() {
         return new IndicadorSocialVacio();
+    }
+
+    /**
+     * Indicadores de activos fijos por defecto (vacios) si no hay adaptador concreto.
+     * El adaptador real lo aporta el modulo {@code activosfijos} y desplaza a este.
+     *
+     * @return el adaptador por defecto del area activos fijos.
+     */
+    @Bean
+    @ConditionalOnMissingBean(IndicadorActivoFijoPort.class)
+    public IndicadorActivoFijoPort indicadorActivoFijoPorDefecto() {
+        return new IndicadorActivoFijoVacio();
     }
 }

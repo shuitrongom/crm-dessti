@@ -22,8 +22,11 @@ import { PaginaResponse } from '../../../core/models/pagina-response';
 import {
   Cotizacion,
   Factura,
+  PerfilCliente,
   Proyecto,
   PruebaDiseno,
+  QuejaPortal,
+  RegistrarQuejaPortalRequest,
   ResultadoRechazoPruebaDiseno,
   TicketServicio,
 } from '../models/portal.models';
@@ -42,6 +45,22 @@ export class PortalService {
     return this.http.get<PaginaResponse<Cotizacion>>(
       this.api.url('/portal/cotizaciones'),
       this.pagina(page, size),
+    );
+  }
+
+  /** Aprueba una cotización propia enviada (Req 45.2, 6.6). */
+  aprobarCotizacion(id: string): Observable<Cotizacion> {
+    return this.http.post<Cotizacion>(
+      this.api.url(`/portal/cotizaciones/${id}/aprobacion`),
+      {},
+    );
+  }
+
+  /** Rechaza una cotización propia enviada (Req 45.2, 6.6). */
+  rechazarCotizacion(id: string): Observable<Cotizacion> {
+    return this.http.post<Cotizacion>(
+      this.api.url(`/portal/cotizaciones/${id}/rechazo`),
+      {},
     );
   }
 
@@ -96,5 +115,23 @@ export class PortalService {
       this.api.url('/portal/facturas'),
       this.pagina(page, size),
     );
+  }
+
+  /** Mis quejas levantadas desde el portal (Req 45.1). */
+  misQuejas(page = 0, size = 20): Observable<PaginaResponse<QuejaPortal>> {
+    return this.http.get<PaginaResponse<QuejaPortal>>(
+      this.api.url('/portal/quejas'),
+      this.pagina(page, size),
+    );
+  }
+
+  /** Levanta una queja con origen portal (Req 45.2, 70.1). */
+  registrarQueja(request: RegistrarQuejaPortalRequest): Observable<QuejaPortal> {
+    return this.http.post<QuejaPortal>(this.api.url('/portal/quejas'), request);
+  }
+
+  /** Mi perfil: datos del Cliente autenticado (Req 45.1). */
+  miPerfil(): Observable<PerfilCliente> {
+    return this.http.get<PerfilCliente>(this.api.url('/portal/perfil'));
   }
 }

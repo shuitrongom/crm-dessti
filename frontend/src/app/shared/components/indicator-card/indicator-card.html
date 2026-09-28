@@ -1,17 +1,46 @@
-<article class="indicator-card">
-  <p class="indicator-card__etiqueta">{{ indicador().etiqueta }}</p>
-  <p class="indicator-card__valor">
-    {{ indicador().valor | number: '1.0-2' }}
-    <span class="indicator-card__unidad">{{ indicador().unidad }}</span>
+<button
+  type="button"
+  class="kpi"
+  [class]="claseTono()"
+  [class.kpi--sube]="tendencia() === 'subida'"
+  [class.kpi--baja]="tendencia() === 'bajada'"
+  (click)="abrirInfo()"
+  [attr.aria-label]="'Ver explicación de ' + indicador().etiqueta"
+>
+  <header class="kpi__head">
+    <span class="kpi__icon" aria-hidden="true"><mat-icon>{{ icono() }}</mat-icon></span>
+
+    @if (tendencia() !== 'ninguna') {
+      <span class="kpi__delta" [class]="'kpi__delta--' + tendencia()">
+        <mat-icon class="kpi__delta-icon" aria-hidden="true">{{ iconoTendencia() }}</mat-icon>
+        @if (porcentaje() !== null) {
+          <span>{{ porcentaje()! >= 0 ? '+' : '' }}{{ porcentaje() | number: '1.0-1' : 'es-MX' }}%</span>
+        } @else {
+          <span>{{ indicador().variacion | number: '1.0-2' : 'es-MX' }}</span>
+        }
+        <span class="ds-visually-hidden">{{ textoTendencia() }} respecto al periodo anterior</span>
+      </span>
+    }
+    <span class="kpi__info" aria-hidden="true"><mat-icon>info</mat-icon></span>
+  </header>
+
+  <p class="kpi__value">
+    @if (esMonetario()) {
+      <span class="kpi__prefix">{{ unidadVisible() }}</span>
+    }
+    <span class="kpi__number" [style.font-size]="tamanoNumero()">{{ indicador().valor | number: '1.0-0' : 'es-MX' }}</span>
+    @if (!esMonetario() && unidadVisible()) {
+      <span class="kpi__suffix">{{ unidadVisible() }}</span>
+    }
   </p>
 
-  @if (indicador().comparativo !== null && indicador().variacion !== null) {
-    <p class="indicator-card__comparativo" [class]="'indicator-card__comparativo--' + tendencia()">
-      <mat-icon class="indicator-card__icono" aria-hidden="true">{{ iconoTendencia() }}</mat-icon>
-      <span>
-        {{ indicador().variacion | number: '1.0-2' }} {{ textoTendencia() }}
-        <span class="ds-visually-hidden">respecto al periodo anterior</span>
-      </span>
-    </p>
+  <p class="kpi__label" [title]="indicador().etiqueta">{{ indicador().etiqueta }}</p>
+  <p class="kpi__desc">{{ descripcionCorta() }}</p>
+
+  @if (tieneComparativo()) {
+    <div class="kpi__spark" aria-hidden="true">
+      <span class="kpi__spark-bar kpi__spark-bar--prev" [style.width.%]="anchoPrevio()"></span>
+      <span class="kpi__spark-bar kpi__spark-bar--now" [style.width.%]="anchoActual()"></span>
+    </div>
   }
-</article>
+</button>

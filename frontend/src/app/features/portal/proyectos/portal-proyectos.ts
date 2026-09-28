@@ -33,6 +33,7 @@ import { Proyecto, SitioAvance } from '../models/portal.models';
   selector: 'app-portal-proyectos',
   imports: [MatCardModule, MatButtonModule, MatIconModule, PageHeader, StateContainer, ProgressBadge],
   templateUrl: './portal-proyectos.html',
+  styleUrl: './portal-proyectos.scss',
 })
 export class PortalProyectos {
   private readonly service = inject(PortalService);
@@ -101,5 +102,19 @@ export class PortalProyectos {
       return 'en_riesgo';
     }
     return 'en_curso';
+  }
+
+  /**
+   * Desglose de las cuatro fases de un sitio en orden del proceso, con su etiqueta
+   * legible y si está cubierta. Permite al cliente ver EXACTAMENTE en qué fase va
+   * cada sitio (levantamiento → permiso → fabricación → instalación).
+   */
+  fasesDeSitio(s: SitioAvance): { etiqueta: string; completada: boolean }[] {
+    return [
+      { etiqueta: 'Levantamiento', completada: s.tieneLevantamientoCompletado },
+      { etiqueta: 'Permiso', completada: s.tienePermisoAprobado },
+      { etiqueta: 'Fabricación', completada: s.tieneOrdenFabricacionTerminada },
+      { etiqueta: 'Instalación', completada: s.tieneInstalacionCompletada },
+    ];
   }
 }

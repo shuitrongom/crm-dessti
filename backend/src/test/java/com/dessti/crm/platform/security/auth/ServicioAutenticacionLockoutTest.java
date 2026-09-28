@@ -196,9 +196,9 @@ class ServicioAutenticacionLockoutTest {
         when(passwordEncoder.matches("buena", HASH)).thenReturn(true);
         when(usuarioRepository.buscarNombresRoles(ID)).thenReturn(List.of("ventas"));
         when(usuarioRepository.buscarPermisos(ID)).thenReturn(List.of("cliente:crear"));
-        when(servicioTokens.emitirTokenAcceso(eq(ID.toString()), eq(TENANT), anyList(), anyList(), eq(GIRO), eq(IDENTIFICADOR), anyList()))
+        when(servicioTokens.emitirTokenAcceso(eq(ID.toString()), eq(TENANT), anyList(), anyList(), eq(GIRO), eq(IDENTIFICADOR), anyList(), any()))
                 .thenReturn(new TokenEmitido("acceso-jwt", T0.plusSeconds(900)));
-        when(servicioTokens.emitirTokenRefresco(eq(ID.toString()), eq(TENANT), anyList(), anyList(), eq(GIRO), eq(IDENTIFICADOR), anyList()))
+        when(servicioTokens.emitirTokenRefresco(eq(ID.toString()), eq(TENANT), anyList(), anyList(), eq(GIRO), eq(IDENTIFICADOR), anyList(), any()))
                 .thenReturn(new TokenEmitido("refresco-jwt", T0.plusSeconds(604800)));
 
         TokenResponse respuesta = servicio.login(IDENTIFICADOR, "buena", IP);

@@ -38,6 +38,7 @@ import {
 } from '../../../shared/models/estado-solicitud';
 
 import { EstadoChip } from '../../finanzas-comun/estado-chip/estado-chip';
+import { MetricChart, type MetricPoint } from '../../../shared/components/metric-chart/metric-chart';
 import { PresupuestosVistasService } from '../services/presupuestos-vistas.service';
 import { Presupuesto, VariacionPresupuesto } from '../models/presupuestos.models';
 
@@ -57,6 +58,7 @@ import { Presupuesto, VariacionPresupuesto } from '../models/presupuestos.models
     DataTable,
     CeldaTablaDirective,
     EstadoChip,
+    MetricChart,
   ],
   templateUrl: './presupuestos.html',
   styleUrl: '../presupuestos.scss',
@@ -175,5 +177,17 @@ export class PresupuestosVistas {
 
   cerrarVariacion(): void {
     this.variacion.set(null);
+  }
+
+  /**
+   * Puntos para la grafica de barras comparativa: dos categorias (Ingresos y
+   * Egresos), cada una con su valor real (serie actual) y su estimado (serie
+   * comparativa), para visualizar de un vistazo lo ejercido frente a lo planeado.
+   */
+  puntosVariacion(v: VariacionPresupuesto): MetricPoint[] {
+    return [
+      { etiqueta: 'Ingresos', valor: v.ingresosReales, comparativo: v.ingresosEstimados, unidad: 'MXN' },
+      { etiqueta: 'Egresos', valor: v.egresosReales, comparativo: v.egresosEstimados, unidad: 'MXN' },
+    ];
   }
 }

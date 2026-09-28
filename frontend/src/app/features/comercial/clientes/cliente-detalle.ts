@@ -33,6 +33,7 @@ import { FaseSolicitud } from '../../../shared/models/estado-solicitud';
 import { ClientesService } from '../services/clientes.service';
 import { OportunidadesService } from '../services/oportunidades.service';
 import { CotizacionesService } from '../services/cotizaciones.service';
+import { TimelineActividades } from '../actividades/timeline-actividades';
 import {
   Cliente,
   Cotizacion,
@@ -61,6 +62,7 @@ const TAMANO_RESUMEN = 20;
     StateContainer,
     StatCard,
     EstadoChip,
+    TimelineActividades,
   ],
   templateUrl: './cliente-detalle.html',
   styleUrl: './cliente-detalle.scss',

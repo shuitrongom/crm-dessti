@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import com.dessti.crm.operacion.cliente.application.ClienteExistentePort;
+import com.dessti.crm.operacion.proyecto.adapter.out.persistence.AvanceSitioRepository;
 import com.dessti.crm.operacion.proyecto.adapter.out.persistence.ProyectoRepository;
 import com.dessti.crm.operacion.proyecto.adapter.out.persistence.SitioRepository;
 import com.dessti.crm.operacion.proyecto.domain.PerfilFasesGiro;
@@ -53,6 +54,7 @@ class ServicioProyectosClienteTest {
 
     private ProyectoRepository proyectoRepository;
     private SitioRepository sitioRepository;
+    private AvanceSitioRepository avanceSitioRepository;
     private ClienteExistentePort clienteExistente;
     private PerfilFasesGiroPort perfilFasesGiro;
     private AvanceSitioPort avanceProduccion;
@@ -64,6 +66,7 @@ class ServicioProyectosClienteTest {
     void setUp() {
         proyectoRepository = mock(ProyectoRepository.class);
         sitioRepository = mock(SitioRepository.class);
+        avanceSitioRepository = mock(AvanceSitioRepository.class);
         clienteExistente = mock(ClienteExistentePort.class);
         perfilFasesGiro = mock(PerfilFasesGiroPort.class);
         avanceProduccion = mock(AvanceSitioPort.class);
@@ -74,8 +77,8 @@ class ServicioProyectosClienteTest {
         lenient().when(proyectoRepository.save(any(Proyecto.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
         servicio = new ServicioProyectos(
-                proyectoRepository, sitioRepository, clienteExistente, perfilFasesGiro,
-                avanceProduccion, avanceSitioAnuncios, auditoria);
+                proyectoRepository, sitioRepository, avanceSitioRepository, clienteExistente,
+                perfilFasesGiro, avanceProduccion, avanceSitioAnuncios, auditoria);
         TenantContext.set(TENANT);
     }
 

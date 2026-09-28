@@ -29,6 +29,7 @@ import {
   DataTable,
 } from '../../../shared/components/data-table/data-table';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 import {
@@ -69,6 +70,7 @@ export class ContabilidadCuentasPorCobrar {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(ContabilidadService);
   private readonly toast = inject(NotificacionesService);
+  private readonly overlay = inject(OperacionOverlayService);
   private readonly auth = inject(AuthService);
 
   protected readonly tono = tonoDeEstado;
@@ -153,14 +155,17 @@ export class ContabilidadCuentasPorCobrar {
     }
     const v = this.formPago.getRawValue();
     this.guardando.set(true);
-    this.service
-      .registrarPago({
-        clienteId: cxc.clienteId,
-        monto: v.monto,
-        formaPago: v.formaPago || null,
-        esParcialidad: v.esParcialidad,
-        aplicaciones: [{ facturaId: cxc.facturaId, monto: v.monto }],
-      })
+    this.overlay
+      .ejecutar(
+        this.service.registrarPago({
+          clienteId: cxc.clienteId,
+          monto: v.monto,
+          formaPago: v.formaPago || null,
+          esParcialidad: v.esParcialidad,
+          aplicaciones: [{ facturaId: cxc.facturaId, monto: v.monto }],
+        }),
+        { tipo: 'procesar', textoProceso: 'Registrando pago…', textoExito: 'Pago registrado' },
+      )
       .subscribe({
         next: () => {
           this.guardando.set(false);

@@ -31,6 +31,7 @@ import {
 } from '../../../shared/components/data-table/data-table';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 import {
@@ -85,6 +86,7 @@ export class ComprasRequisiciones {
   private readonly service = inject(ComprasService);
   private readonly confirm = inject(ConfirmDialogService);
   private readonly toast = inject(NotificacionesService);
+  private readonly overlay = inject(OperacionOverlayService);
   private readonly auth = inject(AuthService);
 
   protected readonly tono = tonoDeEstado;
@@ -95,6 +97,8 @@ export class ComprasRequisiciones {
     'requisicion_compra',
     'cambiar_estado',
   );
+  /** Segregación de funciones (V75): aprobar/rechazar exige permiso dedicado. */
+  protected readonly puedeAprobar = this.auth.tienePermiso('requisicion_compra', 'aprobar');
 
   protected readonly columnas: ColumnaTabla[] = [
     { clave: 'id', encabezado: 'Folio' },
@@ -153,7 +157,12 @@ export class ComprasRequisiciones {
   }
 
   transicionesDe(estado: string): { estado: string; etiqueta: string; destructiva: boolean }[] {
-    return TRANSICIONES[estado] ?? [];
+    // Filtra por permiso: aprobar/rechazar exigen 'aprobar' (segregación V75);
+    // enviar/cancelar usan 'cambiar_estado'. Así el menú solo muestra lo permitido.
+    return (TRANSICIONES[estado] ?? []).filter((t) => {
+      const requiereAprobar = t.estado === 'aprobada' || t.estado === 'rechazada';
+      return requiereAprobar ? this.puedeAprobar : this.puedeCambiarEstado;
+    });
   }
 
   cargar(): void {
@@ -190,7 +199,13 @@ export class ComprasRequisiciones {
     }
     this.guardando.set(true);
     const partidas = this.partidas.getRawValue() as { materialId: string; cantidad: number }[];
-    this.service.crearRequisicion({ partidas }).subscribe({
+    this.overlay
+      .ejecutar(this.service.crearRequisicion({ partidas }), {
+        tipo: 'crear',
+        textoProceso: 'Creando requisición…',
+        textoExito: 'Requisición creada',
+      })
+      .subscribe({
       next: () => {
         this.guardando.set(false);
         this.toast.exito('Requisicion creada en borrador.');
@@ -221,12 +236,18 @@ export class ComprasRequisiciones {
         return;
       }
     }
-    this.service.cambiarEstadoRequisicion(req.id, transicion.estado).subscribe({
-      next: () => {
-        this.toast.exito('Estado actualizado.');
-        this.cargar();
-      },
-      error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
-    });
+    this.overlay
+      .ejecutar(this.service.cambiarEstadoRequisicion(req.id, transicion.estado), {
+        tipo: 'procesar',
+        textoProceso: 'Actualizando estado…',
+        textoExito: 'Estado actualizado',
+      })
+      .subscribe({
+        next: () => {
+          this.toast.exito('Estado actualizado.');
+          this.cargar();
+        },
+        error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
+      });
   }
 }

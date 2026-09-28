@@ -18,6 +18,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { AdminBranding } from './branding';
 import { NotificacionesService } from '../../../../shared/services/notificaciones.service';
+import { OperacionOverlayService } from '../../../../shared/components/operacion-overlay/operacion-overlay';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { TematizacionService } from '../../../../core/services/tematizacion.service';
 import { esperarSinViolaciones } from '../../../../../testing/axe';
@@ -80,6 +81,7 @@ describe('AdminBranding (carga de logotipo como archivo)', () => {
       providers: [
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
+        { provide: OperacionOverlayService, useValue: new OperacionOverlayServiceStub() },
         { provide: NotificacionesService, useValue: toast },
         { provide: AuthService, useValue: new AuthServiceStub() },
       ],
@@ -204,6 +206,17 @@ class TematizacionServiceSpy {
   }
 }
 
+/**
+ * Stub del OperacionOverlayService: reemite el observable tal cual, SIN montar el
+ * overlay en el DOM (jsdom no monta componentes dinamicos). Asi las pruebas de
+ * "guardar" verifican la peticion HTTP sin efectos de UI.
+ */
+class OperacionOverlayServiceStub {
+  ejecutar<T>(origen: import('rxjs').Observable<T>): import('rxjs').Observable<T> {
+    return origen;
+  }
+}
+
 /** Forma del componente accedida por las pruebas de color. */
 interface BrandingColorTest {
   formulario: {
@@ -234,6 +247,7 @@ describe('AdminBranding (seleccion de color de marca) (Req 1.x)', () => {
       providers: [
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
+        { provide: OperacionOverlayService, useValue: new OperacionOverlayServiceStub() },
         { provide: NotificacionesService, useValue: toast },
         { provide: AuthService, useValue: new AuthServiceStub() },
         { provide: TematizacionService, useValue: tematizacion },
@@ -265,12 +279,12 @@ describe('AdminBranding (seleccion de color de marca) (Req 1.x)', () => {
   it('presenta el selector, los presets y el campo hex con permiso (Req 1.1)', () => {
     resolverCarga();
     const el: HTMLElement = fixture.nativeElement;
-    // 8 muestras de Preset_Color, el selector nativo y el campo hexadecimal.
-    expect(el.querySelectorAll('.admin-branding__preset').length).toBe(8);
+    // 16 muestras de Preset_Color, el selector nativo y el campo de color.
+    expect(el.querySelectorAll('.admin-branding__preset').length).toBe(16);
     expect(el.querySelector('input[type="color"]')).not.toBeNull();
     expect(el.querySelector('.admin-branding__color-hex')).not.toBeNull();
     // Coherencia con la lista de presets del componente.
-    expect(componenteDe().presets.length).toBe(8);
+    expect(componenteDe().presets.length).toBe(16);
   });
 
   it('seleccionar un preset fija el Color_Primario_Marca (Req 1.2)', () => {
@@ -360,6 +374,7 @@ describe('AdminBranding (sin permiso branding:actualizar) (Req 1.8)', () => {
       providers: [
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
+        { provide: OperacionOverlayService, useValue: new OperacionOverlayServiceStub() },
         { provide: NotificacionesService, useValue: new ToastSpy() },
         { provide: AuthService, useValue: new AuthServiceSoloLecturaStub() },
         { provide: TematizacionService, useValue: tematizacion },

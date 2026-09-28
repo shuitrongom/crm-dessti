@@ -33,6 +33,12 @@ export const comercialRoutes: Routes = [
       import('./oportunidades/oportunidades').then((m) => m.ComercialOportunidades),
   },
   {
+    // Agenda de actividades de seguimiento comercial (V79).
+    path: 'actividades',
+    canActivate: [guardaPorPermiso('actividad', 'listar')],
+    loadComponent: () => import('./actividades/actividades').then((m) => m.ComercialActividades),
+  },
+  {
     path: 'cotizaciones',
     canActivate: [guardaPorPermiso('cotizacion', 'listar')],
     loadComponent: () => import('./cotizaciones/cotizaciones').then((m) => m.ComercialCotizaciones),

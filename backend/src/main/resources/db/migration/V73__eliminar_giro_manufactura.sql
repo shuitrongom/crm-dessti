@@ -1,0 +1,24 @@
+-- ============================================================================
+-- V73__eliminar_giro_manufactura.sql
+--
+-- Elimina del Catalogo_Giros el Giro `manufactura` sembrado por V52.
+--
+-- MOTIVO (decision de negocio): `manufactura` se introdujo como ESQUELETO de
+-- demostracion del modelo enchufable (V52 + paquete
+-- com.dessti.crm.vertical.manufactura), pero NO es un giro completo: no tiene
+-- reglas de negocio propias programadas. La politica es que solo los giros
+-- COMPLETOS (hoy unicamente `anuncios-luminosos`) permanezcan en la plataforma;
+-- un giro incompleto es un error tenerlo. Por eso se elimina tanto el codigo del
+-- vertical de demostracion como su fila de catalogo.
+--
+-- Se hace en una migracion NUEVA (no se borra V52) para preservar el historial
+-- de Flyway integro en instalaciones ya migradas (local/produccion).
+--
+-- SEGURIDAD: el DELETE es idempotente y seguro:
+--   * Solo borra la fila por su clave natural `manufactura`.
+--   * Si alguna Empresa estuviera enlazada a ese giro (empresa.giro_id), la FK
+--     lo impediria; en una instalacion real `manufactura` nunca fue asignado a
+--     una Empresa (era catalogo de demostracion), por lo que el borrado procede.
+-- ============================================================================
+
+DELETE FROM giro WHERE clave = 'manufactura';

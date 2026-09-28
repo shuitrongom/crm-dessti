@@ -3,11 +3,13 @@ package com.dessti.crm.portalcliente.adapter.in.rest;
 import java.util.UUID;
 
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,11 +18,15 @@ import com.dessti.crm.comercial.cotizacion.application.CotizacionDto;
 import com.dessti.crm.facturacion.factura.application.FacturaDto;
 import com.dessti.crm.platform.web.pagination.PageRequestFactory;
 import com.dessti.crm.platform.web.pagination.PaginaResponse;
+import com.dessti.crm.portalcliente.application.PerfilClienteResumen;
 import com.dessti.crm.portalcliente.application.ProyectoResumen;
 import com.dessti.crm.portalcliente.application.PruebaDisenoResumen;
+import com.dessti.crm.portalcliente.application.QuejaPortalResumen;
 import com.dessti.crm.portalcliente.application.ResultadoRechazoPruebaResumen;
 import com.dessti.crm.portalcliente.application.ServicioPortalCliente;
 import com.dessti.crm.portalcliente.application.TicketServicioResumen;
+
+import jakarta.validation.Valid;
 
 /**
  * Adaptador de entrada REST del <strong>Portal del Cliente</strong> (rol externo
@@ -95,6 +101,30 @@ public class PortalClienteController {
             @RequestParam(name = "size", required = false) Integer size) {
         Pageable pageable = PageRequestFactory.acotando(page, size);
         return PaginaResponse.de(servicioPortalCliente.misCotizaciones(pageable));
+    }
+
+    /**
+     * Aprueba una Cotizacion propia del Cliente autenticado (Req 45.2, 6.6). 404 si
+     * la Cotizacion no es del Cliente (Req 45.3); 409 si no esta {@code enviada}.
+     *
+     * @param id identificador de la Cotizacion.
+     * @return 200 OK con el {@link CotizacionDto} aprobado.
+     */
+    @PostMapping("/cotizaciones/{id}/aprobacion")
+    public ResponseEntity<CotizacionDto> aprobarCotizacion(@PathVariable("id") UUID id) {
+        return ResponseEntity.ok(servicioPortalCliente.aprobarMiCotizacion(id));
+    }
+
+    /**
+     * Rechaza una Cotizacion propia del Cliente autenticado (Req 45.2, 6.6). 404 si
+     * la Cotizacion no es del Cliente (Req 45.3); 409 si no esta {@code enviada}.
+     *
+     * @param id identificador de la Cotizacion.
+     * @return 200 OK con el {@link CotizacionDto} rechazado.
+     */
+    @PostMapping("/cotizaciones/{id}/rechazo")
+    public ResponseEntity<CotizacionDto> rechazarCotizacion(@PathVariable("id") UUID id) {
+        return ResponseEntity.ok(servicioPortalCliente.rechazarMiCotizacion(id));
     }
 
     /**
@@ -185,6 +215,36 @@ public class PortalClienteController {
     }
 
     /**
+     * Lista de forma paginada (20/100) las Queja_Cliente del Cliente autenticado
+     * (Req 45.1).
+     *
+     * @param page numero de pagina 0-index; opcional.
+     * @param size tamano de pagina; opcional (por defecto 20, maximo 100).
+     * @return 200 OK con la pagina de {@link QuejaPortalResumen}.
+     */
+    @GetMapping("/quejas")
+    public PaginaResponse<QuejaPortalResumen> misQuejas(
+            @RequestParam(name = "page", required = false) Integer page,
+            @RequestParam(name = "size", required = false) Integer size) {
+        Pageable pageable = PageRequestFactory.acotando(page, size);
+        return PaginaResponse.de(servicioPortalCliente.misQuejas(pageable));
+    }
+
+    /**
+     * Levanta una Queja_Cliente con origen {@code portal} para el Cliente autenticado
+     * (Req 45.2, 70.1). 422 si la descripcion es invalida.
+     *
+     * @param request descripcion de la queja.
+     * @return 201 Created con el {@link QuejaPortalResumen} registrado.
+     */
+    @PostMapping("/quejas")
+    public ResponseEntity<QuejaPortalResumen> registrarQueja(
+            @Valid @RequestBody RegistrarQuejaPortalRequest request) {
+        QuejaPortalResumen resumen = servicioPortalCliente.registrarMiQueja(request.descripcion());
+        return ResponseEntity.status(HttpStatus.CREATED).body(resumen);
+    }
+
+    /**
      * Lista de forma paginada (20/100) las Facturas del Cliente autenticado
      * (Req 45.1).
      *
@@ -198,5 +258,16 @@ public class PortalClienteController {
             @RequestParam(name = "size", required = false) Integer size) {
         Pageable pageable = PageRequestFactory.acotando(page, size);
         return PaginaResponse.de(servicioPortalCliente.misFacturas(pageable));
+    }
+
+    /**
+     * Consulta el perfil del Cliente autenticado: identificacion, contacto y
+     * direccion (Req 45.1). 404 si el Cliente no es accesible.
+     *
+     * @return 200 OK con el {@link PerfilClienteResumen}.
+     */
+    @GetMapping("/perfil")
+    public ResponseEntity<PerfilClienteResumen> miPerfil() {
+        return ResponseEntity.ok(servicioPortalCliente.miPerfil());
     }
 }

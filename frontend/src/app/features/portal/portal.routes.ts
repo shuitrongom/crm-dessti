@@ -42,6 +42,14 @@ export const portalRoutes: Routes = [
         path: 'facturas',
         loadComponent: () => import('./facturas/portal-facturas').then((m) => m.PortalFacturas),
       },
+      {
+        path: 'quejas',
+        loadComponent: () => import('./quejas/portal-quejas').then((m) => m.PortalQuejas),
+      },
+      {
+        path: 'perfil',
+        loadComponent: () => import('./perfil/portal-perfil').then((m) => m.PortalPerfil),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'inicio' },
     ],
   },

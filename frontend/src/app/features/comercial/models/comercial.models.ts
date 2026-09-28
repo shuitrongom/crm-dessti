@@ -28,6 +28,8 @@ export interface Cliente {
   direccionPais: string | null;
   notas: string | null;
   activo: boolean;
+  /** Usuario propietario/vendedor asignado; null si no se asignó (V81). */
+  propietarioUsuarioId: string | null;
   version: number;
   createdAt: string;
   updatedAt: string;
@@ -102,9 +104,43 @@ export interface Oportunidad {
   responsableUsuarioId: string | null;
   cotizacionId: string | null;
   canalVentaId: string | null;
+  /** Probabilidad de cierre en porcentaje entero [0,100] (V81, forecast). */
+  probabilidad: number;
+  /** Fecha esperada de cierre (ISO date); null si no se estima (V81). */
+  fechaCierreEsperada: string | null;
+  /** Motivo de pérdida; null salvo etapa 'perdido' (V81). */
+  motivoPerdida: string | null;
   version: number;
   createdAt: string;
   updatedAt: string;
+}
+
+/** Probabilidad de cierre sugerida por etapa (coincide con el backend, V81). */
+export const PROBABILIDAD_POR_ETAPA: Record<EtapaOportunidad, number> = {
+  nuevo: 10,
+  calificado: 30,
+  propuesta: 50,
+  negociacion: 70,
+  ganado: 100,
+  perdido: 0,
+};
+
+/**
+ * Valor ponderado de una oportunidad para el forecast: valor estimado por su
+ * probabilidad de cierre (valor * probabilidad / 100), redondeado a 2 decimales.
+ */
+export function valorPonderado(oportunidad: {
+  valorEstimado: number;
+  probabilidad: number;
+}): number {
+  const bruto = (Number(oportunidad.valorEstimado) || 0) * (Number(oportunidad.probabilidad) || 0) / 100;
+  return Math.round((bruto + Number.EPSILON) * 100) / 100;
+}
+
+/** Cuerpo para ajustar el forecast de una oportunidad (V81). */
+export interface AjustarForecastRequest {
+  probabilidad?: number | null;
+  fechaCierreEsperada?: string | null;
 }
 
 /** Cuerpo de alta de Oportunidad (CrearOportunidadRequest). */
@@ -135,6 +171,36 @@ export const MONEDAS_COTIZACION: readonly { valor: MonedaCotizacion; etiqueta: s
   { valor: 'EUR', etiqueta: 'Euro (EUR)' },
 ];
 
+/** Tasa de IVA de una partida (TasaIva.valorBd, V80). */
+export type TasaIva = '16' | '8' | '0' | 'exento';
+
+/** Tasa de IVA por defecto de una partida (16%). */
+export const TASA_IVA_POR_DEFECTO: TasaIva = '16';
+
+/** Etiqueta legible de una tasa de IVA. */
+export const ETIQUETA_TASA_IVA: Record<TasaIva, string> = {
+  '16': 'IVA 16%',
+  '8': 'IVA 8% (frontera)',
+  '0': 'IVA 0%',
+  exento: 'Exento',
+};
+
+/** Factor multiplicativo de cada tasa (para la previsualización de IVA en el cliente). */
+export const FACTOR_TASA_IVA: Record<TasaIva, number> = {
+  '16': 0.16,
+  '8': 0.08,
+  '0': 0,
+  exento: 0,
+};
+
+/** Opciones de tasa de IVA para el selector del formulario de partida. */
+export const TASAS_IVA: readonly { valor: TasaIva; etiqueta: string }[] = [
+  { valor: '16', etiqueta: ETIQUETA_TASA_IVA['16'] },
+  { valor: '8', etiqueta: ETIQUETA_TASA_IVA['8'] },
+  { valor: '0', etiqueta: ETIQUETA_TASA_IVA['0'] },
+  { valor: 'exento', etiqueta: ETIQUETA_TASA_IVA.exento },
+];
+
 /** Partida de una Cotizacion (PartidaCotizacionDto). */
 export interface PartidaCotizacion {
   id: string;
@@ -142,6 +208,15 @@ export interface PartidaCotizacion {
   descripcion: string;
   cantidad: number;
   precioUnitario: number;
+  /** Descuento (monto) de la partida antes de IVA (V80). */
+  descuento: number;
+  /** Importe bruto = cantidad * precioUnitario, antes de descuento (V80). */
+  importeBase: number;
+  /** Tasa de IVA de la partida (V80). */
+  tasaIva: TasaIva;
+  /** IVA de la partida sobre su base neta (V80). */
+  iva: number;
+  /** Base neta = importe bruto - descuento; base del IVA (V80). */
   subtotal: number;
 }
 
@@ -151,7 +226,17 @@ export interface Cotizacion {
   clienteId: string;
   oportunidadId: string | null;
   estado: EstadoCotizacion;
+  /** Suma de las bases netas de partida, antes de descuento global (V80). */
   subtotal: number;
+  /** Descuento global (monto) restado del subtotal (V80). */
+  descuentoGlobal: number;
+  /** IVA consolidado (suma del IVA de las partidas) (V80). */
+  iva: number;
+  /** Retencion de ISR (monto) restada del total (V80). */
+  retencionIsr: number;
+  /** Retencion de IVA (monto) restada del total (V80). */
+  retencionIva: number;
+  /** Total = subtotal - descuento global + IVA - retenciones (V80). */
   total: number;
   partidas: PartidaCotizacion[];
   canalVentaId: string | null;
@@ -185,6 +270,10 @@ export interface PartidaRequest {
   descripcion: string;
   cantidad: number;
   precioUnitario?: number | null;
+  /** Descuento (monto) de la partida; opcional, por defecto 0 (V80). */
+  descuento?: number | null;
+  /** Tasa de IVA de la partida; opcional, por defecto 16% (V80). */
+  tasaIva?: TasaIva | null;
 }
 
 /** Cuerpo de alta de Cotizacion (CrearCotizacionRequest). Los campos descriptivos
@@ -200,6 +289,19 @@ export interface CotizacionRequest {
   notas?: string | null;
   /** Moneda de la cotizacion; por defecto MXN si se omite. */
   moneda?: MonedaCotizacion | null;
+  /** Descuento global (monto); opcional, por defecto 0 (V80). */
+  descuentoGlobal?: number | null;
+  /** Retencion de ISR (monto); opcional, por defecto 0 (V80). */
+  retencionIsr?: number | null;
+  /** Retencion de IVA (monto); opcional, por defecto 0 (V80). */
+  retencionIva?: number | null;
+}
+
+/** Cuerpo para ajustar impuestos/descuentos de una cotizacion en borrador (V80). */
+export interface AjustesFiscalesRequest {
+  descuentoGlobal?: number | null;
+  retencionIsr?: number | null;
+  retencionIva?: number | null;
 }
 
 /** Cuerpo para enviar una Cotizacion por correo (EnviarCotizacionCorreoRequest).
@@ -424,4 +526,195 @@ export function totalPartidas(
     0,
   );
   return Math.round((suma + Number.EPSILON) * 100) / 100;
+}
+
+// -----------------------------------------------------------------------------
+// Previsualizacion del desglose fiscal CFDI en el cliente (V80)
+// -----------------------------------------------------------------------------
+// Replica el calculo del backend (orden CFDI) para mostrar el total en vivo
+// antes de enviar. El total oficial siempre lo devuelve el servidor.
+
+/** Redondea a 2 decimales half-up (aritmetica monetaria de previsualizacion). */
+function redondear2(valor: number): number {
+  return Math.round((Number(valor) + Number.EPSILON) * 100) / 100;
+}
+
+/** Base neta de una partida = cantidad*precio - descuento (acotada a >= 0). */
+export function baseNetaPartida(
+  cantidad: number,
+  precioUnitario: number | null | undefined,
+  descuento: number | null | undefined,
+): number {
+  const bruto = subtotalPartida(cantidad, Number(precioUnitario ?? 0));
+  const desc = Math.max(0, Math.min(Number(descuento ?? 0), bruto));
+  return redondear2(bruto - desc);
+}
+
+/** IVA de una partida = baseNeta * factor(tasa), redondeado a 2 decimales. */
+export function ivaPartida(
+  cantidad: number,
+  precioUnitario: number | null | undefined,
+  descuento: number | null | undefined,
+  tasaIva: TasaIva | null | undefined,
+): number {
+  const base = baseNetaPartida(cantidad, precioUnitario, descuento);
+  const factor = FACTOR_TASA_IVA[(tasaIva ?? TASA_IVA_POR_DEFECTO) as TasaIva];
+  return redondear2(base * factor);
+}
+
+/** Renglon de entrada para el desglose fiscal de previsualizacion. */
+export interface PartidaFiscalEntrada {
+  cantidad: number;
+  precioUnitario?: number | null;
+  descuento?: number | null;
+  tasaIva?: TasaIva | null;
+}
+
+/** Resultado del desglose fiscal de previsualizacion (mismos campos que el DTO). */
+export interface DesgloseFiscal {
+  subtotal: number;
+  descuentoGlobal: number;
+  iva: number;
+  retencionIsr: number;
+  retencionIva: number;
+  total: number;
+}
+
+/**
+ * Calcula el desglose fiscal CFDI de una cotizacion en el cliente (V80),
+ * replicando el orden del backend: subtotal = Σ base neta; IVA = Σ IVA por
+ * partida; base gravable = subtotal - descuento global (>= 0); total = base
+ * gravable + IVA - retenciones (>= 0). Solo para previsualizacion.
+ */
+export function calcularDesgloseFiscal(
+  partidas: readonly PartidaFiscalEntrada[],
+  descuentoGlobal: number | null | undefined,
+  retencionIsr: number | null | undefined,
+  retencionIva: number | null | undefined,
+): DesgloseFiscal {
+  let subtotal = 0;
+  let iva = 0;
+  for (const p of partidas) {
+    subtotal += baseNetaPartida(p.cantidad, p.precioUnitario, p.descuento);
+    iva += ivaPartida(p.cantidad, p.precioUnitario, p.descuento, p.tasaIva);
+  }
+  subtotal = redondear2(subtotal);
+  iva = redondear2(iva);
+  const descGlobal = Math.max(0, Math.min(Number(descuentoGlobal ?? 0), subtotal));
+  const retIsr = Math.max(0, Number(retencionIsr ?? 0));
+  const retIva = Math.max(0, Number(retencionIva ?? 0));
+  const baseGravable = redondear2(subtotal - descGlobal);
+  const total = Math.max(0, redondear2(baseGravable + iva - retIsr - retIva));
+  return {
+    subtotal,
+    descuentoGlobal: redondear2(descGlobal),
+    iva,
+    retencionIsr: redondear2(retIsr),
+    retencionIva: redondear2(retIva),
+    total,
+  };
+}
+
+// -----------------------------------------------------------------------------
+// Actividades de seguimiento comercial (V79)
+// -----------------------------------------------------------------------------
+// Refleja EXACTAMENTE el ActividadDto del backend. El tipo y el estado son
+// uniones de literales que coinciden con la etiqueta lowercase `valorBd()`.
+
+/** Tipo de una Actividad de seguimiento (TipoActividad.valorBd). */
+export type TipoActividad = 'llamada' | 'correo' | 'reunion' | 'tarea' | 'nota';
+
+/** Estado de una Actividad de seguimiento (EstadoActividad.valorBd). */
+export type EstadoActividad = 'pendiente' | 'completada' | 'cancelada';
+
+/** Actividad de seguimiento comercial (ActividadDto). */
+export interface Actividad {
+  id: string;
+  clienteId: string;
+  oportunidadId: string | null;
+  tipo: TipoActividad;
+  estado: EstadoActividad;
+  asunto: string;
+  descripcion: string | null;
+  fechaProgramada: string;
+  vencimiento: string | null;
+  completadaEn: string | null;
+  responsableUsuarioId: string | null;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Cuerpo de alta de una Actividad (CrearActividadRequest). */
+export interface ActividadRequest {
+  clienteId: string;
+  oportunidadId?: string | null;
+  tipo: TipoActividad;
+  asunto: string;
+  descripcion?: string | null;
+  /** Instante planificado en formato ISO-8601 (UTC). */
+  fechaProgramada: string;
+  /** Fecha limite opcional en formato ISO-8601 (UTC). */
+  vencimiento?: string | null;
+  responsableUsuarioId?: string | null;
+}
+
+/** Cuerpo de edicion de asunto/descripcion de una Actividad (EditarActividadRequest). */
+export interface EditarActividadRequest {
+  asunto: string;
+  descripcion?: string | null;
+}
+
+/** Cuerpo de reprogramacion de una Actividad (ReprogramarActividadRequest). */
+export interface ReprogramarActividadRequest {
+  fechaProgramada: string;
+  vencimiento?: string | null;
+}
+
+/** Etiqueta legible del tipo de Actividad. */
+export const ETIQUETA_TIPO_ACTIVIDAD: Record<TipoActividad, string> = {
+  llamada: 'Llamada',
+  correo: 'Correo',
+  reunion: 'Reunión',
+  tarea: 'Tarea',
+  nota: 'Nota',
+};
+
+/** Icono Material asociado a cada tipo de Actividad (para el timeline). */
+export const ICONO_TIPO_ACTIVIDAD: Record<TipoActividad, string> = {
+  llamada: 'call',
+  correo: 'mail',
+  reunion: 'groups',
+  tarea: 'task_alt',
+  nota: 'sticky_note_2',
+};
+
+/** Opciones de tipo de Actividad para el selector del formulario. */
+export const TIPOS_ACTIVIDAD: readonly { valor: TipoActividad; etiqueta: string; icono: string }[] =
+  [
+    { valor: 'llamada', etiqueta: ETIQUETA_TIPO_ACTIVIDAD.llamada, icono: ICONO_TIPO_ACTIVIDAD.llamada },
+    { valor: 'correo', etiqueta: ETIQUETA_TIPO_ACTIVIDAD.correo, icono: ICONO_TIPO_ACTIVIDAD.correo },
+    { valor: 'reunion', etiqueta: ETIQUETA_TIPO_ACTIVIDAD.reunion, icono: ICONO_TIPO_ACTIVIDAD.reunion },
+    { valor: 'tarea', etiqueta: ETIQUETA_TIPO_ACTIVIDAD.tarea, icono: ICONO_TIPO_ACTIVIDAD.tarea },
+    { valor: 'nota', etiqueta: ETIQUETA_TIPO_ACTIVIDAD.nota, icono: ICONO_TIPO_ACTIVIDAD.nota },
+  ];
+
+/** Etiqueta legible del estado de una Actividad. */
+export const ETIQUETA_ESTADO_ACTIVIDAD: Record<EstadoActividad, string> = {
+  pendiente: 'Pendiente',
+  completada: 'Completada',
+  cancelada: 'Cancelada',
+};
+
+/**
+ * Indica si una Actividad esta vencida: es una tarea/seguimiento pendiente cuyo
+ * vencimiento (o, en su defecto, fecha programada) ya paso. Utilidad de UI para
+ * resaltar tareas atrasadas; no altera el estado del backend.
+ */
+export function actividadVencida(actividad: Actividad, ahora: Date = new Date()): boolean {
+  if (actividad.estado !== 'pendiente') {
+    return false;
+  }
+  const limite = actividad.vencimiento ?? actividad.fechaProgramada;
+  return new Date(limite).getTime() < ahora.getTime();
 }

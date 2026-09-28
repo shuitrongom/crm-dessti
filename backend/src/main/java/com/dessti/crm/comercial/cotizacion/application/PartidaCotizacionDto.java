@@ -15,7 +15,12 @@ import com.dessti.crm.comercial.cotizacion.domain.PartidaCotizacion;
  * @param descripcion    descripcion de la partida.
  * @param cantidad       cantidad (entero en [1, 999,999]).
  * @param precioUnitario precio unitario (escala 2).
- * @param subtotal       subtotal = round(cantidad * precio_unitario, 2) (Req 6.3).
+ * @param descuento      descuento (monto) de la partida (escala 2, V80).
+ * @param importeBase    importe bruto = cantidad * precio_unitario (escala 2, V80).
+ * @param tasaIva        etiqueta de la tasa de IVA ({@code 16}/{@code 8}/{@code 0}/
+ *                       {@code exento}) (V80).
+ * @param iva            IVA de la partida sobre su base neta (escala 2, V80).
+ * @param subtotal       base neta = importe bruto - descuento (escala 2, V80).
  */
 public record PartidaCotizacionDto(
         UUID id,
@@ -23,6 +28,10 @@ public record PartidaCotizacionDto(
         String descripcion,
         int cantidad,
         BigDecimal precioUnitario,
+        BigDecimal descuento,
+        BigDecimal importeBase,
+        String tasaIva,
+        BigDecimal iva,
         BigDecimal subtotal) {
 
     /**
@@ -38,6 +47,10 @@ public record PartidaCotizacionDto(
                 partida.getDescripcion(),
                 partida.getCantidad(),
                 partida.getPrecioUnitario(),
+                partida.getDescuento(),
+                partida.getImporteBase(),
+                partida.getTasaIva().valorBd(),
+                partida.getIva(),
                 partida.getSubtotal());
     }
 }

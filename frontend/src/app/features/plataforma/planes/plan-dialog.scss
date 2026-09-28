@@ -1,63 +1,38 @@
 // =============================================================================
-// Estilos del dialogo de Plan (super_admin) (Req 25.1, plataforma-multigiro)
+// Estilos ESPECÍFICOS del diálogo de Plan (super_admin)
 // -----------------------------------------------------------------------------
-// Layout enterprise en secciones tipo "tarjeta" con encabezado, coherente con
-// los dialogos de Empresa/Giro. El contenido se ajusta al ancho del dialogo,
-// permite el ajuste de linea y evita por completo la barra de desplazamiento
-// horizontal. La seccion de modulos muestra, por cada modulo marcado, un campo
-// de precio en la moneda elegida y un total en vivo destacado. Solo tokens del
-// Sistema de Diseno (tema claro/oscuro).
+// El layout general (secciones two-pane, rejilla, ayudas, notas, resumen) lo
+// aporta el "form shell" compartido (styles/_form-shell.scss, clases ds-form*).
+// Aquí solo viven los estilos propios del diálogo: la parrilla de módulos como
+// tarjetas seleccionables (app-selectable-card) con su precio inline, los
+// títulos de grupo y los esqueletos de carga. Solo tokens del Sistema de Diseño.
 // =============================================================================
 
 @use '../../../../styles/breakpoints' as bp;
 
-.plan-dialog__form {
+.plan-dialog__content {
+  // Aire interno del contenido del diálogo.
+  padding-block: var(--ds-space-2);
+}
+
+// -----------------------------------------------------------------------------
+// Grupos de módulos (Núcleo común / Giro)
+// -----------------------------------------------------------------------------
+.plan-dialog__grupos {
   display: flex;
   flex-direction: column;
-  gap: var(--ds-space-4);
-  inline-size: 100%;
-  max-inline-size: 100%;
-  min-inline-size: 0;
-  box-sizing: border-box;
+  gap: var(--ds-space-5);
+  // Región con scroll VERTICAL para catálogos largos; nunca horizontal.
+  max-block-size: 46vh;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding-block-start: var(--ds-space-2);
-}
-
-.plan-dialog__error {
-  display: flex;
-  align-items: center;
-  gap: var(--ds-space-2);
-  margin: 0 0 var(--ds-space-2);
-  padding: var(--ds-space-3);
-  border: 1px solid color-mix(in srgb, var(--ds-color-error) 32%, transparent);
-  border-radius: var(--ds-radius-sm);
-  background: color-mix(in srgb, var(--ds-color-error) 12%, transparent);
-  color: var(--ds-color-error);
-  font-size: var(--ds-font-size-sm);
-
-  mat-icon {
-    flex: 0 0 auto;
-    font-size: 20px;
-    inline-size: 20px;
-    block-size: 20px;
-  }
-}
-
-// -----------------------------------------------------------------------------
-// Secciones (tarjeta con encabezado)
-// -----------------------------------------------------------------------------
-.plan-dialog__seccion {
-  margin: 0;
-  padding: var(--ds-space-4);
-  border: 1px solid var(--ds-color-border);
-  border-radius: var(--ds-radius-md);
-  background: var(--ds-color-surface);
+  padding-inline-end: var(--ds-space-2);
   min-inline-size: 0;
 }
 
-.plan-dialog__seccion-titulo {
+.plan-dialog__grupo-titulo {
   margin: 0 0 var(--ds-space-3);
-  padding-block-end: var(--ds-space-2);
-  border-block-end: 1px solid var(--ds-color-border);
   font-size: var(--ds-font-size-xs);
   font-weight: var(--ds-font-weight-medium);
   text-transform: uppercase;
@@ -65,168 +40,71 @@
   color: var(--ds-color-text-muted);
 }
 
-.plan-dialog__grid {
+// Rejilla de tarjetas de módulo: el número de columnas se ADAPTA al ancho real
+// disponible (auto-fill), evitando forzar 2 columnas cuando no caben y provocar
+// nombres cortados o scroll horizontal. Cada tarjeta pide un ancho mínimo cómodo.
+.plan-dialog__cards {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--ds-space-4) var(--ds-space-4);
-  // Cada fila se dimensiona a su contenido: un campo mas alto (p. ej. el hint de
-  // "Duracion (dias)" al ajustarse a dos lineas) no estira ni encima al vecino.
-  align-items: start;
-
-  @include bp.from('sm') {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  mat-form-field {
-    min-inline-size: 0;
-    inline-size: 100%;
-    // Evita que un campo mas alto arrastre a su vecino de la misma fila.
-    align-self: start;
-  }
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--ds-space-3);
 }
 
-// -----------------------------------------------------------------------------
-// Notas informativas (hint y aviso de cambio de giro)
-// -----------------------------------------------------------------------------
-.plan-dialog__hint {
+// Contenido proyectado dentro de cada app-selectable-card.
+.plan-dialog__card-cab {
   display: flex;
-  align-items: flex-start;
-  gap: var(--ds-space-2);
-  margin: 0 0 var(--ds-space-3);
-  padding: var(--ds-space-3);
-  border: 1px solid color-mix(in srgb, var(--ds-color-info) 32%, transparent);
-  border-radius: var(--ds-radius-md);
-  background: color-mix(in srgb, var(--ds-color-info) 10%, transparent);
-  color: var(--ds-color-text);
-  font-size: var(--ds-font-size-sm);
-  min-inline-size: 0;
-
-  mat-icon {
-    flex: 0 0 auto;
-    margin-block-start: 1px;
-    font-size: 20px;
-    inline-size: 20px;
-    block-size: 20px;
-    color: var(--ds-color-info);
-  }
-}
-
-.plan-dialog__hint--aviso {
-  border-color: color-mix(in srgb, var(--ds-color-warning) 36%, transparent);
-  background: color-mix(in srgb, var(--ds-color-warning) 12%, transparent);
-
-  mat-icon {
-    color: var(--ds-color-warning);
-  }
-}
-
-// Motivo del bloqueo de deseleccion de un modulo requerido por dependencia.
-.plan-dialog__hint--bloqueado {
-  margin: var(--ds-space-1) 0 0;
-  padding: var(--ds-space-2) var(--ds-space-3);
-  border-color: color-mix(in srgb, var(--ds-color-warning) 36%, transparent);
-  background: color-mix(in srgb, var(--ds-color-warning) 10%, transparent);
-
-  mat-icon {
-    color: var(--ds-color-warning);
-  }
-}
-
-// -----------------------------------------------------------------------------
-// Selector de modulos con precio
-// -----------------------------------------------------------------------------
-.plan-dialog__grupos {
-  // Region con scroll vertical para catalogos largos: no crece sin limite.
-  max-block-size: 44vh;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: var(--ds-space-4);
-}
-
-.plan-dialog__grupo-titulo {
-  margin: 0 0 var(--ds-space-2);
-  font-size: var(--ds-font-size-sm);
-  font-weight: var(--ds-font-weight-medium);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--ds-color-text-muted);
-}
-
-.plan-dialog__modulos {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: var(--ds-space-2);
-}
-
-// Fila de modulo: casilla + campo de precio (se apila en pantallas estrechas).
-.plan-dialog__modulo {
-  display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--ds-space-2) var(--ds-space-4);
-  padding-block: var(--ds-space-1);
-  min-inline-size: 0;
-
-  mat-checkbox {
-    min-inline-size: 0;
-  }
+  gap: var(--ds-space-2);
 }
 
-.plan-dialog__precio-campo {
+.plan-dialog__card-nombre {
+  font-size: var(--ds-font-size-sm);
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-text);
+  line-height: 1.3;
+  // El nombre completo se ajusta en varias líneas si hace falta (no se corta).
+  overflow-wrap: anywhere;
+  min-inline-size: 0;
+}
+
+.plan-dialog__card-lock {
   flex: 0 0 auto;
-  inline-size: 12rem;
-  max-inline-size: 100%;
+  font-size: 18px;
+  inline-size: 18px;
+  block-size: 18px;
+  color: var(--ds-color-warning);
+}
 
-  // En pantallas estrechas el precio ocupa toda la fila (se apila bajo la casilla).
-  @include bp.until('sm') {
-    inline-size: 100%;
-  }
+.plan-dialog__card-motivo {
+  margin: var(--ds-space-2) 0 0;
+  font-size: var(--ds-font-size-xs);
+  line-height: 1.4;
+  color: var(--ds-color-warning);
+}
 
+// Campo de precio inline dentro de la tarjeta seleccionada.
+.plan-dialog__precio-campo {
+  inline-size: 100%;
+  margin-block-start: var(--ds-space-3);
+
+  // El precio no necesita el espacio del subscript (sin hint/error propios).
   ::ng-deep .mat-mdc-form-field-subscript-wrapper {
     display: none;
   }
 }
 
-// -----------------------------------------------------------------------------
-// Total en vivo
-// -----------------------------------------------------------------------------
-.plan-dialog__total {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--ds-space-2);
-  margin-block-start: var(--ds-space-4);
-  padding: var(--ds-space-3);
-  border: 1px solid var(--ds-color-border);
-  border-radius: var(--ds-radius-md);
-  background: var(--ds-color-surface-variant);
-}
-
-.plan-dialog__total-conteo {
+.plan-dialog__precio-moneda {
   color: var(--ds-color-text-muted);
-  font-size: var(--ds-font-size-sm);
-}
-
-.plan-dialog__total-sep {
-  color: var(--ds-color-text-muted);
-}
-
-.plan-dialog__total-valor {
-  font-size: var(--ds-font-size-lg);
-  font-weight: var(--ds-font-weight-bold);
-  color: var(--ds-color-primary);
+  font-size: var(--ds-font-size-xs);
   font-variant-numeric: tabular-nums;
 }
 
-.plan-dialog__cargando {
+// -----------------------------------------------------------------------------
+// Esqueletos de carga del catálogo de módulos
+// -----------------------------------------------------------------------------
+.plan-dialog__skeletons {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: var(--ds-space-2);
-  color: var(--ds-color-text-muted);
-  padding: var(--ds-space-3) 0;
+  padding-block: var(--ds-space-2);
 }

@@ -26,5 +26,17 @@
       <app-estado-chip [etiqueta]="humanizar(c.estado)" [tono]="tono(c.estado)" />
     </ng-template>
     <ng-template appCelda="fecha" let-c>{{ c.createdAt | date: 'dd/MM/yyyy' }}</ng-template>
+    <ng-template appCelda="acciones" let-c>
+      @if (puedeDecidir(c)) {
+        <button matButton type="button" [disabled]="procesando()" (click)="aprobar(c)">
+          <mat-icon>check</mat-icon> Aprobar
+        </button>
+        <button matButton type="button" [disabled]="procesando()" (click)="rechazar(c)">
+          <mat-icon>close</mat-icon> Rechazar
+        </button>
+      } @else {
+        <span class="portal-ayuda">—</span>
+      }
+    </ng-template>
   </app-data-table>
 </app-state-container>

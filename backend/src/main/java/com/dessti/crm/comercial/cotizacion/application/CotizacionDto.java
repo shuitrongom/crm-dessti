@@ -25,8 +25,12 @@ import com.dessti.crm.comercial.cotizacion.domain.Cotizacion;
  *                      si el Cliente no tiene correo.
  * @param oportunidadId Oportunidad de origen; {@code null} en alta manual (Req 14.5).
  * @param estado        etiqueta del estado (Req 6.6).
- * @param subtotal      suma de subtotales (escala 2, Req 6.5).
- * @param total         total = round(Σ subtotales, 2) (Req 6.5).
+ * @param subtotal      suma de bases netas de partida, antes de descuento global (escala 2, V80).
+ * @param descuentoGlobal descuento global (monto) restado del subtotal (escala 2, V80).
+ * @param iva           IVA consolidado (suma del IVA de las partidas) (escala 2, V80).
+ * @param retencionIsr  retencion de ISR (monto) restada del total (escala 2, V80).
+ * @param retencionIva  retencion de IVA (monto) restada del total (escala 2, V80).
+ * @param total         total = subtotal - descuento global + iva - retenciones (escala 2, V80).
  * @param moneda        moneda ISO 4217 de la Cotizacion (por defecto MXN, V60).
  * @param fechaEmision  fecha de emision (por defecto la de creacion, V60).
  * @param validoHasta   fecha de vigencia/expiracion; opcional (V60).
@@ -54,6 +58,10 @@ public record CotizacionDto(
         UUID oportunidadId,
         String estado,
         BigDecimal subtotal,
+        BigDecimal descuentoGlobal,
+        BigDecimal iva,
+        BigDecimal retencionIsr,
+        BigDecimal retencionIva,
         BigDecimal total,
         String moneda,
         LocalDate fechaEmision,
@@ -104,6 +112,10 @@ public record CotizacionDto(
                 cotizacion.getOportunidadId(),
                 cotizacion.getEstado().valorBd(),
                 cotizacion.getSubtotal(),
+                cotizacion.getDescuentoGlobal(),
+                cotizacion.getIva(),
+                cotizacion.getRetencionIsr(),
+                cotizacion.getRetencionIva(),
                 cotizacion.getTotal(),
                 cotizacion.getMoneda(),
                 cotizacion.getFechaEmision(),
@@ -130,8 +142,8 @@ public record CotizacionDto(
      */
     public CotizacionDto conEmisorIncompleto(boolean emisorIncompleto) {
         return new CotizacionDto(id, folio, clienteId, clienteNombre, clienteRfc, clienteEmail,
-                oportunidadId, estado, subtotal, total, moneda, fechaEmision, validoHasta,
-                condiciones, notas, enviadaEn, partidas, canalVentaId, version, createdAt,
-                updatedAt, emisorIncompleto);
+                oportunidadId, estado, subtotal, descuentoGlobal, iva, retencionIsr, retencionIva,
+                total, moneda, fechaEmision, validoHasta, condiciones, notas, enviadaEn, partidas,
+                canalVentaId, version, createdAt, updatedAt, emisorIncompleto);
     }
 }

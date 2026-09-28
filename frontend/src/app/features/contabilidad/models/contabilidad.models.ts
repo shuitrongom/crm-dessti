@@ -143,6 +143,25 @@ export interface CuentaPorPagar {
   updatedAt: string;
 }
 
+/** Programación de pago de una CxP (ProgramacionPagoDto). */
+export interface ProgramacionPago {
+  id: string;
+  cuentaPorPagarId: string;
+  fechaProgramada: string;
+  monto: number;
+  aplicada: boolean;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Cuerpo de POST /contabilidad/programaciones-pago (CrearProgramacionPagoRequest). */
+export interface CrearProgramacionPagoRequest {
+  cuentaPorPagarId: string;
+  fechaProgramada: string;
+  monto: number;
+}
+
 // --- Reportes financieros (Req 39) — solo lectura ---------------------------
 
 /** Ingresos por periodo (IngresosPeriodoDto). */
@@ -166,4 +185,107 @@ export interface IvaPeriodo {
   baseGravable: number;
   ivaTrasladado: number;
   ivaRetenido: number;
+}
+
+// --- Estados financieros (Req 47) — solo lectura ----------------------------
+
+/** Balance general del periodo (BalanceGeneralDto). Property 17: activo = pasivo + capital. */
+export interface BalanceGeneral {
+  desde: string | null;
+  hasta: string | null;
+  activo: number;
+  pasivo: number;
+  capital: number;
+  capitalBase: number;
+  resultadoEjercicio: number;
+  cuadra: boolean;
+}
+
+/** Estado de resultados del periodo (EstadoResultadosDto). */
+export interface EstadoResultados {
+  desde: string | null;
+  hasta: string | null;
+  ingresos: number;
+  gastos: number;
+  utilidad: number;
+}
+
+/** Renglón de la balanza de comprobación (BalanzaComprobacionDto.RenglonDto). */
+export interface RenglonBalanza {
+  cuentaId: string;
+  codigo: string;
+  nombre: string;
+  cargos: number;
+  abonos: number;
+}
+
+/** Balanza de comprobación del periodo (BalanzaComprobacionDto). */
+export interface BalanzaComprobacion {
+  desde: string | null;
+  hasta: string | null;
+  renglones: RenglonBalanza[];
+  totalCargos: number;
+  totalAbonos: number;
+  cuadra: boolean;
+}
+
+/** Renglón de aging de un cliente (AntiguedadSaldosDto.RenglonCliente). */
+export interface RenglonAgingCliente {
+  clienteId: string;
+  saldoTotal: number;
+  rango0a30: number;
+  rango31a60: number;
+  rango61a90: number;
+  rangoMas90: number;
+}
+
+/** Antigüedad de saldos de CxC agrupada por cliente (AntiguedadSaldosDto). */
+export interface AntiguedadSaldos {
+  clientes: RenglonAgingCliente[];
+}
+
+/** Renglón de aging de un proveedor (AntiguedadSaldosProveedorDto.RenglonProveedor). */
+export interface RenglonAgingProveedor {
+  proveedorId: string;
+  saldoTotal: number;
+  rango0a30: number;
+  rango31a60: number;
+  rango61a90: number;
+  rangoMas90: number;
+}
+
+/** Antigüedad de saldos de CxP agrupada por proveedor (AntiguedadSaldosProveedorDto). */
+export interface AntiguedadSaldosProveedor {
+  proveedores: RenglonAgingProveedor[];
+}
+
+/** Renglón del estado de cuenta de un cliente (EstadoCuentaClienteDto.RenglonDto). */
+export interface RenglonEstadoCuentaCliente {
+  cxcId: string;
+  facturaId: string;
+  total: number;
+  saldo: number;
+  estado: string;
+  fechaEmision: string;
+  fechaVencimiento: string | null;
+}
+
+/** Estado de cuenta de un cliente (EstadoCuentaClienteDto). */
+export interface EstadoCuentaCliente {
+  clienteId: string;
+  desde: string | null;
+  hasta: string | null;
+  renglones: RenglonEstadoCuentaCliente[];
+  totalFacturado: number;
+  saldoPendiente: number;
+}
+
+// --- Alta de cuenta contable (Req 38.1) -------------------------------------
+
+/** Cuerpo de POST /contabilidad/cuentas-contables (CrearCuentaContableRequest). */
+export interface CrearCuentaContableRequest {
+  codigo: string;
+  nombre: string;
+  tipo: string;
+  naturaleza: string;
 }

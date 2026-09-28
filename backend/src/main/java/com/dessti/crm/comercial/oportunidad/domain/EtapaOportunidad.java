@@ -141,4 +141,24 @@ public enum EtapaOportunidad {
     public boolean puedeTransicionarA(EtapaOportunidad destino) {
         return MAQUINA.puedeTransicionar(this, destino);
     }
+
+    /**
+     * Probabilidad de cierre sugerida (porcentaje entero [0,100]) para esta etapa
+     * del pipeline (V81, forecast). Es un valor por defecto razonable que el
+     * usuario puede afinar: nuevo=10, calificado=30, propuesta=50, negociacion=70,
+     * ganado=100, perdido=0. Sirve para inicializar y reajustar la probabilidad de
+     * una Oportunidad al crearla o cambiar de etapa.
+     *
+     * @return la probabilidad sugerida de la etapa.
+     */
+    public int probabilidadSugerida() {
+        return switch (this) {
+            case NUEVO -> 10;
+            case CALIFICADO -> 30;
+            case PROPUESTA -> 50;
+            case NEGOCIACION -> 70;
+            case GANADO -> 100;
+            case PERDIDO -> 0;
+        };
+    }
 }

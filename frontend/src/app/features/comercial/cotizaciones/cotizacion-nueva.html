@@ -66,6 +66,26 @@
           <mat-error>Las notas admiten hasta 2000 caracteres.</mat-error>
         }
       </mat-form-field>
+
+      <!-- Ajustes fiscales globales (V80): descuento global y retenciones -->
+      <p class="cotizacion-nueva__ajustes-titulo">Descuentos y retenciones (opcional)</p>
+      <div class="cotizacion-nueva__campos">
+        <mat-form-field appearance="outline">
+          <mat-label>Descuento global</mat-label>
+          <input matInput type="number" formControlName="descuentoGlobal" min="0" step="0.01" />
+          <span matTextPrefix>$&nbsp;</span>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Retención ISR</mat-label>
+          <input matInput type="number" formControlName="retencionIsr" min="0" step="0.01" />
+          <span matTextPrefix>$&nbsp;</span>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Retención IVA</mat-label>
+          <input matInput type="number" formControlName="retencionIva" min="0" step="0.01" />
+          <span matTextPrefix>$&nbsp;</span>
+        </mat-form-field>
+      </div>
     </mat-card-content>
   </mat-card>
 
@@ -117,23 +137,76 @@
                 <mat-error>El precio debe estar entre 0.01 y 999,999,999.99.</mat-error>
               }
             </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Descuento (opcional)</mat-label>
+              <input matInput type="number" formControlName="descuento" min="0" step="0.01" />
+              @if (grupo.get('descuento')?.invalid && grupo.get('descuento')?.touched) {
+                <mat-error>El descuento no puede ser negativo.</mat-error>
+              }
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>IVA</mat-label>
+              <mat-select formControlName="tasaIva">
+                @for (t of tasasIva; track t.valor) {
+                  <mat-option [value]="t.valor">{{ t.etiqueta }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
           </div>
           <p class="cotizacion-nueva__subtotal">
-            Subtotal previsualizado: {{ subtotalDe($index) | currency: 'MXN' : 'symbol-narrow' }}
+            Importe (cant. × precio): {{ subtotalDe($index) | currency: 'MXN' : 'symbol-narrow' }}
           </p>
         </mat-card-content>
       </mat-card>
     }
   </div>
 
-  <div class="cotizacion-nueva__pie">
+  <div class="cotizacion-nueva__acciones-partida">
     <button matButton="tonal" type="button" (click)="agregarPartida()">
       <mat-icon aria-hidden="true">add</mat-icon>
       Agregar partida
     </button>
-    <p class="cotizacion-nueva__total">
-      Total previsualizado: <strong>{{ total() | currency: 'MXN' : 'symbol-narrow' }}</strong>
-    </p>
+  </div>
+
+  <!-- Desglose fiscal previsualizado (V80). El total oficial lo devuelve el servidor. -->
+  <mat-card appearance="outlined" class="cotizacion-nueva__desglose">
+    <mat-card-content>
+      <dl class="desglose">
+        <div class="desglose__fila">
+          <dt>Subtotal</dt>
+          <dd>{{ desglose().subtotal | currency: 'MXN' : 'symbol-narrow' }}</dd>
+        </div>
+        @if (desglose().descuentoGlobal > 0) {
+          <div class="desglose__fila">
+            <dt>Descuento global</dt>
+            <dd>− {{ desglose().descuentoGlobal | currency: 'MXN' : 'symbol-narrow' }}</dd>
+          </div>
+        }
+        <div class="desglose__fila">
+          <dt>IVA</dt>
+          <dd>{{ desglose().iva | currency: 'MXN' : 'symbol-narrow' }}</dd>
+        </div>
+        @if (desglose().retencionIsr > 0) {
+          <div class="desglose__fila">
+            <dt>Retención ISR</dt>
+            <dd>− {{ desglose().retencionIsr | currency: 'MXN' : 'symbol-narrow' }}</dd>
+          </div>
+        }
+        @if (desglose().retencionIva > 0) {
+          <div class="desglose__fila">
+            <dt>Retención IVA</dt>
+            <dd>− {{ desglose().retencionIva | currency: 'MXN' : 'symbol-narrow' }}</dd>
+          </div>
+        }
+        <div class="desglose__fila desglose__fila--total">
+          <dt>Total</dt>
+          <dd>{{ total() | currency: 'MXN' : 'symbol-narrow' }}</dd>
+        </div>
+      </dl>
+    </mat-card-content>
+  </mat-card>
+
+  <div class="cotizacion-nueva__pie">
     <button matButton="filled" type="submit" [disabled]="guardando()">Crear cotizacion</button>
   </div>
 </form>

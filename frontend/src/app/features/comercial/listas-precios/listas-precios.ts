@@ -21,6 +21,7 @@ import { Observable } from 'rxjs';
 
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../shared/components/state-container/state-container';
+import { KpiTile } from '../../../shared/components/kpi-tile/kpi-tile';
 import { EntitySelect } from '../../../shared/components/entity-select/entity-select';
 import {
   CeldaTablaDirective,
@@ -50,6 +51,7 @@ import { ListaPrecios, PrecioLista, Producto } from '../models/comercial.models'
     MatIconModule,
     PageHeader,
     StateContainer,
+    KpiTile,
     DataTable,
     CeldaTablaDirective,
     EntitySelect,

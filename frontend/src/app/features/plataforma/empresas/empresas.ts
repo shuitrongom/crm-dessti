@@ -452,7 +452,8 @@ export class PlataformaEmpresas {
   /** Abre el dialogo de alta de Empresa (Req 24.2). */
   crear(): void {
     const ref = this.dialog.open(CrearEmpresaDialog, {
-      width: 'min(760px, 96vw)',
+      width: 'min(920px, 96vw)',
+      maxWidth: 'min(920px, 96vw)',
       maxHeight: '92vh',
       autoFocus: 'first-tabbable',
       panelClass: 'ds-dialog-panel',
@@ -473,7 +474,8 @@ export class PlataformaEmpresas {
   editar(empresa: Empresa): void {
     const data: EditarEmpresaDialogData = { empresa };
     const ref = this.dialog.open(EditarEmpresaDialog, {
-      width: 'min(760px, 96vw)',
+      width: 'min(920px, 96vw)',
+      maxWidth: 'min(920px, 96vw)',
       maxHeight: '92vh',
       autoFocus: 'first-tabbable',
       panelClass: 'ds-dialog-panel',

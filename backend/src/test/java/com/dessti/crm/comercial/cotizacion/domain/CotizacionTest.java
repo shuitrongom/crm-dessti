@@ -27,8 +27,16 @@ class CotizacionTest {
     private static final UUID CLIENTE = UUID.fromString("22222222-2222-2222-2222-222222222222");
     private static final String ACTOR = "ventas";
 
+    /**
+     * Partida EXENTA de IVA (V80): estos tests validan el calculo de subtotales,
+     * las cotas de partidas y la maquina de estados, con la invariante historica
+     * {@code total == Σ subtotales}. Al usar tasa 'exento', el IVA es 0 y el total
+     * sigue siendo la suma de bases, de modo que las expectativas de total no
+     * dependen del IVA. El calculo del IVA se cubre en {@code CotizacionIvaTest}.
+     */
     private static PartidaCotizacion partida(int cantidad, String precio) {
-        return PartidaCotizacion.crear(null, "Anuncio luminoso", cantidad, new BigDecimal(precio), ACTOR);
+        return PartidaCotizacion.crear(null, "Anuncio luminoso", cantidad, new BigDecimal(precio),
+                BigDecimal.ZERO, TasaIva.EXENTO, ACTOR);
     }
 
     @Test

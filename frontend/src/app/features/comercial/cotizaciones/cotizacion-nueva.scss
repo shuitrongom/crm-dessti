@@ -53,7 +53,7 @@
     gap: var(--ds-space-2);
 
     @include bp.from('md') {
-      grid-template-columns: 2fr 1fr 1fr 1fr;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
     mat-form-field {
@@ -67,17 +67,65 @@
     font-size: var(--ds-font-size-sm);
   }
 
+  &__ajustes-titulo {
+    margin: var(--ds-space-3) 0 var(--ds-space-1);
+    font-weight: var(--ds-font-weight-medium);
+  }
+
+  &__acciones-partida {
+    margin-top: var(--ds-space-3);
+  }
+
+  &__desglose {
+    margin-top: var(--ds-space-3);
+    max-width: 420px;
+    margin-left: auto;
+  }
+
   &__pie {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: var(--ds-space-3);
-    justify-content: space-between;
+    justify-content: flex-end;
     margin-top: var(--ds-space-4);
   }
 
   &__total {
     margin: 0;
     font-size: var(--ds-font-size-md);
+  }
+}
+
+// Desglose fiscal (subtotal, descuento, IVA, retenciones, total).
+.desglose {
+  margin: 0;
+
+  &__fila {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--ds-space-3);
+    padding: var(--ds-space-1) 0;
+
+    dt {
+      color: var(--ds-color-text-muted);
+    }
+
+    dd {
+      margin: 0;
+      font-variant-numeric: tabular-nums;
+    }
+
+    &--total {
+      margin-top: var(--ds-space-1);
+      padding-top: var(--ds-space-2);
+      border-top: 2px solid color-mix(in srgb, var(--mat-sys-primary, #3f51b5) 45%, transparent);
+      font-weight: var(--ds-font-weight-medium);
+      font-size: var(--ds-font-size-md);
+
+      dt {
+        color: inherit;
+      }
+    }
   }
 }

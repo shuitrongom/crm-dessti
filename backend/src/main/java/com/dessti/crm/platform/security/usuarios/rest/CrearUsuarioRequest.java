@@ -18,10 +18,15 @@ import jakarta.validation.constraints.Size;
  * @param password            contrasena en claro; obligatoria (8..255).
  * @param nombreVisible       nombre para mostrar (Req 4); opcional (max 200).
  * @param rolIds              identificadores de los Roles iniciales; al menos uno.
+ * @param clienteId           Cliente asociado para el Portal (Req 45); obligatorio
+ *                            si se asigna el rol {@code cliente_portal} y debe ser
+ *                            {@code null} en otro caso. El servicio valida la
+ *                            coherencia y que el Cliente pertenezca al tenant.
  */
 public record CrearUsuarioRequest(
         @NotBlank @Size(max = 255) String identificadorAcceso,
         @NotBlank @Size(min = 8, max = 255) String password,
         @Size(max = 200) String nombreVisible,
-        @NotEmpty Set<UUID> rolIds) {
+        @NotEmpty Set<UUID> rolIds,
+        UUID clienteId) {
 }

@@ -34,6 +34,7 @@ import { SuscripcionesService } from '../services/suscripciones.service';
 import { Empresa, Plan, Suscripcion } from '../models/plataforma.models';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 import { provideFechaIsoDatepicker } from '../../../shared/date/provide-fecha-iso';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 
 /**
  * Datos de entrada del dialogo: la Empresa a la que se asigna el plan, el
@@ -67,6 +68,7 @@ export class AsignarPlanDialog {
   private readonly suscripcionesService = inject(SuscripcionesService);
   private readonly dialogRef = inject(MatDialogRef<AsignarPlanDialog, Suscripcion>);
   protected readonly data = inject<AsignarPlanDialogData>(MAT_DIALOG_DATA);
+  private readonly overlay = inject(OperacionOverlayService);
 
   protected readonly guardando = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -98,13 +100,16 @@ export class AsignarPlanDialog {
     }
     const { planId, vigenciaInicio, vigenciaFin } = this.formulario.getRawValue();
     this.guardando.set(true);
-    this.suscripcionesService
-      .crear({
-        tenantId: this.data.empresa.id,
-        planId,
-        vigenciaInicio: vigenciaInicio || null,
-        vigenciaFin: vigenciaFin || null,
-      })
+    this.overlay
+      .ejecutar(
+        this.suscripcionesService.crear({
+          tenantId: this.data.empresa.id,
+          planId,
+          vigenciaInicio: vigenciaInicio || null,
+          vigenciaFin: vigenciaFin || null,
+        }),
+        { tipo: 'guardar', textoProceso: 'Asignando plan…', textoExito: 'Plan asignado' },
+      )
       .subscribe({
         next: (suscripcion) => {
           this.guardando.set(false);

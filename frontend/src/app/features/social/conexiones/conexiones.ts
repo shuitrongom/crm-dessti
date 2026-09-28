@@ -27,6 +27,7 @@ import {
   DataTable,
 } from '../../../shared/components/data-table/data-table';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError, erroresDeCampo } from '../../../core/services/error-mensajes';
 import {
@@ -71,6 +72,7 @@ export class Conexiones {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(CuentasCanalService);
   private readonly toast = inject(NotificacionesService);
+  private readonly overlay = inject(OperacionOverlayService);
   private readonly auth = inject(AuthService);
 
   protected readonly puedeCrear = this.auth.tienePermiso('cuenta_canal_social', 'crear');
@@ -148,13 +150,16 @@ export class Conexiones {
     }
     const v = this.formAlta.getRawValue();
     this.guardando.set(true);
-    this.service
-      .crear({
-        canal: v.canal as CanalSocial,
-        nombre: v.nombre,
-        identificadorExterno: v.identificadorExterno,
-        credencialesRef: v.credencialesRef,
-      })
+    this.overlay
+      .ejecutar(
+        this.service.crear({
+          canal: v.canal as CanalSocial,
+          nombre: v.nombre,
+          identificadorExterno: v.identificadorExterno,
+          credencialesRef: v.credencialesRef,
+        }),
+        { tipo: 'crear', textoProceso: 'Conectando cuenta…', textoExito: 'Cuenta conectada' },
+      )
       .subscribe({
         next: () => {
           this.guardando.set(false);

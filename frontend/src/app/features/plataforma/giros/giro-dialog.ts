@@ -20,6 +20,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { ActualizarGiroRequest, GirosService } from '../services/giros.service';
 import { Giro } from '../models/plataforma.models';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 
 /** Patron de clave kebab-case: minusculas/numeros separados por guiones. */
 const PATRON_CLAVE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -47,6 +48,7 @@ export class GiroDialog {
   private readonly service = inject(GirosService);
   private readonly dialogRef = inject(MatDialogRef<GiroDialog, Giro>);
   private readonly datos = inject<DatosGiroDialog>(MAT_DIALOG_DATA, { optional: true });
+  private readonly overlay = inject(OperacionOverlayService);
 
   /** Modo edicion cuando se recibio un Giro; en alta la clave es editable. */
   protected readonly esEdicion = !!this.datos?.giro;
@@ -93,30 +95,39 @@ export class GiroDialog {
         nombreVisible: v.nombreVisible,
         descripcion: v.descripcion ? v.descripcion : null,
       };
-      this.service.actualizar(this.datos.giro.id, cambios).subscribe({
-        next: (giro) => {
-          this.guardando.set(false);
-          this.dialogRef.close(giro);
-        },
-        error: (e: HttpErrorResponse) => {
-          this.guardando.set(false);
-          this.error.set(mensajeDeError(e));
-        },
-      });
+      this.overlay
+        .ejecutar(this.service.actualizar(this.datos.giro.id, cambios), {
+          tipo: 'guardar',
+          textoProceso: 'Guardando cambios…',
+          textoExito: 'Cambios guardados',
+        })
+        .subscribe({
+          next: (giro) => {
+            this.guardando.set(false);
+            this.dialogRef.close(giro);
+          },
+          error: (e: HttpErrorResponse) => {
+            this.guardando.set(false);
+            this.error.set(mensajeDeError(e));
+          },
+        });
       return;
     }
 
-    this.service
-      .crear({
-        clave: v.clave,
-        nombreVisible: v.nombreVisible,
-        descripcion: v.descripcion ? v.descripcion : null,
-      })
+    this.overlay
+      .ejecutar(
+        this.service.crear({
+          clave: v.clave,
+          nombreVisible: v.nombreVisible,
+          descripcion: v.descripcion ? v.descripcion : null,
+        }),
+        { tipo: 'crear', textoProceso: 'Creando giro…', textoExito: 'Giro creado' },
+      )
       .subscribe({
         next: (giro) => {
           this.guardando.set(false);
-          // No se cierra en silencio: se muestra el panel informativo de
-          // completitud con el giro creado.
+          // Tras la animación de éxito NO se cierra en silencio: se muestra el
+          // panel informativo de completitud con el giro creado.
           this.creado.set(giro);
         },
         error: (e: HttpErrorResponse) => {

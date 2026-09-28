@@ -50,6 +50,7 @@ class ServicioOportunidadesTest {
     private OportunidadRepository repositorio;
     private ClienteExistentePort clienteExistente;
     private CanalVentaExistentePort canalVentaExistente;
+    private com.dessti.crm.comercial.oportunidad.application.UsuarioExistentePort usuarioExistente;
     private AuditoriaPort auditoria;
     private CreacionCotizacionPort creacionCotizacion;
     private ServicioOportunidades servicio;
@@ -59,10 +60,11 @@ class ServicioOportunidadesTest {
         repositorio = mock(OportunidadRepository.class);
         clienteExistente = mock(ClienteExistentePort.class);
         canalVentaExistente = mock(CanalVentaExistentePort.class);
+        usuarioExistente = mock(com.dessti.crm.comercial.oportunidad.application.UsuarioExistentePort.class);
         auditoria = mock(AuditoriaPort.class);
         creacionCotizacion = mock(CreacionCotizacionPort.class);
         servicio = new ServicioOportunidades(repositorio, clienteExistente, canalVentaExistente,
-                auditoria, Optional.of(creacionCotizacion));
+                usuarioExistente, auditoria, Optional.of(creacionCotizacion));
         TenantContext.set(TENANT);
     }
 
@@ -96,7 +98,7 @@ class ServicioOportunidadesTest {
                 o.cambiarEtapa(EtapaOportunidad.NEGOCIACION, "ventas");
                 o.cambiarEtapa(EtapaOportunidad.GANADO, "ventas");
             }
-            case PERDIDO -> o.cambiarEtapa(EtapaOportunidad.PERDIDO, "ventas");
+            case PERDIDO -> o.cambiarEtapa(EtapaOportunidad.PERDIDO, "sin presupuesto", "ventas");
         }
         return o;
     }
@@ -140,6 +142,8 @@ class ServicioOportunidadesTest {
         when(repositorio.findById(o.getId())).thenReturn(Optional.of(o));
         when(repositorio.save(any(Oportunidad.class))).thenAnswer(inv -> inv.getArgument(0));
         UUID usuario = UUID.randomUUID();
+        // V81: el responsable debe existir y estar activo en el tenant.
+        when(usuarioExistente.existeUsuarioActivo(usuario)).thenReturn(true);
 
         OportunidadDto dto = servicio.asignarResponsable(o.getId(), usuario);
 

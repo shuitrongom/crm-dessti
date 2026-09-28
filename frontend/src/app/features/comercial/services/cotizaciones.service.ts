@@ -27,6 +27,7 @@ import { Observable } from 'rxjs';
 import { ApiConfigService } from '../../../core/services/api-config.service';
 import { PaginaResponse } from '../../../core/models/pagina-response';
 import {
+  AjustesFiscalesRequest,
   Cotizacion,
   CotizacionRequest,
   EnviarCorreoRequest,
@@ -106,6 +107,11 @@ export class CotizacionesService {
     return this.http.put<Cotizacion>(this.api.url(`/cotizaciones/${id}/canal-venta`), {
       canalVentaId,
     });
+  }
+
+  /** Ajusta el descuento global y las retenciones de una Cotizacion en borrador (V80). */
+  ajustesFiscales(id: string, request: AjustesFiscalesRequest): Observable<Cotizacion> {
+    return this.http.put<Cotizacion>(this.api.url(`/cotizaciones/${id}/ajustes-fiscales`), request);
   }
 
   // ---------------------------------------------------------------------------

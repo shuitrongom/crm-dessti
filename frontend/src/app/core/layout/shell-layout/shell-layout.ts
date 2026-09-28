@@ -30,7 +30,6 @@ import { NavigationService } from '../../navigation/navigation';
 import { ThemeService } from '../../services/theme.service';
 import { TematizacionService } from '../../services/tematizacion.service';
 import { BrandingService } from '../../../features/empresa/services/branding.service';
-import { Branding } from '../../../features/empresa/home/home.models';
 
 /**
  * Etiqueta neutral de empresa cuando el tenant aun no ha configurado su branding
@@ -125,7 +124,10 @@ export class ShellLayout {
    * ambito empresa. `null` mientras no se ha resuelto o si la carga falla (en tal
    * caso la UI recae en una etiqueta neutral, nunca en "Dess-TI").
    */
-  private readonly brandingEmpresa = signal<Branding | null>(null);
+  // El branding vigente es un estado COMPARTIDO en BrandingService: asi, cuando el
+  // admin lo actualiza en la vista de Branding, el nombre/logo del shell se refresca
+  // de inmediato (misma fuente de verdad, sin recargar).
+  private readonly brandingEmpresa = this.branding.brandingActual;
 
   constructor() {
     // Carga reactiva y perezosa del branding: solo para el ambito empresa y una
@@ -147,7 +149,8 @@ export class ShellLayout {
         cargado = true;
         this.branding.consultar().subscribe({
           next: (b) => {
-            this.brandingEmpresa.set(b);
+            // El signal compartido de BrandingService ya se actualizo (tap);
+            // aqui solo se aplica la tematizacion por empresa (Req 4.1-4.3).
             // Tematizacion por empresa (Req 4.1-4.3): al entrar al ambito empresa
             // se aplica el Color_Primario_Marca del tenant si esta configurado.
             // TematizacionService.aplicar deriva la paleta accesible y usa el modo
@@ -165,7 +168,8 @@ export class ShellLayout {
           // etiqueta neutral y se mantiene el Tema_Corporativo limpiando cualquier
           // color previo. El error se traga a proposito (sin tarjeta de error).
           error: () => {
-            this.brandingEmpresa.set(null);
+            // Fallo de carga: se mantiene el estado compartido (null si nunca
+            // cargo) y se limpia el color; el shell recae en etiqueta neutral.
             this.tematizacion.limpiar();
           },
         });
@@ -310,9 +314,10 @@ export class ShellLayout {
       case 'portal':
         return 'Portal del cliente';
       default:
-        // Empresa: refleja su propio nombre visible o una etiqueta neutral,
-        // nunca "Dess-TI" (proveedor SaaS).
-        return this.etiquetaEmpresa();
+        // Empresa: el nombre/logo ya se muestra en la marca del panel de
+        // navegacion, asi que la barra superior NO lo repite (evita ver el
+        // nombre de la empresa dos veces). Queda vacio a proposito.
+        return '';
     }
   });
 

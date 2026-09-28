@@ -1,0 +1,158 @@
+<app-page-header
+  titulo="Riesgos del SGC"
+  subtitulo="Identifica los riesgos, califica su probabilidad e impacto (el nivel se calcula solo) y da seguimiento a su tratamiento."
+>
+  @if (puedeCrear) {
+    <button acciones matButton="filled" type="button" (click)="alternarAlta()">
+      <mat-icon>{{ mostrarAlta() ? 'close' : 'add' }}</mat-icon>
+      {{ mostrarAlta() ? 'Cerrar' : 'Identificar riesgo' }}
+    </button>
+  }
+</app-page-header>
+
+@if (mostrarAlta() && puedeCrear) {
+  <mat-card appearance="outlined" class="cal-alta">
+    <mat-card-content>
+      <form [formGroup]="formAlta" (ngSubmit)="crear()" novalidate>
+        <h2 class="cal-alta__titulo">Identificar riesgo</h2>
+        <div class="cal-form-grid">
+          <mat-form-field appearance="outline" class="cal-form-grid__ancho">
+            <mat-label>Descripción del riesgo</mat-label>
+            <textarea matInput formControlName="descripcion" rows="2"></textarea>
+            <mat-error>La descripción es obligatoria.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Probabilidad</mat-label>
+            <mat-select formControlName="probabilidad">
+              @for (p of probabilidades; track p.valor) {
+                <mat-option [value]="p.valor">{{ p.etiqueta }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Impacto</mat-label>
+            <mat-select formControlName="impacto">
+              @for (im of impactos; track im.valor) {
+                <mat-option [value]="im.valor">{{ im.etiqueta }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="cal-form-grid__ancho">
+            <mat-label>Acciones para abordarlo (opcional)</mat-label>
+            <textarea matInput formControlName="acciones" rows="2"></textarea>
+          </mat-form-field>
+        </div>
+        <button matButton="filled" type="submit" [disabled]="guardando()">Identificar riesgo</button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="No hay riesgos registrados."
+  (reintentar)="cargar()"
+>
+  @if (hayDatos()) {
+    <!-- Scorecard por nivel + composicion (patron dashboard reutilizable) -->
+    <app-dashboard-section layout="apilado">
+      <div kpis>
+        <app-kpi-tile
+          icono="priority_high"
+          tono="error"
+          etiqueta="Críticos"
+          [valor]="resumen().critico"
+        />
+        <app-kpi-tile
+          icono="warning"
+          tono="advertencia"
+          etiqueta="Altos"
+          [valor]="resumen().alto"
+        />
+        <app-kpi-tile
+          icono="info"
+          tono="primario"
+          etiqueta="Medios"
+          [valor]="resumen().medio"
+        />
+        <app-kpi-tile
+          icono="check_circle"
+          tono="exito"
+          etiqueta="Bajos"
+          [valor]="resumen().bajo"
+        />
+      </div>
+      <div grafica class="dash-grafica">
+        <app-metric-chart
+          [datos]="[]"
+          tipo="gauge"
+          [porcentaje]="porcentajeTratados()"
+          titulo="Riesgos tratados"
+        />
+      </div>
+      <div grafica class="dash-grafica">
+        <app-metric-chart [datos]="composicionNivel()" tipo="dona" titulo="Riesgos por nivel" />
+      </div>
+      @if (composicionEstado().length > 0) {
+        <div grafica class="dash-grafica">
+          <app-metric-chart [datos]="composicionEstado()" tipo="dona" titulo="Riesgos por estado" />
+        </div>
+      }
+    </app-dashboard-section>
+  }
+
+  <div class="cal-filtros">
+    <mat-form-field appearance="outline">
+      <mat-label>Estado</mat-label>
+      <mat-select [value]="filtroEstado()" (valueChange)="aplicarFiltroEstado($event)">
+        @for (opcion of estadosFiltro; track opcion.valor) {
+          <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Nivel</mat-label>
+      <mat-select [value]="filtroNivel()" (valueChange)="aplicarFiltroNivel($event)">
+        @for (opcion of nivelesFiltro; track opcion.valor) {
+          <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="descripcion" let-r>{{ r.descripcion }}</ng-template>
+    <ng-template appCelda="probabilidad" let-r>{{ humanizar(r.probabilidad) }}</ng-template>
+    <ng-template appCelda="impacto" let-r>{{ humanizar(r.impacto) }}</ng-template>
+    <ng-template appCelda="nivel" let-r>
+      <span [class]="claseNivel(r.nivelDerivado)">{{ humanizar(r.nivelDerivado) }}</span>
+    </ng-template>
+    <ng-template appCelda="estado" let-r>
+      <app-estado-chip [etiqueta]="humanizar(r.estado)" [tono]="tono(r.estado)" />
+    </ng-template>
+    <ng-template appCelda="acciones" let-r>
+      @if (transiciones(r).length > 0) {
+        <button matIconButton [matMenuTriggerFor]="menu" aria-label="Acciones del riesgo">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+          @for (destino of transiciones(r); track destino) {
+            <button mat-menu-item type="button" (click)="cambiarEstado(r, destino)">
+              <mat-icon>arrow_forward</mat-icon> Marcar como {{ humanizar(destino) }}
+            </button>
+          }
+        </mat-menu>
+      } @else {
+        <span class="cal-ayuda">-</span>
+      }
+    </ng-template>
+  </app-data-table>
+</app-state-container>

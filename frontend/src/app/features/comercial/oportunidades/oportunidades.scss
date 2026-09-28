@@ -24,21 +24,25 @@
 }
 
 .pipeline {
-  display: grid;
-  grid-template-columns: 1fr;
+  // Movil: una columna apilada.
+  display: flex;
+  flex-direction: column;
   gap: var(--ds-space-3);
 
   @include bp.from('md') {
-    grid-auto-flow: column;
-    // Ancho consistente por columna (no 1fr): asi el embudo mantiene columnas
-    // legibles y se desplaza horizontalmente en pantallas/zoom reducidos en vez
-    // de comprimir el contenido hasta desbordarlo (bugfix zoom del pipeline).
-    grid-auto-columns: minmax(260px, 288px);
+    // Tablero horizontal (kanban): fila de columnas de ANCHO FIJO que se
+    // desplaza en horizontal. Se usa flex con flex:0 0 <ancho> (en lugar de
+    // grid-auto-columns) para garantizar que NINGUNA columna se comprima: el
+    // sintoma anterior era la primera columna aplastada con el titulo en
+    // vertical. Cada columna mantiene 300px y el contenedor hace scroll-x.
+    flex-direction: row;
+    align-items: flex-start;
     overflow-x: auto;
-    // Desplazamiento tactil suave y aislamiento del scroll al contenedor.
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
     padding-bottom: var(--ds-space-2);
+    // Guias de scroll por columna para un desplazamiento comodo.
+    scroll-snap-type: x proximity;
   }
 
   &__columna {
@@ -47,6 +51,19 @@
     border-radius: var(--ds-radius-md);
     padding: var(--ds-space-3);
     min-width: 0;
+
+    @include bp.from('md') {
+      // Ancho fijo e IN-comprimible: 300px por columna. flex-basis fija el
+      // ancho, flex-grow/shrink en 0 evitan que se estire o encoja.
+      flex: 0 0 300px;
+      max-width: 300px;
+      scroll-snap-align: start;
+      // Cada columna gestiona su propia altura; las tarjetas hacen scroll
+      // vertical si la columna es muy larga, manteniendo la cabecera visible.
+      max-height: calc(100vh - 320px);
+      display: flex;
+      flex-direction: column;
+    }
   }
 
   &__cabecera {
@@ -60,6 +77,9 @@
     margin: 0;
     font-size: var(--ds-font-size-md);
     font-weight: var(--ds-font-weight-medium);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   &__contador {
@@ -76,6 +96,16 @@
     display: flex;
     flex-direction: column;
     gap: var(--ds-space-2);
+
+    @include bp.from('md') {
+      // Las tarjetas hacen scroll vertical dentro de la columna, dejando la
+      // cabecera (etapa + total + forecast) siempre visible arriba.
+      overflow-y: auto;
+      overscroll-behavior-y: contain;
+      // Espacio para que la sombra/hover de las tarjetas no se recorte.
+      padding: 2px;
+      margin: -2px;
+    }
   }
 
   &__tarjeta {
@@ -240,7 +270,12 @@
   &__cabecera {
     flex-direction: column;
     align-items: stretch;
-    gap: 2px;
+    gap: 4px;
+    // La cabecera no se comprime aunque las tarjetas hagan scroll debajo.
+    flex: 0 0 auto;
+    padding-bottom: var(--ds-space-2);
+    margin-bottom: var(--ds-space-2);
+    border-bottom: 1px solid color-mix(in srgb, var(--ds-color-border) 70%, transparent);
   }
 
   &__cabecera-titulo {
@@ -252,8 +287,8 @@
   &__cabecera-valor {
     margin: 0;
     font-size: var(--ds-font-size-sm);
-    font-weight: var(--ds-font-weight-medium);
-    color: var(--ds-color-text-muted);
+    font-weight: var(--ds-font-weight-bold, 700);
+    color: var(--ds-color-text);
   }
 
   &__punto {
@@ -306,4 +341,53 @@
     color: var(--ds-color-primary);
     font-weight: var(--ds-font-weight-medium);
   }
+}
+
+// -----------------------------------------------------------------------------
+// Forecast (Bloque C, V81): probabilidad por tarjeta, forecast por columna,
+// fecha de cierre y motivo de pérdida.
+// -----------------------------------------------------------------------------
+.pipeline {
+  &__cabecera-forecast {
+    margin-left: 0.35rem;
+    font-weight: var(--ds-font-weight-medium, 500);
+    color: var(--ds-color-primary);
+    white-space: nowrap;
+  }
+
+  &__tarjeta-prob {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+    font-size: var(--ds-font-size-xs, 0.72rem);
+    font-weight: var(--ds-font-weight-bold, 700);
+    background: color-mix(in srgb, var(--ds-color-primary) 14%, transparent);
+    color: var(--ds-color-primary);
+    vertical-align: middle;
+  }
+
+  &__tarjeta-cierre,
+  &__tarjeta-perdida {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin: 0.35rem 0 0;
+    font-size: 0.75rem;
+    color: var(--ds-color-text-muted);
+
+    mat-icon {
+      font-size: 0.95rem;
+      width: 0.95rem;
+      height: 0.95rem;
+    }
+  }
+
+  &__tarjeta-perdida {
+    color: #c62828;
+  }
+}
+
+.pipeline-kpi--forecast .pipeline-kpi__icono mat-icon {
+  color: color-mix(in srgb, var(--mat-sys-primary, #3f51b5) 90%, #000);
 }

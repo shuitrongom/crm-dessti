@@ -9,7 +9,7 @@
 // los calcula el servidor; la UI solo los formatea (currency es-MX).
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CurrencyPipe } from '@angular/common';
@@ -41,6 +41,11 @@ import {
 
 import { EstadoChip } from '../../finanzas-comun/estado-chip/estado-chip';
 import { humanizarEstado, tonoDeEstado } from '../../finanzas-comun/tono-estado';
+import { aPesos, aCentavos } from '../../finanzas-comun/dinero';
+import { MetricChart, type MetricPoint } from '../../../shared/components/metric-chart/metric-chart';
+import { KpiTile } from '../../../shared/components/kpi-tile/kpi-tile';
+import { DashboardSection } from '../../../shared/components/dashboard-section/dashboard-section';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 import { RhNominaService } from '../services/rhnomina.service';
 import { Nomina, ReciboNomina } from '../models/rhnomina.models';
 import { AccionNomina, accionDeNomina } from '../nomina-estados';
@@ -61,6 +66,9 @@ import { AccionNomina, accionDeNomina } from '../nomina-estados';
     DataTable,
     CeldaTablaDirective,
     EstadoChip,
+    MetricChart,
+    KpiTile,
+    DashboardSection,
   ],
   templateUrl: './nomina.html',
   styleUrl: '../rhnomina.scss',
@@ -70,6 +78,7 @@ export class RhNominaNomina {
   private readonly service = inject(RhNominaService);
   private readonly confirm = inject(ConfirmDialogService);
   private readonly toast = inject(NotificacionesService);
+  private readonly overlay = inject(OperacionOverlayService);
   private readonly auth = inject(AuthService);
 
   protected readonly tono = tonoDeEstado;
@@ -125,6 +134,66 @@ export class RhNominaNomina {
     this.cargar();
   }
 
+  /**
+   * Resumen (scorecard) de las nominas de la pagina cargada: costo total
+   * (percepciones), deducciones, neto pagado y numero de nominas. Se agrega en
+   * centavos para evitar errores de coma flotante y se expresa de vuelta en pesos.
+   */
+  protected readonly resumen = computed(() => {
+    const nominas = this.estado().datos ?? [];
+    let percC = 0;
+    let dedC = 0;
+    let netoC = 0;
+    for (const n of nominas) {
+      percC += aCentavos(n.totalPercepciones);
+      dedC += aCentavos(n.totalDeducciones);
+      netoC += aCentavos(n.totalNeto);
+    }
+    return {
+      percepciones: aPesos(percC),
+      deducciones: aPesos(dedC),
+      neto: aPesos(netoC),
+      cantidad: nominas.length,
+    };
+  });
+
+  /** Puntos de la grafica: neto por periodo de nomina (columnas), orden cronologico. */
+  protected readonly netoPorPeriodo = computed<MetricPoint[]>(() => {
+    const nominas = this.estado().datos ?? [];
+    return [...nominas]
+      .sort((a, b) => a.periodoNomina.localeCompare(b.periodoNomina))
+      .map((n) => ({ etiqueta: n.periodoNomina, valor: n.totalNeto, unidad: 'MXN' }));
+  });
+
+  /**
+   * Columnas comparativas por periodo: percepciones (valor) vs deducciones
+   * (comparativo). Deja ver el peso de las deducciones sobre el costo bruto.
+   */
+  protected readonly percepcionesVsDeducciones = computed<MetricPoint[]>(() => {
+    const nominas = this.estado().datos ?? [];
+    return [...nominas]
+      .sort((a, b) => a.periodoNomina.localeCompare(b.periodoNomina))
+      .map((n) => ({
+        etiqueta: n.periodoNomina,
+        valor: n.totalPercepciones,
+        comparativo: n.totalDeducciones,
+        unidad: 'MXN',
+      }));
+  });
+
+  /**
+   * Gauge: porcentaje del neto respecto a las percepciones (0-100). Mide cuanto del
+   * costo bruto llega al bolsillo del empleado tras deducciones.
+   */
+  protected readonly porcentajeNeto = computed<number>(() => {
+    const r = this.resumen();
+    if (r.percepciones <= 0) {
+      return 0;
+    }
+    const pct = (r.neto / r.percepciones) * 100;
+    return Math.max(0, Math.min(100, Math.round(pct)));
+  });
+
   cargar(): void {
     this.estado.set(cargando());
     this.service.listarNominas(null, this.filtroEstado() || null, this.page(), this.size()).subscribe({
@@ -158,20 +227,26 @@ export class RhNominaNomina {
       return;
     }
     this.guardando.set(true);
-    this.service.crearNomina({ periodoNomina: this.formAlta.getRawValue().periodoNomina }).subscribe({
-      next: () => {
-        this.guardando.set(false);
-        this.toast.exito('Nomina creada en borrador.');
-        this.formAlta.reset({ periodoNomina: '' });
-        this.mostrarAlta.set(false);
-        this.page.set(0);
-        this.cargar();
-      },
-      error: (e: HttpErrorResponse) => {
-        this.guardando.set(false);
-        this.toast.error(mensajeDeError(e));
-      },
-    });
+    this.overlay
+      .ejecutar(this.service.crearNomina({ periodoNomina: this.formAlta.getRawValue().periodoNomina }), {
+        tipo: 'crear',
+        textoProceso: 'Creando nómina…',
+        textoExito: 'Nómina creada',
+      })
+      .subscribe({
+        next: () => {
+          this.guardando.set(false);
+          this.toast.exito('Nomina creada en borrador.');
+          this.formAlta.reset({ periodoNomina: '' });
+          this.mostrarAlta.set(false);
+          this.page.set(0);
+          this.cargar();
+        },
+        error: (e: HttpErrorResponse) => {
+          this.guardando.set(false);
+          this.toast.error(mensajeDeError(e));
+        },
+      });
   }
 
   async ejecutarAccion(nomina: Nomina, accion: AccionNomina): Promise<void> {
@@ -191,16 +266,22 @@ export class RhNominaNomina {
           : accion.accion === 'timbrar'
             ? this.service.timbrarNomina(nomina.id)
             : this.service.pagarNomina(nomina.id);
-    peticion$.subscribe({
-      next: () => {
-        this.toast.exito('Nomina actualizada.');
-        this.cargar();
-        if (this.seleccionada()?.id === nomina.id) {
-          this.verRecibos(nomina);
-        }
-      },
-      error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
-    });
+    this.overlay
+      .ejecutar(peticion$, {
+        tipo: 'procesar',
+        textoProceso: `${accion.etiqueta}…`,
+        textoExito: `${accion.etiqueta} lista`,
+      })
+      .subscribe({
+        next: () => {
+          this.toast.exito('Nomina actualizada.');
+          this.cargar();
+          if (this.seleccionada()?.id === nomina.id) {
+            this.verRecibos(nomina);
+          }
+        },
+        error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
+      });
   }
 
   verRecibos(nomina: Nomina): void {

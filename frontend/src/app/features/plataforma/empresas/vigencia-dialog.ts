@@ -30,6 +30,7 @@ import { SuscripcionesService } from '../services/suscripciones.service';
 import { Suscripcion } from '../models/plataforma.models';
 import { provideFechaIsoDatepicker } from '../../../shared/date/provide-fecha-iso';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 
 /**
  * Datos de entrada del dialogo: la suscripcion cuya vigencia se actualiza, las
@@ -62,6 +63,7 @@ export class VigenciaDialog {
   private readonly suscripcionesService = inject(SuscripcionesService);
   private readonly dialogRef = inject(MatDialogRef<VigenciaDialog, Suscripcion>);
   protected readonly data = inject<VigenciaDialogData>(MAT_DIALOG_DATA);
+  private readonly overlay = inject(OperacionOverlayService);
 
   protected readonly guardando = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -82,11 +84,14 @@ export class VigenciaDialog {
     }
     const { vigenciaInicio, vigenciaFin } = this.formulario.getRawValue();
     this.guardando.set(true);
-    this.suscripcionesService
-      .actualizarVigencia(this.data.suscripcionId, {
-        vigenciaInicio,
-        vigenciaFin: vigenciaFin || null,
-      })
+    this.overlay
+      .ejecutar(
+        this.suscripcionesService.actualizarVigencia(this.data.suscripcionId, {
+          vigenciaInicio,
+          vigenciaFin: vigenciaFin || null,
+        }),
+        { tipo: 'guardar', textoProceso: 'Actualizando vigencia…', textoExito: 'Vigencia actualizada' },
+      )
       .subscribe({
         next: (suscripcion) => {
           this.guardando.set(false);

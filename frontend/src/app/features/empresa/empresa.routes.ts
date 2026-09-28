@@ -136,6 +136,15 @@ export const empresaRoutes: Routes = [
         canActivate: [guardaModulo('reportes-bi'), guardaPorPermiso('tablero', 'leer')],
         loadChildren: () => import('../reportes/reportes.routes').then((m) => m.reportesRoutes),
       },
+      {
+        // Bloque Calidad / SGC ISO 9001 (Req 70): COMUN a todos los giros. El
+        // backend (com.dessti.crm.calidad) no exige giro ni Modulo, solo permisos;
+        // por eso la rama se protege unicamente por permiso (sin guardaModulo ni
+        // guardaGiro). El backend reimpone el 403 por permiso atomico.
+        path: 'calidad',
+        canActivate: [guardaPorPermiso('calidad', 'leer')],
+        loadChildren: () => import('../calidad/calidad.routes').then((m) => m.calidadRoutes),
+      },
 
       { path: '', pathMatch: 'full', redirectTo: 'inicio' },
     ],

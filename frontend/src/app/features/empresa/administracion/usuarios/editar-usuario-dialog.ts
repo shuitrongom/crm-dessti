@@ -19,11 +19,13 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { Observable, of, switchMap } from 'rxjs';
 
 import { UsuariosService, RolAsignable, Usuario } from '../services/usuarios.service';
 import { mensajeDeError } from '../../../../core/services/error-mensajes';
+import { SelectableCard } from '../../../../shared/components/selectable-card/selectable-card';
+import { OperacionOverlayService } from '../../../../shared/components/operacion-overlay/operacion-overlay';
+import { NotificacionesService } from '../../../../shared/services/notificaciones.service';
 
 /** Datos de entrada del dialogo: la cuenta a editar (para prellenar). */
 export interface EditarUsuarioDialogData {
@@ -39,7 +41,7 @@ export interface EditarUsuarioDialogData {
     MatInputModule,
     MatButtonModule,
     MatIconModule,
-    MatCheckboxModule,
+    SelectableCard,
   ],
   templateUrl: './editar-usuario-dialog.html',
   styleUrl: './usuario-dialog.scss',
@@ -49,6 +51,8 @@ export class EditarUsuarioDialog {
   private readonly service = inject(UsuariosService);
   private readonly dialogRef = inject(MatDialogRef<EditarUsuarioDialog, Usuario>);
   private readonly data = inject<EditarUsuarioDialogData>(MAT_DIALOG_DATA);
+  private readonly overlay = inject(OperacionOverlayService);
+  private readonly toast = inject(NotificacionesService);
 
   protected readonly guardando = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -132,8 +136,9 @@ export class EditarUsuarioDialog {
     const cambioRoles = this.rolesCambiaron();
 
     if (!cambioNombre && !cambioRoles) {
-      // Sin cambios: cierra sin efectos y sin peticiones.
-      this.dialogRef.close(undefined);
+      // Sin cambios: avisa al usuario (por que "no pasa nada" al guardar) y NO
+      // cierra, para que pueda ajustar algo o cancelar conscientemente.
+      this.toast.info('No hay cambios que guardar.');
       return;
     }
 
@@ -145,14 +150,20 @@ export class EditarUsuarioDialog {
       ? this.service.actualizarNombre(id, { nombreVisible: nombre ? nombre : null })
       : of(null);
 
-    nombreOp
-      .pipe(
-        switchMap((resNombre) =>
-          cambioRoles
-            ? this.service.asignarRoles(id, { rolIds: Array.from(this.seleccion()) })
-            : of(resNombre as Usuario),
-        ),
-      )
+    const operacion = nombreOp.pipe(
+      switchMap((resNombre) =>
+        cambioRoles
+          ? this.service.asignarRoles(id, { rolIds: Array.from(this.seleccion()) })
+          : of(resNombre as Usuario),
+      ),
+    );
+
+    this.overlay
+      .ejecutar(operacion, {
+        tipo: 'guardar',
+        textoProceso: 'Guardando cambios…',
+        textoExito: 'Cambios guardados',
+      })
       .subscribe({
         next: (usuario) => {
           this.guardando.set(false);

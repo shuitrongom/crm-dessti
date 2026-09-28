@@ -20,7 +20,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.dessti.crm.platform.web.pagination.PageRequestFactory;
 import com.dessti.crm.platform.web.pagination.PaginaResponse;
+import com.dessti.crm.reportesbi.application.InsightsDto;
 import com.dessti.crm.reportesbi.application.InteligenciaNegocioDto;
+import com.dessti.crm.reportesbi.application.ServicioInsightsBi;
 import com.dessti.crm.reportesbi.application.ServicioInteligenciaNegocio;
 import com.dessti.crm.reportesbi.application.TableroPersonalizadoDto;
 
@@ -37,6 +39,9 @@ import jakarta.validation.Valid;
  *       consolidado con filtros por fecha/area/dimension ({@code inteligencia_negocio:leer}).</li>
  *   <li>{@code GET /reportes-bi/inteligencia-negocio/consolidado/exportar} — exportacion
  *       del consolidado ({@code inteligencia_negocio:exportar}).</li>
+ *   <li>{@code GET /reportes-bi/inteligencia-negocio/insights} — insights ejecutivos en
+ *       lenguaje natural (IA con degradacion gracil al heuristico,
+ *       {@code inteligencia_negocio:leer}).</li>
  *   <li>{@code POST /reportes-bi/inteligencia-negocio/tableros-personalizados} — crear
  *       ({@code inteligencia_negocio:gestionar}); 201 Created.</li>
  *   <li>{@code GET .../tableros-personalizados} — listado paginado ({@code inteligencia_negocio:leer}).</li>
@@ -61,9 +66,12 @@ import jakarta.validation.Valid;
 public class InteligenciaNegocioController {
 
     private final ServicioInteligenciaNegocio servicioInteligenciaNegocio;
+    private final ServicioInsightsBi servicioInsightsBi;
 
-    public InteligenciaNegocioController(ServicioInteligenciaNegocio servicioInteligenciaNegocio) {
+    public InteligenciaNegocioController(ServicioInteligenciaNegocio servicioInteligenciaNegocio,
+                                         ServicioInsightsBi servicioInsightsBi) {
         this.servicioInteligenciaNegocio = servicioInteligenciaNegocio;
+        this.servicioInsightsBi = servicioInsightsBi;
     }
 
     /**
@@ -109,6 +117,30 @@ public class InteligenciaNegocioController {
             @RequestParam(name = "dimension", required = false) String dimension) {
         return ResponseEntity.ok(servicioInteligenciaNegocio
                 .consolidado(desde, hasta, area, dimension, true));
+    }
+
+    /**
+     * Insights ejecutivos en lenguaje natural (es-MX) del consolidado del periodo
+     * (Req 48.1, suite BI+IA). Redactados por el proveedor de IA cuando esta
+     * configurado o por el generador heuristico de respaldo (degradacion gracil); el
+     * DTO indica su procedencia via {@code generadoPorIa}.
+     *
+     * @param desde     inicio del periodo (inclusivo); opcional.
+     * @param hasta     fin del periodo (inclusivo); opcional.
+     * @param area      area a filtrar; opcional.
+     * @param dimension dimension de analisis; opcional.
+     * @return 200 OK con el {@link InsightsDto}.
+     */
+    @GetMapping("/insights")
+    @PreAuthorize("@autorizador.moduloHabilitado('reportes-bi') and @autorizador.tiene('inteligencia_negocio','leer')")
+    public ResponseEntity<InsightsDto> insights(
+            @RequestParam(name = "desde", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam(name = "hasta", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
+            @RequestParam(name = "area", required = false) String area,
+            @RequestParam(name = "dimension", required = false) String dimension) {
+        return ResponseEntity.ok(servicioInsightsBi.generar(desde, hasta, area, dimension));
     }
 
     /**

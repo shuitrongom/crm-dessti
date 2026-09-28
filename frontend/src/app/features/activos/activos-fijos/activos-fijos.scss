@@ -41,3 +41,7 @@
 .activos-num {
   font-variant-numeric: tabular-nums;
 }
+
+// El dashboard patrimonial (scorecard + composicion) ahora usa los componentes
+// compartidos <app-dashboard-section> + <app-kpi-tile>. Los estilos viven en
+// esos componentes; aqui ya no se duplican.

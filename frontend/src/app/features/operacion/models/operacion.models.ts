@@ -305,18 +305,79 @@ export interface SitioAvance {
   tieneInstalacionCompletada: boolean;
 }
 
+/** Fase operativa generica de un Sitio multi-sitio (FaseSitioGenerica.valorBd). */
+export type FaseSitioGenerica =
+  | 'pendiente'
+  | 'en_preparacion'
+  | 'en_instalacion'
+  | 'entregado';
+
+/** Fase de un Sitio en un Proyecto multi-sitio generico (SitioFaseDto). */
+export interface SitioFase {
+  sitio: Sitio;
+  fase: FaseSitioGenerica;
+  nota: string | null;
+  /** Referencia a la evidencia que respalda la fase; null si no hay. */
+  evidenciaUrl: string | null;
+}
+
 /** Proyecto con estado consolidado y sitios (ProyectoDto). */
 export interface Proyecto {
   id: string;
   clienteId: string;
   nombre: string;
-  /** Estado consolidado derivado; null en la proyeccion de resumen del listado. */
+  /** Estado consolidado de anuncios (4 fases); null en resumen y en giros genericos. */
   estadoConsolidado: string | null;
-  /** Sitios con avance; vacio en la proyeccion de resumen del listado. */
+  /** Sitios con avance por fases de anuncios; vacio en resumen y en giros genericos. */
   sitios: SitioAvance[];
+  /** Estado consolidado multi-sitio generico; null en resumen y en el giro anuncios. */
+  estadoMultisitio: string | null;
+  /** Sitios con su fase operativa generica; vacio en resumen y en el giro anuncios. */
+  sitiosMultisitio: SitioFase[];
   version: number;
   createdAt: string;
   updatedAt: string;
+}
+
+/**
+ * Cuerpo de PUT /proyectos/{id}/sitios/{sitioId}/avance (avanzar) y
+ * .../correccion-fase (corregir/retroceder).
+ */
+export interface AvanceSitioRequest {
+  fase: FaseSitioGenerica;
+  nota?: string | null;
+  evidenciaUrl?: string | null;
+}
+
+/** Etiquetas legibles de las fases multi-sitio. */
+export const ETIQUETA_FASE_SITIO: Record<FaseSitioGenerica, string> = {
+  pendiente: 'Pendiente',
+  en_preparacion: 'En preparación',
+  en_instalacion: 'En instalación',
+  entregado: 'Entregado',
+};
+
+/** Orden operativo de las fases multi-sitio (para derivar porcentaje). */
+export const ORDEN_FASE_SITIO: FaseSitioGenerica[] = [
+  'pendiente',
+  'en_preparacion',
+  'en_instalacion',
+  'entregado',
+];
+
+/** Porcentaje de avance de un Sitio multi-sitio (0..100) segun su fase. */
+export function porcentajeFaseSitio(fase: FaseSitioGenerica): number {
+  const indice = ORDEN_FASE_SITIO.indexOf(fase);
+  const pasos = ORDEN_FASE_SITIO.length - 1;
+  return indice <= 0 ? 0 : Math.round((indice / pasos) * 100);
+}
+
+/** Siguiente fase multi-sitio (o null si ya esta entregado). */
+export function siguienteFaseSitio(fase: FaseSitioGenerica): FaseSitioGenerica | null {
+  const indice = ORDEN_FASE_SITIO.indexOf(fase);
+  return indice >= 0 && indice < ORDEN_FASE_SITIO.length - 1
+    ? ORDEN_FASE_SITIO[indice + 1]
+    : null;
 }
 
 /** Cuerpo de alta de Proyecto (CrearProyectoRequest). */

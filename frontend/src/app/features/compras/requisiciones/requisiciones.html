@@ -101,7 +101,7 @@
     </ng-template>
     <ng-template appCelda="fecha" let-r>{{ r.createdAt | date: 'dd/MM/yyyy' }}</ng-template>
     <ng-template appCelda="acciones" let-r>
-      @if (puedeCambiarEstado && transicionesDe(r.estado).length > 0) {
+      @if (transicionesDe(r.estado).length > 0) {
         <button matIconButton [matMenuTriggerFor]="menu" aria-label="Acciones de estado">
           <mat-icon>more_vert</mat-icon>
         </button>

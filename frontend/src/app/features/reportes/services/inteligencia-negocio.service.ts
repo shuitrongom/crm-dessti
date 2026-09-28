@@ -20,6 +20,7 @@ import { PaginaResponse } from '../../../core/models/pagina-response';
 import {
   FiltroInteligencia,
   GuardarTableroPersonalizadoRequest,
+  InsightsBi,
   InteligenciaNegocio,
   TableroPersonalizado,
 } from '../models/reportes.models';
@@ -42,6 +43,17 @@ export class InteligenciaNegocioService {
   /** Exportacion del consolidado (Req 48.4, 48.7). */
   exportarConsolidado(filtro: FiltroInteligencia): Observable<InteligenciaNegocio> {
     return this.http.get<InteligenciaNegocio>(this.api.url(`${BASE}/consolidado/exportar`), {
+      params: this.aParams(filtro),
+    });
+  }
+
+  /**
+   * Insights ejecutivos en lenguaje natural del consolidado (suite BI+IA). El
+   * backend los redacta con IA o, si no esta configurada/falla, con un generador
+   * heuristico determinista (degradacion gracil); `generadoPorIa` lo distingue.
+   */
+  insights(filtro: FiltroInteligencia): Observable<InsightsBi> {
+    return this.http.get<InsightsBi>(this.api.url(`${BASE}/insights`), {
       params: this.aParams(filtro),
     });
   }

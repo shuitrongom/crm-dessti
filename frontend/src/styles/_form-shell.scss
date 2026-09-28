@@ -1,0 +1,228 @@
+// =============================================================================
+// Sistema de Diseño — "Form Shell" enterprise (layout de formularios/diálogos)
+// -----------------------------------------------------------------------------
+// Patrón de formulario premium, reutilizable en TODA la aplicación (diálogos y
+// vistas). Estilo "settings" (Stripe/Linear): cada sección presenta a la
+// izquierda su título + descripción y, a la derecha, los campos. Mobile-first:
+// en pantallas estrechas la descripción se apila ARRIBA de los campos.
+//
+// Objetivos:
+//   * Jerarquía y aire (evita el aspecto "encimado"/pobre).
+//   * Textos de ayuda largos FUERA del subscript de Material (no se solapan).
+//   * Solo tokens del Sistema de Diseño (--ds-*), tema claro/oscuro.
+//   * Responsivo (Req 52) y accesible; respeta prefers-reduced-motion.
+//
+// Clases (todas globales, prefijo ds-form-*):
+//   .ds-form                     contenedor del formulario (columna con gap)
+//   .ds-form__header             encabezado (título + subtítulo del diálogo)
+//   .ds-form__header-title
+//   .ds-form__header-subtitle
+//   .ds-form__section            sección "tarjeta" con two-pane
+//   .ds-form__section-aside      panel izquierdo: título + descripción
+//   .ds-form__section-title
+//   .ds-form__section-desc
+//   .ds-form__section-body       panel derecho: los campos
+//   .ds-form__grid               rejilla de campos (1 col móvil, 2 col desktop)
+//   .ds-form__field              celda campo + ayuda a ancho completo
+//   .ds-form__field--full        ocupa las 2 columnas
+//   .ds-form__help               texto de ayuda bajo el campo (no en subscript)
+//   .ds-form__note               nota informativa (info/aviso) con ícono
+//   .ds-form__note--warn / --info
+//   .ds-form__summary            resumen/total destacado (order summary)
+// =============================================================================
+
+@use 'breakpoints' as bp;
+
+.ds-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-5);
+  inline-size: 100%;
+  min-inline-size: 0;
+  box-sizing: border-box;
+}
+
+// -----------------------------------------------------------------------------
+// Encabezado del formulario/diálogo
+// -----------------------------------------------------------------------------
+.ds-form__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-1);
+  padding-block-end: var(--ds-space-3);
+  border-block-end: 1px solid var(--ds-color-border);
+}
+
+.ds-form__header-title {
+  margin: 0;
+  // Tamaño de encabezado de diálogo: presente pero sin abrumar (20px).
+  font-size: var(--ds-font-size-lg);
+  font-weight: var(--ds-font-weight-bold);
+  line-height: var(--ds-line-height-tight);
+  color: var(--ds-color-text);
+}
+
+.ds-form__header-subtitle {
+  margin: 0;
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-text-muted);
+}
+
+// -----------------------------------------------------------------------------
+// Sección con layout two-pane (aside descripción + body campos)
+// -----------------------------------------------------------------------------
+.ds-form__section {
+  display: grid;
+  grid-template-columns: 1fr; // móvil: apilado
+  gap: var(--ds-space-3) var(--ds-space-6);
+  padding-block: var(--ds-space-2);
+
+  @include bp.from('md') {
+    // Desktop: descripción (fija) + campos (flexible).
+    grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
+    gap: var(--ds-space-6);
+  }
+
+  & + & {
+    padding-block-start: var(--ds-space-5);
+    border-block-start: 1px solid var(--ds-color-border);
+  }
+}
+
+.ds-form__section-aside {
+  min-inline-size: 0;
+}
+
+.ds-form__section-title {
+  margin: 0 0 var(--ds-space-1);
+  font-size: var(--ds-font-size-sm);
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-text);
+}
+
+.ds-form__section-desc {
+  margin: 0;
+  font-size: var(--ds-font-size-xs);
+  line-height: 1.5;
+  color: var(--ds-color-text-muted);
+}
+
+.ds-form__section-body {
+  min-inline-size: 0;
+}
+
+// -----------------------------------------------------------------------------
+// Rejilla de campos dentro del body
+// -----------------------------------------------------------------------------
+.ds-form__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-space-4);
+  align-items: start;
+
+  @include bp.from('sm') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.ds-form__field {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  align-self: start;
+
+  mat-form-field,
+  .mat-mdc-form-field {
+    inline-size: 100%;
+  }
+}
+
+.ds-form__field--full {
+  @include bp.from('sm') {
+    grid-column: 1 / -1;
+  }
+}
+
+// Texto de ayuda: FUERA del subscript de Material para que empuje el layout en
+// vez de encimarse con el campo de abajo (limitación conocida del mat-hint).
+.ds-form__help {
+  margin: var(--ds-space-1) 0 0;
+  font-size: var(--ds-font-size-xs);
+  line-height: 1.45;
+  color: var(--ds-color-text-muted);
+}
+
+// -----------------------------------------------------------------------------
+// Notas informativas (info / aviso) con ícono
+// -----------------------------------------------------------------------------
+.ds-form__note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ds-space-2);
+  margin: 0;
+  padding: var(--ds-space-3);
+  border: 1px solid color-mix(in srgb, var(--ds-color-info) 32%, transparent);
+  border-radius: var(--ds-radius-md);
+  background: color-mix(in srgb, var(--ds-color-info) 10%, transparent);
+  color: var(--ds-color-text);
+  font-size: var(--ds-font-size-sm);
+  min-inline-size: 0;
+
+  mat-icon {
+    flex: 0 0 auto;
+    margin-block-start: 1px;
+    font-size: 20px;
+    inline-size: 20px;
+    block-size: 20px;
+    color: var(--ds-color-info);
+  }
+}
+
+.ds-form__note--warn {
+  border-color: color-mix(in srgb, var(--ds-color-warning) 36%, transparent);
+  background: color-mix(in srgb, var(--ds-color-warning) 12%, transparent);
+
+  mat-icon {
+    color: var(--ds-color-warning);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Resumen / total destacado (estilo "order summary")
+// -----------------------------------------------------------------------------
+.ds-form__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-2) var(--ds-space-4);
+  padding: var(--ds-space-4);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-accent-surface);
+}
+
+.ds-form__summary-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-inline-size: 0;
+}
+
+.ds-form__summary-conteo {
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-text-muted);
+}
+
+.ds-form__summary-etiqueta {
+  font-size: var(--ds-font-size-xs);
+  color: var(--ds-color-text-muted);
+}
+
+.ds-form__summary-total {
+  font-size: var(--ds-font-size-xl);
+  font-weight: var(--ds-font-weight-bold);
+  color: var(--ds-color-primary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

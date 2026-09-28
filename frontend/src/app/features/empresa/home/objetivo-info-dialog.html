@@ -1,0 +1,32 @@
+<div class="obj" [class]="claseTono()">
+  <div class="obj__head" mat-dialog-title>
+    <span class="obj__icon" aria-hidden="true"><mat-icon>flag_circle</mat-icon></span>
+    <div class="obj__head-txt">
+      <span class="obj__titulo">{{ datos.nombre }}</span>
+      <span class="obj__estado">{{ estadoTexto() }}</span>
+    </div>
+  </div>
+
+  <mat-dialog-content class="obj__body">
+    <div class="obj__avance">
+      <div class="obj__avance-num">{{ datos.avance | number: '1.0-0' : 'es-MX' }}%</div>
+      <div class="obj__barra" aria-hidden="true">
+        <span class="obj__barra-fill" [style.width.%]="datos.avance"></span>
+      </div>
+      <p class="obj__estado-exp">{{ estadoExplicacion() }}</p>
+    </div>
+
+    <dl class="obj__def">
+      <dt><mat-icon aria-hidden="true">person</mat-icon> Responsable</dt>
+      <dd>{{ datos.responsable }}</dd>
+      <dt><mat-icon aria-hidden="true">adjust</mat-icon> Meta</dt>
+      <dd>{{ datos.meta }}</dd>
+      <dt><mat-icon aria-hidden="true">date_range</mat-icon> Periodo</dt>
+      <dd>{{ datos.periodoInicio }} — {{ datos.periodoFin }}</dd>
+    </dl>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button matButton="filled" mat-dialog-close>Entendido</button>
+  </mat-dialog-actions>
+</div>

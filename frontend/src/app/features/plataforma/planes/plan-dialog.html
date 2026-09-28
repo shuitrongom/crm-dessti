@@ -1,167 +1,209 @@
-<h2 mat-dialog-title>{{ esEdicion ? 'Editar plan' : 'Nuevo plan' }}</h2>
-<mat-dialog-content>
-  @if (error()) {
-    <p class="plan-dialog__error" role="alert">
-      <mat-icon aria-hidden="true">error_outline</mat-icon>
-      <span>{{ error() }}</span>
-    </p>
-  }
-  <form class="plan-dialog__form" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
-    <!-- Seccion: Datos del plan -->
-    <section class="plan-dialog__seccion">
-      <h3 class="plan-dialog__seccion-titulo">Datos del plan</h3>
-      <div class="plan-dialog__grid">
-        <mat-form-field appearance="outline">
-          <mat-label>Nombre del plan</mat-label>
-          <input matInput type="text" formControlName="nombre" required />
-          @if (formulario.controls.nombre.hasError('required') && formulario.controls.nombre.touched) {
-            <mat-error>El nombre es obligatorio.</mat-error>
-          }
-        </mat-form-field>
+<mat-dialog-content class="plan-dialog__content">
+  <form class="ds-form" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+    <!-- Encabezado con contexto -->
+    <header class="ds-form__header">
+      <h2 class="ds-form__header-title" mat-dialog-title>
+        {{ esEdicion ? 'Editar plan' : 'Nuevo plan' }}
+      </h2>
+      <p class="ds-form__header-subtitle">
+        Configura el plan comercial, su vigencia y los módulos incluidos con su precio.
+      </p>
+    </header>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Máximo de usuarios</mat-label>
-          <input matInput type="number" min="0" formControlName="maxUsuarios" required />
-          <mat-hint>Cantidad maxima de usuarios que la empresa cliente podra crear con este plan.</mat-hint>
-          @if (formulario.controls.maxUsuarios.hasError('required') && formulario.controls.maxUsuarios.touched) {
-            <mat-error>El máximo de usuarios es obligatorio.</mat-error>
-          } @else if (formulario.controls.maxUsuarios.hasError('min') && formulario.controls.maxUsuarios.touched) {
-            <mat-error>Debe ser mayor o igual a cero.</mat-error>
-          }
-        </mat-form-field>
+    @if (error()) {
+      <p class="ds-form__note ds-form__note--warn" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </p>
+    }
 
-        <mat-form-field appearance="outline">
-          <mat-label>Duración (días)</mat-label>
-          <input matInput type="number" min="366" step="1" formControlName="duracionDias" required />
-          <mat-hint>Mayor a 365 días (más de un año).</mat-hint>
-          @if (formulario.controls.duracionDias.hasError('required') && formulario.controls.duracionDias.touched) {
-            <mat-error>La duración es obligatoria.</mat-error>
-          } @else if (formulario.controls.duracionDias.hasError('min') && formulario.controls.duracionDias.touched) {
-            <mat-error>La duración de un plan debe ser mayor a 365 días (más de un año).</mat-error>
-          }
-        </mat-form-field>
+    <!-- Sección: Datos del plan (two-pane) -->
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Datos del plan</h3>
+        <p class="ds-form__section-desc">
+          Identidad comercial, vigencia del contrato, giro y moneda de cotización.
+        </p>
+      </div>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Giro</mat-label>
-          <mat-select
-            formControlName="giroId"
-            required
-            (selectionChange)="cambiarGiro($event.value)"
-          >
-            @for (giro of giros(); track giro.id) {
-              <mat-option [value]="giro.id">{{ giro.nombreVisible }}</mat-option>
-            }
-          </mat-select>
-          @if (formulario.controls.giroId.hasError('required') && formulario.controls.giroId.touched) {
-            <mat-error>El giro es obligatorio.</mat-error>
-          }
-        </mat-form-field>
+      <div class="ds-form__section-body">
+        <div class="ds-form__grid">
+          <div class="ds-form__field ds-form__field--full">
+            <mat-form-field appearance="outline">
+              <mat-label>Nombre del plan</mat-label>
+              <input matInput type="text" formControlName="nombre" required />
+              @if (formulario.controls.nombre.hasError('required') && formulario.controls.nombre.touched) {
+                <mat-error>El nombre es obligatorio.</mat-error>
+              }
+            </mat-form-field>
+          </div>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Moneda</mat-label>
-          <mat-select
-            formControlName="monedaCodigo"
-            required
-            (selectionChange)="cambiarMoneda($event.value)"
-          >
-            @for (moneda of monedas(); track moneda.codigo) {
-              <mat-option [value]="moneda.codigo">{{ moneda.codigo }} - {{ moneda.nombre }}</mat-option>
-            }
-          </mat-select>
-          @if (formulario.controls.monedaCodigo.hasError('required') && formulario.controls.monedaCodigo.touched) {
-            <mat-error>La moneda es obligatoria.</mat-error>
-          }
-        </mat-form-field>
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Máximo de usuarios</mat-label>
+              <input matInput type="number" min="0" formControlName="maxUsuarios" required
+                     aria-describedby="ayuda-max-usuarios" />
+              @if (formulario.controls.maxUsuarios.hasError('required') && formulario.controls.maxUsuarios.touched) {
+                <mat-error>El máximo de usuarios es obligatorio.</mat-error>
+              } @else if (formulario.controls.maxUsuarios.hasError('min') && formulario.controls.maxUsuarios.touched) {
+                <mat-error>Debe ser mayor o igual a cero.</mat-error>
+              }
+            </mat-form-field>
+            <p class="ds-form__help" id="ayuda-max-usuarios">
+              Usuarios con acceso al sistema además del administrador. Ajustable en cualquier momento.
+            </p>
+          </div>
+
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Duración (días)</mat-label>
+              <input matInput type="number" min="366" step="1" formControlName="duracionDias" required />
+              @if (formulario.controls.duracionDias.hasError('required') && formulario.controls.duracionDias.touched) {
+                <mat-error>La duración es obligatoria.</mat-error>
+              } @else if (formulario.controls.duracionDias.hasError('min') && formulario.controls.duracionDias.touched) {
+                <mat-error>La duración debe ser mayor a 365 días.</mat-error>
+              }
+            </mat-form-field>
+            <p class="ds-form__help">Mayor a 365 días (más de un año).</p>
+          </div>
+
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Giro</mat-label>
+              <mat-select formControlName="giroId" required (selectionChange)="cambiarGiro($event.value)">
+                @for (giro of giros(); track giro.id) {
+                  <mat-option [value]="giro.id">{{ giro.nombreVisible }}</mat-option>
+                }
+              </mat-select>
+              @if (formulario.controls.giroId.hasError('required') && formulario.controls.giroId.touched) {
+                <mat-error>El giro es obligatorio.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Moneda</mat-label>
+              <mat-select formControlName="monedaCodigo" required (selectionChange)="cambiarMoneda($event.value)">
+                @for (moneda of monedas(); track moneda.codigo) {
+                  <mat-option [value]="moneda.codigo">{{ moneda.codigo }} - {{ moneda.nombre }}</mat-option>
+                }
+              </mat-select>
+              @if (formulario.controls.monedaCodigo.hasError('required') && formulario.controls.monedaCodigo.touched) {
+                <mat-error>La moneda es obligatoria.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- Seccion: Modulos y precios -->
-    <section class="plan-dialog__seccion">
-      <h3 class="plan-dialog__seccion-titulo">Módulos y precios</h3>
+    <!-- Sección: Módulos y precios (two-pane) -->
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Módulos y precios</h3>
+        <p class="ds-form__section-desc">
+          Selecciona los módulos incluidos. Al activarlos captura su precio en la moneda del plan.
+        </p>
+      </div>
 
-      @if (cargando()) {
-        <div class="plan-dialog__cargando">
-          <mat-spinner diameter="24" />
-          <span>Cargando módulos...</span>
-        </div>
-      } @else {
-        @if (!hayGiro()) {
-          <p class="plan-dialog__hint" role="note">
-            <mat-icon aria-hidden="true">info</mat-icon>
-            <span>Selecciona un giro para ver sus módulos específicos.</span>
-          </p>
-        }
-        @if (avisoGiroCambiado()) {
-          <p class="plan-dialog__hint plan-dialog__hint--aviso" role="note">
-            <mat-icon aria-hidden="true">swap_horiz</mat-icon>
-            <span>Se quitaron los módulos específicos del giro anterior. Se conservó el núcleo común.</span>
-          </p>
-        }
-        @if (avisoDependencia(); as aviso) {
-          <p class="plan-dialog__hint plan-dialog__hint--aviso" role="note" aria-live="polite">
-            <mat-icon aria-hidden="true">link</mat-icon>
-            <span>{{ aviso }}</span>
-          </p>
-        }
-
-        <div class="plan-dialog__grupos">
-          @for (grupo of grupos(); track grupo.giro) {
-            <div class="plan-dialog__grupo">
-              <h4 class="plan-dialog__grupo-titulo">{{ grupo.titulo }}</h4>
-              <ul class="plan-dialog__modulos">
-                @for (modulo of grupo.modulos; track modulo.clave) {
-                  <li class="plan-dialog__modulo">
-                    <mat-checkbox
-                      [checked]="estaSeleccionado(modulo.clave)"
-                      [disabled]="estaBloqueado(modulo.clave)"
-                      [attr.aria-describedby]="estaBloqueado(modulo.clave) ? 'motivo-' + modulo.clave : null"
-                      (change)="alternar(modulo.clave, $event.checked)"
-                    >
-                      {{ modulo.nombreVisible }}
-                    </mat-checkbox>
-                    @if (estaBloqueado(modulo.clave)) {
-                      <p
-                        class="plan-dialog__hint plan-dialog__hint--bloqueado"
-                        role="note"
-                        [id]="'motivo-' + modulo.clave"
-                      >
-                        <mat-icon aria-hidden="true">lock</mat-icon>
-                        <span>{{ motivoBloqueado(modulo.clave) }}</span>
-                      </p>
-                    }
-                    @if (estaSeleccionado(modulo.clave)) {
-                      <mat-form-field appearance="outline" class="plan-dialog__precio-campo">
-                        <mat-label>Precio ({{ moneda() }})</mat-label>
-                        <input
-                          matInput
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          [value]="precioDe(modulo.clave)"
-                          (input)="fijarPrecio(modulo.clave, $any($event.target).value)"
-                          [attr.aria-label]="'Precio de ' + modulo.nombreVisible + ' en ' + moneda()"
-                        />
-                      </mat-form-field>
-                    }
-                  </li>
-                }
-              </ul>
-            </div>
+      <div class="ds-form__section-body">
+        @if (cargando()) {
+          <div class="plan-dialog__skeletons" aria-live="polite" aria-busy="true">
+            <div class="ds-skeleton ds-skeleton--linea"></div>
+            <div class="ds-skeleton ds-skeleton--linea"></div>
+            <div class="ds-skeleton ds-skeleton--linea"></div>
+          </div>
+        } @else {
+          @if (!hayGiro()) {
+            <p class="ds-form__note" role="note">
+              <mat-icon aria-hidden="true">info</mat-icon>
+              <span>Selecciona un giro para ver sus módulos específicos.</span>
+            </p>
           }
-        </div>
+          @if (avisoGiroCambiado()) {
+            <p class="ds-form__note ds-form__note--warn" role="note">
+              <mat-icon aria-hidden="true">swap_horiz</mat-icon>
+              <span>Se quitaron los módulos específicos del giro anterior. Se conservó el núcleo común.</span>
+            </p>
+          }
+          @if (avisoDependencia(); as aviso) {
+            <p class="ds-form__note ds-form__note--warn" role="note" aria-live="polite">
+              <mat-icon aria-hidden="true">link</mat-icon>
+              <span>{{ aviso }}</span>
+            </p>
+          }
 
-        <!-- Total en vivo de los modulos marcados -->
-        <div class="plan-dialog__total" aria-live="polite">
-          <span class="plan-dialog__total-conteo">{{ totalSeleccionados() }} módulos</span>
-          <span class="plan-dialog__total-sep" aria-hidden="true">&middot;</span>
-          <span class="plan-dialog__total-valor">
-            Total: {{ total() | currency: moneda() : 'symbol' : '1.2-2' : 'es-MX' }} {{ moneda() }}
-          </span>
-        </div>
-      }
+          <div class="plan-dialog__grupos">
+            @for (grupo of grupos(); track grupo.giro) {
+              <div class="plan-dialog__grupo">
+                <h4 class="plan-dialog__grupo-titulo">{{ grupo.titulo }}</h4>
+                <div class="plan-dialog__cards">
+                  @for (modulo of grupo.modulos; track modulo.clave) {
+                    <app-selectable-card
+                      [seleccionado]="estaSeleccionado(modulo.clave)"
+                      [deshabilitado]="estaBloqueado(modulo.clave)"
+                      (seleccionadoChange)="alternar(modulo.clave, $event)"
+                    >
+                      <div class="plan-dialog__card-cab">
+                        <span class="plan-dialog__card-nombre">{{ modulo.nombreVisible }}</span>
+                        @if (estaBloqueado(modulo.clave)) {
+                          <mat-icon
+                            class="plan-dialog__card-lock"
+                            aria-hidden="true"
+                            [attr.title]="motivoBloqueado(modulo.clave)"
+                          >lock</mat-icon>
+                        }
+                      </div>
+
+                      @if (estaBloqueado(modulo.clave)) {
+                        <p class="plan-dialog__card-motivo">{{ motivoBloqueado(modulo.clave) }}</p>
+                      }
+
+                      @if (estaSeleccionado(modulo.clave)) {
+                        <!-- El campo de precio no debe alternar la tarjeta al interactuar -->
+                        <mat-form-field
+                          appearance="outline"
+                          class="plan-dialog__precio-campo"
+                          (click)="$event.stopPropagation()"
+                          (keydown)="$event.stopPropagation()"
+                        >
+                          <mat-label>Precio</mat-label>
+                          <span matTextSuffix class="plan-dialog__precio-moneda">{{ moneda() }}</span>
+                          <input
+                            matInput
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            [value]="precioDe(modulo.clave)"
+                            (input)="fijarPrecio(modulo.clave, $any($event.target).value)"
+                            [attr.aria-label]="'Precio de ' + modulo.nombreVisible + ' en ' + moneda()"
+                          />
+                        </mat-form-field>
+                      }
+                    </app-selectable-card>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Resumen / total en vivo (order summary) -->
+          <div class="ds-form__summary" aria-live="polite">
+            <div class="ds-form__summary-info">
+              <span class="ds-form__summary-conteo">{{ totalSeleccionados() }} módulos seleccionados</span>
+              <span class="ds-form__summary-etiqueta">Total del plan</span>
+            </div>
+            <span class="ds-form__summary-total">
+              {{ total() | currency: moneda() : 'symbol' : '1.2-2' : 'es-MX' }} {{ moneda() }}
+            </span>
+          </div>
+        }
+      </div>
     </section>
   </form>
 </mat-dialog-content>
+
 <mat-dialog-actions align="end">
   <button matButton type="button" (click)="cancelar()">Cancelar</button>
   <button

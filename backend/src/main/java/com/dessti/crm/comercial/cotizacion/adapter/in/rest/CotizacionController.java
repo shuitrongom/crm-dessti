@@ -102,7 +102,8 @@ public class CotizacionController {
                 .toList();
         CotizacionDto dto = servicioCotizaciones.crearCotizacion(
                 new CrearCotizacionCommand(request.clienteId(), partidas, request.validoHasta(),
-                        request.condiciones(), request.notas(), request.moneda()));
+                        request.condiciones(), request.notas(), request.moneda(),
+                        request.descuentoGlobal(), request.retencionIsr(), request.retencionIva()));
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
@@ -250,6 +251,25 @@ public class CotizacionController {
 
     private static CrearPartidaCommand aComando(PartidaRequest request) {
         return new CrearPartidaCommand(
-                request.productoId(), request.descripcion(), request.cantidad(), request.precioUnitario());
+                request.productoId(), request.descripcion(), request.cantidad(),
+                request.precioUnitario(), request.descuento(), request.tasaIva());
+    }
+
+    /**
+     * Ajusta el descuento global y las retenciones (ISR/IVA) de una Cotizacion en
+     * {@code borrador} y recalcula el total con el desglose CFDI (V80). Requiere el
+     * permiso de actualizacion. 422 si no esta en {@code borrador} o algun monto es
+     * invalido; 404 si no es accesible.
+     *
+     * @param id      identificador de la Cotizacion.
+     * @param request descuento global y retenciones.
+     * @return 200 OK con el {@link CotizacionDto} con su total recalculado.
+     */
+    @PutMapping("/{id}/ajustes-fiscales")
+    @PreAuthorize("@autorizador.moduloHabilitado('comercial') and @autorizador.tiene('cotizacion','actualizar')")
+    public ResponseEntity<CotizacionDto> ajustesFiscales(@PathVariable("id") UUID id,
+            @Valid @RequestBody AjustesFiscalesRequest request) {
+        return ResponseEntity.ok(servicioCotizaciones.aplicarAjustesFiscales(
+                id, request.descuentoGlobal(), request.retencionIsr(), request.retencionIva()));
     }
 }

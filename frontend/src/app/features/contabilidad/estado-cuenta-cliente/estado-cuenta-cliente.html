@@ -1,0 +1,76 @@
+<app-page-header
+  titulo="Estado de cuenta por cliente"
+  subtitulo="Detalle de las cuentas por cobrar de un cliente en el periodo, con su total facturado y saldo pendiente."
+/>
+
+<mat-card appearance="outlined" class="cont-alta">
+  <mat-card-content>
+    <form [formGroup]="formulario" (ngSubmit)="consultar()" novalidate>
+      <div class="cont-filtros">
+        <mat-form-field appearance="outline">
+          <mat-label>Cliente</mat-label>
+          <mat-select formControlName="clienteId">
+            @for (cliente of clientes(); track cliente.id) {
+              <mat-option [value]="cliente.id">{{ cliente.nombre }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>Selecciona un cliente.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Desde</mat-label>
+          <input matInput [matDatepicker]="pickerDesde" formControlName="desde" />
+          <mat-datepicker-toggle matSuffix [for]="pickerDesde" />
+          <mat-datepicker #pickerDesde />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Hasta</mat-label>
+          <input matInput [matDatepicker]="pickerHasta" formControlName="hasta" />
+          <mat-datepicker-toggle matSuffix [for]="pickerHasta" />
+          <mat-datepicker #pickerHasta />
+        </mat-form-field>
+        <button matButton="filled" type="submit" [disabled]="cargando()">
+          <mat-icon>search</mat-icon> Consultar
+        </button>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>
+
+@if (error(); as msg) {
+  <div class="cont-error" role="alert">
+    <mat-icon aria-hidden="true">error</mat-icon>
+    <span>{{ msg }}</span>
+  </div>
+}
+
+@if (resultado(); as ec) {
+  <div class="cont-resumen" role="status" aria-live="polite">
+    <div class="cont-resumen__kpi">
+      <mat-icon aria-hidden="true">receipt_long</mat-icon>
+      <div>
+        <span class="cont-resumen__valor">{{ ec.totalFacturado | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span>
+        <span class="cont-resumen__etiqueta">Total facturado</span>
+      </div>
+    </div>
+    <div class="cont-resumen__kpi" [class.cont-resumen__kpi--negativo]="ec.saldoPendiente > 0">
+      <mat-icon aria-hidden="true">account_balance_wallet</mat-icon>
+      <div>
+        <span class="cont-resumen__valor">{{ ec.saldoPendiente | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span>
+        <span class="cont-resumen__etiqueta">Saldo pendiente</span>
+      </div>
+    </div>
+  </div>
+
+  <app-data-table [columnas]="columnas" [filas]="ec.renglones" [total]="ec.renglones.length">
+    <ng-template appCelda="fechaEmision" let-r>{{ r.fechaEmision | date: 'dd/MM/yyyy' }}</ng-template>
+    <ng-template appCelda="factura" let-r><span class="cont-mono">{{ r.facturaId.slice(0, 8) }}</span></ng-template>
+    <ng-template appCelda="total" let-r><span class="cont-num">{{ r.total | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span></ng-template>
+    <ng-template appCelda="saldo" let-r><span class="cont-num">{{ r.saldo | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span></ng-template>
+    <ng-template appCelda="vencimiento" let-r>{{ r.fechaVencimiento ? (r.fechaVencimiento | date: 'dd/MM/yyyy') : '—' }}</ng-template>
+    <ng-template appCelda="estado" let-r>
+      <app-estado-chip [etiqueta]="humanizar(r.estado)" [tono]="tono(r.estado)" />
+    </ng-template>
+  </app-data-table>
+} @else if (!cargando() && !error()) {
+  <p class="cont-ayuda">Selecciona un cliente y consulta para ver su estado de cuenta.</p>
+}

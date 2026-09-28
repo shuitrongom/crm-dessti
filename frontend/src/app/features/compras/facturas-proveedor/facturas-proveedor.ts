@@ -30,6 +30,7 @@ import {
 } from '../../../shared/components/data-table/data-table';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 import {
@@ -71,6 +72,7 @@ export class ComprasFacturasProveedor {
   private readonly service = inject(ComprasService);
   private readonly confirm = inject(ConfirmDialogService);
   private readonly toast = inject(NotificacionesService);
+  private readonly overlay = inject(OperacionOverlayService);
   private readonly auth = inject(AuthService);
 
   protected readonly tono = tonoDeEstado;
@@ -151,6 +153,10 @@ export class ComprasFacturasProveedor {
     return this.puedeCambiarEstado && f.estado === 'conciliada';
   }
 
+  puedeReabrir(f: FacturaProveedor): boolean {
+    return this.puedeCambiarEstado && f.estado === 'discrepancia';
+  }
+
   crear(): void {
     if (this.formAlta.invalid) {
       this.formAlta.markAllAsTouched();
@@ -158,12 +164,15 @@ export class ComprasFacturasProveedor {
     }
     this.guardando.set(true);
     const v = this.formAlta.getRawValue();
-    this.service
-      .registrarFacturaProveedor({
-        ordenCompraId: v.ordenCompraId,
-        folioProveedor: v.folioProveedor,
-        monto: v.monto,
-      })
+    this.overlay
+      .ejecutar(
+        this.service.registrarFacturaProveedor({
+          ordenCompraId: v.ordenCompraId,
+          folioProveedor: v.folioProveedor,
+          monto: v.monto,
+        }),
+        { tipo: 'crear', textoProceso: 'Registrando factura…', textoExito: 'Factura registrada' },
+      )
       .subscribe({
         next: () => {
           this.guardando.set(false);
@@ -181,17 +190,23 @@ export class ComprasFacturasProveedor {
   }
 
   conciliar(f: FacturaProveedor): void {
-    this.service.conciliarFactura(f.id).subscribe({
-      next: (actualizada) => {
-        if (actualizada.estado === 'discrepancia') {
-          this.toast.info('Conciliacion con discrepancia: revisa orden, recepcion y factura.');
-        } else {
-          this.toast.exito('Factura conciliada.');
-        }
-        this.cargar();
-      },
-      error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
-    });
+    this.overlay
+      .ejecutar(this.service.conciliarFactura(f.id), {
+        tipo: 'procesar',
+        textoProceso: 'Conciliando factura…',
+        textoExito: 'Conciliación lista',
+      })
+      .subscribe({
+        next: (actualizada) => {
+          if (actualizada.estado === 'discrepancia') {
+            this.toast.info('Conciliacion con discrepancia: revisa orden, recepcion y factura.');
+          } else {
+            this.toast.exito('Factura conciliada.');
+          }
+          this.cargar();
+        },
+        error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
+      });
   }
 
   async autorizarPago(f: FacturaProveedor): Promise<void> {
@@ -203,12 +218,47 @@ export class ComprasFacturasProveedor {
     if (!ok) {
       return;
     }
-    this.service.autorizarPagoFactura(f.id).subscribe({
-      next: () => {
-        this.toast.exito('Pago autorizado.');
-        this.cargar();
-      },
-      error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
+    this.overlay
+      .ejecutar(this.service.autorizarPagoFactura(f.id), {
+        tipo: 'procesar',
+        textoProceso: 'Autorizando pago…',
+        textoExito: 'Pago autorizado',
+      })
+      .subscribe({
+        next: () => {
+          this.toast.exito('Pago autorizado.');
+          this.cargar();
+        },
+        error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
+      });
+  }
+
+  /**
+   * Reabre una factura en discrepancia (vuelve a 'registrada') para re-conciliar
+   * tras corregir la orden/recepción/folio. Pide confirmación por ser un cambio de
+   * estado que reactiva el flujo de conciliación.
+   */
+  async reabrir(f: FacturaProveedor): Promise<void> {
+    const ok = await this.confirm.confirmar({
+      titulo: 'Reabrir factura',
+      mensaje: `La factura ${f.folioProveedor} volverá a "registrada" para intentar conciliarla de nuevo. Continuar?`,
+      textoConfirmar: 'Reabrir',
     });
+    if (!ok) {
+      return;
+    }
+    this.overlay
+      .ejecutar(this.service.reabrirFactura(f.id), {
+        tipo: 'procesar',
+        textoProceso: 'Reabriendo factura…',
+        textoExito: 'Factura reabierta',
+      })
+      .subscribe({
+        next: () => {
+          this.toast.exito('Factura reabierta; ya puedes volver a conciliarla.');
+          this.cargar();
+        },
+        error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
+      });
   }
 }

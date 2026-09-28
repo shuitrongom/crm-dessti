@@ -13,6 +13,11 @@ import { guardaPorPermiso } from '../../core/auth/auth.guard';
 
 export const comprasRoutes: Routes = [
   {
+    path: 'proveedores',
+    canActivate: [guardaPorPermiso('proveedor', 'listar')],
+    loadComponent: () => import('./proveedores/proveedores').then((m) => m.ComprasProveedores),
+  },
+  {
     path: 'requisiciones',
     canActivate: [guardaPorPermiso('requisicion_compra', 'listar')],
     loadComponent: () => import('./requisiciones/requisiciones').then((m) => m.ComprasRequisiciones),

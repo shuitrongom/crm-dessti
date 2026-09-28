@@ -33,6 +33,7 @@ import { StateContainer } from '../../../shared/components/state-container/state
 import { EntitySelect } from '../../../shared/components/entity-select/entity-select';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 import {
@@ -95,6 +96,7 @@ export class Bandeja {
   private readonly clientes = inject(ClientesService);
   private readonly confirm = inject(ConfirmDialogService);
   private readonly toast = inject(NotificacionesService);
+  private readonly overlay = inject(OperacionOverlayService);
   private readonly auth = inject(AuthService);
 
   protected readonly humanizar = humanizarEstado;
@@ -362,19 +364,25 @@ export class Bandeja {
     }
     const clienteId = this.formVinculo.getRawValue().clienteId;
     this.guardandoVinculo.set(true);
-    this.service.vincular(c.id, clienteId).subscribe({
-      next: (actualizada) => {
-        this.guardandoVinculo.set(false);
-        this.vinculando.set(false);
-        this.toast.exito('Conversacion vinculada al cliente.');
-        this.actualizarEnLista(actualizada);
-        this.resolverClienteVinculado(actualizada);
-      },
-      error: (e: HttpErrorResponse) => {
-        this.guardandoVinculo.set(false);
-        this.toast.error(mensajeDeError(e));
-      },
-    });
+    this.overlay
+      .ejecutar(this.service.vincular(c.id, clienteId), {
+        tipo: 'traspasar',
+        textoProceso: 'Vinculando al cliente…',
+        textoExito: 'Conversación vinculada',
+      })
+      .subscribe({
+        next: (actualizada) => {
+          this.guardandoVinculo.set(false);
+          this.vinculando.set(false);
+          this.toast.exito('Conversacion vinculada al cliente.');
+          this.actualizarEnLista(actualizada);
+          this.resolverClienteVinculado(actualizada);
+        },
+        error: (e: HttpErrorResponse) => {
+          this.guardandoVinculo.set(false);
+          this.toast.error(mensajeDeError(e));
+        },
+      });
   }
 
   /**
@@ -402,13 +410,19 @@ export class Bandeja {
     if (!c || !usuarioId) {
       return;
     }
-    this.service.asignar(c.id, usuarioId).subscribe({
-      next: (actualizada) => {
-        this.toast.exito('Conversacion asignada.');
-        this.actualizarEnLista(actualizada);
-      },
-      error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
-    });
+    this.overlay
+      .ejecutar(this.service.asignar(c.id, usuarioId), {
+        tipo: 'procesar',
+        textoProceso: 'Asignando conversación…',
+        textoExito: 'Conversación asignada',
+      })
+      .subscribe({
+        next: (actualizada) => {
+          this.toast.exito('Conversacion asignada.');
+          this.actualizarEnLista(actualizada);
+        },
+        error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
+      });
   }
 
   async cerrarConversacion(): Promise<void> {
@@ -424,13 +438,19 @@ export class Bandeja {
     if (!ok) {
       return;
     }
-    this.service.cerrar(c.id).subscribe({
-      next: (actualizada) => {
-        this.toast.exito('Conversacion cerrada.');
-        this.actualizarEnLista(actualizada);
-      },
-      error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
-    });
+    this.overlay
+      .ejecutar(this.service.cerrar(c.id), {
+        tipo: 'procesar',
+        textoProceso: 'Cerrando conversación…',
+        textoExito: 'Conversación cerrada',
+      })
+      .subscribe({
+        next: (actualizada) => {
+          this.toast.exito('Conversacion cerrada.');
+          this.actualizarEnLista(actualizada);
+        },
+        error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
+      });
   }
 
   /** Refleja el cambio de una conversacion en la lista y el detalle. */

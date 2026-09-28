@@ -17,12 +17,15 @@ import java.util.UUID;
  * la fecha de emision NO se reciben del cliente: la aplicacion los asigna
  * (folio consecutivo por tenant/anio, fecha de emision = hoy segun el Clock).</p>
  *
- * @param clienteId   identificador del Cliente existente; obligatorio (Req 6.1).
- * @param partidas    partidas de la Cotizacion; entre 1 y 500 (Req 6.1, 6.2).
- * @param validoHasta fecha de vigencia; opcional, &ge; fecha de emision (V60).
- * @param condiciones terminos y condiciones; opcional (max. 2000, V60).
- * @param notas       notas libres; opcional (max. 2000, V60).
- * @param moneda      moneda ISO 4217; {@code null}/blanco usa {@code MXN} (V60).
+ * @param clienteId       identificador del Cliente existente; obligatorio (Req 6.1).
+ * @param partidas        partidas de la Cotizacion; entre 1 y 500 (Req 6.1, 6.2).
+ * @param validoHasta     fecha de vigencia; opcional, &ge; fecha de emision (V60).
+ * @param condiciones     terminos y condiciones; opcional (max. 2000, V60).
+ * @param notas           notas libres; opcional (max. 2000, V60).
+ * @param moneda          moneda ISO 4217; {@code null}/blanco usa {@code MXN} (V60).
+ * @param descuentoGlobal descuento global (monto); {@code null}=0, no negativo (V80).
+ * @param retencionIsr    retencion de ISR (monto); {@code null}=0, no negativa (V80).
+ * @param retencionIva    retencion de IVA (monto); {@code null}=0, no negativa (V80).
  */
 public record CrearCotizacionCommand(
         UUID clienteId,
@@ -30,17 +33,30 @@ public record CrearCotizacionCommand(
         LocalDate validoHasta,
         String condiciones,
         String notas,
-        String moneda) {
+        String moneda,
+        java.math.BigDecimal descuentoGlobal,
+        java.math.BigDecimal retencionIsr,
+        java.math.BigDecimal retencionIva) {
 
     /**
-     * Constructor de conveniencia sin datos descriptivos (todos ausentes): fija
-     * la fecha de vigencia, condiciones, notas y moneda a sus valores por defecto
-     * (moneda {@code MXN} la aplica el dominio). Preserva el contrato previo a V60.
+     * Constructor de conveniencia sin datos descriptivos ni ajustes fiscales:
+     * fija la fecha de vigencia, condiciones, notas y moneda a sus valores por
+     * defecto y los ajustes fiscales a cero. Preserva el contrato previo a V60.
      *
      * @param clienteId identificador del Cliente existente; obligatorio.
      * @param partidas  partidas de la Cotizacion; entre 1 y 500.
      */
     public CrearCotizacionCommand(UUID clienteId, List<CrearPartidaCommand> partidas) {
-        this(clienteId, partidas, null, null, null, null);
+        this(clienteId, partidas, null, null, null, null, null, null, null);
+    }
+
+    /**
+     * Constructor de conveniencia con datos descriptivos pero sin ajustes fiscales
+     * (todos cero). Preserva el contrato previo a V80.
+     */
+    public CrearCotizacionCommand(UUID clienteId, List<CrearPartidaCommand> partidas,
+                                  LocalDate validoHasta, String condiciones, String notas,
+                                  String moneda) {
+        this(clienteId, partidas, validoHasta, condiciones, notas, moneda, null, null, null);
     }
 }

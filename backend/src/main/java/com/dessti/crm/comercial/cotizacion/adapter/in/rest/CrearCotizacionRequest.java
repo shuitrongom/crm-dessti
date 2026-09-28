@@ -1,10 +1,14 @@
 package com.dessti.crm.comercial.cotizacion.adapter.in.rest;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -29,6 +33,9 @@ import jakarta.validation.constraints.Size;
  * @param condiciones terminos y condiciones; opcional, max. 2000 (V60).
  * @param notas       notas libres; opcional, max. 2000 (V60).
  * @param moneda      moneda ISO 4217; {@code null}/blanco usa {@code MXN} (V60).
+ * @param descuentoGlobal descuento global (monto); opcional, &ge; 0 (V80).
+ * @param retencionIsr    retencion de ISR (monto); opcional, &ge; 0 (V80).
+ * @param retencionIva    retencion de IVA (monto); opcional, &ge; 0 (V80).
  */
 public record CrearCotizacionRequest(
         @NotNull UUID clienteId,
@@ -36,5 +43,11 @@ public record CrearCotizacionRequest(
         LocalDate validoHasta,
         @Size(max = 2000) String condiciones,
         @Size(max = 2000) String notas,
-        @Size(max = 3) String moneda) {
+        @Size(max = 3) String moneda,
+        @DecimalMin("0.00") @DecimalMax("999999999.99") @Digits(integer = 9, fraction = 2)
+        BigDecimal descuentoGlobal,
+        @DecimalMin("0.00") @DecimalMax("999999999.99") @Digits(integer = 9, fraction = 2)
+        BigDecimal retencionIsr,
+        @DecimalMin("0.00") @DecimalMax("999999999.99") @Digits(integer = 9, fraction = 2)
+        BigDecimal retencionIva) {
 }

@@ -210,4 +210,21 @@ public class ClienteController {
                 request.telefono()));
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
+
+    /**
+     * Asigna o limpia el Usuario propietario/vendedor de un Cliente activo (V81).
+     * Se guarda con el permiso de actualizacion del Cliente. Un {@code usuarioId}
+     * nulo desasigna. 404 si el Cliente no es accesible o si el Usuario indicado
+     * no existe/activo en el tenant.
+     *
+     * @param id      identificador del Cliente.
+     * @param request identificador del Usuario propietario (nulo para desasignar).
+     * @return 200 OK con el {@link ClienteDto} con su propietario actualizado.
+     */
+    @PutMapping("/{id}/propietario")
+    @PreAuthorize("@autorizador.moduloHabilitado('comercial') and @autorizador.tiene('cliente','actualizar')")
+    public ResponseEntity<ClienteDto> asignarPropietario(@PathVariable("id") UUID id,
+                                                         @Valid @RequestBody AsignarPropietarioRequest request) {
+        return ResponseEntity.ok(servicioClientes.asignarPropietario(id, request.usuarioId()));
+    }
 }

@@ -68,8 +68,11 @@
               [alt]="etiquetaEmpresa()"
             />
           } @else {
-            <span class="shell__marca-logo shell__marca-empresa">{{ etiquetaEmpresa() }}</span>
+            <span class="shell__marca-icono" aria-hidden="true">
+              <mat-icon>domain</mat-icon>
+            </span>
           }
+          <span class="shell__marca-empresa">{{ etiquetaEmpresa() }}</span>
         } @else {
           <span class="shell__marca-logo">
             <span class="shell__marca-nombre">Dess</span><span class="shell__marca-acento">-TI</span>

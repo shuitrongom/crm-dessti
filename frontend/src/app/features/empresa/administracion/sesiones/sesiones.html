@@ -3,6 +3,20 @@
   subtitulo="Consulta las sesiones activas de las cuentas de tu empresa y revoca el acceso cuando lo necesites."
 />
 
+<!-- Nota de seguridad: explica que hace revocar y su alcance real (Req 68). -->
+<div class="sesiones__nota" role="note">
+  <mat-icon aria-hidden="true">shield</mat-icon>
+  <div>
+    <p class="sesiones__nota-titulo">¿Qué es una sesión?</p>
+    <p class="sesiones__nota-texto">
+      Cada sesión representa un inicio de sesión activo (por ejemplo, un navegador o
+      dispositivo). Al <strong>revocar</strong>, se invalidan las sesiones de la cuenta:
+      el acceso se corta en cuanto la app intente renovar su credencial. Si revocas
+      <strong>tu propia cuenta</strong>, se cerrará tu sesión de inmediato.
+    </p>
+  </div>
+</div>
+
 <mat-card appearance="outlined" class="admin-consulta">
   <mat-card-content>
     <div class="sesiones__consulta">
@@ -28,7 +42,7 @@
         (click)="revocar()"
       >
         <mat-icon aria-hidden="true">block</mat-icon>
-        Revocar sesiones
+        {{ esMiCuenta() ? 'Revocar mis sesiones' : 'Revocar sesiones' }}
       </button>
     </div>
   </mat-card-content>
@@ -49,11 +63,28 @@
       [size]="size()"
       (cambioPagina)="cambiarPagina($event)"
     >
-      <ng-template appCelda="jti" let-sesion>
-        <code>{{ sesion.jti }}</code>
+      <ng-template appCelda="sesion" let-sesion>
+        <div class="sesiones__celda-sesion">
+          <span class="sesiones__disp" aria-hidden="true"><mat-icon>devices</mat-icon></span>
+          <div>
+            <div class="sesiones__disp-titulo">Sesión activa</div>
+            <code class="sesiones__jti" [title]="sesion.jti">{{ jtiCorto(sesion.jti) }}</code>
+          </div>
+        </div>
       </ng-template>
-      <ng-template appCelda="emitidoEn" let-sesion>{{ sesion.emitidoEn | date: 'short' }}</ng-template>
-      <ng-template appCelda="expiraEn" let-sesion>{{ sesion.expiraEn | date: 'short' }}</ng-template>
+      <ng-template appCelda="emitidoEn" let-sesion>
+        <div>{{ sesion.emitidoEn | date: 'dd/MM/yyyy HH:mm' }}</div>
+      </ng-template>
+      <ng-template appCelda="expiraEn" let-sesion>
+        <div>{{ sesion.expiraEn | date: 'dd/MM/yyyy HH:mm' }}</div>
+        <div class="sesiones__ayuda">Expira en {{ diasRestantes(sesion.expiraEn) }} día(s)</div>
+      </ng-template>
+      <ng-template appCelda="estado" let-sesion>
+        <span class="sesiones__chip">
+          <span class="sesiones__punto" aria-hidden="true"></span>
+          Activa
+        </span>
+      </ng-template>
     </app-data-table>
   </app-state-container>
 }

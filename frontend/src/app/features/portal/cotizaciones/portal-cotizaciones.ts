@@ -8,6 +8,8 @@
 import { Component, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CurrencyPipe, DatePipe } from '@angular/common';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../shared/components/state-container/state-container';
@@ -17,6 +19,8 @@ import {
   ColumnaTabla,
   DataTable,
 } from '../../../shared/components/data-table/data-table';
+import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog';
+import { NotificacionesService } from '../../../shared/services/notificaciones.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 import {
   EstadoSolicitud,
@@ -35,6 +39,8 @@ import { Cotizacion } from '../models/portal.models';
   imports: [
     CurrencyPipe,
     DatePipe,
+    MatButtonModule,
+    MatIconModule,
     PageHeader,
     StateContainer,
     DataTable,
@@ -45,6 +51,8 @@ import { Cotizacion } from '../models/portal.models';
 })
 export class PortalCotizaciones {
   private readonly service = inject(PortalService);
+  private readonly confirm = inject(ConfirmDialogService);
+  private readonly toast = inject(NotificacionesService);
 
   protected readonly humanizar = humanizarEstado;
   protected readonly tono = tonoDeEstado;
@@ -55,12 +63,14 @@ export class PortalCotizaciones {
     { clave: 'total', encabezado: 'Total', alineacion: 'fin' },
     { clave: 'estado', encabezado: 'Estado' },
     { clave: 'fecha', encabezado: 'Fecha' },
+    { clave: 'acciones', encabezado: 'Acciones', alineacion: 'fin' },
   ];
 
   protected readonly estado = signal<EstadoSolicitud<Cotizacion[]>>(cargando());
   protected readonly total = signal(0);
   protected readonly page = signal(0);
   protected readonly size = signal(20);
+  protected readonly procesando = signal(false);
 
   constructor() {
     this.cargar();
@@ -81,5 +91,57 @@ export class PortalCotizaciones {
     this.page.set(evento.page);
     this.size.set(evento.size);
     this.cargar();
+  }
+
+  /** El cliente solo puede decidir una cotización que le fue enviada. */
+  puedeDecidir(c: Cotizacion): boolean {
+    return c.estado === 'enviada';
+  }
+
+  async aprobar(c: Cotizacion): Promise<void> {
+    const ok = await this.confirm.confirmar({
+      titulo: 'Aprobar cotización',
+      mensaje: '¿Aprobar esta cotización? Esta decisión es definitiva y autoriza el trabajo.',
+      textoConfirmar: 'Aprobar',
+    });
+    if (!ok) {
+      return;
+    }
+    this.procesando.set(true);
+    this.service.aprobarCotizacion(c.id).subscribe({
+      next: () => {
+        this.procesando.set(false);
+        this.toast.exito('Cotización aprobada.');
+        this.cargar();
+      },
+      error: (e: HttpErrorResponse) => {
+        this.procesando.set(false);
+        this.toast.error(mensajeDeError(e));
+      },
+    });
+  }
+
+  async rechazar(c: Cotizacion): Promise<void> {
+    const ok = await this.confirm.confirmar({
+      titulo: 'Rechazar cotización',
+      mensaje: '¿Rechazar esta cotización? Esta decisión es definitiva.',
+      textoConfirmar: 'Rechazar',
+      destructiva: true,
+    });
+    if (!ok) {
+      return;
+    }
+    this.procesando.set(true);
+    this.service.rechazarCotizacion(c.id).subscribe({
+      next: () => {
+        this.procesando.set(false);
+        this.toast.exito('Cotización rechazada.');
+        this.cargar();
+      },
+      error: (e: HttpErrorResponse) => {
+        this.procesando.set(false);
+        this.toast.error(mensajeDeError(e));
+      },
+    });
   }
 }

@@ -74,10 +74,12 @@ describe('IndicatorCard', () => {
       variacion: null,
     });
     await fixture.whenStable();
-    const comparativo = (fixture.nativeElement as HTMLElement).querySelector(
-      '.indicator-card__comparativo',
-    );
-    expect(comparativo).toBeNull();
+    // Sin comparativo no se pinta la mini-barra comparativa. La tarjeta muestra
+    // en su lugar la descripcion corta del indicador (del catalogo central).
+    const spark = (fixture.nativeElement as HTMLElement).querySelector('.kpi__spark');
+    expect(spark).toBeNull();
+    // Ficha generica (clave no catalogada): descripcion corta por defecto.
+    expect(texto()).toContain('Indicador del negocio');
   });
 
   it('no tiene violaciones de accesibilidad (WCAG 2.1 A/AA)', async () => {

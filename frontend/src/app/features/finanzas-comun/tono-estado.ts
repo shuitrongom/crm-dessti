@@ -14,6 +14,7 @@ const TONOS: Record<string, TonoEstado> = {
   aprobada: 'exito',
   aprobado: 'exito',
   conciliada: 'exito',
+  completa: 'exito',
   cumplido: 'exito',
   pagada: 'exito',
   pagado: 'exito',
@@ -37,12 +38,36 @@ const TONOS: Record<string, TonoEstado> = {
   asignado: 'info',
   recibida_parcial: 'info',
   en_curso: 'info',
+  // Calidad / SGC ISO 9001 (Req 70): ciclos de riesgo, accion, cambio, contexto
+  identificado: 'info',
+  en_tratamiento: 'info',
+  en_analisis: 'info',
+  en_ejecucion: 'info',
+  verificacion: 'info',
+  vinculada: 'info',
+  propuesto: 'info',
+  identificada: 'info',
+  en_evaluacion: 'info',
+  // Proyectos multi-sitio (Req 3.2): fases de despliegue por sucursal
+  en_preparacion: 'info',
+  en_instalacion: 'info',
+  en_entrega: 'info',
+  entregado: 'exito',
+  completado: 'exito',
+  // Nota: 'aprobado' ya esta mapeado arriba (seccion Calidad); no repetir.
+  // Calidad: desenlaces favorables ('aprobado' ya esta mapeado arriba)
+  mitigado: 'exito',
+  aceptado: 'exito',
+  atendida: 'exito',
+  implementado: 'exito',
+  realizada: 'exito',
   // Advertencias
   discrepancia: 'advertencia',
   vencida: 'advertencia',
   parcial: 'advertencia',
   en_riesgo: 'advertencia',
   pendiente: 'advertencia',
+  excepcion: 'advertencia',
   // Errores / finales negativos
   rechazada: 'error',
   rechazado: 'error',
@@ -50,6 +75,7 @@ const TONOS: Record<string, TonoEstado> = {
   cancelado: 'error',
   inactivo: 'error',
   incumplido: 'error',
+  descartada: 'error',
 };
 
 /** Devuelve el tono semantico de un estado; neutro si no esta mapeado. */

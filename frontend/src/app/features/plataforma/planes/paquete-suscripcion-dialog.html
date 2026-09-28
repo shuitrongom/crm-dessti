@@ -1,198 +1,258 @@
-<h2 mat-dialog-title>{{ esEdicion ? 'Editar paquete de suscripción' : 'Nuevo paquete de suscripción' }}</h2>
-<mat-dialog-content>
-  @if (error()) {
-    <p class="paquete-suscripcion-dialog__error" role="alert">
-      <mat-icon aria-hidden="true">error_outline</mat-icon>
-      <span>{{ error() }}</span>
-    </p>
-  }
-  <form class="paquete-suscripcion-dialog__form" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
-    <!-- Seccion: Datos del paquete -->
-    <section class="paquete-suscripcion-dialog__seccion">
-      <h3 class="paquete-suscripcion-dialog__seccion-titulo">Datos del paquete</h3>
-      <div class="paquete-suscripcion-dialog__grid">
-        <mat-form-field appearance="outline">
-          <mat-label>Nombre del paquete</mat-label>
-          <input matInput type="text" formControlName="nombre" required maxlength="120" />
-          @if (formulario.controls.nombre.hasError('required') && formulario.controls.nombre.touched) {
-            <mat-error>El nombre es obligatorio.</mat-error>
-          } @else if (formulario.controls.nombre.hasError('maxlength') && formulario.controls.nombre.touched) {
-            <mat-error>El nombre no puede exceder 120 caracteres.</mat-error>
-          }
-        </mat-form-field>
+<mat-dialog-content class="paquete-dialog__content">
+  <form class="ds-form" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+    <!-- Encabezado con contexto -->
+    <header class="ds-form__header">
+      <h2 class="ds-form__header-title" mat-dialog-title>
+        {{ esEdicion ? 'Editar paquete de suscripción' : 'Nuevo paquete de suscripción' }}
+      </h2>
+      <p class="ds-form__header-subtitle">
+        Contrato de corto plazo (un año o menos) con período de prueba opcional y módulos con precio.
+      </p>
+    </header>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Máximo de usuarios</mat-label>
-          <input matInput type="number" min="0" formControlName="maxUsuarios" required />
-          <mat-hint>Cantidad maxima de usuarios que la empresa cliente podra crear con este plan.</mat-hint>
-          @if (formulario.controls.maxUsuarios.hasError('required') && formulario.controls.maxUsuarios.touched) {
-            <mat-error>El máximo de usuarios es obligatorio.</mat-error>
-          } @else if (formulario.controls.maxUsuarios.hasError('min') && formulario.controls.maxUsuarios.touched) {
-            <mat-error>Debe ser mayor o igual a cero.</mat-error>
-          }
-        </mat-form-field>
+    @if (error()) {
+      <p class="ds-form__note ds-form__note--warn" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </p>
+    }
 
-        <mat-form-field appearance="outline">
-          <mat-label>Duración (días)</mat-label>
-          <input matInput type="number" min="1" max="365" step="1" formControlName="duracionDias" required />
-          <mat-hint>De 1 a 365 días (un año o menos).</mat-hint>
-          @if (formulario.controls.duracionDias.hasError('required') && formulario.controls.duracionDias.touched) {
-            <mat-error>La duración es obligatoria.</mat-error>
-          } @else if (
-            (formulario.controls.duracionDias.hasError('min') || formulario.controls.duracionDias.hasError('max'))
-            && formulario.controls.duracionDias.touched
-          ) {
-            <mat-error>La duración de una suscripción debe ser de 1 a 365 días (un año o menos).</mat-error>
-          }
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Giro</mat-label>
-          <mat-select
-            formControlName="giroId"
-            required
-            (selectionChange)="cambiarGiro($event.value)"
-          >
-            @for (giro of giros(); track giro.id) {
-              <mat-option [value]="giro.id">{{ giro.nombreVisible }}</mat-option>
-            }
-          </mat-select>
-          @if (formulario.controls.giroId.hasError('required') && formulario.controls.giroId.touched) {
-            <mat-error>El giro es obligatorio.</mat-error>
-          }
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Moneda</mat-label>
-          <mat-select
-            formControlName="monedaCodigo"
-            required
-            (selectionChange)="cambiarMoneda($event.value)"
-          >
-            @for (moneda of monedas(); track moneda.codigo) {
-              <mat-option [value]="moneda.codigo">{{ moneda.codigo }} - {{ moneda.nombre }}</mat-option>
-            }
-          </mat-select>
-          @if (formulario.controls.monedaCodigo.hasError('required') && formulario.controls.monedaCodigo.touched) {
-            <mat-error>La moneda es obligatoria.</mat-error>
-          }
-        </mat-form-field>
+    <!-- Sección: Datos del paquete (two-pane) -->
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Datos del paquete</h3>
+        <p class="ds-form__section-desc">
+          Identidad comercial, vigencia del contrato, giro y moneda de cotización.
+        </p>
       </div>
-    </section>
 
-    <!-- Seccion: Periodo de prueba -->
-    <section class="paquete-suscripcion-dialog__seccion">
-      <h3 class="paquete-suscripcion-dialog__seccion-titulo">Período de prueba</h3>
-      <div class="paquete-suscripcion-dialog__prueba">
-        <mat-checkbox
-          [checked]="admitePrueba()"
-          (change)="cambiarAdmitePrueba($event.checked)"
-        >
-          Este paquete admite período de prueba
-        </mat-checkbox>
+      <div class="ds-form__section-body">
+        <div class="ds-form__grid">
+          <div class="ds-form__field ds-form__field--full">
+            <mat-form-field appearance="outline">
+              <mat-label>Nombre del paquete</mat-label>
+              <input matInput type="text" formControlName="nombre" required maxlength="120" />
+              @if (formulario.controls.nombre.hasError('required') && formulario.controls.nombre.touched) {
+                <mat-error>El nombre es obligatorio.</mat-error>
+              } @else if (formulario.controls.nombre.hasError('maxlength') && formulario.controls.nombre.touched) {
+                <mat-error>El nombre no puede exceder 120 caracteres.</mat-error>
+              }
+            </mat-form-field>
+          </div>
 
-        @if (admitePrueba()) {
-          <mat-form-field appearance="outline" class="paquete-suscripcion-dialog__prueba-campo">
-            <mat-label>Duración de la prueba (meses)</mat-label>
-            <input matInput type="number" min="1" step="1" formControlName="duracionPruebaMeses" required />
-            <mat-hint>Un mes equivale aproximadamente a 30 días; la prueba no puede exceder la duración del paquete.</mat-hint>
-            @if (formulario.controls.duracionPruebaMeses.hasError('required') && formulario.controls.duracionPruebaMeses.touched) {
-              <mat-error>La duración de la prueba es obligatoria.</mat-error>
-            } @else if (formulario.controls.duracionPruebaMeses.hasError('min') && formulario.controls.duracionPruebaMeses.touched) {
-              <mat-error>La prueba debe ser de al menos 1 mes.</mat-error>
-            }
-          </mat-form-field>
-        }
-      </div>
-    </section>
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Máximo de usuarios</mat-label>
+              <input matInput type="number" min="0" formControlName="maxUsuarios" required
+                     aria-describedby="ayuda-paq-max-usuarios" />
+              @if (formulario.controls.maxUsuarios.hasError('required') && formulario.controls.maxUsuarios.touched) {
+                <mat-error>El máximo de usuarios es obligatorio.</mat-error>
+              } @else if (formulario.controls.maxUsuarios.hasError('min') && formulario.controls.maxUsuarios.touched) {
+                <mat-error>Debe ser mayor o igual a cero.</mat-error>
+              }
+            </mat-form-field>
+            <p class="ds-form__help" id="ayuda-paq-max-usuarios">
+              Usuarios con acceso al sistema además del administrador. Ajustable en cualquier momento.
+            </p>
+          </div>
 
-    <!-- Seccion: Modulos y precios -->
-    <section class="paquete-suscripcion-dialog__seccion">
-      <h3 class="paquete-suscripcion-dialog__seccion-titulo">Módulos y precios</h3>
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Duración (días)</mat-label>
+              <input matInput type="number" min="1" max="365" step="1" formControlName="duracionDias" required />
+              @if (formulario.controls.duracionDias.hasError('required') && formulario.controls.duracionDias.touched) {
+                <mat-error>La duración es obligatoria.</mat-error>
+              } @else if (
+                (formulario.controls.duracionDias.hasError('min') || formulario.controls.duracionDias.hasError('max'))
+                && formulario.controls.duracionDias.touched
+              ) {
+                <mat-error>La duración debe ser de 1 a 365 días (un año o menos).</mat-error>
+              }
+            </mat-form-field>
+            <p class="ds-form__help">De 1 a 365 días (un año o menos).</p>
+          </div>
 
-      @if (cargando()) {
-        <div class="paquete-suscripcion-dialog__cargando">
-          <mat-spinner diameter="24" />
-          <span>Cargando módulos...</span>
-        </div>
-      } @else {
-        @if (!hayGiro()) {
-          <p class="paquete-suscripcion-dialog__hint" role="note">
-            <mat-icon aria-hidden="true">info</mat-icon>
-            <span>Selecciona un giro para ver sus módulos específicos.</span>
-          </p>
-        }
-        @if (avisoGiroCambiado()) {
-          <p class="paquete-suscripcion-dialog__hint paquete-suscripcion-dialog__hint--aviso" role="note">
-            <mat-icon aria-hidden="true">swap_horiz</mat-icon>
-            <span>Se quitaron los módulos específicos del giro anterior. Se conservó el núcleo común.</span>
-          </p>
-        }
-        @if (avisoDependencia(); as aviso) {
-          <p class="paquete-suscripcion-dialog__hint paquete-suscripcion-dialog__hint--aviso" role="note" aria-live="polite">
-            <mat-icon aria-hidden="true">link</mat-icon>
-            <span>{{ aviso }}</span>
-          </p>
-        }
-
-        <div class="paquete-suscripcion-dialog__grupos">
-          @for (grupo of grupos(); track grupo.giro) {
-            <div class="paquete-suscripcion-dialog__grupo">
-              <h4 class="paquete-suscripcion-dialog__grupo-titulo">{{ grupo.titulo }}</h4>
-              <ul class="paquete-suscripcion-dialog__modulos">
-                @for (modulo of grupo.modulos; track modulo.clave) {
-                  <li class="paquete-suscripcion-dialog__modulo">
-                    <mat-checkbox
-                      [checked]="estaSeleccionado(modulo.clave)"
-                      [disabled]="estaBloqueado(modulo.clave)"
-                      [attr.aria-describedby]="estaBloqueado(modulo.clave) ? 'motivo-paq-' + modulo.clave : null"
-                      (change)="alternar(modulo.clave, $event.checked)"
-                    >
-                      {{ modulo.nombreVisible }}
-                    </mat-checkbox>
-                    @if (estaBloqueado(modulo.clave)) {
-                      <p
-                        class="paquete-suscripcion-dialog__hint paquete-suscripcion-dialog__hint--bloqueado"
-                        role="note"
-                        [id]="'motivo-paq-' + modulo.clave"
-                      >
-                        <mat-icon aria-hidden="true">lock</mat-icon>
-                        <span>{{ motivoBloqueado(modulo.clave) }}</span>
-                      </p>
-                    }
-                    @if (estaSeleccionado(modulo.clave)) {
-                      <mat-form-field appearance="outline" class="paquete-suscripcion-dialog__precio-campo">
-                        <mat-label>Precio ({{ moneda() }})</mat-label>
-                        <input
-                          matInput
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          [value]="precioDe(modulo.clave)"
-                          (input)="fijarPrecio(modulo.clave, $any($event.target).value)"
-                          [attr.aria-label]="'Precio de ' + modulo.nombreVisible + ' en ' + moneda()"
-                        />
-                      </mat-form-field>
-                    }
-                  </li>
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Giro</mat-label>
+              <mat-select formControlName="giroId" required (selectionChange)="cambiarGiro($event.value)">
+                @for (giro of giros(); track giro.id) {
+                  <mat-option [value]="giro.id">{{ giro.nombreVisible }}</mat-option>
                 }
-              </ul>
-            </div>
+              </mat-select>
+              @if (formulario.controls.giroId.hasError('required') && formulario.controls.giroId.touched) {
+                <mat-error>El giro es obligatorio.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Moneda</mat-label>
+              <mat-select formControlName="monedaCodigo" required (selectionChange)="cambiarMoneda($event.value)">
+                @for (moneda of monedas(); track moneda.codigo) {
+                  <mat-option [value]="moneda.codigo">{{ moneda.codigo }} - {{ moneda.nombre }}</mat-option>
+                }
+              </mat-select>
+              @if (formulario.controls.monedaCodigo.hasError('required') && formulario.controls.monedaCodigo.touched) {
+                <mat-error>La moneda es obligatoria.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sección: Período de prueba (two-pane) -->
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Período de prueba</h3>
+        <p class="ds-form__section-desc">
+          Opcional. Si se habilita, la prueba no puede exceder la duración del paquete.
+        </p>
+      </div>
+
+      <div class="ds-form__section-body">
+        <div class="paquete-dialog__prueba">
+          <mat-checkbox
+            [checked]="admitePrueba()"
+            (change)="cambiarAdmitePrueba($event.checked)"
+          >
+            Este paquete admite período de prueba
+          </mat-checkbox>
+
+          @if (admitePrueba()) {
+            <mat-form-field appearance="outline" class="paquete-dialog__prueba-campo">
+              <mat-label>Duración de la prueba (meses)</mat-label>
+              <input matInput type="number" min="1" max="6" step="1" formControlName="duracionPruebaMeses" required />
+              @if (formulario.controls.duracionPruebaMeses.hasError('required') && formulario.controls.duracionPruebaMeses.touched) {
+                <mat-error>La duración de la prueba es obligatoria.</mat-error>
+              } @else if (formulario.controls.duracionPruebaMeses.hasError('min') && formulario.controls.duracionPruebaMeses.touched) {
+                <mat-error>La prueba debe ser de al menos 1 mes.</mat-error>
+              } @else if (formulario.controls.duracionPruebaMeses.hasError('max') && formulario.controls.duracionPruebaMeses.touched) {
+                <mat-error>La prueba no puede exceder 6 meses.</mat-error>
+              }
+            </mat-form-field>
+            <p class="ds-form__help">Entre 1 y 6 meses.</p>
           }
         </div>
+      </div>
+    </section>
 
-        <!-- Total en vivo de los modulos marcados -->
-        <div class="paquete-suscripcion-dialog__total" aria-live="polite">
-          <span class="paquete-suscripcion-dialog__total-conteo">{{ totalSeleccionados() }} módulos</span>
-          <span class="paquete-suscripcion-dialog__total-sep" aria-hidden="true">&middot;</span>
-          <span class="paquete-suscripcion-dialog__total-valor">
-            Total: {{ total() | currency: moneda() : 'symbol' : '1.2-2' : 'es-MX' }} {{ moneda() }}
-          </span>
-        </div>
-      }
+    <!-- Sección: Módulos y precios (two-pane) -->
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Módulos y precios</h3>
+        <p class="ds-form__section-desc">
+          Selecciona los módulos incluidos. Al activarlos captura su precio en la moneda del paquete.
+        </p>
+      </div>
+
+      <div class="ds-form__section-body">
+        @if (cargando()) {
+          <div class="paquete-dialog__skeletons" aria-live="polite" aria-busy="true">
+            <div class="ds-skeleton ds-skeleton--linea"></div>
+            <div class="ds-skeleton ds-skeleton--linea"></div>
+            <div class="ds-skeleton ds-skeleton--linea"></div>
+          </div>
+        } @else {
+          @if (!hayGiro()) {
+            <p class="ds-form__note" role="note">
+              <mat-icon aria-hidden="true">info</mat-icon>
+              <span>Selecciona un giro para ver sus módulos específicos.</span>
+            </p>
+          }
+          @if (avisoGiroCambiado()) {
+            <p class="ds-form__note ds-form__note--warn" role="note">
+              <mat-icon aria-hidden="true">swap_horiz</mat-icon>
+              <span>Se quitaron los módulos específicos del giro anterior. Se conservó el núcleo común.</span>
+            </p>
+          }
+          @if (avisoDependencia(); as aviso) {
+            <p class="ds-form__note ds-form__note--warn" role="note" aria-live="polite">
+              <mat-icon aria-hidden="true">link</mat-icon>
+              <span>{{ aviso }}</span>
+            </p>
+          }
+
+          <div class="paquete-dialog__grupos">
+            @for (grupo of grupos(); track grupo.giro) {
+              <div class="paquete-dialog__grupo">
+                <h4 class="paquete-dialog__grupo-titulo">{{ grupo.titulo }}</h4>
+                <div class="paquete-dialog__cards">
+                  @for (modulo of grupo.modulos; track modulo.clave) {
+                    <app-selectable-card
+                      [seleccionado]="estaSeleccionado(modulo.clave)"
+                      [deshabilitado]="estaBloqueado(modulo.clave)"
+                      (seleccionadoChange)="alternar(modulo.clave, $event)"
+                    >
+                      <div class="paquete-dialog__card-cab">
+                        <span class="paquete-dialog__card-nombre">{{ modulo.nombreVisible }}</span>
+                        @if (estaBloqueado(modulo.clave)) {
+                          <mat-icon
+                            class="paquete-dialog__card-lock"
+                            aria-hidden="true"
+                            [attr.title]="motivoBloqueado(modulo.clave)"
+                          >lock</mat-icon>
+                        }
+                      </div>
+
+                      @if (estaBloqueado(modulo.clave)) {
+                        <p class="paquete-dialog__card-motivo">{{ motivoBloqueado(modulo.clave) }}</p>
+                      }
+
+                      @if (estaSeleccionado(modulo.clave) && !admitePrueba()) {
+                        <!-- El campo de precio no debe alternar la tarjeta al interactuar.
+                             En modo prueba NO se captura precio: los módulos solo se seleccionan. -->
+                        <mat-form-field
+                          appearance="outline"
+                          class="paquete-dialog__precio-campo"
+                          (click)="$event.stopPropagation()"
+                          (keydown)="$event.stopPropagation()"
+                        >
+                          <mat-label>Precio</mat-label>
+                          <span matTextSuffix class="paquete-dialog__precio-moneda">{{ moneda() }}</span>
+                          <input
+                            matInput
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            [value]="precioDe(modulo.clave)"
+                            (input)="fijarPrecio(modulo.clave, $any($event.target).value)"
+                            [attr.aria-label]="'Precio de ' + modulo.nombreVisible + ' en ' + moneda()"
+                          />
+                        </mat-form-field>
+                      }
+                    </app-selectable-card>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Resumen / total en vivo (order summary).
+               En modo prueba no hay cobro: se muestra solo el conteo de módulos. -->
+          <div class="ds-form__summary" aria-live="polite">
+            <div class="ds-form__summary-info">
+              <span class="ds-form__summary-conteo">{{ totalSeleccionados() }} módulos seleccionados</span>
+              <span class="ds-form__summary-etiqueta">
+                {{ admitePrueba() ? 'Paquete de prueba (sin cobro)' : 'Total del paquete' }}
+              </span>
+            </div>
+            @if (!admitePrueba()) {
+              <span class="ds-form__summary-total">
+                {{ total() | currency: moneda() : 'symbol' : '1.2-2' : 'es-MX' }} {{ moneda() }}
+              </span>
+            } @else {
+              <span class="ds-form__summary-total">—</span>
+            }
+          </div>
+        }
+      </div>
     </section>
   </form>
 </mat-dialog-content>
+
 <mat-dialog-actions align="end">
   <button matButton type="button" (click)="cancelar()">Cancelar</button>
   <button

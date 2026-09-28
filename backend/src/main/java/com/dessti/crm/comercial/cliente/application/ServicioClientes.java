@@ -73,13 +73,16 @@ public class ServicioClientes {
 
     private final ClienteRepository clienteRepository;
     private final ContactoRepository contactoRepository;
+    private final UsuarioExistentePort usuarioExistente;
     private final AuditoriaPort auditoria;
 
     public ServicioClientes(ClienteRepository clienteRepository,
                             ContactoRepository contactoRepository,
+                            UsuarioExistentePort usuarioExistente,
                             AuditoriaPort auditoria) {
         this.clienteRepository = clienteRepository;
         this.contactoRepository = contactoRepository;
+        this.usuarioExistente = usuarioExistente;
         this.auditoria = auditoria;
     }
 
@@ -175,6 +178,33 @@ public class ServicioClientes {
         Cliente guardado = clienteRepository.save(cliente);
         auditarCliente(actor, "eliminar", guardado.getId(),
                 "baja logica del cliente '" + guardado.getNombre() + "' (rfc=" + guardado.getRfc() + ")");
+        return ClienteDto.de(guardado);
+    }
+
+    /**
+     * Asigna o limpia el Usuario propietario/vendedor de un Cliente activo del
+     * tenant (V81). Si se indica un propietario, se verifica que el Usuario exista
+     * y este activo en el tenant (404 si no); un {@code usuarioId} nulo desasigna.
+     *
+     * @param clienteId identificador del Cliente.
+     * @param usuarioId Usuario propietario; {@code null} para desasignar.
+     * @return el DTO del Cliente con su propietario actualizado.
+     * @throws RecursoNoEncontradoException si el Cliente no es accesible, o si el
+     *         Usuario indicado no existe/activo en el tenant (404).
+     */
+    @Transactional
+    public ClienteDto asignarPropietario(UUID clienteId, UUID usuarioId) {
+        String actor = actorActual();
+        Cliente cliente = cargarClienteActivo(clienteId, actor);
+        if (usuarioId != null && !usuarioExistente.existeUsuarioActivo(usuarioId)) {
+            auditarAccesoCruzado(actor, "usuario", usuarioId);
+            throw new RecursoNoEncontradoException(
+                    "No se encontro el Usuario indicado como propietario en el tenant.");
+        }
+        cliente.asignarPropietario(usuarioId, actor);
+        Cliente guardado = clienteRepository.save(cliente);
+        auditarCliente(actor, "asignar_propietario", guardado.getId(),
+                "asignado propietario [usuario=" + usuarioId + "] al cliente '" + guardado.getNombre() + "'");
         return ClienteDto.de(guardado);
     }
 

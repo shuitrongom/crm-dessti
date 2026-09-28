@@ -14,7 +14,13 @@ import { Observable } from 'rxjs';
 
 import { ApiConfigService } from '../../../core/services/api-config.service';
 import { PaginaResponse } from '../../../core/models/pagina-response';
-import { Proyecto, ProyectoRequest, Sitio, SitioRequest } from '../models/operacion.models';
+import {
+  AvanceSitioRequest,
+  Proyecto,
+  ProyectoRequest,
+  Sitio,
+  SitioRequest,
+} from '../models/operacion.models';
 
 @Injectable({ providedIn: 'root' })
 export class ProyectosService {
@@ -47,5 +53,36 @@ export class ProyectosService {
   /** Agrega un Sitio a un Proyecto existente (Req 21.2). */
   agregarSitio(proyectoId: string, request: SitioRequest): Observable<Sitio> {
     return this.http.post<Sitio>(this.api.url(`/proyectos/${proyectoId}/sitios`), request);
+  }
+
+  /**
+   * Avanza la fase operativa generica de un Sitio siguiendo la secuencia lineal
+   * (Req 3.2). Requiere proyecto:actualizar. Devuelve el Proyecto detallado
+   * (variante multi-sitio) tras el cambio.
+   */
+  actualizarAvanceSitio(
+    proyectoId: string,
+    sitioId: string,
+    request: AvanceSitioRequest,
+  ): Observable<Proyecto> {
+    return this.http.put<Proyecto>(
+      this.api.url(`/proyectos/${proyectoId}/sitios/${sitioId}/avance`),
+      request,
+    );
+  }
+
+  /**
+   * Corrige (incluido retroceso) la fase de un Sitio. Operacion administrativa que
+   * requiere proyecto:cambiar_estado. Devuelve el Proyecto detallado tras la correccion.
+   */
+  corregirFaseSitio(
+    proyectoId: string,
+    sitioId: string,
+    request: AvanceSitioRequest,
+  ): Observable<Proyecto> {
+    return this.http.put<Proyecto>(
+      this.api.url(`/proyectos/${proyectoId}/sitios/${sitioId}/correccion-fase`),
+      request,
+    );
   }
 }

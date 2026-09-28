@@ -93,3 +93,48 @@ export interface ConciliacionBancaria {
   createdAt: string;
   updatedAt: string;
 }
+
+/** Transferencia entre cuentas bancarias (TransferenciaBancariaDto). */
+export interface TransferenciaBancaria {
+  id: string;
+  cuentaOrigenId: string;
+  cuentaDestinoId: string;
+  monto: number;
+  fecha: string;
+  concepto: string | null;
+  fechaRegistro: string;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Cuerpo de POST /tesoreria/transferencias (RegistrarTransferenciaRequest). */
+export interface RegistrarTransferenciaRequest {
+  cuentaOrigenId: string;
+  cuentaDestinoId: string;
+  monto: number;
+  fecha: string;
+  concepto: string | null;
+}
+
+/** Punto mensual del flujo de caja (FlujoCajaDto.FlujoMensualDto). */
+export interface FlujoMensual {
+  periodo: string;
+  entradas: number;
+  salidas: number;
+  neto: number;
+}
+
+/** Posicion de liquidez y flujo de caja del periodo (FlujoCajaDto). */
+export interface FlujoCaja {
+  generadoEn: string;
+  desde: string | null;
+  hasta: string | null;
+  saldoAcumulado: number;
+  entradasPeriodo: number;
+  salidasPeriodo: number;
+  flujoNetoPeriodo: number;
+  cuentasActivas: number;
+  partidasPorConciliar: number;
+  meses: FlujoMensual[];
+}

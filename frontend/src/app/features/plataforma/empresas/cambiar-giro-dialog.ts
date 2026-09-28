@@ -26,6 +26,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { EmpresasService } from '../services/empresas.service';
 import { Empresa, Giro } from '../models/plataforma.models';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 
 /**
  * Datos de entrada del dialogo: la Empresa cuyo giro se cambia y el catalogo de
@@ -54,6 +55,7 @@ export class CambiarGiroDialog {
   private readonly empresasService = inject(EmpresasService);
   private readonly dialogRef = inject(MatDialogRef<CambiarGiroDialog, Empresa>);
   protected readonly data = inject<CambiarGiroDialogData>(MAT_DIALOG_DATA);
+  private readonly overlay = inject(OperacionOverlayService);
 
   protected readonly guardando = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -100,18 +102,24 @@ export class CambiarGiroDialog {
     }
     const giroId = this.formulario.controls.giroId.value;
     this.guardando.set(true);
-    this.empresasService.cambiarGiro(this.data.empresa.id, giroId).subscribe({
-      next: (empresa) => {
-        this.guardando.set(false);
-        this.dialogRef.close(empresa);
-      },
-      error: (e: HttpErrorResponse) => {
-        // El backend impone las reglas (giro activo, datos del vertical): se
-        // muestra su mensaje y el dialogo permanece abierto para que se lea.
-        this.guardando.set(false);
-        this.error.set(mensajeDeError(e));
-      },
-    });
+    this.overlay
+      .ejecutar(this.empresasService.cambiarGiro(this.data.empresa.id, giroId), {
+        tipo: 'guardar',
+        textoProceso: 'Cambiando giro…',
+        textoExito: 'Giro actualizado',
+      })
+      .subscribe({
+        next: (empresa) => {
+          this.guardando.set(false);
+          this.dialogRef.close(empresa);
+        },
+        error: (e: HttpErrorResponse) => {
+          // El backend impone las reglas (giro activo, datos del vertical): se
+          // muestra su mensaje y el dialogo permanece abierto para que se lea.
+          this.guardando.set(false);
+          this.error.set(mensajeDeError(e));
+        },
+      });
   }
 
   /** Cancela el cambio de giro. */

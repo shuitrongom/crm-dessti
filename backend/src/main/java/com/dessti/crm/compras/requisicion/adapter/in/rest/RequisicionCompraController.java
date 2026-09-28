@@ -117,12 +117,21 @@ public class RequisicionCompraController {
      * (Req 30.2). 409 si la transicion es invalida; 404 si no es accesible; 422 si
      * la etiqueta es desconocida.
      *
+     * <p><strong>Segregacion de funciones (V75):</strong> la resolucion de la
+     * requisicion (destino {@code aprobada} o {@code rechazada}) exige el permiso
+     * dedicado {@code requisicion_compra:aprobar}; el resto de transiciones
+     * ({@code enviada}, {@code cancelada}) usan {@code requisicion_compra:cambiar_estado}.
+     * Asi el aprobador puede separarse del solicitante sin cambiar el contrato REST.</p>
+     *
      * @param id      identificador de la Requisicion_Compra.
      * @param request etiqueta del estado destino.
      * @return 200 OK con el {@link RequisicionCompraDto} en su nuevo estado.
      */
     @PutMapping("/{id}/estado")
-    @PreAuthorize("@autorizador.moduloHabilitado('compras') and @autorizador.tiene('requisicion_compra','cambiar_estado')")
+    @PreAuthorize("@autorizador.moduloHabilitado('compras') and ("
+            + "((#request.estado() == 'aprobada' or #request.estado() == 'rechazada') "
+            + "? @autorizador.tiene('requisicion_compra','aprobar') "
+            + ": @autorizador.tiene('requisicion_compra','cambiar_estado')))")
     public ResponseEntity<RequisicionCompraDto> cambiarEstado(
             @PathVariable("id") UUID id,
             @Valid @RequestBody CambiarEstadoRequisicionRequest request) {

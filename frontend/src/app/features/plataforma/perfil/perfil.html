@@ -12,42 +12,43 @@
   @if (estado().datos; as perfil) {
     <div class="perfil__grid">
       <!-- Tarjeta: datos de la cuenta (solo lectura) -->
-      <mat-card appearance="outlined" class="perfil__card">
-        <mat-card-header>
-          <mat-card-title>Datos de la cuenta</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <dl class="perfil__datos">
-            <div class="perfil__dato">
-              <dt class="perfil__etiqueta">Identificador</dt>
-              <dd class="perfil__valor">{{ perfil.identificador }}</dd>
-            </div>
-            <div class="perfil__dato">
-              <dt class="perfil__etiqueta">Ámbito</dt>
-              <dd class="perfil__valor">{{ ambitoLegible() }}</dd>
-            </div>
-            <div class="perfil__dato">
-              <dt class="perfil__etiqueta">Roles</dt>
-              <dd class="perfil__valor">
-                @if (perfil.roles.length) {
-                  <mat-chip-set aria-label="Roles de la cuenta">
-                    @for (rol of perfil.roles; track rol) {
-                      <mat-chip class="perfil__rol">{{ etiquetaRol(rol) }}</mat-chip>
-                    }
-                  </mat-chip-set>
-                } @else {
-                  <span class="perfil__vacio">Sin roles asignados</span>
-                }
-              </dd>
-            </div>
-          </dl>
-        </mat-card-content>
+      <mat-card appearance="outlined" class="perfil__card perfil__card--cuenta">
+        <!-- Hero: avatar + identificador de acceso + ambito -->
+        <div class="perfil__cuenta-hero">
+          <span class="perfil__avatar" aria-hidden="true">{{ iniciales() }}</span>
+          <div class="perfil__cuenta-id">
+            <span class="perfil__cuenta-etiqueta">Identificador de acceso</span>
+            <span class="perfil__cuenta-nombre">{{ perfil.identificador }}</span>
+            <span class="perfil__cuenta-sub">
+              <mat-icon aria-hidden="true">apartment</mat-icon>Ámbito: {{ ambitoLegible() }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Roles asignados a la cuenta -->
+        <div class="perfil__cuenta-roles">
+          <span class="perfil__etiqueta">
+            <mat-icon aria-hidden="true">shield_person</mat-icon> Roles
+          </span>
+          @if (perfil.roles.length) {
+            <mat-chip-set aria-label="Roles de la cuenta">
+              @for (rol of perfil.roles; track rol) {
+                <mat-chip class="perfil__rol">{{ etiquetaRol(rol) }}</mat-chip>
+              }
+            </mat-chip-set>
+          } @else {
+            <span class="perfil__vacio">Sin roles asignados</span>
+          }
+        </div>
       </mat-card>
 
       <!-- Tarjeta: cambio de contraseña -->
       <mat-card appearance="outlined" class="perfil__card">
         <mat-card-header>
-          <mat-card-title>Cambiar contraseña</mat-card-title>
+          <mat-card-title class="perfil__card-titulo">
+            <span class="perfil__card-icono" aria-hidden="true"><mat-icon>lock_reset</mat-icon></span>
+            Cambiar contraseña
+          </mat-card-title>
           <mat-card-subtitle>Usa una contraseña de al menos 8 caracteres.</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
@@ -136,7 +137,10 @@
     @if (esAdminEmpresa) {
       <mat-card appearance="outlined" class="perfil__card perfil__card--empresa">
         <mat-card-header>
-          <mat-card-title>Datos de mi empresa</mat-card-title>
+          <mat-card-title class="perfil__card-titulo">
+            <span class="perfil__card-icono" aria-hidden="true"><mat-icon>apartment</mat-icon></span>
+            Datos de mi empresa
+          </mat-card-title>
           <mat-card-subtitle>Actualiza la información de contacto y dirección de tu empresa.</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>

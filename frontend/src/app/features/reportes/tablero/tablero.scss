@@ -1,5 +1,5 @@
 // =============================================================================
-// Estilos del Tablero de indicadores (Req 52, 22) — mobile-first, tokens --ds-*
+// Tablero de indicadores (Req 52, 22) — grid denso de KPIs, tokens --ds-*
 // =============================================================================
 
 .reportes-filtros {
@@ -15,22 +15,58 @@
   }
 }
 
-.reportes-area {
+.area {
   margin-block-end: var(--ds-space-5);
 
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-2);
+    margin-block-end: var(--ds-space-3);
+  }
+
   &__titulo {
-    margin: 0 0 var(--ds-space-3);
+    margin: 0;
     font-size: var(--ds-font-size-lg);
-    font-weight: var(--ds-font-weight-medium);
+    font-weight: var(--ds-font-weight-bold, 700);
+  }
+
+  &__conteo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    height: 1.5rem;
+    padding: 0 0.4rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: color-mix(in srgb, var(--mat-sys-primary, #6750a4) 14%, transparent);
+    color: var(--mat-sys-primary, #6750a4);
   }
 }
 
-.reportes-indicadores {
+.area__cuerpo {
   display: grid;
+  gap: var(--ds-space-4);
   grid-template-columns: 1fr;
-  gap: var(--ds-space-3);
 
-  @media (min-width: 40rem) {
-    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  @media (min-width: 60rem) {
+    grid-template-columns: minmax(280px, 380px) 1fr;
+    align-items: start;
   }
+}
+
+.area__grafica {
+  padding: var(--ds-space-3);
+  background: var(--mat-sys-surface, #fff);
+  border: 1px solid var(--mat-sys-outline-variant, #e2e0e8);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+}
+
+.kpi-grid {
+  display: grid;
+  gap: var(--ds-space-3);
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
 }

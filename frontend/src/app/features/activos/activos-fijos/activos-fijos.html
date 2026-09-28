@@ -59,6 +59,68 @@
   mensajeVacio="No hay activos fijos registrados."
   (reintentar)="cargar()"
 >
+  @if ((estado().datos ?? []).length > 0) {
+    <!-- Resumen patrimonial + composicion (patron dashboard reutilizable) -->
+    <app-dashboard-section layout="apilado">
+      <div kpis>
+        <app-kpi-tile
+          icono="savings"
+          tono="primario"
+          etiqueta="Valor neto en libros"
+          [valor]="resumen().valorNeto | currency: 'MXN' : 'symbol-narrow' : '1.0-0' : 'es-MX'"
+        />
+        <app-kpi-tile
+          icono="payments"
+          tono="info"
+          etiqueta="Costo total"
+          [valor]="resumen().costo | currency: 'MXN' : 'symbol-narrow' : '1.0-0' : 'es-MX'"
+        />
+        <app-kpi-tile
+          icono="trending_down"
+          tono="advertencia"
+          etiqueta="Depreciación acumulada"
+          [valor]="resumen().depreciacion | currency: 'MXN' : 'symbol-narrow' : '1.0-0' : 'es-MX'"
+        />
+        <app-kpi-tile
+          icono="inventory_2"
+          tono="exito"
+          etiqueta="Activos vigentes"
+          [valor]="resumen().vigentes"
+        />
+        <app-kpi-tile
+          icono="archive"
+          tono="neutro"
+          etiqueta="Dados de baja"
+          [valor]="resumen().bajas"
+        />
+      </div>
+      <div grafica class="dash-grafica">
+        <app-metric-chart
+          [datos]="[]"
+          tipo="gauge"
+          [porcentaje]="porcentajeValorNeto()"
+          titulo="Vida útil remanente del patrimonio"
+        />
+      </div>
+      <div grafica class="dash-grafica">
+        <app-metric-chart
+          [datos]="composicion()"
+          tipo="dona"
+          titulo="Valor en libros por método"
+        />
+      </div>
+      <div grafica class="dash-grafica">
+        <app-metric-chart
+          [datos]="costoVsNeto()"
+          tipo="columnas"
+          titulo="Costo vs valor neto por método"
+          nombreSerie="Costo original"
+          nombreComparativo="Valor neto"
+        />
+      </div>
+    </app-dashboard-section>
+  }
+
   <div class="activos-filtros">
     <mat-form-field appearance="outline">
       <mat-label>Estado</mat-label>

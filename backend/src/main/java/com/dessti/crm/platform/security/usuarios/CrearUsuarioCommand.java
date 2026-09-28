@@ -21,12 +21,23 @@ import java.util.UUID;
  *                            y acota (max 200) en el dominio.
  * @param rolIds              identificadores de los Roles iniciales; al menos
  *                            uno (Req 4.1).
+ * @param clienteId           Cliente asociado para el Portal del Cliente (Req 45);
+ *                            obligatorio si se asigna el rol {@code cliente_portal},
+ *                            y debe ser {@code null} en cualquier otro caso. El
+ *                            servicio valida la coherencia y que el Cliente
+ *                            pertenezca al tenant.
  */
 public record CrearUsuarioCommand(String identificadorAcceso, String password,
-                                  String nombreVisible, Set<UUID> rolIds) {
+                                  String nombreVisible, Set<UUID> rolIds, UUID clienteId) {
 
     public CrearUsuarioCommand {
         // Copia defensiva preservando el orden de insercion para mensajes estables.
         rolIds = (rolIds == null) ? Set.of() : new LinkedHashSet<>(rolIds);
+    }
+
+    /** Compatibilidad: alta de usuario de staff (sin Cliente de portal). */
+    public CrearUsuarioCommand(String identificadorAcceso, String password,
+                               String nombreVisible, Set<UUID> rolIds) {
+        this(identificadorAcceso, password, nombreVisible, rolIds, null);
     }
 }

@@ -1,0 +1,81 @@
+<app-page-header
+  titulo="Conciliaciones bancarias"
+  subtitulo="Historial de conciliaciones: contrasta el saldo del banco con el saldo contable y detecta diferencias."
+/>
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="Aún no hay conciliaciones registradas. Ejecuta una desde Cuentas bancarias."
+  (reintentar)="cargar()"
+>
+  @if (resumen().total > 0) {
+    <div class="tes-resumen" role="status" aria-live="polite">
+      <div class="tes-resumen__kpi tes-resumen__kpi--exito">
+        <mat-icon aria-hidden="true">check_circle</mat-icon>
+        <div>
+          <span class="tes-resumen__valor">{{ resumen().completas }}</span>
+          <span class="tes-resumen__etiqueta">Completas</span>
+        </div>
+      </div>
+      <div class="tes-resumen__kpi tes-resumen__kpi--proceso">
+        <mat-icon aria-hidden="true">pending</mat-icon>
+        <div>
+          <span class="tes-resumen__valor">{{ resumen().enProceso }}</span>
+          <span class="tes-resumen__etiqueta">En proceso</span>
+        </div>
+      </div>
+    </div>
+  }
+
+  <div class="tes-filtros">
+    <mat-form-field appearance="outline">
+      <mat-label>Cuenta bancaria</mat-label>
+      <mat-select [value]="filtroCuenta()" (valueChange)="filtrarPorCuenta($event)">
+        <mat-option value="">Todas las cuentas</mat-option>
+        @for (cuenta of cuentas(); track cuenta.id) {
+          <mat-option [value]="cuenta.id">{{ cuenta.nombre }} · {{ cuenta.banco }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Estado</mat-label>
+      <mat-select [value]="filtroEstado()" (valueChange)="filtrarPorEstado($event)">
+        @for (opcion of estadosFiltro; track opcion.valor) {
+          <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="fecha" let-c>{{ c.fecha | date: 'dd/MM/yyyy' }}</ng-template>
+    <ng-template appCelda="cuenta" let-c>{{ nombreCuenta(c.cuentaBancariaId) }}</ng-template>
+    <ng-template appCelda="saldoBancario" let-c>
+      <span class="tes-num">{{ c.saldoBancario | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span>
+    </ng-template>
+    <ng-template appCelda="saldoContable" let-c>
+      <span class="tes-num">{{ c.saldoContable | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span>
+    </ng-template>
+    <ng-template appCelda="diferencia" let-c>
+      <span
+        class="tes-num tes-dif-celda"
+        [class.tes-dif-celda--cero]="diferenciaEsCero(c.diferencia)"
+        [class.tes-dif-celda--distinta]="!diferenciaEsCero(c.diferencia)"
+      >
+        <mat-icon aria-hidden="true">{{ diferenciaEsCero(c.diferencia) ? 'check_circle' : 'report_problem' }}</mat-icon>
+        {{ c.diferencia | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}
+      </span>
+    </ng-template>
+    <ng-template appCelda="estado" let-c>
+      <app-estado-chip [etiqueta]="humanizar(c.estado)" [tono]="tono(c.estado)" />
+    </ng-template>
+  </app-data-table>
+</app-state-container>

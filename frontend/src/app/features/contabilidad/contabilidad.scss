@@ -155,3 +155,123 @@
 .cont-ce__amarre-campo {
   min-width: 16rem;
 }
+
+// -----------------------------------------------------------------------------
+// Programación de pagos: panel de resumen (KPIs de flujo de caja).
+// -----------------------------------------------------------------------------
+.cont-resumen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-3);
+  margin-block-end: var(--ds-space-4);
+}
+
+.cont-resumen__kpi {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  flex: 1 1 14rem;
+  padding: var(--ds-space-3) var(--ds-space-4);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md, 0.5rem);
+  background: var(--ds-color-surface);
+  animation: cont-resumen-entra 220ms ease-out both;
+
+  mat-icon {
+    font-size: 2rem;
+    inline-size: 2rem;
+    block-size: 2rem;
+    color: var(--ds-color-primary);
+  }
+
+  div {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+    min-inline-size: 0;
+  }
+}
+
+.cont-resumen__valor {
+  font-size: var(--ds-font-size-xl, 1.5rem);
+  font-weight: var(--ds-font-weight-bold, 700);
+  font-variant-numeric: tabular-nums;
+}
+
+.cont-resumen__etiqueta {
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-text-muted);
+}
+
+@keyframes cont-resumen-entra {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cont-resumen__kpi {
+    animation: none;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Estados financieros: banda de integridad, detalle y estado de error.
+// -----------------------------------------------------------------------------
+.cont-error {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  padding: var(--ds-space-3) var(--ds-space-4);
+  margin-block: var(--ds-space-3);
+  border-radius: var(--ds-radius-md, 0.5rem);
+  color: var(--ds-color-error, #b3261e);
+  background: var(--ds-color-error-surface, rgba(179, 38, 30, 0.1));
+}
+
+.cont-ef-integridad {
+  margin-block: var(--ds-space-3) var(--ds-space-2);
+}
+
+.cont-ef-detalle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-4);
+  margin-block-start: var(--ds-space-3);
+
+  div {
+    display: flex;
+    flex-direction: column;
+  }
+
+  dt {
+    font-size: var(--ds-font-size-sm);
+    color: var(--ds-color-text-muted);
+  }
+
+  dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--ds-font-weight-medium);
+  }
+}
+
+.cont-resumen__kpi--negativo mat-icon {
+  color: var(--ds-color-error, #b3261e);
+}
+
+// -----------------------------------------------------------------------------
+// Antigüedad de saldos (aging): énfasis en vencido y total.
+// -----------------------------------------------------------------------------
+.cont-aging-vencido {
+  color: var(--ds-color-warning-text, #8a5300);
+}
+
+.cont-aging-total {
+  font-weight: var(--ds-font-weight-bold, 700);
+}

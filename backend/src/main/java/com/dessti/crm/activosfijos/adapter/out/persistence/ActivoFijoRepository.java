@@ -53,4 +53,38 @@ public interface ActivoFijoRepository extends JpaRepository<ActivoFijo, UUID> {
     Page<ActivoFijo> buscarConFiltros(
             @Param("estado") EstadoActivoFijo estado,
             Pageable pageable);
+
+    /**
+     * Agregacion de <strong>solo lectura</strong> del costo total de adquisicion de los
+     * Activos_Fijos vigentes (estado {@code ACTIVO}) del tenant (Req 22.1, 48.1). El
+     * filtro global de Hibernate y la RLS de V37 acotan la consulta al tenant vigente
+     * (Req 23); no modifica dato alguno (Req 22.2).
+     *
+     * @return el costo total de los activos vigentes, o {@code 0}.
+     */
+    @Query("""
+            SELECT COALESCE(SUM(a.costo), 0) FROM ActivoFijo a
+            WHERE a.estado = com.dessti.crm.activosfijos.domain.EstadoActivoFijo.ACTIVO
+            """)
+    java.math.BigDecimal sumarCostoActivos();
+
+    /**
+     * Agregacion de <strong>solo lectura</strong> de la depreciacion acumulada de los
+     * Activos_Fijos vigentes del tenant (Req 22.1, 48.1). Acotada al tenant vigente por
+     * el filtro de Hibernate y la RLS (Req 23).
+     *
+     * @return la depreciacion acumulada de los activos vigentes, o {@code 0}.
+     */
+    @Query("""
+            SELECT COALESCE(SUM(a.depreciacionAcumulada), 0) FROM ActivoFijo a
+            WHERE a.estado = com.dessti.crm.activosfijos.domain.EstadoActivoFijo.ACTIVO
+            """)
+    java.math.BigDecimal sumarDepreciacionAcumulada();
+
+    /**
+     * Cuenta los Activos_Fijos vigentes (estado {@code ACTIVO}) del tenant (Req 22.1).
+     *
+     * @return el numero de activos vigentes.
+     */
+    long countByEstado(EstadoActivoFijo estado);
 }

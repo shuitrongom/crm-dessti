@@ -102,6 +102,15 @@ public class ServicioTokensJwt {
      */
     public static final String CLAIM_MODULOS = "modulos";
 
+    /**
+     * Claim con el <b>Cliente asociado</b> al Usuario para el Portal del Cliente
+     * (Req 45). Solo lo llevan los Usuarios de portal (rol {@code cliente_portal});
+     * se <b>omite</b> para el staff de la Empresa y el super_admin (coherente con
+     * {@code tenant_id}/{@code giro}). El {@link com.dessti.crm.platform.security.JwtAuthenticationFilter}
+     * lo convierte en la authority {@code cliente_id:<uuid>} que acota el Portal.
+     */
+    public static final String CLAIM_CLIENTE_ID = "cliente_id";
+
     private final SecretKey clave;
     private final JwtProperties propiedades;
     private final Clock clock;
@@ -169,8 +178,23 @@ public class ServicioTokensJwt {
                                           List<String> roles, List<String> permisos,
                                           String giro, String identificador,
                                           List<String> modulos) {
+        return emitirTokenAcceso(subject, tenantId, roles, permisos, giro, identificador,
+                modulos, null);
+    }
+
+    /**
+     * Emite un {@code Token_Acceso} incluyendo el Cliente del Portal (Req 45). Un
+     * {@code clienteId} nulo omite el claim {@code cliente_id} (staff/super_admin).
+     *
+     * @param clienteId Cliente asociado al Usuario de portal; {@code null} omite el claim.
+     * @return el token firmado y su instante de expiracion.
+     */
+    public TokenEmitido emitirTokenAcceso(String subject, UUID tenantId,
+                                          List<String> roles, List<String> permisos,
+                                          String giro, String identificador,
+                                          List<String> modulos, UUID clienteId) {
         return emitir(subject, tenantId, roles, permisos, giro, identificador, modulos,
-                TipoToken.ACCESO, propiedades.vigenciaTokenAcceso());
+                clienteId, TipoToken.ACCESO, propiedades.vigenciaTokenAcceso());
     }
 
     /**
@@ -193,13 +217,29 @@ public class ServicioTokensJwt {
                                             List<String> roles, List<String> permisos,
                                             String giro, String identificador,
                                             List<String> modulos) {
+        return emitirTokenRefresco(subject, tenantId, roles, permisos, giro, identificador,
+                modulos, null);
+    }
+
+    /**
+     * Emite un {@code Token_Refresco} incluyendo el Cliente del Portal (Req 45), para
+     * preservarlo al reemitir el Token_Acceso sin acceder a la BD.
+     *
+     * @param clienteId Cliente asociado al Usuario de portal; {@code null} omite el claim.
+     * @return el token firmado y su instante de expiracion.
+     */
+    public TokenEmitido emitirTokenRefresco(String subject, UUID tenantId,
+                                            List<String> roles, List<String> permisos,
+                                            String giro, String identificador,
+                                            List<String> modulos, UUID clienteId) {
         return emitir(subject, tenantId, roles, permisos, giro, identificador, modulos,
-                TipoToken.REFRESCO, propiedades.vigenciaTokenRefresco());
+                clienteId, TipoToken.REFRESCO, propiedades.vigenciaTokenRefresco());
     }
 
     private TokenEmitido emitir(String subject, UUID tenantId, List<String> roles,
                                 List<String> permisos, String giro, String identificador,
-                                List<String> modulos, TipoToken tipo, Duration vigencia) {
+                                List<String> modulos, UUID clienteId,
+                                TipoToken tipo, Duration vigencia) {
         Instant ahora = clock.instant();
         Instant exp = ahora.plus(vigencia);
         // Identificador unico del token (claim jti, RFC 7519). Sustenta el
@@ -237,6 +277,11 @@ public class ServicioTokensJwt {
         // cero modulos habilitados (distinto de "sin restriccion") (Req 25.4).
         if (modulos != null) {
             builder.claim(CLAIM_MODULOS, modulos);
+        }
+        // El Cliente del Portal solo aplica a Usuarios de portal: si es nulo
+        // (staff/super_admin) el claim se omite, coherente con tenant_id/giro (Req 45).
+        if (clienteId != null) {
+            builder.claim(CLAIM_CLIENTE_ID, clienteId.toString());
         }
         return new TokenEmitido(builder.signWith(clave).compact(), exp, jti);
     }
@@ -290,7 +335,8 @@ public class ServicioTokensJwt {
                     claims.getId(),
                     leerGiro(claims),
                     leerIdentificador(claims),
-                    leerLista(claims, CLAIM_MODULOS));
+                    leerLista(claims, CLAIM_MODULOS),
+                    leerClienteId(claims));
         } catch (ExpiredJwtException ex) {
             throw new TokenInvalidoException("Token expirado", ex);
         } catch (JwtException | IllegalArgumentException ex) {
@@ -349,6 +395,23 @@ public class ServicioTokensJwt {
         }
         String identificador = valor.toString();
         return identificador.isBlank() ? null : identificador;
+    }
+
+    /**
+     * Lee el {@code cliente_id} del token (Req 45). Devuelve {@code null} cuando el
+     * claim esta ausente (staff/super_admin). Un valor mal formado invalida el token
+     * (fail-safe): nunca se degrada a un Cliente arbitrario.
+     */
+    private static UUID leerClienteId(Claims claims) {
+        Object valor = claims.get(CLAIM_CLIENTE_ID);
+        if (valor == null) {
+            return null;
+        }
+        try {
+            return UUID.fromString(valor.toString());
+        } catch (IllegalArgumentException ex) {
+            throw new TokenInvalidoException("cliente_id invalido en el token", ex);
+        }
     }
 
     private static List<String> leerLista(Claims claims, String nombre) {

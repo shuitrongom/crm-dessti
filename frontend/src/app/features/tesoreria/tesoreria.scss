@@ -80,3 +80,99 @@
     color: var(--ds-color-warning);
   }
 }
+
+// -----------------------------------------------------------------------------
+// Conciliaciones bancarias: panel de resumen (KPIs) y celda de diferencia.
+// -----------------------------------------------------------------------------
+.tes-resumen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-3);
+  margin-block-end: var(--ds-space-4);
+}
+
+.tes-resumen__kpi {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  flex: 1 1 12rem;
+  padding: var(--ds-space-3) var(--ds-space-4);
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md, 0.5rem);
+  background: var(--ds-color-surface);
+  animation: tes-resumen-entra 220ms ease-out both;
+
+  mat-icon {
+    font-size: 2rem;
+    inline-size: 2rem;
+    block-size: 2rem;
+  }
+
+  div {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+  }
+
+  &--exito mat-icon {
+    color: var(--ds-color-success);
+  }
+
+  &--proceso mat-icon {
+    color: var(--ds-color-warning);
+  }
+}
+
+.tes-resumen__valor {
+  font-size: var(--ds-font-size-xl, 1.5rem);
+  font-weight: var(--ds-font-weight-bold, 700);
+  font-variant-numeric: tabular-nums;
+}
+
+.tes-resumen__etiqueta {
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-text-muted);
+}
+
+.tes-dif-celda {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-1);
+
+  mat-icon {
+    font-size: 1.125rem;
+    inline-size: 1.125rem;
+    block-size: 1.125rem;
+  }
+
+  &--cero {
+    color: var(--ds-color-success);
+  }
+
+  &--distinta {
+    color: var(--ds-color-warning);
+    font-weight: var(--ds-font-weight-medium);
+  }
+}
+
+@keyframes tes-resumen-entra {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Respeta la preferencia de movimiento reducido (WCAG 2.3.3).
+@media (prefers-reduced-motion: reduce) {
+  .tes-resumen__kpi {
+    animation: none;
+  }
+}
+
+// El dashboard de flujo de caja (scorecard de liquidez + grafica) ahora usa los
+// componentes compartidos <app-dashboard-section> + <app-kpi-tile>. Sus estilos
+// viven en esos componentes; aqui ya no se duplican.

@@ -1,7 +1,60 @@
 <app-page-header
   titulo="Catálogo de cuentas"
   subtitulo="Consulta las cuentas contables y amárralas al código agrupador del SAT (Anexo 24) para la Contabilidad Electrónica."
-/>
+>
+  @if (puedeCrear) {
+    <button acciones matButton="filled" type="button" (click)="alternarAlta()">
+      <mat-icon>{{ mostrarAlta() ? 'close' : 'add' }}</mat-icon>
+      {{ mostrarAlta() ? 'Cerrar' : 'Nueva cuenta' }}
+    </button>
+  }
+</app-page-header>
+
+@if (mostrarAlta() && puedeCrear) {
+  <mat-card appearance="outlined" class="cont-alta">
+    <mat-card-content>
+      <form [formGroup]="formAlta" (ngSubmit)="crearCuenta()" novalidate>
+        <h2 class="cont-alta__titulo">Nueva cuenta contable</h2>
+        <div class="cont-form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Código</mat-label>
+            <input matInput formControlName="codigo" autocomplete="off" />
+            @if (formAlta.controls.codigo.hasError('duplicado')) {
+              <mat-error>Ya existe una cuenta con ese código.</mat-error>
+            } @else {
+              <mat-error>El código es obligatorio.</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre</mat-label>
+            <input matInput formControlName="nombre" autocomplete="off" />
+            <mat-error>El nombre es obligatorio.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Tipo</mat-label>
+            <mat-select formControlName="tipo">
+              @for (t of tipos; track t.valor) {
+                <mat-option [value]="t.valor">{{ t.etiqueta }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Naturaleza</mat-label>
+            <mat-select formControlName="naturaleza">
+              @for (n of naturalezas; track n.valor) {
+                <mat-option [value]="n.valor">{{ n.etiqueta }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div class="cont-ce__acciones">
+          <button matButton="filled" type="submit" [disabled]="guardandoAlta()">Crear cuenta</button>
+          <button matButton type="button" (click)="alternarAlta()">Cancelar</button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
 
 @if (error()) {
   <p class="ds-dialog-error" role="alert">{{ error() }}</p>

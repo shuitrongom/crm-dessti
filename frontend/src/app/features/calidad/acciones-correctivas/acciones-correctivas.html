@@ -1,0 +1,151 @@
+<app-page-header
+  titulo="Acciones correctivas"
+  subtitulo="Gestiona el ciclo completo: análisis de causa raíz, ejecución, verificación de eficacia y cierre controlado."
+>
+  @if (puedeCrear) {
+    <button acciones matButton="filled" type="button" (click)="alternarAlta()">
+      <mat-icon>{{ mostrarAlta() ? 'close' : 'add' }}</mat-icon>
+      {{ mostrarAlta() ? 'Cerrar' : 'Abrir acción' }}
+    </button>
+  }
+</app-page-header>
+
+@if (mostrarAlta() && puedeCrear) {
+  <mat-card appearance="outlined" class="cal-alta">
+    <mat-card-content>
+      <form [formGroup]="formAlta" (ngSubmit)="crear()" novalidate>
+        <h2 class="cal-alta__titulo">Abrir acción correctiva</h2>
+        <div class="cal-form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Responsable (identificador de usuario)</mat-label>
+            <input matInput formControlName="responsableId" autocomplete="off" />
+            <mat-error>El responsable es obligatorio.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>No conformidad de origen (opcional)</mat-label>
+            <input matInput formControlName="noConformidadId" autocomplete="off" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="cal-form-grid__ancho">
+            <mat-label>Causa raíz</mat-label>
+            <textarea matInput formControlName="causaRaiz" rows="2"></textarea>
+            <mat-error>La causa raíz es obligatoria.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="cal-form-grid__ancho">
+            <mat-label>Acciones planificadas</mat-label>
+            <textarea matInput formControlName="accionesPlanificadas" rows="2"></textarea>
+            <mat-error>Las acciones planificadas son obligatorias.</mat-error>
+          </mat-form-field>
+        </div>
+        <button matButton="filled" type="submit" [disabled]="guardando()">Abrir acción</button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="No hay acciones correctivas registradas."
+  (reintentar)="cargar()"
+>
+  @if (hayDatos()) {
+    <!-- Scorecard de acciones + composicion (patron dashboard reutilizable) -->
+    <app-dashboard-section layout="apilado">
+      <div kpis>
+        <app-kpi-tile
+          icono="build_circle"
+          tono="advertencia"
+          etiqueta="Abiertas"
+          [valor]="resumen().abiertas"
+        />
+        <app-kpi-tile
+          icono="fact_check"
+          tono="primario"
+          etiqueta="Por verificar"
+          [valor]="resumen().porVerificar"
+        />
+        <app-kpi-tile
+          icono="task_alt"
+          tono="exito"
+          etiqueta="Cerradas"
+          [valor]="resumen().cerradas"
+        />
+      </div>
+      <div grafica class="dash-grafica">
+        <app-metric-chart
+          [datos]="[]"
+          tipo="gauge"
+          [porcentaje]="porcentajeCerradas()"
+          titulo="Acciones cerradas"
+        />
+      </div>
+      <div grafica class="dash-grafica">
+        <app-metric-chart [datos]="composicionEstados()" tipo="dona" titulo="Acciones abiertas vs cerradas" />
+      </div>
+      @if (composicionCiclo().length > 0) {
+        <div grafica class="dash-grafica">
+          <app-metric-chart [datos]="composicionCiclo()" tipo="barras" titulo="Acciones por etapa del ciclo" nombreSerie="Acciones" />
+        </div>
+      }
+    </app-dashboard-section>
+  }
+
+  <div class="cal-filtros">
+    <mat-form-field appearance="outline">
+      <mat-label>Estado</mat-label>
+      <mat-select [value]="filtroEstado()" (valueChange)="aplicarFiltro($event)">
+        @for (opcion of estadosFiltro; track opcion.valor) {
+          <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="causa" let-a>{{ a.causaRaiz }}</ng-template>
+    <ng-template appCelda="acciones_plan" let-a>{{ a.accionesPlanificadas }}</ng-template>
+    <ng-template appCelda="eficacia" let-a>
+      @if (a.eficaciaVerificada) {
+        <span class="cal-nivel cal-nivel--bajo">Verificada</span>
+      } @else {
+        <span class="cal-ayuda">Pendiente</span>
+      }
+    </ng-template>
+    <ng-template appCelda="estado" let-a>
+      <app-estado-chip [etiqueta]="humanizar(a.estado)" [tono]="tono(a.estado)" />
+    </ng-template>
+    <ng-template appCelda="acciones" let-a>
+      @if (siguienteAvance(a) || puedeVerificar(a) || puedeCerrar(a)) {
+        <button matIconButton [matMenuTriggerFor]="menu" aria-label="Acciones">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+          @if (siguienteAvance(a); as destino) {
+            <button mat-menu-item type="button" (click)="avanzar(a, destino)">
+              <mat-icon>arrow_forward</mat-icon> Avanzar a {{ humanizar(destino) }}
+            </button>
+          }
+          @if (puedeVerificar(a)) {
+            <button mat-menu-item type="button" (click)="verificar(a)">
+              <mat-icon>fact_check</mat-icon> Verificar eficacia
+            </button>
+          }
+          @if (puedeCerrar(a)) {
+            <button mat-menu-item type="button" (click)="cerrar(a)">
+              <mat-icon>lock</mat-icon> Cerrar acción
+            </button>
+          }
+        </mat-menu>
+      } @else {
+        <span class="cal-ayuda">-</span>
+      }
+    </ng-template>
+  </app-data-table>
+</app-state-container>

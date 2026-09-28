@@ -22,6 +22,7 @@ import com.dessti.crm.operacion.produccion.application.ServicioOrdenesFabricacio
 import com.dessti.crm.operacion.produccion.adapter.out.persistence.OrdenFabricacionRepository;
 import com.dessti.crm.operacion.produccion.adapter.out.persistence.PartidaOrdenFabricacionRepository;
 import com.dessti.crm.operacion.produccion.domain.OrdenFabricacion;
+import com.dessti.crm.operacion.proyecto.adapter.out.persistence.AvanceSitioRepository;
 import com.dessti.crm.operacion.proyecto.adapter.out.persistence.ProyectoRepository;
 import com.dessti.crm.operacion.proyecto.adapter.out.persistence.SitioRepository;
 import com.dessti.crm.operacion.proyecto.domain.PerfilFasesGiro;
@@ -103,6 +104,7 @@ class VerificacionClientePropertyTest {
 
         ProyectoRepository proyectoRepository = mock(ProyectoRepository.class);
         SitioRepository sitioRepository = mock(SitioRepository.class);
+        AvanceSitioRepository avanceSitioRepository = mock(AvanceSitioRepository.class);
         ClienteExistentePort clienteExistente = mock(ClienteExistentePort.class);
         PerfilFasesGiroPort perfilFasesGiro = mock(PerfilFasesGiroPort.class);
         AvanceSitioPort avanceProduccion = mock(AvanceSitioPort.class);
@@ -120,8 +122,8 @@ class VerificacionClientePropertyTest {
         lenient().when(clienteExistente.existeEnTenant(any(UUID.class))).thenReturn(existe);
 
         ServicioProyectos servicio = new ServicioProyectos(
-                proyectoRepository, sitioRepository, clienteExistente, perfilFasesGiro,
-                avanceProduccion, avanceSitioAnuncios, auditoria);
+                proyectoRepository, sitioRepository, avanceSitioRepository, clienteExistente,
+                perfilFasesGiro, avanceProduccion, avanceSitioAnuncios, auditoria);
 
         CrearProyectoCommand comando = new CrearProyectoCommand(clienteId, "Proyecto de prueba");
 

@@ -15,341 +15,428 @@
     <button matButton="filled" type="button" (click)="cerrarConExito()">Entendido</button>
   </mat-dialog-actions>
 } @else {
-  <h2 mat-dialog-title>Nueva empresa</h2>
-  <mat-dialog-content>
-    <form class="crear-empresa__form" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+  <mat-dialog-content class="crear-empresa__content">
+    <form class="ds-form" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+      <!-- Encabezado con contexto -->
+      <header class="ds-form__header">
+        <h2 class="ds-form__header-title" mat-dialog-title>Nueva empresa</h2>
+        <p class="ds-form__header-subtitle">
+          Da de alta una empresa con su primer administrador. La contraseña temporal se muestra una única vez.
+        </p>
+      </header>
+
       @if (error()) {
-        <p class="crear-empresa__error" role="alert">
+        <p class="ds-form__note ds-form__note--warn" role="alert">
           <mat-icon aria-hidden="true">error_outline</mat-icon>
           <span>{{ error() }}</span>
         </p>
       }
       @if (sinGirosActivos()) {
-        <p class="crear-empresa__aviso-giros" role="alert">
+        <p class="ds-form__note ds-form__note--warn" role="alert">
           <mat-icon aria-hidden="true">info</mat-icon>
-          No hay giros activos. Crea o activa un giro antes de dar de alta empresas.
+          <span>No hay giros activos. Crea o activa un giro antes de dar de alta empresas.</span>
         </p>
       }
 
-      <!-- Seccion: Identidad -->
-      <section class="crear-empresa__seccion">
-        <h3 class="crear-empresa__seccion-titulo">Identidad</h3>
-        <div class="crear-empresa__grid">
-          <mat-form-field appearance="outline">
-            <mat-label>Razon social</mat-label>
-            <input matInput type="text" formControlName="nombre" required />
-            @if (formulario.controls.nombre.hasError('required') && formulario.controls.nombre.touched) {
-              <mat-error>La razon social es obligatoria.</mat-error>
-            }
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Nombre comercial</mat-label>
-            <input matInput type="text" formControlName="nombreComercial" />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>RFC</mat-label>
-            <input
-              matInput
-              type="text"
-              formControlName="rfc"
-              required
-              maxlength="13"
-              (input)="normalizarRfc($event)"
-            />
-            <mat-hint>Ej.: ABC010101AB1</mat-hint>
-            @if (formulario.controls.rfc.hasError('required') && formulario.controls.rfc.touched) {
-              <mat-error>El RFC es obligatorio.</mat-error>
-            } @else if (formulario.controls.rfc.hasError('rfc') && formulario.controls.rfc.touched) {
-              <mat-error>El RFC no tiene un formato valido.</mat-error>
-            } @else if (formulario.controls.rfc.hasError('maxlength') && formulario.controls.rfc.touched) {
-              <mat-error>El RFC no puede exceder 13 caracteres.</mat-error>
-            }
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Giro</mat-label>
-            <mat-select formControlName="giroId" required (selectionChange)="cambiarGiro($event.value)">
-              @for (giro of giros(); track giro.id) {
-                <mat-option [value]="giro.id">{{ giro.nombreVisible }}</mat-option>
-              }
-            </mat-select>
-            @if (formulario.controls.giroId.hasError('required') && formulario.controls.giroId.touched) {
-              <mat-error>Selecciona un giro.</mat-error>
-            }
-          </mat-form-field>
+      <!-- Sección: Identidad (two-pane) -->
+      <section class="ds-form__section">
+        <div class="ds-form__section-aside">
+          <h3 class="ds-form__section-title">Identidad</h3>
+          <p class="ds-form__section-desc">
+            Datos fiscales y de marca de la empresa: razón social, RFC, giro y logotipo.
+          </p>
         </div>
 
-        @if (giroBaseSeleccionado()) {
-          <p class="crear-empresa__nota-giro-base" role="note">
-            <mat-icon aria-hidden="true">info</mat-icon>
-            <span>
-              Este giro solo incluye los módulos base; sus reglas de negocio específicas aún no
-              están disponibles.
-            </span>
-          </p>
-        }
+        <div class="ds-form__section-body">
+          <div class="ds-form__grid">
+            <div class="ds-form__field">
+              <mat-form-field appearance="outline">
+                <mat-label>Razón social</mat-label>
+                <input matInput type="text" formControlName="nombre" required />
+                @if (formulario.controls.nombre.hasError('required') && formulario.controls.nombre.touched) {
+                  <mat-error>La razón social es obligatoria.</mat-error>
+                }
+              </mat-form-field>
+            </div>
 
-        <!-- Carga de logo del branding -->
-        <div class="crear-empresa__logo">
-          @if (logo(); as src) {
-            <img
-              class="crear-empresa__logo-preview"
-              [src]="src"
-              [alt]="'Vista previa del logo ' + (logoNombre() ?? '')"
-            />
-          } @else {
-            <span class="crear-empresa__logo-placeholder" aria-hidden="true">
-              <mat-icon>add_photo_alternate</mat-icon>
-            </span>
-          }
-          <div class="crear-empresa__logo-controles">
-            <span class="crear-empresa__logo-titulo">Logotipo de la empresa</span>
-            <span class="crear-empresa__logo-ayuda">PNG, JPG, SVG o WebP. Maximo 256 KB.</span>
-            <div class="crear-empresa__logo-botones">
-              <label class="crear-empresa__logo-boton">
+            <div class="ds-form__field">
+              <mat-form-field appearance="outline">
+                <mat-label>Nombre comercial</mat-label>
+                <input matInput type="text" formControlName="nombreComercial" />
+              </mat-form-field>
+            </div>
+
+            <div class="ds-form__field">
+              <mat-form-field appearance="outline">
+                <mat-label>RFC</mat-label>
                 <input
-                  type="file"
-                  class="crear-empresa__logo-input"
-                  accept="image/png,image/jpeg,image/svg+xml,image/webp"
-                  aria-label="Cargar logo de la empresa"
-                  (change)="seleccionarLogo($event)"
+                  matInput
+                  type="text"
+                  formControlName="rfc"
+                  required
+                  maxlength="13"
+                  (input)="normalizarRfc($event)"
                 />
-                <span matButton="outlined">
-                  <mat-icon aria-hidden="true">upload</mat-icon>
-                  {{ logo() ? 'Cambiar' : 'Cargar logo' }}
-                </span>
-              </label>
-              @if (logo()) {
-                <button matButton type="button" (click)="quitarLogo()">Quitar</button>
+                @if (formulario.controls.rfc.hasError('required') && formulario.controls.rfc.touched) {
+                  <mat-error>El RFC es obligatorio.</mat-error>
+                } @else if (formulario.controls.rfc.hasError('rfc') && formulario.controls.rfc.touched) {
+                  <mat-error>El RFC no tiene un formato válido.</mat-error>
+                } @else if (formulario.controls.rfc.hasError('maxlength') && formulario.controls.rfc.touched) {
+                  <mat-error>El RFC no puede exceder 13 caracteres.</mat-error>
+                }
+              </mat-form-field>
+              <p class="ds-form__help">Ej.: ABC010101AB1</p>
+            </div>
+
+            <div class="ds-form__field">
+              <mat-form-field appearance="outline">
+                <mat-label>Giro</mat-label>
+                <mat-select formControlName="giroId" required (selectionChange)="cambiarGiro($event.value)">
+                  @for (giro of giros(); track giro.id) {
+                    <mat-option [value]="giro.id">{{ giro.nombreVisible }}</mat-option>
+                  }
+                </mat-select>
+                @if (formulario.controls.giroId.hasError('required') && formulario.controls.giroId.touched) {
+                  <mat-error>Selecciona un giro.</mat-error>
+                }
+              </mat-form-field>
+            </div>
+          </div>
+
+          @if (giroBaseSeleccionado()) {
+            <p class="ds-form__note" role="note">
+              <mat-icon aria-hidden="true">info</mat-icon>
+              <span>
+                Este giro solo incluye los módulos base; sus reglas de negocio específicas aún no
+                están disponibles.
+              </span>
+            </p>
+          }
+
+          <!-- Carga de logo del branding -->
+          <div class="crear-empresa__logo">
+            @if (logo(); as src) {
+              <img
+                class="crear-empresa__logo-preview"
+                [src]="src"
+                [alt]="'Vista previa del logo ' + (logoNombre() ?? '')"
+              />
+            } @else {
+              <span class="crear-empresa__logo-placeholder" aria-hidden="true">
+                <mat-icon>add_photo_alternate</mat-icon>
+              </span>
+            }
+            <div class="crear-empresa__logo-controles">
+              <span class="crear-empresa__logo-titulo">Logotipo de la empresa</span>
+              <span class="crear-empresa__logo-ayuda">PNG, JPG, SVG o WebP. Máximo 256 KB.</span>
+              <div class="crear-empresa__logo-botones">
+                <label class="crear-empresa__logo-boton">
+                  <input
+                    type="file"
+                    class="crear-empresa__logo-input"
+                    accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                    aria-label="Cargar logo de la empresa"
+                    (change)="seleccionarLogo($event)"
+                  />
+                  <span matButton="outlined">
+                    <mat-icon aria-hidden="true">upload</mat-icon>
+                    {{ logo() ? 'Cambiar' : 'Cargar logo' }}
+                  </span>
+                </label>
+                @if (logo()) {
+                  <button matButton type="button" (click)="quitarLogo()">Quitar</button>
+                }
+              </div>
+              @if (logoError()) {
+                <p class="ds-form__note ds-form__note--warn" role="alert">
+                  <mat-icon aria-hidden="true">error_outline</mat-icon>
+                  <span>{{ logoError() }}</span>
+                </p>
               }
             </div>
-            @if (logoError()) {
-              <p class="crear-empresa__error crear-empresa__error--inline" role="alert">
-                <mat-icon aria-hidden="true">error_outline</mat-icon>
-                <span>{{ logoError() }}</span>
-              </p>
-            }
           </div>
         </div>
       </section>
 
-      <!-- Seccion: Contacto -->
-      <section class="crear-empresa__seccion">
-        <h3 class="crear-empresa__seccion-titulo">Contacto</h3>
-        <div class="crear-empresa__grid">
-          <mat-form-field appearance="outline">
-            <mat-label>Correo de contacto</mat-label>
-            <input matInput type="email" formControlName="emailContacto" autocomplete="off" required />
-            <mat-hint>Se usa para el envío de la factura por correo.</mat-hint>
-            @if (formulario.controls.emailContacto.hasError('required') && formulario.controls.emailContacto.touched) {
-              <mat-error>El correo de contacto es obligatorio.</mat-error>
-            } @else if (formulario.controls.emailContacto.hasError('email') && formulario.controls.emailContacto.touched) {
-              <mat-error>Correo no válido.</mat-error>
-            }
-          </mat-form-field>
+      <!-- Sección: Contacto (two-pane) -->
+      <section class="ds-form__section">
+        <div class="ds-form__section-aside">
+          <h3 class="ds-form__section-title">Contacto</h3>
+          <p class="ds-form__section-desc">
+            Medios de contacto de la empresa. El correo se usa para el envío de la factura.
+          </p>
+        </div>
 
-          <mat-form-field appearance="outline">
-            <mat-label>Teléfono</mat-label>
-            <input
-              matInput
-              type="tel"
-              formControlName="telefono"
-              autocomplete="off"
-              inputmode="numeric"
-              maxlength="10"
-              (input)="soloDigitos($event)"
-            />
-            <mat-hint>10 dígitos</mat-hint>
-            @if (formulario.controls.telefono.hasError('telefono') && formulario.controls.telefono.touched) {
-              <mat-error>El teléfono debe tener 10 dígitos.</mat-error>
-            }
-          </mat-form-field>
+        <div class="ds-form__section-body">
+          <div class="ds-form__grid">
+            <div class="ds-form__field">
+              <mat-form-field appearance="outline">
+                <mat-label>Correo de contacto</mat-label>
+                <input matInput type="email" formControlName="emailContacto" autocomplete="off" required />
+                @if (formulario.controls.emailContacto.hasError('required') && formulario.controls.emailContacto.touched) {
+                  <mat-error>El correo de contacto es obligatorio.</mat-error>
+                } @else if (formulario.controls.emailContacto.hasError('email') && formulario.controls.emailContacto.touched) {
+                  <mat-error>Correo no válido.</mat-error>
+                }
+              </mat-form-field>
+              <p class="ds-form__help">Se usa para el envío de la factura por correo.</p>
+            </div>
 
-          <mat-form-field appearance="outline" class="crear-empresa__campo--ancho">
-            <mat-label>Sitio web</mat-label>
-            <input matInput type="url" formControlName="sitioWeb" autocomplete="off" placeholder="https://" />
-          </mat-form-field>
+            <div class="ds-form__field">
+              <mat-form-field appearance="outline">
+                <mat-label>Teléfono</mat-label>
+                <input
+                  matInput
+                  type="tel"
+                  formControlName="telefono"
+                  autocomplete="off"
+                  inputmode="numeric"
+                  maxlength="10"
+                  (input)="soloDigitos($event)"
+                />
+                @if (formulario.controls.telefono.hasError('telefono') && formulario.controls.telefono.touched) {
+                  <mat-error>El teléfono debe tener 10 dígitos.</mat-error>
+                }
+              </mat-form-field>
+              <p class="ds-form__help">10 dígitos</p>
+            </div>
+
+            <div class="ds-form__field ds-form__field--full">
+              <mat-form-field appearance="outline">
+                <mat-label>Sitio web</mat-label>
+                <input matInput type="url" formControlName="sitioWeb" autocomplete="off" placeholder="https://" />
+              </mat-form-field>
+            </div>
+          </div>
         </div>
       </section>
 
-      <!-- Seccion: Direccion -->
-      <section class="crear-empresa__seccion">
-        <h3 class="crear-empresa__seccion-titulo">Dirección</h3>
-        <app-address-autocomplete (direccionSeleccionada)="onDireccion($event)" />
-        <div class="crear-empresa__grid">
-          <mat-form-field appearance="outline" class="crear-empresa__campo--ancho">
-            <mat-label>Calle y número</mat-label>
-            <input matInput type="text" formControlName="direccionCalle" />
-          </mat-form-field>
+      <!-- Sección: Dirección (two-pane) -->
+      <section class="ds-form__section">
+        <div class="ds-form__section-aside">
+          <h3 class="ds-form__section-title">Dirección</h3>
+          <p class="ds-form__section-desc">
+            Busca la dirección para autocompletar los campos, o captúralos manualmente.
+          </p>
+        </div>
 
-          <mat-form-field appearance="outline">
-            <mat-label>Ciudad</mat-label>
-            <input matInput type="text" formControlName="direccionCiudad" />
-          </mat-form-field>
+        <div class="ds-form__section-body">
+          <app-address-autocomplete (direccionSeleccionada)="onDireccion($event)" />
+          <div class="ds-form__grid">
+            <div class="ds-form__field ds-form__field--full">
+              <mat-form-field appearance="outline">
+                <mat-label>Calle y número</mat-label>
+                <input matInput type="text" formControlName="direccionCalle" />
+              </mat-form-field>
+            </div>
 
-          <mat-form-field appearance="outline">
-            <mat-label>Estado</mat-label>
-            <input matInput type="text" formControlName="direccionEstado" />
-          </mat-form-field>
+            <div class="ds-form__field">
+              <mat-form-field appearance="outline">
+                <mat-label>Ciudad</mat-label>
+                <input matInput type="text" formControlName="direccionCiudad" />
+              </mat-form-field>
+            </div>
 
-          <mat-form-field appearance="outline">
-            <mat-label>Código postal</mat-label>
-            <input matInput type="text" formControlName="direccionCp" inputmode="numeric" />
-          </mat-form-field>
+            <div class="ds-form__field">
+              <mat-form-field appearance="outline">
+                <mat-label>Estado</mat-label>
+                <input matInput type="text" formControlName="direccionEstado" />
+              </mat-form-field>
+            </div>
 
-          <mat-form-field appearance="outline">
-            <mat-label>País</mat-label>
-            <input matInput type="text" formControlName="direccionPais" />
-          </mat-form-field>
+            <div class="ds-form__field">
+              <mat-form-field appearance="outline">
+                <mat-label>Código postal</mat-label>
+                <input matInput type="text" formControlName="direccionCp" inputmode="numeric" />
+              </mat-form-field>
+            </div>
+
+            <div class="ds-form__field">
+              <mat-form-field appearance="outline">
+                <mat-label>País</mat-label>
+                <input matInput type="text" formControlName="direccionPais" />
+              </mat-form-field>
+            </div>
+          </div>
         </div>
       </section>
 
-      <!-- Seccion: Contratacion (instrumento comercial excluyente) -->
-      <section class="crear-empresa__seccion">
-        <h3 class="crear-empresa__seccion-titulo">Contratación</h3>
+      <!-- Sección: Contratación (instrumento comercial excluyente) (two-pane) -->
+      <section class="ds-form__section">
+        <div class="ds-form__section-aside">
+          <h3 class="ds-form__section-title">Contratación</h3>
+          <p class="ds-form__section-desc">
+            Elige Plan (largo plazo) o Suscripción (corto plazo) y, opcionalmente, un subconjunto de módulos.
+          </p>
+        </div>
 
-        <mat-radio-group
-          class="crear-empresa__tipo-instrumento"
-          aria-label="Tipo de contratación"
-          formControlName="tipoInstrumento"
-          (change)="cambiarTipoInstrumento($event.value)"
-        >
-          <mat-radio-button value="plan">Plan</mat-radio-button>
-          <mat-radio-button value="suscripcion">Suscripción</mat-radio-button>
-        </mat-radio-group>
+        <div class="ds-form__section-body">
+          <mat-radio-group
+            class="crear-empresa__tipo-instrumento"
+            aria-label="Tipo de contratación"
+            formControlName="tipoInstrumento"
+            (change)="cambiarTipoInstrumento($event.value)"
+          >
+            <mat-radio-button value="plan">Plan</mat-radio-button>
+            <mat-radio-button value="suscripcion">Suscripción</mat-radio-button>
+          </mat-radio-group>
 
-        <div class="crear-empresa__grid">
-          @if (tipoInstrumentoSeleccionado() === 'plan') {
-            <mat-form-field appearance="outline">
-              <mat-label>Plan</mat-label>
-              <mat-select formControlName="planId" required (selectionChange)="cambiarPlan($event.value)">
-                @for (plan of planes(); track plan.id) {
-                  <mat-option [value]="plan.id">{{ plan.nombre }}</mat-option>
+          <div class="ds-form__grid">
+            @if (tipoInstrumentoSeleccionado() === 'plan') {
+              <div class="ds-form__field">
+                <mat-form-field appearance="outline">
+                  <mat-label>Plan</mat-label>
+                  <mat-select formControlName="planId" required (selectionChange)="cambiarPlan($event.value)">
+                    @for (plan of planes(); track plan.id) {
+                      <mat-option [value]="plan.id">{{ plan.nombre }}</mat-option>
+                    }
+                  </mat-select>
+                  @if (formulario.controls.planId.hasError('required') && formulario.controls.planId.touched) {
+                    <mat-error>Selecciona un plan.</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+            } @else {
+              <div class="ds-form__field">
+                <mat-form-field appearance="outline">
+                  <mat-label>Paquete de suscripción</mat-label>
+                  <mat-select
+                    formControlName="paqueteSuscripcionId"
+                    required
+                    (selectionChange)="cambiarPaquete($event.value)"
+                  >
+                    @for (paquete of paquetes(); track paquete.id) {
+                      <mat-option [value]="paquete.id">{{ paquete.nombre }}</mat-option>
+                    }
+                  </mat-select>
+                  @if (formulario.controls.paqueteSuscripcionId.hasError('required') && formulario.controls.paqueteSuscripcionId.touched) {
+                    <mat-error>Selecciona un paquete de suscripción.</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+            }
+          </div>
+
+          @if (mostrarOtorgarPrueba()) {
+            <div class="crear-empresa__prueba">
+              <mat-checkbox formControlName="otorgarPrueba">
+                Iniciar la empresa en período de prueba
+              </mat-checkbox>
+              <p class="ds-form__help">
+                @if (formulario.controls.otorgarPrueba.value) {
+                  La empresa arrancará en prueba por
+                  {{ paqueteSeleccionado()?.duracionPruebaMeses }}
+                  {{ paqueteSeleccionado()?.duracionPruebaMeses === 1 ? 'mes' : 'meses' }}
+                  (duración definida por el paquete). Sin marcar, arranca con la suscripción activa.
+                } @else {
+                  Si lo marcas, la empresa arrancará en prueba por
+                  {{ paqueteSeleccionado()?.duracionPruebaMeses }}
+                  {{ paqueteSeleccionado()?.duracionPruebaMeses === 1 ? 'mes' : 'meses' }}
+                  (duración definida por el paquete). Si no, arranca con la suscripción activa.
                 }
-              </mat-select>
-              @if (formulario.controls.planId.hasError('required') && formulario.controls.planId.touched) {
-                <mat-error>Selecciona un plan.</mat-error>
+              </p>
+            </div>
+          }
+
+          @if (hayGiroAjenoEnInstrumento()) {
+            <p class="ds-form__note ds-form__note--warn" role="alert">
+              <mat-icon aria-hidden="true">warning</mat-icon>
+              <span>
+                El instrumento incluye modulos especificos del giro
+                «{{ girosAjenosDelInstrumento().join(', ') }}», distinto al giro seleccionado
+                para la empresa. Verifica que corresponda.
+              </span>
+            </p>
+          }
+
+          @if (hayModulos()) {
+            <div class="crear-empresa__modulos">
+              <p class="crear-empresa__modulos-titulo">Módulos habilitados (opcional)</p>
+              <p class="ds-form__help">
+                Por defecto se habilitan todos los módulos del instrumento. Puedes deseleccionar
+                para otorgar solo un subconjunto.
+              </p>
+              @if (avisoDependencia(); as aviso) {
+                <p class="ds-form__note ds-form__note--warn" role="note" aria-live="polite">
+                  <mat-icon aria-hidden="true">link</mat-icon>
+                  <span>{{ aviso }}</span>
+                </p>
               }
-            </mat-form-field>
-          } @else {
-            <mat-form-field appearance="outline">
-              <mat-label>Paquete de suscripción</mat-label>
-              <mat-select
-                formControlName="paqueteSuscripcionId"
-                required
-                (selectionChange)="cambiarPaquete($event.value)"
-              >
-                @for (paquete of paquetes(); track paquete.id) {
-                  <mat-option [value]="paquete.id">{{ paquete.nombre }}</mat-option>
+              <div class="crear-empresa__grupos">
+                @for (grupo of grupos(); track grupo.giro) {
+                  <div class="crear-empresa__grupo">
+                    <h4 class="crear-empresa__grupo-titulo">{{ grupo.titulo }}</h4>
+                    <div class="crear-empresa__cards">
+                      @for (modulo of grupo.modulos; track modulo.clave) {
+                        <app-selectable-card
+                          [seleccionado]="estaSeleccionado(modulo.clave)"
+                          [deshabilitado]="estaBloqueado(modulo.clave)"
+                          (seleccionadoChange)="alternar(modulo.clave, $event)"
+                        >
+                          <div class="crear-empresa__card-cab">
+                            <span class="crear-empresa__card-nombre">{{ modulo.nombreVisible }}</span>
+                            @if (estaBloqueado(modulo.clave)) {
+                              <mat-icon
+                                class="crear-empresa__card-lock"
+                                aria-hidden="true"
+                                [attr.title]="motivoBloqueado(modulo.clave)"
+                              >lock</mat-icon>
+                            }
+                          </div>
+                          @if (estaBloqueado(modulo.clave)) {
+                            <p class="crear-empresa__card-motivo">{{ motivoBloqueado(modulo.clave) }}</p>
+                          }
+                        </app-selectable-card>
+                      }
+                    </div>
+                  </div>
                 }
-              </mat-select>
-              @if (formulario.controls.paqueteSuscripcionId.hasError('required') && formulario.controls.paqueteSuscripcionId.touched) {
-                <mat-error>Selecciona un paquete de suscripción.</mat-error>
-              }
-            </mat-form-field>
+              </div>
+            </div>
           }
         </div>
-
-        @if (mostrarOtorgarPrueba()) {
-          <div class="crear-empresa__prueba">
-            <mat-checkbox formControlName="otorgarPrueba">
-              Otorgar periodo de prueba
-            </mat-checkbox>
-            <p class="crear-empresa__prueba-ayuda">
-              El paquete permite {{ paqueteSeleccionado()?.duracionPruebaMeses }}
-              {{ paqueteSeleccionado()?.duracionPruebaMeses === 1 ? 'mes' : 'meses' }}
-              de prueba.
-            </p>
-          </div>
-        }
-
-        @if (hayGiroAjenoEnInstrumento()) {
-          <p class="crear-empresa__aviso-giro-ajeno" role="alert">
-            <mat-icon aria-hidden="true">warning</mat-icon>
-            <span>
-              El instrumento incluye modulos especificos del giro
-              «{{ girosAjenosDelInstrumento().join(', ') }}», distinto al giro seleccionado
-              para la empresa. Verifica que corresponda.
-            </span>
-          </p>
-        }
-
-        @if (hayModulos()) {
-          <div class="crear-empresa__modulos">
-            <p class="crear-empresa__modulos-titulo">Módulos habilitados (opcional)</p>
-            <p class="crear-empresa__modulos-ayuda">
-              Por defecto se habilitan todos los módulos del plan. Puedes deseleccionar
-              para otorgar solo un subconjunto.
-            </p>
-            @if (avisoDependencia(); as aviso) {
-              <p class="crear-empresa__nota-giro-base" role="note" aria-live="polite">
-                <mat-icon aria-hidden="true">link</mat-icon>
-                <span>{{ aviso }}</span>
-              </p>
-            }
-            <div class="crear-empresa__grupos">
-              @for (grupo of grupos(); track grupo.giro) {
-                <div class="crear-empresa__grupo">
-                  <h4 class="crear-empresa__grupo-titulo">{{ grupo.titulo }}</h4>
-                  <div class="crear-empresa__grid crear-empresa__grid--checks">
-                    @for (modulo of grupo.modulos; track modulo.clave) {
-                      <div class="crear-empresa__modulo">
-                        <mat-checkbox
-                          [checked]="estaSeleccionado(modulo.clave)"
-                          [disabled]="estaBloqueado(modulo.clave)"
-                          [attr.aria-describedby]="estaBloqueado(modulo.clave) ? 'motivo-emp-' + modulo.clave : null"
-                          (change)="alternar(modulo.clave, $event.checked)"
-                        >
-                          {{ modulo.nombreVisible }}
-                        </mat-checkbox>
-                        @if (estaBloqueado(modulo.clave)) {
-                          <p
-                            class="crear-empresa__nota-giro-base crear-empresa__nota-bloqueado"
-                            role="note"
-                            [id]="'motivo-emp-' + modulo.clave"
-                          >
-                            <mat-icon aria-hidden="true">lock</mat-icon>
-                            <span>{{ motivoBloqueado(modulo.clave) }}</span>
-                          </p>
-                        }
-                      </div>
-                    }
-                  </div>
-                </div>
-              }
-            </div>
-          </div>
-        }
       </section>
 
-      <!-- Seccion: Administrador inicial -->
-      <section class="crear-empresa__seccion">
-        <h3 class="crear-empresa__seccion-titulo">Administrador inicial</h3>
-        <div class="crear-empresa__grid">
-          <mat-form-field appearance="outline">
-            <mat-label>Identificador</mat-label>
-            <input matInput type="text" formControlName="adminIdentificador" autocomplete="off" required />
-            <mat-hint>Correo o usuario de acceso del administrador.</mat-hint>
-            @if (formulario.controls.adminIdentificador.hasError('required') && formulario.controls.adminIdentificador.touched) {
-              <mat-error>El identificador es obligatorio.</mat-error>
-            }
-          </mat-form-field>
+      <!-- Sección: Administrador inicial (two-pane) -->
+      <section class="ds-form__section">
+        <div class="ds-form__section-aside">
+          <h3 class="ds-form__section-title">Administrador inicial</h3>
+          <p class="ds-form__section-desc">
+            Primer usuario administrador de la empresa. Si no fijas contraseña, se genera una temporal.
+          </p>
+        </div>
 
-          <mat-form-field appearance="outline">
-            <mat-label>Contraseña (opcional)</mat-label>
-            <input matInput type="password" formControlName="adminPassword" autocomplete="new-password" />
-            <mat-hint>Si se deja vacía, se genera una temporal.</mat-hint>
-            @if (formulario.controls.adminPassword.hasError('minlength') && formulario.controls.adminPassword.touched) {
-              <mat-error>Mínimo 8 caracteres.</mat-error>
-            }
-          </mat-form-field>
+        <div class="ds-form__section-body">
+          <div class="ds-form__grid">
+            <div class="ds-form__field">
+              <mat-form-field appearance="outline">
+                <mat-label>Identificador</mat-label>
+                <input matInput type="text" formControlName="adminIdentificador" autocomplete="off" required />
+                @if (formulario.controls.adminIdentificador.hasError('required') && formulario.controls.adminIdentificador.touched) {
+                  <mat-error>El identificador es obligatorio.</mat-error>
+                }
+              </mat-form-field>
+              <p class="ds-form__help">Correo o usuario de acceso del administrador.</p>
+            </div>
 
-          <mat-form-field appearance="outline" class="crear-empresa__campo--ancho">
-            <mat-label>Notas</mat-label>
-            <textarea matInput rows="3" formControlName="notas"></textarea>
-          </mat-form-field>
+            <div class="ds-form__field">
+              <mat-form-field appearance="outline">
+                <mat-label>Contraseña (opcional)</mat-label>
+                <input matInput type="password" formControlName="adminPassword" autocomplete="new-password" />
+                @if (formulario.controls.adminPassword.hasError('minlength') && formulario.controls.adminPassword.touched) {
+                  <mat-error>Mínimo 8 caracteres.</mat-error>
+                }
+              </mat-form-field>
+              <p class="ds-form__help">Si se deja vacía, se genera una temporal.</p>
+            </div>
+
+            <div class="ds-form__field ds-form__field--full">
+              <mat-form-field appearance="outline">
+                <mat-label>Notas</mat-label>
+                <textarea matInput rows="3" formControlName="notas"></textarea>
+              </mat-form-field>
+            </div>
+          </div>
         </div>
       </section>
     </form>

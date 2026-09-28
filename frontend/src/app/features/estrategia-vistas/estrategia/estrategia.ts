@@ -31,6 +31,7 @@ import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../shared/components/state-container/state-container';
 import { ProgressBadge } from '../../../shared/components/progress-badge/progress-badge';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 import {
@@ -88,6 +89,7 @@ export class EstrategiaVistas {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(EstrategiaVistasService);
   private readonly toast = inject(NotificacionesService);
+  private readonly overlay = inject(OperacionOverlayService);
   private readonly auth = inject(AuthService);
   private readonly dialog = inject(MatDialog);
   private readonly oportunidadesService = inject(OportunidadesService);
@@ -260,12 +262,15 @@ export class EstrategiaVistas {
   guardarEsencia(): void {
     const v = this.formEsencia.getRawValue();
     this.guardandoEsencia.set(true);
-    this.service
-      .guardarEsencia({
-        mision: v.mision.trim() || null,
-        vision: v.vision.trim() || null,
-        valores: v.valores.trim() || null,
-      })
+    this.overlay
+      .ejecutar(
+        this.service.guardarEsencia({
+          mision: v.mision.trim() || null,
+          vision: v.vision.trim() || null,
+          valores: v.valores.trim() || null,
+        }),
+        { tipo: 'guardar', textoProceso: 'Guardando esencia…', textoExito: 'Esencia guardada' },
+      )
       .subscribe({
         next: (esencia) => {
           this.guardandoEsencia.set(false);
@@ -295,7 +300,14 @@ export class EstrategiaVistas {
 
   /** Abre el dialogo de alta de objetivo y refresca la lista al crear. */
   abrirCrearObjetivo(): void {
-    const ref = this.dialog.open(ObjetivoDialog, { autoFocus: true, restoreFocus: true });
+    const ref = this.dialog.open(ObjetivoDialog, {
+      width: 'min(760px, 96vw)',
+      maxWidth: 'min(760px, 96vw)',
+      maxHeight: '92vh',
+      panelClass: 'ds-dialog-panel',
+      autoFocus: 'first-tabbable',
+      restoreFocus: true,
+    });
     ref.afterClosed().subscribe((creado) => {
       if (creado) {
         this.toast.exito('Objetivo creado.');
@@ -312,7 +324,11 @@ export class EstrategiaVistas {
     };
     const ref = this.dialog.open(ResultadoClaveDialog, {
       data: datos,
-      autoFocus: true,
+      width: 'min(760px, 96vw)',
+      maxWidth: 'min(760px, 96vw)',
+      maxHeight: '92vh',
+      panelClass: 'ds-dialog-panel',
+      autoFocus: 'first-tabbable',
       restoreFocus: true,
     });
     ref.afterClosed().subscribe((actualizado) => {

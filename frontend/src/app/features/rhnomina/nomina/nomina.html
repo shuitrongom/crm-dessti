@@ -57,6 +57,63 @@
   mensajeVacio="No hay nominas registradas."
   (reintentar)="cargar()"
 >
+  @if ((estado().datos ?? []).length > 0) {
+    <!-- Resumen de nomina + neto por periodo (patron dashboard reutilizable) -->
+    <app-dashboard-section layout="apilado">
+      <div kpis>
+        <app-kpi-tile
+          icono="payments"
+          tono="primario"
+          etiqueta="Neto pagado"
+          [valor]="resumen().neto | currency: 'MXN' : 'symbol-narrow' : '1.0-0' : 'es-MX'"
+        />
+        <app-kpi-tile
+          icono="savings"
+          tono="info"
+          etiqueta="Percepciones (costo)"
+          [valor]="resumen().percepciones | currency: 'MXN' : 'symbol-narrow' : '1.0-0' : 'es-MX'"
+        />
+        <app-kpi-tile
+          icono="remove_circle_outline"
+          tono="advertencia"
+          etiqueta="Deducciones"
+          [valor]="resumen().deducciones | currency: 'MXN' : 'symbol-narrow' : '1.0-0' : 'es-MX'"
+        />
+        <app-kpi-tile
+          icono="receipt_long"
+          tono="exito"
+          etiqueta="Nóminas en lista"
+          [valor]="resumen().cantidad"
+        />
+      </div>
+      <div grafica class="dash-grafica">
+        <app-metric-chart
+          [datos]="[]"
+          tipo="gauge"
+          [porcentaje]="porcentajeNeto()"
+          titulo="Neto sobre percepciones"
+        />
+      </div>
+      <div grafica class="dash-grafica">
+        <app-metric-chart
+          [datos]="percepcionesVsDeducciones()"
+          tipo="columnas"
+          titulo="Percepciones vs deducciones por periodo"
+          nombreSerie="Percepciones"
+          nombreComparativo="Deducciones"
+        />
+      </div>
+      <div grafica class="dash-grafica">
+        <app-metric-chart
+          [datos]="netoPorPeriodo()"
+          tipo="area"
+          titulo="Neto por periodo"
+          nombreSerie="Neto"
+        />
+      </div>
+    </app-dashboard-section>
+  }
+
   <div class="rh-filtros">
     <mat-form-field appearance="outline">
       <mat-label>Estado</mat-label>

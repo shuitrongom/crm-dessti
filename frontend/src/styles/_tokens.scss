@@ -69,6 +69,10 @@
   --ds-duration-base: 200ms;
   --ds-duration-slow: 320ms;
   --ds-easing-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  // Curva "emphasized": entrada con ligero rebasamiento (feedback vivo/premium).
+  --ds-easing-emphasized: cubic-bezier(0.34, 1.56, 0.64, 1);
+  // Curva de desaceleración (destellos y salidas que se disipan).
+  --ds-easing-decelerate: cubic-bezier(0, 0, 0.2, 1);
 }
 
 // =============================================================================

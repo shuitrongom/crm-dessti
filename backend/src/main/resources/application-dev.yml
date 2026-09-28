@@ -1,16 +1,47 @@
 # ============================================================================
 # Perfil de desarrollo (dev). Activar con: --spring.profiles.active=dev
 #
-# Sigue sin embeber secretos (Req 11): las credenciales se toman de variables
-# de entorno. Este perfil solo ajusta verbosidad y comportamiento de desarrollo.
+# CONVENIENCIA DE DESARROLLO LOCAL: este perfil provee valores por defecto de
+# los secretos y de la conexion a la base de datos SOLO para desarrollo local,
+# de modo que el backend arranque sin exigir variables de entorno externas. Cada
+# valor sigue admitiendo override por variable de entorno (${VAR:default}), por
+# lo que en un entorno real basta con definir las variables para que estas
+# tengan prioridad. El perfil por defecto (produccion) NO trae estos defaults
+# (Req 11): alli los secretos SIGUEN siendo obligatorios via variables de entorno.
+#
+# NOTA: las llaves JWT/cifrado de aqui son material de juguete para desarrollo;
+# NUNCA usar estos valores en produccion.
 # ============================================================================
 
 spring:
+  # Conexion a la base de datos de desarrollo local (puerto 5432, rol de app y
+  # rol migrador separados). Override por DB_URL/DB_USER/DB_PASSWORD si se define.
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/dessti_plataforma}
+    username: ${DB_USER:dessti_app}
+    password: ${DB_PASSWORD:Pa55worD}
+  flyway:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/dessti_plataforma}
+    user: ${DB_MIGRATOR_USER:dessti_migrator}
+    password: ${DB_MIGRATOR_PASSWORD:Pa55worD}
   jpa:
     show-sql: true
     properties:
       hibernate:
         format_sql: true
+
+# Secretos de desarrollo local (Req 11): valores por defecto SOLO para dev, con
+# override por variable de entorno. En produccion (perfil por defecto) estos NO
+# existen y las variables de entorno siguen siendo obligatorias.
+crm:
+  secretos:
+    db-user: ${DB_USER:dessti_app}
+    db-password: ${DB_PASSWORD:Pa55worD}
+    jwt-signing-key: ${JWT_SIGNING_KEY:clave-de-firma-jwt-solo-para-desarrollo-local-0123456789}
+  cifrado:
+    activa: ${CRM_ENC_KEY_ACTIVE:v1}
+    llaves:
+      v1: ${CRM_ENC_KEY_V1:AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=}
 
 logging:
   level:

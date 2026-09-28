@@ -29,6 +29,7 @@ import com.dessti.crm.comercial.cliente.domain.TipoPersona;
  * @param direccionPais     pais; puede ser {@code null}.
  * @param notas             notas libres; puede ser {@code null}.
  * @param activo            {@code true} si el Cliente esta vigente (no dado de baja).
+ * @param propietarioUsuarioId Usuario propietario/vendedor; {@code null} si no se asigno (V81).
  * @param version           version para concurrencia optimista (Req 49).
  * @param createdAt         instante de alta (UTC).
  * @param updatedAt         instante de la ultima modificacion (UTC).
@@ -49,6 +50,7 @@ public record ClienteDto(
         String direccionPais,
         String notas,
         boolean activo,
+        UUID propietarioUsuarioId,
         long version,
         Instant createdAt,
         Instant updatedAt) {
@@ -79,6 +81,7 @@ public record ClienteDto(
                 cliente.getDireccionPais(),
                 cliente.getNotas(),
                 cliente.isActivo(),
+                cliente.getPropietarioUsuarioId(),
                 cliente.getVersion(),
                 cliente.getCreatedAt(),
                 cliente.getUpdatedAt());

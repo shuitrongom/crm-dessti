@@ -12,6 +12,8 @@ const ETIQUETAS_AREA: Record<string, string> = {
   comercial: 'Comercial',
   operacion: 'Operación',
   produccion: 'Producción',
+  instalacion: 'Instalación',
+  inventario: 'Inventario',
   finanzas: 'Finanzas',
   facturacion: 'Facturación',
   compras: 'Compras',
@@ -22,9 +24,14 @@ const ETIQUETAS_AREA: Record<string, string> = {
   mantenimiento: 'Mantenimiento',
   calidad: 'Calidad',
   social: 'Redes sociales',
+  redes_sociales: 'Redes sociales',
   estrategia: 'Estrategia',
   presupuestos: 'Presupuestos',
+  presupuesto: 'Presupuesto',
   activos: 'Activos fijos',
+  activo_fijo: 'Activos fijos',
+  inventario_avanzado: 'Inventario avanzado',
+  cxp: 'Cuentas por pagar',
 };
 
 /** Humaniza la etiqueta ASCII de un area a texto legible en espanol. */

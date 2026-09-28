@@ -21,8 +21,11 @@ import {
   CrearCuentaBancariaRequest,
   CuentaBancaria,
   EstadoCuentaBancario,
+  FlujoCaja,
   ImportarEstadoCuentaRequest,
   MovimientoBancario,
+  RegistrarTransferenciaRequest,
+  TransferenciaBancaria,
 } from '../models/tesoreria.models';
 
 @Injectable({ providedIn: 'root' })
@@ -106,6 +109,46 @@ export class TesoreriaService {
     }
     return this.http.get<PaginaResponse<ConciliacionBancaria>>(
       this.api.url('/tesoreria/conciliaciones'),
+      { params },
+    );
+  }
+
+  // --- Flujo de caja / posicion de liquidez ----------------------------------
+
+  /** Posicion de liquidez y flujo de caja del periodo (GET /tesoreria/flujo-caja). */
+  flujoCaja(desde: string | null, hasta: string | null): Observable<FlujoCaja> {
+    let params = new HttpParams();
+    if (desde) {
+      params = params.set('desde', desde);
+    }
+    if (hasta) {
+      params = params.set('hasta', hasta);
+    }
+    return this.http.get<FlujoCaja>(this.api.url('/tesoreria/flujo-caja'), { params });
+  }
+
+  // --- Transferencias entre cuentas ------------------------------------------
+
+  registrarTransferencia(
+    request: RegistrarTransferenciaRequest,
+  ): Observable<TransferenciaBancaria> {
+    return this.http.post<TransferenciaBancaria>(
+      this.api.url('/tesoreria/transferencias'),
+      request,
+    );
+  }
+
+  listarTransferencias(
+    cuentaId: string | null,
+    page = 0,
+    size = 20,
+  ): Observable<PaginaResponse<TransferenciaBancaria>> {
+    let params = new HttpParams().set('page', page).set('size', size);
+    if (cuentaId) {
+      params = params.set('cuentaId', cuentaId);
+    }
+    return this.http.get<PaginaResponse<TransferenciaBancaria>>(
+      this.api.url('/tesoreria/transferencias'),
       { params },
     );
   }

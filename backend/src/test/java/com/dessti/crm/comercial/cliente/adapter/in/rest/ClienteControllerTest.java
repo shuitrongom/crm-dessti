@@ -98,7 +98,7 @@ class ClienteControllerTest {
                 "Norte Signs", "moral", "5598765432",
                 "Av. Reforma 100", "Monterrey", "Nuevo Leon", "64000", "Mexico",
                 "Cliente preferente",
-                true, 0L, ahora, ahora);
+                true, null, 0L, ahora, ahora);
     }
 
     private static ContactoDto contactoDto() {
@@ -189,7 +189,7 @@ class ClienteControllerTest {
         Instant ahora = Instant.parse("2024-01-01T00:00:00Z");
         ClienteDto inactivo = new ClienteDto(ID, "Anuncios del Norte", "ANO120101AB1",
                 null, null, null, null, null, null, null, null, null, null, null,
-                false, 1L, ahora, ahora);
+                false, null, 1L, ahora, ahora);
         when(servicioClientes.desactivarCliente(ID)).thenReturn(inactivo);
 
         mockMvc.perform(delete("/clientes/{id}", ID).with(user("ventas")).with(csrf()))

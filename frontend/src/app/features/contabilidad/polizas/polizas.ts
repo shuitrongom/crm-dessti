@@ -29,6 +29,7 @@ import {
 } from '../../../shared/components/data-table/data-table';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 import {
@@ -69,6 +70,7 @@ export class ContabilidadPolizas {
   private readonly service = inject(ContabilidadService);
   private readonly confirm = inject(ConfirmDialogService);
   private readonly toast = inject(NotificacionesService);
+  private readonly overlay = inject(OperacionOverlayService);
   private readonly auth = inject(AuthService);
 
   protected readonly puedeCrear = this.auth.tienePermiso('poliza_contable', 'crear');
@@ -188,15 +190,18 @@ export class ContabilidadPolizas {
     const v = this.formAlta.getRawValue();
     const renglones = v.renglones as RenglonPolizaRequest[];
     this.guardando.set(true);
-    this.service
-      .registrarPoliza({
-        fecha: v.fecha,
-        tipo: v.tipo,
-        concepto: v.concepto,
-        origen: null,
-        origenId: null,
-        renglones,
-      })
+    this.overlay
+      .ejecutar(
+        this.service.registrarPoliza({
+          fecha: v.fecha,
+          tipo: v.tipo,
+          concepto: v.concepto,
+          origen: null,
+          origenId: null,
+          renglones,
+        }),
+        { tipo: 'crear', textoProceso: 'Registrando póliza…', textoExito: 'Póliza registrada' },
+      )
       .subscribe({
         next: () => {
           this.guardando.set(false);
@@ -224,12 +229,18 @@ export class ContabilidadPolizas {
     if (!ok) {
       return;
     }
-    this.service.reversarPoliza(p.id, null).subscribe({
-      next: () => {
-        this.toast.exito('Poliza de reverso creada.');
-        this.cargar();
-      },
-      error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
-    });
+    this.overlay
+      .ejecutar(this.service.reversarPoliza(p.id, null), {
+        tipo: 'procesar',
+        textoProceso: 'Reversando póliza…',
+        textoExito: 'Póliza reversada',
+      })
+      .subscribe({
+        next: () => {
+          this.toast.exito('Poliza de reverso creada.');
+          this.cargar();
+        },
+        error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
+      });
   }
 }

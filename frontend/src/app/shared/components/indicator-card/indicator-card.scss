@@ -1,53 +1,212 @@
-.indicator-card {
+// Tarjeta KPI premium al estilo BI empresarial: valor destacado, chip de
+// tendencia y mini-barra comparativa. Usa tokens Material (claro/oscuro).
+
+.kpi {
+  --kpi-accent: var(--mat-sys-primary, #6750a4);
+
+  // Reset de <button>: la tarjeta es clickeable y abre el modal explicativo.
+  appearance: none;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  width: 100%;
+
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
-  gap: var(--ds-space-1);
-  padding: var(--ds-space-4);
-  background: var(--ds-color-surface);
-  border: 1px solid var(--ds-color-border);
-  border-radius: var(--ds-radius-md);
-  box-shadow: var(--ds-shadow-sm);
+  gap: 0.4rem;
+  padding: 0.95rem 1rem;
+  background: var(--mat-sys-surface, #fff);
+  border: 1px solid var(--mat-sys-outline-variant, #e2e0e8);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+  transition: box-shadow 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
 
-  &__etiqueta {
-    margin: 0;
-    color: var(--ds-color-text-muted);
-    font-size: var(--ds-font-size-sm);
+  // Filo superior de color segun el tono semantico del indicador.
+  border-top: 3px solid color-mix(in srgb, var(--kpi-accent) 55%, transparent);
+
+  // ---- Tonos semanticos (del catalogo central) ----
+  &--primario { --kpi-accent: var(--mat-sys-primary, #6750a4); }
+  &--exito { --kpi-accent: var(--ds-color-success, #12805c); }
+  &--advertencia { --kpi-accent: var(--ds-color-warning, #b26a00); }
+  &--error { --kpi-accent: var(--ds-color-error, #b3261e); }
+  &--info { --kpi-accent: var(--ds-color-info, #1b6a8c); }
+  &--neutro { --kpi-accent: var(--mat-sys-on-surface-variant, #49454f); }
+
+  // La tendencia (sube/baja) puede reforzar el acento del delta, pero el color
+  // base de la tarjeta lo fija el tono semantico del indicador.
+
+  &:hover {
+    box-shadow: 0 6px 18px rgba(16, 24, 40, 0.1);
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--kpi-accent) 40%, var(--mat-sys-outline-variant, #e2e0e8));
   }
 
-  &__valor {
-    margin: 0;
-    font-size: var(--ds-font-size-2xl);
-    font-weight: var(--ds-font-weight-bold);
-    line-height: var(--ds-line-height-tight);
-    font-variant-numeric: tabular-nums;
+  &:focus-visible {
+    outline: 2px solid var(--kpi-accent);
+    outline-offset: 2px;
   }
 
-  &__unidad {
-    font-size: var(--ds-font-size-sm);
-    font-weight: var(--ds-font-weight-regular);
-    color: var(--ds-color-text-muted);
+  &:hover .kpi__info,
+  &:focus-visible .kpi__info {
+    opacity: 1;
   }
 
-  &__comparativo {
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__icon {
     display: inline-flex;
     align-items: center;
-    gap: var(--ds-space-1);
-    margin: var(--ds-space-1) 0 0;
-    font-size: var(--ds-font-size-sm);
-    color: var(--ds-color-text-muted);
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    flex: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--kpi-accent),
+      color-mix(in srgb, var(--kpi-accent) 55%, #ffffff));
+    color: #fff;
+
+    mat-icon { font-size: 1.15rem; width: 1.15rem; height: 1.15rem; }
+  }
+
+  &__info {
+    display: inline-flex;
+    align-items: center;
+    margin-inline-start: auto;
+    color: var(--mat-sys-on-surface-variant, #49454f);
+    opacity: 0;
+    transition: opacity 0.18s ease;
+
+    mat-icon { font-size: 1.05rem; width: 1.05rem; height: 1.05rem; }
+  }
+
+  &__label {
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface, #1d1b20);
+    line-height: 1.25;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  &__desc {
+    margin: 0;
+    font-size: 0.72rem;
+    color: var(--mat-sys-on-surface-variant, #49454f);
+    line-height: 1.25;
+  }
+
+  &__delta {
+    flex: none;
+    margin-inline-start: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
 
     &--subida {
-      color: var(--ds-color-success);
+      background: color-mix(in srgb, var(--ds-color-success, #12805c) 15%, transparent);
+      color: var(--ds-color-success, #12805c);
     }
-
     &--bajada {
-      color: var(--ds-color-error);
+      background: color-mix(in srgb, var(--ds-color-error, #b3261e) 15%, transparent);
+      color: var(--ds-color-error, #b3261e);
+    }
+    &--neutra {
+      background: color-mix(in srgb, var(--mat-sys-on-surface-variant, #49454f) 12%, transparent);
+      color: var(--mat-sys-on-surface-variant, #49454f);
     }
   }
 
-  &__icono {
-    font-size: 1.125rem;
-    width: 1.125rem;
-    height: 1.125rem;
+  &__delta-icon {
+    font-size: 0.95rem;
+    width: 0.95rem;
+    height: 0.95rem;
+  }
+
+  &__value {
+    margin: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 0.3rem;
+    line-height: 1.05;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  &__number {
+    // El tamano base lo fija el componente inline (tamanoNumero) por longitud del
+    // valor; aqui solo el estilo tipografico. Nunca desborda.
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--mat-sys-on-surface, #1d1b20);
+    overflow-wrap: anywhere;
+  }
+
+  &__prefix,
+  &__suffix {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface-variant, #49454f);
+  }
+
+  // ---- Mini-barra comparativa (sparkline de barras) ----
+  &__spark {
+    position: relative;
+    height: 8px;
+    margin-top: 0.15rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--mat-sys-on-surface, #1d1b20) 6%, transparent);
+    overflow: hidden;
+  }
+
+  &__spark-bar {
+    position: absolute;
+    inset: 0 auto 0 0;
+    border-radius: 999px;
+
+    &--prev {
+      background: color-mix(in srgb, var(--mat-sys-on-surface-variant, #49454f) 45%, transparent);
+      height: 100%;
+    }
+
+    &--now {
+      background: var(--kpi-accent);
+      height: 100%;
+      transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+  }
+
+  &__prev {
+    margin: 0;
+    font-size: 0.72rem;
+    color: var(--mat-sys-on-surface-variant, #49454f);
+    font-variant-numeric: tabular-nums;
+
+    &--muted {
+      opacity: 0.7;
+      font-style: italic;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kpi,
+  .kpi__spark-bar--now {
+    transition: none;
   }
 }

@@ -1,147 +1,449 @@
+// =============================================================================
+// Estilos del Home de empresa — rediseno enterprise premium (Req 22, 26, 58)
+// =============================================================================
 @use '../../../../styles/breakpoints' as bp;
 
-.empresa-home {
+// ---- Hero: encabezado con nombre de empresa y accesos rapidos ----
+.eh-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ds-space-4);
+  padding: var(--ds-space-5) var(--ds-space-5);
+  margin-block-end: var(--ds-space-5);
+  background:
+    radial-gradient(ellipse 120% 80% at 100% 0%,
+      color-mix(in srgb, var(--ds-color-primary) 10%, transparent) 0%,
+      transparent 60%),
+    var(--mat-sys-surface, #fff);
+  border: 1px solid var(--mat-sys-outline-variant, #e2e0e8);
+  border-radius: 20px;
+  box-shadow: 0 2px 12px rgba(16, 24, 40, 0.07);
+
+  &__izq {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-4);
+  }
+
   &__logo {
-    max-height: 48px;
-    max-width: 180px;
+    max-height: 52px;
+    max-width: 160px;
     object-fit: contain;
+    border-radius: var(--ds-radius-sm);
   }
 
-  &__seccion {
-    margin-bottom: var(--ds-space-6);
+  &__logo-icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: linear-gradient(135deg,
+      var(--ds-color-primary), color-mix(in srgb, var(--ds-color-primary) 55%, #fff));
+    color: #fff;
+    mat-icon { font-size: 1.75rem; width: 1.75rem; height: 1.75rem; }
   }
 
-  &__seccion-cabecera {
+  &__nombre {
+    margin: 0 0 0.2rem;
+    font-size: var(--ds-font-size-xl);
+    font-weight: var(--ds-font-weight-bold);
+    color: var(--mat-sys-on-surface, #1d1b20);
+    letter-spacing: -0.01em;
+  }
+
+  &__saludo {
+    margin: 0;
+    font-size: var(--ds-font-size-sm);
+    color: var(--mat-sys-on-surface-variant, #49454f);
+  }
+
+  &__accesos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ds-space-2);
+  }
+
+  &__btn {
+    border-radius: var(--ds-radius-pill) !important;
+    font-size: 0.82rem;
+    mat-icon { font-size: 1rem; width: 1rem; height: 1rem; }
+  }
+}
+
+// ---- Seccion generica ----
+.eh-seccion {
+  margin-block-end: var(--ds-space-6);
+
+  &__head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: var(--ds-space-3);
     flex-wrap: wrap;
-    margin-bottom: var(--ds-space-3);
-
-    .empresa-home__titulo-seccion {
-      margin-bottom: 0;
-    }
+    margin-block-end: var(--ds-space-4);
   }
 
-  &__titulo-seccion {
+  &__titulo {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-2);
     font-size: var(--ds-font-size-lg);
     font-weight: var(--ds-font-weight-medium);
-    margin-bottom: var(--ds-space-3);
+    margin: 0;
+    color: var(--mat-sys-on-surface, #1d1b20);
+
+    mat-icon {
+      font-size: 1.3rem;
+      width: 1.3rem;
+      height: 1.3rem;
+      color: var(--ds-color-primary);
+    }
+  }
+}
+
+.eh-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-primary);
+  mat-icon { font-size: 0.95rem; width: 0.95rem; height: 0.95rem; }
+}
+
+// ---- KPI cards del resumen comercial ----
+.eh-kpi-row {
+  display: grid;
+  gap: var(--ds-space-4);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.eh-kpi-card {
+  --kc-accent: var(--ds-color-primary);
+
+  // Reset de <button>: la tarjeta es clickeable y abre el modal explicativo.
+  appearance: none;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  width: 100%;
+
+  position: relative;
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 1.25rem 1.35rem;
+  border-radius: 18px;
+  background:
+    radial-gradient(110% 110% at 100% 0%,
+      color-mix(in srgb, var(--kc-accent) 14%, transparent) 0%,
+      transparent 55%),
+    var(--mat-sys-surface, #fff);
+  border: 1px solid var(--mat-sys-outline-variant, #e2e0e8);
+  box-shadow: 0 2px 8px rgba(16, 24, 40, 0.06);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px rgba(16, 24, 40, 0.1);
   }
 
-  &__esencia {
+  &:focus-visible {
+    outline: 2px solid var(--kc-accent);
+    outline-offset: 2px;
+  }
+
+  &:hover .eh-kpi-card__info,
+  &:focus-visible .eh-kpi-card__info {
+    opacity: 1;
+  }
+
+  // Icono de "info" arriba a la derecha: pista de que la tarjeta abre ayuda.
+  &__info {
+    position: absolute;
+    top: 0.9rem;
+    inset-inline-end: 1rem;
+    color: var(--mat-sys-on-surface-variant, #49454f);
+    opacity: 0;
+    transition: opacity 0.18s ease;
+    font-size: 1.1rem;
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  &--primario { --kc-accent: var(--ds-color-primary); }
+  &--info { --kc-accent: var(--ds-color-info); }
+  &--exito { --kc-accent: var(--ds-color-success); }
+  &--neutro { --kc-accent: var(--mat-sys-on-surface-variant, #49454f); }
+
+  &__icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--kc-accent),
+      color-mix(in srgb, var(--kc-accent) 55%, #ffffff));
+    color: #fff;
+    margin-block-end: 0.3rem;
+    box-shadow: 0 4px 10px color-mix(in srgb, var(--kc-accent) 35%, transparent);
+
+    mat-icon { font-size: 1.25rem; width: 1.25rem; height: 1.25rem; }
+  }
+
+  &__valor {
+    // Escala fluida: nunca desborda la tarjeta aunque el monto sea de millones.
+    font-size: clamp(1.15rem, 4.5cqi, 1.7rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--mat-sys-on-surface, #1d1b20);
+    line-height: 1.05;
+    overflow-wrap: anywhere;
+    min-width: 0;
+  }
+
+  &__label {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--mat-sys-on-surface, #1d1b20);
+  }
+
+  &__sub {
+    font-size: 0.73rem;
+    color: var(--mat-sys-on-surface-variant, #49454f);
+  }
+}
+
+// ---- Area de indicadores (grafica + kpi grid) ----
+.eh-area {
+  margin-block-end: var(--ds-space-5);
+  padding: var(--ds-space-4) var(--ds-space-5);
+  background: var(--mat-sys-surface, #fff);
+  border: 1px solid var(--mat-sys-outline-variant, #e2e0e8);
+  border-radius: 16px;
+  box-shadow: 0 1px 4px rgba(16, 24, 40, 0.05);
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-2);
+    margin-block-end: var(--ds-space-4);
+  }
+
+  &__titulo {
+    font-size: var(--ds-font-size-md);
+    font-weight: var(--ds-font-weight-medium);
+    margin: 0;
+    color: var(--mat-sys-on-surface, #1d1b20);
+  }
+
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    height: 1.5rem;
+    padding: 0 0.4rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    background: color-mix(in srgb, var(--ds-color-primary) 15%, transparent);
+    color: var(--ds-color-primary);
+  }
+
+  &__cuerpo {
     display: grid;
     gap: var(--ds-space-4);
+    grid-template-columns: 1fr;
 
-    @include bp.from('md') {
-      grid-template-columns: repeat(3, 1fr);
+    @include bp.from('lg') {
+      grid-template-columns: 1fr 1fr;
+      align-items: start;
     }
   }
 
-  &__esencia-item {
-    padding: var(--ds-space-4);
-    background: var(--ds-color-surface);
-    border: 1px solid var(--ds-color-border);
-    border-radius: var(--ds-radius-md);
-
-    h3 {
-      display: flex;
-      align-items: center;
-      gap: var(--ds-space-2);
-      margin: 0 0 var(--ds-space-2);
-      font-size: var(--ds-font-size-md);
-      color: var(--ds-color-primary);
-
-      mat-icon {
-        font-size: 1.25rem;
-        width: 1.25rem;
-        height: 1.25rem;
-      }
-    }
-
-    p {
-      margin: 0;
-      white-space: pre-line;
-    }
+  &__grafica {
+    // La grafica ocupa la mitad izquierda en desktop
   }
 
-  &__esencia-vacio {
-    color: var(--ds-color-text-muted);
-    font-style: italic;
-  }
-
-  &__objetivos {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
+  &__kpis {
+    display: grid;
     gap: var(--ds-space-3);
+    grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+  }
+}
+
+// ---- Esencia: cards premium con acento por tipo ----
+.eh-esencia {
+  display: grid;
+  gap: var(--ds-space-4);
+
+  @include bp.from('md') {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.eh-esencia-card {
+  --ec-accent: var(--ds-color-primary);
+
+  padding: 1.3rem 1.4rem;
+  border-radius: 18px;
+  background:
+    radial-gradient(110% 110% at 0% 100%,
+      color-mix(in srgb, var(--ec-accent) 10%, transparent) 0%,
+      transparent 55%),
+    var(--mat-sys-surface, #fff);
+  border: 1px solid var(--mat-sys-outline-variant, #e2e0e8);
+  border-top: 4px solid var(--ec-accent);
+  box-shadow: 0 2px 8px rgba(16, 24, 40, 0.06);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(16, 24, 40, 0.1);
   }
 
-  &__objetivo {
+  &--mision { --ec-accent: var(--ds-color-primary); }
+  &--vision { --ec-accent: var(--ds-color-info); }
+  &--valores { --ec-accent: var(--ds-color-success); }
+
+  &__top {
     display: flex;
-    flex-direction: column;
-    gap: var(--ds-space-3);
-    padding: var(--ds-space-4);
-    background: var(--ds-color-surface);
-    border: 1px solid var(--ds-color-border);
-    border-radius: var(--ds-radius-md);
-
-    @include bp.from('md') {
-      flex-direction: row;
-      align-items: center;
-      justify-content: space-between;
-    }
+    align-items: center;
+    gap: var(--ds-space-2);
+    margin-block-end: var(--ds-space-3);
   }
 
-  &__objetivo-nombre {
-    margin: 0;
+  &__icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--ec-accent),
+      color-mix(in srgb, var(--ec-accent) 55%, #fff));
+    color: #fff;
+    mat-icon { font-size: 1.1rem; width: 1.1rem; height: 1.1rem; }
+  }
+
+  &__titulo {
+    font-size: var(--ds-font-size-md);
     font-weight: var(--ds-font-weight-medium);
+    color: var(--mat-sys-on-surface, #1d1b20);
   }
 
-  &__objetivo-meta {
+  &__texto {
+    margin: 0;
+    font-size: var(--ds-font-size-sm);
+    color: var(--mat-sys-on-surface-variant, #49454f);
+    line-height: var(--ds-line-height-base);
+    white-space: pre-line;
+  }
+}
+
+// ---- Objetivos estrategicos ----
+.eh-objetivos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-3);
+}
+
+.eh-objetivo {
+  // Reset de <button>: el objetivo es clickeable y abre un modal informativo.
+  appearance: none;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  width: 100%;
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-4);
+  background: var(--mat-sys-surface, #fff);
+  border: 1px solid var(--mat-sys-outline-variant, #e2e0e8);
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.05);
+  transition: box-shadow 0.18s ease, transform 0.18s ease;
+
+  &:hover {
+    box-shadow: 0 4px 14px rgba(16, 24, 40, 0.09);
+    transform: translateY(-2px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ds-color-primary);
+    outline-offset: 2px;
+  }
+
+  &:hover .eh-objetivo__info-icon,
+  &:focus-visible .eh-objetivo__info-icon {
+    opacity: 1;
+  }
+
+  &__info-icon {
+    flex: none;
+    color: var(--mat-sys-on-surface-variant, #49454f);
+    opacity: 0;
+    transition: opacity 0.18s ease;
+    font-size: 1.15rem;
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+
+  @include bp.from('md') {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__nombre {
+    margin: 0 0 var(--ds-space-1);
+    font-weight: var(--ds-font-weight-medium);
+    color: var(--mat-sys-on-surface, #1d1b20);
+  }
+
+  &__meta {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
     gap: var(--ds-space-1);
-    margin: var(--ds-space-1) 0 0;
-    color: var(--ds-color-text-muted);
+    margin: 0;
+    color: var(--mat-sys-on-surface-variant, #49454f);
     font-size: var(--ds-font-size-sm);
 
     mat-icon {
-      font-size: 1rem;
-      width: 1rem;
-      height: 1rem;
+      font-size: 0.95rem;
+      width: 0.95rem;
+      height: 0.95rem;
     }
   }
 
-  &__objetivo app-progress-badge {
+  app-progress-badge {
     display: block;
+    flex: 0 0 auto;
     min-width: 200px;
   }
+}
 
-  &__area {
-    margin-bottom: var(--ds-space-5);
-  }
-
-  &__area-titulo {
-    font-size: var(--ds-font-size-md);
-    font-weight: var(--ds-font-weight-medium);
-    margin-bottom: var(--ds-space-2);
-    text-transform: capitalize;
-  }
-
-  &__indicadores {
-    display: grid;
-    gap: var(--ds-space-3);
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  }
-
-  &__resumen-comercial {
-    display: grid;
-    gap: var(--ds-space-4);
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+@media (prefers-reduced-motion: reduce) {
+  .eh-hero, .eh-kpi-card, .eh-esencia-card, .eh-objetivo {
+    transition: none;
+    &:hover { transform: none; }
   }
 }

@@ -2,6 +2,7 @@ package com.dessti.crm.comercial.oportunidad.application;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import com.dessti.crm.comercial.oportunidad.domain.Oportunidad;
@@ -34,6 +35,9 @@ public record OportunidadDto(
         UUID responsableUsuarioId,
         UUID cotizacionId,
         UUID canalVentaId,
+        int probabilidad,
+        LocalDate fechaCierreEsperada,
+        String motivoPerdida,
         long version,
         Instant createdAt,
         Instant updatedAt) {
@@ -54,6 +58,9 @@ public record OportunidadDto(
                 oportunidad.getResponsableUsuarioId(),
                 oportunidad.getCotizacionId(),
                 oportunidad.getCanalVentaId(),
+                oportunidad.getProbabilidad(),
+                oportunidad.getFechaCierreEsperada(),
+                oportunidad.getMotivoPerdida(),
                 oportunidad.getVersion(),
                 oportunidad.getCreatedAt(),
                 oportunidad.getUpdatedAt());

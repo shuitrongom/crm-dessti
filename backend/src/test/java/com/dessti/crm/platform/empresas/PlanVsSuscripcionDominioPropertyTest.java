@@ -201,7 +201,10 @@ class PlanVsSuscripcionDominioPropertyTest {
         if (!admitePrueba) {
             pruebaValida = true; // se ignora la config de prueba
         } else {
+            // Regla de negocio: prueba en (0, 6] meses y su equivalente en dias no
+            // puede exceder la duracion del contrato.
             pruebaValida = pruebaMesesRaw > 0
+                    && pruebaMesesRaw <= PaqueteSuscripcion.DURACION_PRUEBA_MAXIMA_MESES
                     && (long) pruebaMesesRaw * DIAS_POR_MES <= duracionDias;
         }
 

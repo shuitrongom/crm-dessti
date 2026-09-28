@@ -1,0 +1,42 @@
+@if (destacados().length > 0) {
+  <div class="scorecard" role="list" aria-label="Indicadores destacados del negocio">
+    @for (d of destacados(); track d.clave) {
+      <button
+        type="button"
+        class="score"
+        role="listitem"
+        [class]="'score--' + tono(d)"
+        (click)="abrirInfo(d)"
+        [attr.aria-label]="'Ver explicación de ' + d.etiqueta"
+      >
+        <div class="score__top">
+          <span class="score__icon" aria-hidden="true">
+            <mat-icon>{{ d.icono }}</mat-icon>
+          </span>
+          <span class="score__info" aria-hidden="true">
+            <mat-icon>info</mat-icon>
+          </span>
+          @if (tono(d) !== 'neutro' && porcentaje(d) !== null) {
+            <span class="score__delta" [class]="'score__delta--' + tono(d)">
+              <mat-icon aria-hidden="true">{{ iconoDelta(d) }}</mat-icon>
+              {{ porcentaje(d)! >= 0 ? '+' : '' }}{{ porcentaje(d) | number: '1.0-1' : 'es-MX' }}%
+            </span>
+          }
+        </div>
+
+        <p class="score__value">
+          @if (esMonetario(d)) {
+            <span class="score__prefix">{{ unidadVisible(d) }}</span>
+          }
+          <span class="score__number" [style.font-size]="tamanoNumero(d)">{{ d.valor | number: '1.0-0' : 'es-MX' }}</span>
+          @if (!esMonetario(d) && unidadVisible(d)) {
+            <span class="score__suffix">{{ unidadVisible(d) }}</span>
+          }
+        </p>
+
+        <p class="score__label">{{ d.etiqueta }}</p>
+        <p class="score__desc">{{ descripcionCorta(d) }}</p>
+      </button>
+    }
+  </div>
+}

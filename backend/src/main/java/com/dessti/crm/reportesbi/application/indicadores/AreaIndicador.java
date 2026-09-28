@@ -51,6 +51,9 @@ public enum AreaIndicador {
     /** Presupuesto: variacion presupuestal (Req 22.1). */
     PRESUPUESTO("presupuesto"),
 
+    /** Activos fijos: valor neto en libros, costo y depreciacion acumulada (Req 22.1, 44). */
+    ACTIVO_FIJO("activo_fijo"),
+
     /** Redes sociales/mensajeria omnicanal: mensajes, tiempo de respuesta (Req 22.1). */
     REDES_SOCIALES("redes_sociales");
 

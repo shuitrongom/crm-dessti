@@ -35,6 +35,7 @@ import {
 } from '../../../../shared/components/data-table/data-table';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog';
 import { NotificacionesService } from '../../../../shared/services/notificaciones.service';
+import { OperacionOverlayService } from '../../../../shared/components/operacion-overlay/operacion-overlay';
 import { mensajeDeError } from '../../../../core/services/error-mensajes';
 import { AuthService } from '../../../../core/auth/auth.service';
 import {
@@ -70,6 +71,7 @@ export class AdminUsuarios {
   private readonly dialog = inject(MatDialog);
   private readonly confirm = inject(ConfirmDialogService);
   private readonly toast = inject(NotificacionesService);
+  private readonly overlay = inject(OperacionOverlayService);
   private readonly auth = inject(AuthService);
 
   /** Columnas de la tabla de cuentas. */
@@ -157,7 +159,8 @@ export class AdminUsuarios {
   /** Abre el dialogo de alta de cuenta (Req 4.1). */
   crear(): void {
     const ref = this.dialog.open(CrearUsuarioDialog, {
-      width: 'min(680px, 96vw)',
+      width: 'min(860px, 96vw)',
+      maxWidth: 'min(860px, 96vw)',
       maxHeight: '92vh',
       autoFocus: 'first-tabbable',
       panelClass: 'ds-dialog-panel',
@@ -175,7 +178,8 @@ export class AdminUsuarios {
   editar(usuario: Usuario): void {
     const data: EditarUsuarioDialogData = { usuario };
     const ref = this.dialog.open(EditarUsuarioDialog, {
-      width: 'min(680px, 96vw)',
+      width: 'min(860px, 96vw)',
+      maxWidth: 'min(860px, 96vw)',
       maxHeight: '92vh',
       autoFocus: 'first-tabbable',
       panelClass: 'ds-dialog-panel',
@@ -201,12 +205,18 @@ export class AdminUsuarios {
     if (!ok) {
       return;
     }
-    this.service.desactivar(usuario.id).subscribe({
-      next: () => {
-        this.toast.exito(`Usuario "${etiqueta}" desactivado.`);
-        this.cargar();
-      },
-      error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
-    });
+    this.overlay
+      .ejecutar(this.service.desactivar(usuario.id), {
+        tipo: 'eliminar',
+        textoProceso: 'Desactivando usuario…',
+        textoExito: 'Usuario desactivado',
+      })
+      .subscribe({
+        next: () => {
+          this.toast.exito(`Usuario "${etiqueta}" desactivado.`);
+          this.cargar();
+        },
+        error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
+      });
   }
 }

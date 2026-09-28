@@ -1,0 +1,27 @@
+<div class="rid" [class]="claseTono()">
+  <div class="rid__head" mat-dialog-title>
+    <span class="rid__icon" aria-hidden="true"><mat-icon>{{ datos.icono }}</mat-icon></span>
+    <div class="rid__head-txt">
+      <span class="rid__titulo">{{ datos.nombre }}</span>
+      <span class="rid__modulo">
+        <mat-icon aria-hidden="true">{{ datos.esAdministracion ? 'admin_panel_settings' : 'extension' }}</mat-icon>
+        {{ datos.esAdministracion ? 'Administración' : datos.modulo }}
+      </span>
+    </div>
+  </div>
+
+  <mat-dialog-content class="rid__body">
+    <dl class="rid__def">
+      <dt><mat-icon aria-hidden="true">badge</mat-icon> ¿Qué hace este rol?</dt>
+      <dd>{{ datos.descripcion }}</dd>
+      <dt><mat-icon aria-hidden="true">shield</mat-icon> Alcance</dt>
+      <dd>{{ alcance() }}</dd>
+      <dt><mat-icon aria-hidden="true">lightbulb</mat-icon> ¿Cómo se asigna?</dt>
+      <dd>Puedes asignar este rol a una cuenta al crear o editar un usuario, en la sección de Roles.</dd>
+    </dl>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button matButton="filled" mat-dialog-close>Entendido</button>
+  </mat-dialog-actions>
+</div>

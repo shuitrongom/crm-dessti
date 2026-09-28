@@ -36,14 +36,30 @@
 >
   @if (estado().datos; as tablero) {
     @for (grupo of tablero.areas; track grupo.area) {
-      <section class="reportes-area" [attr.aria-label]="'Indicadores de ' + humanizarArea(grupo.area)">
-        <h2 class="reportes-area__titulo">{{ humanizarArea(grupo.area) }}</h2>
-        <div class="reportes-indicadores">
-          @for (indicador of grupo.indicadores; track indicador.clave) {
-            <app-indicator-card [indicador]="indicador" />
-          }
-        </div>
-      </section>
+      @if (grupo.indicadores.length > 0) {
+        <section class="area" [attr.aria-label]="'Indicadores de ' + humanizarArea(grupo.area)">
+          <div class="area__head">
+            <h2 class="area__titulo">{{ humanizarArea(grupo.area) }}</h2>
+            <span class="area__conteo">{{ grupo.indicadores.length }}</span>
+          </div>
+
+          <div class="area__cuerpo">
+            <div class="area__grafica">
+              <app-metric-chart
+                [datos]="puntos(grupo)"
+                [tipo]="tipoGrafica(grupo)"
+                [titulo]="tipoGrafica(grupo) === 'dona' ? 'Distribución' : 'Actual vs anterior'"
+              />
+            </div>
+
+            <div class="kpi-grid">
+              @for (indicador of grupo.indicadores; track indicador.clave) {
+                <app-indicator-card [indicador]="indicador" />
+              }
+            </div>
+          </div>
+        </section>
+      }
     }
   }
 </app-state-container>

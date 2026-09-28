@@ -250,6 +250,30 @@ crm:
     max-intentos: ${SOCIAL_MAX_INTENTOS:3}
     espera-reintento-millis: ${SOCIAL_ESPERA_REINTENTO_MILLIS:200}
 
+  # ==========================================================================
+  # Inteligencia Artificial de la suite BI (Req 48, suite BI+IA; Req 11). El
+  # generador de insights ejecutivos en lenguaje natural (es-MX) se apoya en un
+  # proveedor de IA externo (LLM por HTTP), pero es OPCIONAL: si no se configura,
+  # el sistema degrada de forma gracil a un generador heuristico determinista, de
+  # modo que la suite BI nunca se rompe por la IA (mismo enfoque que la poliza
+  # contable automatica).
+  #
+  # La clave de API se resuelve EXCLUSIVAMENTE desde variables de entorno / almacen
+  # externo (Req 11) y NUNCA se escribe en logs (Req 11.3). NO se definen valores
+  # por defecto sensibles: sin url y api-key, el adaptador HTTP no realiza ninguna
+  # llamada de red y se usa el heuristico. El modelo y el timeout son parametros NO
+  # sensibles (el timeout admite un valor por defecto porque no expone secretos).
+  #   crm.ia.api-key  <- IA_API_KEY  (clave del proveedor; vacio => heuristico)
+  #   crm.ia.url      <- IA_URL      (endpoint de completions; vacio => heuristico)
+  #   crm.ia.modelo   <- IA_MODELO   (identificador del modelo de lenguaje)
+  #   crm.ia.timeout  <- IA_TIMEOUT  (ISO-8601, p. ej. PT20S; por defecto PT20S)
+  # ==========================================================================
+  ia:
+    api-key: ${IA_API_KEY:}
+    url: ${IA_URL:}
+    modelo: ${IA_MODELO:}
+    timeout: ${IA_TIMEOUT:PT20S}
+
   datasource:
     # Placeholders sin valores por defecto de credenciales: el arranque debe
     # proveer estas variables de entorno. La URL tiene un default local no

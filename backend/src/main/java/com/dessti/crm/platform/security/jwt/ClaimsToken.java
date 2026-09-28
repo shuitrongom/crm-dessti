@@ -37,6 +37,12 @@ import java.util.UUID;
  *                  Cuando el claim esta ausente (super_admin / token sin el) se
  *                  normaliza a la lista <em>vacia</em>; una Empresa sin modulos
  *                  tambien lleva la lista vacia.
+ * @param clienteId claim {@code cliente_id}: <b>Cliente asociado</b> al Usuario
+ *                  para el Portal del Cliente (Req 45). Solo lo llevan los
+ *                  Usuarios de portal (rol {@code cliente_portal}); es
+ *                  {@code null} para el staff de la Empresa y el super_admin, en
+ *                  cuyo caso el claim se omite. El filtro lo convierte en la
+ *                  authority {@code cliente_id:<uuid>} que acota el Portal.
  */
 public record ClaimsToken(
         String subject,
@@ -48,7 +54,8 @@ public record ClaimsToken(
         String jti,
         String giro,
         String identificador,
-        List<String> modulos
+        List<String> modulos,
+        UUID clienteId
 ) {
 
     public ClaimsToken {

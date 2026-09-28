@@ -18,6 +18,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { EstrategiaVistasService } from '../services/estrategia-vistas.service';
 import { ObjetivoEstrategico } from '../models/estrategia.models';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 
 /** Datos de entrada del dialogo: objetivo al que se agrega el resultado clave. */
 export interface DatosResultadoClaveDialog {
@@ -43,6 +44,7 @@ export class ResultadoClaveDialog {
   private readonly service = inject(EstrategiaVistasService);
   private readonly dialogRef = inject(MatDialogRef<ResultadoClaveDialog, ObjetivoEstrategico>);
   protected readonly datos = inject<DatosResultadoClaveDialog>(MAT_DIALOG_DATA);
+  private readonly overlay = inject(OperacionOverlayService);
 
   protected readonly guardando = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -63,16 +65,22 @@ export class ResultadoClaveDialog {
     }
     this.guardando.set(true);
     const v = this.formulario.getRawValue();
-    this.service.agregarResultadoClave(this.datos.objetivoId, v).subscribe({
-      next: (objetivo) => {
-        this.guardando.set(false);
-        this.dialogRef.close(objetivo);
-      },
-      error: (e: HttpErrorResponse) => {
-        this.guardando.set(false);
-        this.error.set(mensajeDeError(e));
-      },
-    });
+    this.overlay
+      .ejecutar(this.service.agregarResultadoClave(this.datos.objetivoId, v), {
+        tipo: 'crear',
+        textoProceso: 'Agregando resultado clave…',
+        textoExito: 'Resultado clave agregado',
+      })
+      .subscribe({
+        next: (objetivo) => {
+          this.guardando.set(false);
+          this.dialogRef.close(objetivo);
+        },
+        error: (e: HttpErrorResponse) => {
+          this.guardando.set(false);
+          this.error.set(mensajeDeError(e));
+        },
+      });
   }
 
   /** Cancela el alta. */

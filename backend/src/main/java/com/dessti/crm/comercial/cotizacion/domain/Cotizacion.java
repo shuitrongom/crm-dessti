@@ -77,9 +77,31 @@ public class Cotizacion extends TenantScopedEntity {
     @Column(name = "subtotal", nullable = false)
     private BigDecimal subtotal;
 
-    /** Total = round(Σ subtotales, 2) half-up (Req 6.5; Property 2). */
+    /**
+     * Total neto = subtotal - descuento_global + iva - retencion_isr -
+     * retencion_iva (V80; antes era simplemente Σ subtotales). Escala 2 half-up.
+     */
     @Column(name = "total", nullable = false)
     private BigDecimal total;
+
+    /**
+     * Descuento global (monto) que se resta del subtotal para obtener la base
+     * gravable (V80); escala 2, no negativo. Por defecto 0.
+     */
+    @Column(name = "descuento_global", nullable = false)
+    private BigDecimal descuentoGlobal;
+
+    /** IVA consolidado = suma del IVA de cada partida (V80); escala 2. */
+    @Column(name = "iva", nullable = false)
+    private BigDecimal iva;
+
+    /** Retencion de ISR (monto) que se resta del total (V80); escala 2. Por defecto 0. */
+    @Column(name = "retencion_isr", nullable = false)
+    private BigDecimal retencionIsr;
+
+    /** Retencion de IVA (monto) que se resta del total (V80); escala 2. Por defecto 0. */
+    @Column(name = "retencion_iva", nullable = false)
+    private BigDecimal retencionIva;
 
     /**
      * Canal de venta al que se clasifica la Cotizacion (Req 63.1); {@code null}
@@ -207,8 +229,13 @@ public class Cotizacion extends TenantScopedEntity {
         cotizacion.clienteId = clienteId;
         cotizacion.oportunidadId = oportunidadId;
         cotizacion.estado = EstadoCotizacion.BORRADOR;
-        cotizacion.subtotal = BigDecimal.ZERO.setScale(CotizacionValidaciones.ESCALA_MONETARIA);
-        cotizacion.total = BigDecimal.ZERO.setScale(CotizacionValidaciones.ESCALA_MONETARIA);
+        BigDecimal cero = BigDecimal.ZERO.setScale(CotizacionValidaciones.ESCALA_MONETARIA);
+        cotizacion.subtotal = cero;
+        cotizacion.total = cero;
+        cotizacion.descuentoGlobal = cero;
+        cotizacion.iva = cero;
+        cotizacion.retencionIsr = cero;
+        cotizacion.retencionIva = cero;
         cotizacion.moneda = CotizacionValidaciones.MONEDA_POR_DEFECTO;
         cotizacion.partidas = new ArrayList<>();
         cotizacion.setCreatedBy(actor);
@@ -327,19 +354,80 @@ public class Cotizacion extends TenantScopedEntity {
     }
 
     /**
-     * Recalcula {@code subtotal} y {@code total} como {@code round(Σ subtotales, 2)}
-     * half-up a partir de los subtotales de las partidas (Req 6.5; Property 2).
-     * Como cada subtotal ya esta a escala 2, la suma es exacta; el redondeo final
-     * garantiza la escala monetaria de forma idempotente.
+     * Aplica el descuento global y las retenciones (ISR/IVA) de la Cotizacion y
+     * recalcula el total (V80). Solo se permite mientras la Cotizacion esta en
+     * {@code borrador} (una vez enviada/aprobada, los importes quedan fijos). El
+     * descuento global se acota a la base disponible (no puede exceder el subtotal).
+     *
+     * @param descuentoGlobal descuento global (monto); {@code null}=0, no negativo.
+     * @param retencionIsr    retencion de ISR (monto); {@code null}=0, no negativa.
+     * @param retencionIva    retencion de IVA (monto); {@code null}=0, no negativa.
+     * @param actor           identificador de quien edita, para {@code updated_by}.
+     * @throws ReglaNegocioException si la Cotizacion no esta en {@code borrador},
+     *         algun monto es negativo, o el descuento global excede el subtotal (422).
+     */
+    public void aplicarAjustesFiscales(BigDecimal descuentoGlobal, BigDecimal retencionIsr,
+                                       BigDecimal retencionIva, String actor) {
+        if (this.estado != EstadoCotizacion.BORRADOR) {
+            throw new ReglaNegocioException(
+                    "Solo se pueden ajustar impuestos y descuentos de una Cotizacion en 'borrador'.");
+        }
+        this.descuentoGlobal = CotizacionValidaciones.validarMontoFiscalNoNegativo(
+                descuentoGlobal, "descuento global");
+        this.retencionIsr = CotizacionValidaciones.validarMontoFiscalNoNegativo(
+                retencionIsr, "retencion de ISR");
+        this.retencionIva = CotizacionValidaciones.validarMontoFiscalNoNegativo(
+                retencionIva, "retencion de IVA");
+        recalcularTotales();
+        this.setUpdatedBy(actor);
+    }
+
+    /**
+     * Recalcula el desglose fiscal completo de la Cotizacion siguiendo el orden
+     * CFDI (V80):
+     * <ol>
+     *   <li>{@code subtotal} = Σ base neta de partida (importe bruto - descuento
+     *       de partida).</li>
+     *   <li>{@code iva} = Σ IVA de partida (sobre su base neta, respetando tasas
+     *       mixtas).</li>
+     *   <li>base gravable = subtotal - descuento_global (acotado a &ge; 0).</li>
+     *   <li>{@code total} = base gravable + iva - retencion_isr - retencion_iva
+     *       (acotado a &ge; 0).</li>
+     * </ol>
+     * Todo a escala 2 half-up. Es idempotente y la unica fuente de verdad de los
+     * importes derivados, de modo que subtotal/iva/total quedan siempre coherentes
+     * con las partidas y los ajustes fiscales.
+     *
+     * <p>Si el descuento global captado excede el subtotal (p. ej. tras quitar
+     * partidas en una futura edicion), se acota al subtotal para no producir una
+     * base negativa; el dominio no falla por ello en el recalculo.</p>
      */
     private void recalcularTotales() {
-        BigDecimal suma = BigDecimal.ZERO;
+        BigDecimal sumaBases = BigDecimal.ZERO;
+        BigDecimal sumaIva = BigDecimal.ZERO;
         for (PartidaCotizacion partida : this.partidas) {
-            suma = suma.add(partida.getSubtotal());
+            sumaBases = sumaBases.add(partida.getSubtotal());
+            sumaIva = sumaIva.add(partida.getIva());
         }
-        BigDecimal consolidado = CotizacionValidaciones.normalizarMonto(suma);
-        this.subtotal = consolidado;
-        this.total = consolidado;
+        this.subtotal = CotizacionValidaciones.normalizarMonto(sumaBases);
+        this.iva = CotizacionValidaciones.normalizarMonto(sumaIva);
+
+        // El descuento global no puede dejar una base gravable negativa: se acota
+        // al subtotal disponible (defensa; la captura tambien se valida en la UI).
+        BigDecimal descuentoAplicado = this.descuentoGlobal.min(this.subtotal);
+        BigDecimal baseGravable = CotizacionValidaciones.normalizarMonto(
+                this.subtotal.subtract(descuentoAplicado));
+
+        BigDecimal totalCalculado = baseGravable
+                .add(this.iva)
+                .subtract(this.retencionIsr)
+                .subtract(this.retencionIva);
+        // Un total negativo (retenciones mayores que base+iva) se acota a 0 para
+        // respetar el CHECK ck_cotizacion_total_no_negativo de V14.
+        if (totalCalculado.signum() < 0) {
+            totalCalculado = BigDecimal.ZERO;
+        }
+        this.total = CotizacionValidaciones.normalizarMonto(totalCalculado);
     }
 
     /**
@@ -416,6 +504,26 @@ public class Cotizacion extends TenantScopedEntity {
 
     public BigDecimal getTotal() {
         return total;
+    }
+
+    /** Descuento global (monto) restado del subtotal (V80). */
+    public BigDecimal getDescuentoGlobal() {
+        return descuentoGlobal;
+    }
+
+    /** IVA consolidado de la Cotizacion (suma del IVA de las partidas) (V80). */
+    public BigDecimal getIva() {
+        return iva;
+    }
+
+    /** Retencion de ISR (monto) restada del total (V80). */
+    public BigDecimal getRetencionIsr() {
+        return retencionIsr;
+    }
+
+    /** Retencion de IVA (monto) restada del total (V80). */
+    public BigDecimal getRetencionIva() {
+        return retencionIva;
     }
 
     public UUID getCanalVentaId() {

@@ -87,6 +87,9 @@ public class ServicioUsuarios {
      */
     private static final Set<String> ROLES_PLATAFORMA = Set.of("super_admin");
 
+    /** Nombre del rol externo del Portal del Cliente (Req 45, V45). */
+    private static final String ROL_CLIENTE_PORTAL = "cliente_portal";
+
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
@@ -94,6 +97,7 @@ public class ServicioUsuarios {
     private final RegistroSesionesPort registroSesiones;
     private final LimiteUsuariosPort limiteUsuarios;
     private final ModulosHabilitadosPort modulosHabilitados;
+    private final ClienteExistentePort clienteExistente;
 
     public ServicioUsuarios(UsuarioRepository usuarioRepository,
                             RolRepository rolRepository,
@@ -101,7 +105,8 @@ public class ServicioUsuarios {
                             AuditoriaPort auditoria,
                             RegistroSesionesPort registroSesiones,
                             LimiteUsuariosPort limiteUsuarios,
-                            ModulosHabilitadosPort modulosHabilitados) {
+                            ModulosHabilitadosPort modulosHabilitados,
+                            ClienteExistentePort clienteExistente) {
         this.usuarioRepository = usuarioRepository;
         this.rolRepository = rolRepository;
         this.passwordEncoder = passwordEncoder;
@@ -109,6 +114,7 @@ public class ServicioUsuarios {
         this.registroSesiones = registroSesiones;
         this.limiteUsuarios = limiteUsuarios;
         this.modulosHabilitados = modulosHabilitados;
+        this.clienteExistente = clienteExistente;
     }
 
     /**
@@ -134,6 +140,11 @@ public class ServicioUsuarios {
 
         Set<Rol> roles = resolverRolesAsignables(comando.rolIds(), tenantId);
 
+        // Coherencia rol<->Cliente del Portal (Req 45): un Usuario con rol
+        // cliente_portal DEBE llevar un Cliente activo del tenant; uno sin ese rol
+        // NO puede llevar clienteId (evita cuentas de staff con acceso de portal).
+        UUID clienteId = validarClientePortal(roles, comando.clienteId(), actor);
+
         // Limite de Usuarios del Plan (Req 25.3): si la Empresa alcanzo el
         // maximo de su Plan, se rechaza la creacion (422) informando el limite.
         if (!limiteUsuarios.puedeCrearUsuario(tenantId)) {
@@ -150,7 +161,7 @@ public class ServicioUsuarios {
 
         String hash = passwordEncoder.encode(password);
         Usuario usuario = Usuario.crear(tenantId, identificador, hash,
-                comando.nombreVisible(), roles, actor);
+                comando.nombreVisible(), roles, clienteId, actor);
         Usuario guardado = guardarTraduciendoUnicidad(usuario, identificador);
 
         auditar(tenantId, actor, "crear",
@@ -395,6 +406,44 @@ public class ServicioUsuarios {
         }
 
         return new LinkedHashSet<>(roles);
+    }
+
+    /**
+     * Valida la coherencia entre el rol {@code cliente_portal} y el Cliente asociado
+     * al dar de alta un Usuario (Req 45):
+     * <ul>
+     *   <li>Si los roles incluyen {@code cliente_portal}, el {@code clienteId} es
+     *       obligatorio (422 si falta) y debe corresponder a un Cliente activo del
+     *       tenant (404 si no, sin revelar existencia ajena).</li>
+     *   <li>Si NO incluyen {@code cliente_portal}, el {@code clienteId} debe ser
+     *       {@code null} (422 si viene): un usuario de staff nunca lleva Cliente de
+     *       portal.</li>
+     * </ul>
+     *
+     * @return el {@code clienteId} validado a persistir ({@code null} para staff).
+     */
+    private UUID validarClientePortal(Set<Rol> roles, UUID clienteId, String actor) {
+        boolean esPortal = roles.stream().anyMatch(r ->
+                ROL_CLIENTE_PORTAL.equalsIgnoreCase(r.getNombre() == null ? null : r.getNombre().strip()));
+        if (esPortal) {
+            if (clienteId == null) {
+                throw new ReglaNegocioException(
+                        "Un Usuario del Portal (rol cliente_portal) debe indicar el Cliente asociado.");
+            }
+            if (!clienteExistente.existeClienteActivo(clienteId)) {
+                auditar(TenantContext.require(), actor, "acceso_denegado",
+                        "intento de asociar un Cliente inexistente o ajeno a un Usuario de portal"
+                                + " [cliente=" + clienteId + "]");
+                throw new RecursoNoEncontradoException(
+                        "No se encontro el Cliente indicado para el Usuario del Portal.");
+            }
+            return clienteId;
+        }
+        if (clienteId != null) {
+            throw new ReglaNegocioException(
+                    "Solo un Usuario con rol cliente_portal puede asociarse a un Cliente.");
+        }
+        return null;
     }
 
     /**

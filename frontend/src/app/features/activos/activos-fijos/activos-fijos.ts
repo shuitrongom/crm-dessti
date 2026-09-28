@@ -9,7 +9,7 @@
 // gobierna por permiso atomico (deny-by-default).
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CurrencyPipe, DatePipe } from '@angular/common';
@@ -32,6 +32,7 @@ import {
 } from '../../../shared/components/data-table/data-table';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 import {
@@ -44,6 +45,9 @@ import {
 import { EstadoChip } from '../../finanzas-comun/estado-chip/estado-chip';
 import { humanizarEstado, tonoDeEstado } from '../../finanzas-comun/tono-estado';
 import { aPesos, aCentavos } from '../../finanzas-comun/dinero';
+import { MetricChart, type MetricPoint } from '../../../shared/components/metric-chart/metric-chart';
+import { KpiTile } from '../../../shared/components/kpi-tile/kpi-tile';
+import { DashboardSection } from '../../../shared/components/dashboard-section/dashboard-section';
 import { ActivosService } from '../services/activos.service';
 import { ActivoFijo } from '../models/activos.models';
 
@@ -66,6 +70,9 @@ import { ActivoFijo } from '../models/activos.models';
     DataTable,
     CeldaTablaDirective,
     EstadoChip,
+    MetricChart,
+    KpiTile,
+    DashboardSection,
   ],
   templateUrl: './activos-fijos.html',
   styleUrl: './activos-fijos.scss',
@@ -75,6 +82,7 @@ export class ActivosFijos {
   private readonly service = inject(ActivosService);
   private readonly confirm = inject(ConfirmDialogService);
   private readonly toast = inject(NotificacionesService);
+  private readonly overlay = inject(OperacionOverlayService);
   private readonly auth = inject(AuthService);
 
   protected readonly tono = tonoDeEstado;
@@ -121,6 +129,96 @@ export class ActivosFijos {
     this.cargar();
   }
 
+  /**
+   * Resumen (scorecard) de los activos de la pagina cargada: costo total,
+   * depreciacion acumulada, valor neto en libros y conteos por estado. Se calcula en
+   * centavos para evitar errores de coma flotante y se expresa de vuelta en pesos.
+   */
+  protected readonly resumen = computed(() => {
+    const activos = this.estado().datos ?? [];
+    let costoC = 0;
+    let deprecC = 0;
+    let vigentes = 0;
+    let bajas = 0;
+    for (const a of activos) {
+      costoC += aCentavos(a.costo);
+      deprecC += aCentavos(a.depreciacionAcumulada);
+      if (a.estado === 'baja') {
+        bajas += 1;
+      } else {
+        vigentes += 1;
+      }
+    }
+    return {
+      costo: aPesos(costoC),
+      depreciacion: aPesos(deprecC),
+      valorNeto: aPesos(costoC - deprecC),
+      vigentes,
+      bajas,
+    };
+  });
+
+  /** Puntos de la dona: composicion del valor en libros por metodo de depreciacion. */
+  protected readonly composicion = computed<MetricPoint[]>(() => {
+    const activos = this.estado().datos ?? [];
+    let recta = 0;
+    let decreciente = 0;
+    for (const a of activos) {
+      const libros = aCentavos(a.costo) - aCentavos(a.depreciacionAcumulada);
+      if (a.metodoDepreciacion === 'saldos_decrecientes') {
+        decreciente += libros;
+      } else {
+        recta += libros;
+      }
+    }
+    return [
+      { etiqueta: 'Línea recta', valor: aPesos(recta), unidad: 'MXN' },
+      { etiqueta: 'Saldos decrecientes', valor: aPesos(decreciente), unidad: 'MXN' },
+    ];
+  });
+
+  /**
+   * Columnas comparativas por metodo de depreciacion: costo original (valor) vs
+   * valor neto en libros (comparativo). Muestra cuanto se ha depreciado en cada
+   * metodo. Todo en pesos, agregando en centavos para evitar errores de float.
+   */
+  protected readonly costoVsNeto = computed<MetricPoint[]>(() => {
+    const activos = this.estado().datos ?? [];
+    let costoRectaC = 0;
+    let netoRectaC = 0;
+    let costoDecrC = 0;
+    let netoDecrC = 0;
+    for (const a of activos) {
+      const costoC = aCentavos(a.costo);
+      const netoC = costoC - aCentavos(a.depreciacionAcumulada);
+      if (a.metodoDepreciacion === 'saldos_decrecientes') {
+        costoDecrC += costoC;
+        netoDecrC += netoC;
+      } else {
+        costoRectaC += costoC;
+        netoRectaC += netoC;
+      }
+    }
+    return [
+      { etiqueta: 'Línea recta', valor: aPesos(costoRectaC), comparativo: aPesos(netoRectaC), unidad: 'MXN' },
+      { etiqueta: 'Saldos decrecientes', valor: aPesos(costoDecrC), comparativo: aPesos(netoDecrC), unidad: 'MXN' },
+    ];
+  });
+
+  /**
+   * Porcentaje del valor neto en libros respecto al costo total (0-100). Es una
+   * medida de "vida util remanente" del patrimonio: 100% recien adquirido, 0%
+   * totalmente depreciado. Alimenta el gauge del tablero.
+   */
+  protected readonly porcentajeValorNeto = computed<number>(() => {
+    const r = this.resumen();
+    if (r.costo <= 0) {
+      return 0;
+    }
+    const pct = (r.valorNeto / r.costo) * 100;
+    return Math.max(0, Math.min(100, Math.round(pct)));
+  });
+
   /** Valor en libros de despliegue: costo - depreciacion acumulada (en centavos). */
   valorEnLibros(a: ActivoFijo): number {
     return aPesos(aCentavos(a.costo) - aCentavos(a.depreciacionAcumulada));
@@ -160,15 +258,18 @@ export class ActivosFijos {
     }
     const v = this.formAlta.getRawValue();
     this.guardando.set(true);
-    this.service
-      .crear({
-        nombre: v.nombre,
-        costo: v.costo,
-        fechaAdquisicion: v.fechaAdquisicion,
-        vidaUtilMeses: v.vidaUtilMeses,
-        metodoDepreciacion: v.metodoDepreciacion as 'linea_recta' | 'saldos_decrecientes',
-        valorResidual: v.valorResidual ?? 0,
-      })
+    this.overlay
+      .ejecutar(
+        this.service.crear({
+          nombre: v.nombre,
+          costo: v.costo,
+          fechaAdquisicion: v.fechaAdquisicion,
+          vidaUtilMeses: v.vidaUtilMeses,
+          metodoDepreciacion: v.metodoDepreciacion as 'linea_recta' | 'saldos_decrecientes',
+          valorResidual: v.valorResidual ?? 0,
+        }),
+        { tipo: 'crear', textoProceso: 'Registrando activo…', textoExito: 'Activo registrado' },
+      )
       .subscribe({
         next: () => {
           this.guardando.set(false);
@@ -209,13 +310,19 @@ export class ActivosFijos {
     if (!ok) {
       return;
     }
-    this.service.depreciar(a.id, periodo).subscribe({
-      next: (d) => {
-        this.toast.exito(`Depreciacion aplicada del periodo ${d.periodo}.`);
-        this.cargar();
-      },
-      error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
-    });
+    this.overlay
+      .ejecutar(this.service.depreciar(a.id, periodo), {
+        tipo: 'procesar',
+        textoProceso: 'Corriendo depreciación…',
+        textoExito: 'Depreciación aplicada',
+      })
+      .subscribe({
+        next: (d) => {
+          this.toast.exito(`Depreciacion aplicada del periodo ${d.periodo}.`);
+          this.cargar();
+        },
+        error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
+      });
   }
 
   async darDeBaja(a: ActivoFijo): Promise<void> {
@@ -228,12 +335,18 @@ export class ActivosFijos {
     if (!ok) {
       return;
     }
-    this.service.darDeBaja(a.id).subscribe({
-      next: () => {
-        this.toast.exito('Activo dado de baja.');
-        this.cargar();
-      },
-      error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
-    });
+    this.overlay
+      .ejecutar(this.service.darDeBaja(a.id), {
+        tipo: 'eliminar',
+        textoProceso: 'Dando de baja…',
+        textoExito: 'Activo dado de baja',
+      })
+      .subscribe({
+        next: () => {
+          this.toast.exito('Activo dado de baja.');
+          this.cargar();
+        },
+        error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
+      });
   }
 }

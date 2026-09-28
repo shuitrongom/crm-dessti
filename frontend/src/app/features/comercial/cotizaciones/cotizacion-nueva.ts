@@ -40,15 +40,19 @@ import { CotizacionesService } from '../services/cotizaciones.service';
 import { ClientesService } from '../services/clientes.service';
 import { ProductosService } from '../services/catalogo.service';
 import {
+  calcularDesgloseFiscal,
   Cliente,
   CotizacionRequest,
+  DesgloseFiscal,
   MONEDA_POR_DEFECTO,
   MONEDAS_COTIZACION,
   MonedaCotizacion,
   PartidaRequest,
   Producto,
   subtotalPartida,
-  totalPartidas,
+  TASA_IVA_POR_DEFECTO,
+  TASAS_IVA,
+  TasaIva,
 } from '../models/comercial.models';
 
 /** Numero maximo de partidas por Cotizacion (Req 6.2). */
@@ -84,6 +88,7 @@ export class ComercialCotizacionNueva {
   protected readonly guardando = signal(false);
   protected readonly maxPartidas = MAX_PARTIDAS;
   protected readonly monedas = MONEDAS_COTIZACION;
+  protected readonly tasasIva = TASAS_IVA;
 
   protected readonly form = this.fb.nonNullable.group({
     clienteId: ['', [Validators.required]],
@@ -91,22 +96,35 @@ export class ComercialCotizacionNueva {
     moneda: [MONEDA_POR_DEFECTO as MonedaCotizacion],
     condiciones: ['', [Validators.maxLength(2000)]],
     notas: ['', [Validators.maxLength(2000)]],
+    // Ajustes fiscales globales (V80): montos opcionales, no negativos.
+    descuentoGlobal: [null as number | null, [Validators.min(0)]],
+    retencionIsr: [null as number | null, [Validators.min(0)]],
+    retencionIva: [null as number | null, [Validators.min(0)]],
     partidas: this.fb.array([this.crearPartida()]),
   });
 
   /** Signal del valor del formulario para recalcular totales de forma reactiva. */
   private readonly valor = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
 
-  /** Total previsualizado de la cotizacion (suma de subtotales, Req 6.5). */
-  protected readonly total = computed(() => {
-    const partidas = this.valor()?.partidas ?? [];
-    return totalPartidas(
-      partidas.map((p) => ({
-        cantidad: Number(p?.cantidad ?? 0),
-        precioUnitario: p?.precioUnitario == null ? 0 : Number(p.precioUnitario),
-      })),
+  /** Desglose fiscal previsualizado (subtotal, descuento, IVA, retenciones, total) (V80). */
+  protected readonly desglose = computed<DesgloseFiscal>(() => {
+    const v = this.valor();
+    const partidas = (v?.partidas ?? []).map((p) => ({
+      cantidad: Number(p?.cantidad ?? 0),
+      precioUnitario: p?.precioUnitario == null ? 0 : Number(p.precioUnitario),
+      descuento: p?.descuento == null ? 0 : Number(p.descuento),
+      tasaIva: (p?.tasaIva ?? TASA_IVA_POR_DEFECTO) as TasaIva,
+    }));
+    return calcularDesgloseFiscal(
+      partidas,
+      v?.descuentoGlobal == null ? 0 : Number(v.descuentoGlobal),
+      v?.retencionIsr == null ? 0 : Number(v.retencionIsr),
+      v?.retencionIva == null ? 0 : Number(v.retencionIva),
     );
   });
+
+  /** Total previsualizado de la cotizacion (con desglose fiscal, V80). */
+  protected readonly total = computed(() => this.desglose().total);
 
   /** Busca Clientes por nombre/RFC para el selector (nunca se teclea el UUID). */
   protected readonly buscarCliente = (filtro: string): Observable<PaginaResponse<Cliente>> =>
@@ -141,10 +159,13 @@ export class ComercialCotizacionNueva {
       descripcion: ['', [Validators.required, Validators.maxLength(500)]],
       cantidad: [1, [Validators.required, Validators.min(1), Validators.max(999999)]],
       precioUnitario: [null as number | null, [Validators.min(0.01), Validators.max(999999999.99)]],
+      // Desglose fiscal por partida (V80): descuento (monto) y tasa de IVA.
+      descuento: [null as number | null, [Validators.min(0), Validators.max(999999999.99)]],
+      tasaIva: [TASA_IVA_POR_DEFECTO as TasaIva],
     });
   }
 
-  /** Subtotal previsualizado de una partida por indice. */
+  /** Importe bruto previsualizado de una partida por indice (cantidad * precio). */
   subtotalDe(indice: number): number {
     const grupo = this.partidas.at(indice);
     const cantidad = Number(grupo.get('cantidad')?.value ?? 0);
@@ -179,11 +200,15 @@ export class ComercialCotizacionNueva {
     const partidas: PartidaRequest[] = bruto.partidas.map((p) => {
       const precio = p['precioUnitario'];
       const sinPrecio = precio == null || (precio as unknown as string) === '';
+      const desc = p['descuento'];
+      const sinDescuento = desc == null || (desc as unknown as string) === '';
       return {
         productoId: (p['productoId'] as string)?.trim() || null,
         descripcion: (p['descripcion'] as string).trim(),
         cantidad: Number(p['cantidad']),
         precioUnitario: sinPrecio ? null : Number(precio),
+        descuento: sinDescuento ? null : Number(desc),
+        tasaIva: (p['tasaIva'] as TasaIva) ?? TASA_IVA_POR_DEFECTO,
       };
     });
     const request: CotizacionRequest = {
@@ -191,6 +216,15 @@ export class ComercialCotizacionNueva {
       partidas,
       moneda: bruto.moneda,
     };
+    if (bruto.descuentoGlobal != null && Number(bruto.descuentoGlobal) > 0) {
+      request.descuentoGlobal = Number(bruto.descuentoGlobal);
+    }
+    if (bruto.retencionIsr != null && Number(bruto.retencionIsr) > 0) {
+      request.retencionIsr = Number(bruto.retencionIsr);
+    }
+    if (bruto.retencionIva != null && Number(bruto.retencionIva) > 0) {
+      request.retencionIva = Number(bruto.retencionIva);
+    }
     const validoHasta = bruto.validoHasta.trim();
     if (validoHasta) {
       request.validoHasta = validoHasta;

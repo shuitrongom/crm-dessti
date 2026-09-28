@@ -152,6 +152,11 @@ public class ServicioCotizaciones {
         cotizacion.aplicarDatosDescriptivos(hoy, comando.validoHasta(),
                 comando.condiciones(), comando.notas(), comando.moneda(), actor);
 
+        // Ajustes fiscales globales (V80): descuento global y retenciones. Recalcula
+        // el total con el desglose CFDI (base - descuento global + IVA - retenciones).
+        cotizacion.aplicarAjustesFiscales(comando.descuentoGlobal(),
+                comando.retencionIsr(), comando.retencionIva(), actor);
+
         // Folio legible por humanos (V60): consecutivo atomico por (tenant, anio).
         cotizacion.asignarFolio(componerFolio(hoy.getYear()));
 
@@ -201,6 +206,33 @@ public class ServicioCotizaciones {
         Cotizacion guardada = cotizacionRepository.save(cotizacion);
         auditar(actor, "agregar_partida", guardada.getId(),
                 "agregada partida; total recalculado " + guardada.getTotal().toPlainString(),
+                null, null);
+        return CotizacionDto.de(guardada, resolverCliente(guardada.getClienteId()));
+    }
+
+    /**
+     * Ajusta el descuento global y las retenciones (ISR/IVA) de una Cotizacion en
+     * {@code borrador} y recalcula el total con el desglose CFDI (V80). Util para
+     * afinar los importes despues de agregar partidas.
+     *
+     * @param cotizacionId    identificador de la Cotizacion.
+     * @param descuentoGlobal descuento global (monto); {@code null}=0, no negativo.
+     * @param retencionIsr    retencion de ISR (monto); {@code null}=0, no negativa.
+     * @param retencionIva    retencion de IVA (monto); {@code null}=0, no negativa.
+     * @return el DTO de la Cotizacion con su total recalculado.
+     * @throws RecursoNoEncontradoException si la Cotizacion no es accesible (404).
+     * @throws ReglaNegocioException si no esta en {@code borrador} o algun monto es
+     *         invalido (422).
+     */
+    @Transactional
+    public CotizacionDto aplicarAjustesFiscales(UUID cotizacionId, BigDecimal descuentoGlobal,
+                                                BigDecimal retencionIsr, BigDecimal retencionIva) {
+        String actor = actorActual();
+        Cotizacion cotizacion = cargar(cotizacionId, actor);
+        cotizacion.aplicarAjustesFiscales(descuentoGlobal, retencionIsr, retencionIva, actor);
+        Cotizacion guardada = cotizacionRepository.save(cotizacion);
+        auditar(actor, "ajustes_fiscales", guardada.getId(),
+                "ajustes fiscales aplicados; total recalculado " + guardada.getTotal().toPlainString(),
                 null, null);
         return CotizacionDto.de(guardada, resolverCliente(guardada.getClienteId()));
     }
@@ -473,8 +505,25 @@ public class ServicioCotizaciones {
             throw new ReglaNegocioException(
                     "El precio unitario de la partida es obligatorio (no se pudo sugerir para el Producto).");
         }
+        com.dessti.crm.comercial.cotizacion.domain.TasaIva tasa = interpretarTasaIva(comando.tasaIva());
         return PartidaCotizacion.crear(
-                comando.productoId(), comando.descripcion(), comando.cantidad(), precio, actor);
+                comando.productoId(), comando.descripcion(), comando.cantidad(), precio,
+                comando.descuento(), tasa, actor);
+    }
+
+    /**
+     * Interpreta la etiqueta de tasa de IVA de un comando; {@code null}/blanco usa
+     * la tasa por defecto (16%). Una etiqueta desconocida se rechaza con 422.
+     */
+    private com.dessti.crm.comercial.cotizacion.domain.TasaIva interpretarTasaIva(String etiqueta) {
+        if (etiqueta == null || etiqueta.isBlank()) {
+            return com.dessti.crm.comercial.cotizacion.domain.TasaIva.POR_DEFECTO;
+        }
+        try {
+            return com.dessti.crm.comercial.cotizacion.domain.TasaIva.desdeValorBd(etiqueta);
+        } catch (IllegalArgumentException ex) {
+            throw new ReglaNegocioException("Tasa de IVA desconocida: " + etiqueta);
+        }
     }
 
     private Cotizacion cargar(UUID cotizacionId, String actor) {

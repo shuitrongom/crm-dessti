@@ -37,80 +37,102 @@
     <button matButton="filled" type="button" (click)="cerrarConExito()">Entendido</button>
   </mat-dialog-actions>
 } @else {
-<h2 mat-dialog-title>{{ esEdicion ? 'Editar giro' : 'Nuevo giro' }}</h2>
-<mat-dialog-content>
-  <form class="giro-dialog__form" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+<mat-dialog-content class="giro-dialog__content">
+  <form class="ds-form" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+    <!-- Encabezado con contexto -->
+    <header class="ds-form__header">
+      <h2 class="ds-form__header-title" mat-dialog-title>
+        {{ esEdicion ? 'Editar giro' : 'Nuevo giro' }}
+      </h2>
+      <p class="ds-form__header-subtitle">
+        Un giro define un vertical de negocio (ej. carpintería, telas). Queda disponible para asignarse a nuevas empresas.
+      </p>
+    </header>
+
     @if (error()) {
-      <p class="giro-dialog__error" role="alert">
+      <p class="ds-form__note ds-form__note--warn" role="alert">
         <mat-icon aria-hidden="true">error_outline</mat-icon>
         <span>{{ error() }}</span>
       </p>
     }
 
-    <p class="giro-dialog__intro">
-      Un giro define un vertical de negocio (ej. carpinteria, manufactura, telas).
-      Al crearlo, queda disponible para asignarse a nuevas empresas.
-    </p>
+    <!-- Sección: Identificación del giro (two-pane) -->
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Identificación del giro</h3>
+        <p class="ds-form__section-desc">
+          Clave única (inmutable), nombre visible en la plataforma y una descripción opcional.
+        </p>
+      </div>
 
-    <section class="giro-dialog__seccion">
-      <h3 class="giro-dialog__seccion-titulo">Identificacion del giro</h3>
+      <div class="ds-form__section-body">
+        <div class="ds-form__grid">
+          <div class="ds-form__field ds-form__field--full">
+            <mat-form-field appearance="outline">
+              <mat-label>Clave</mat-label>
+              <mat-icon matPrefix aria-hidden="true">vpn_key</mat-icon>
+              <input
+                matInput
+                type="text"
+                formControlName="clave"
+                autocomplete="off"
+                maxlength="60"
+                placeholder="ej. carpinteria, telas-textiles"
+                (input)="normalizarClave()"
+                [readonly]="esEdicion"
+                required
+              />
+              @if (formulario.controls.clave.hasError('required') && formulario.controls.clave.touched) {
+                <mat-error>La clave es obligatoria.</mat-error>
+              } @else if (formulario.controls.clave.hasError('pattern') && formulario.controls.clave.touched) {
+                <mat-error>Usa solo minúsculas, números y guiones.</mat-error>
+              } @else if (formulario.controls.clave.hasError('maxlength') && formulario.controls.clave.touched) {
+                <mat-error>Máximo 60 caracteres.</mat-error>
+              }
+            </mat-form-field>
+            <p class="ds-form__help">
+              {{ esEdicion ? 'La clave no se puede cambiar.' : 'Identificador único, solo minúsculas y guiones.' }}
+            </p>
+          </div>
 
-      <mat-form-field appearance="outline" class="giro-dialog__campo">
-        <mat-label>Clave</mat-label>
-        <mat-icon matPrefix aria-hidden="true">vpn_key</mat-icon>
-        <input
-          matInput
-          type="text"
-          formControlName="clave"
-          autocomplete="off"
-          maxlength="60"
-          placeholder="ej. carpinteria, telas-textiles"
-          (input)="normalizarClave()"
-          [readonly]="esEdicion"
-          required
-        />
-        <mat-hint>{{ esEdicion ? 'La clave no se puede cambiar.' : 'Identificador unico, solo minusculas y guiones.' }}</mat-hint>
-        @if (formulario.controls.clave.hasError('required') && formulario.controls.clave.touched) {
-          <mat-error>La clave es obligatoria.</mat-error>
-        } @else if (formulario.controls.clave.hasError('pattern') && formulario.controls.clave.touched) {
-          <mat-error>Usa solo minusculas, numeros y guiones.</mat-error>
-        } @else if (formulario.controls.clave.hasError('maxlength') && formulario.controls.clave.touched) {
-          <mat-error>Maximo 60 caracteres.</mat-error>
-        }
-      </mat-form-field>
+          <div class="ds-form__field ds-form__field--full">
+            <mat-form-field appearance="outline">
+              <mat-label>Nombre visible</mat-label>
+              <mat-icon matPrefix aria-hidden="true">label</mat-icon>
+              <input
+                matInput
+                type="text"
+                formControlName="nombreVisible"
+                maxlength="150"
+                placeholder="ej. Carpintería y ebanistería"
+                required
+              />
+              @if (formulario.controls.nombreVisible.hasError('required') && formulario.controls.nombreVisible.touched) {
+                <mat-error>El nombre visible es obligatorio.</mat-error>
+              } @else if (formulario.controls.nombreVisible.hasError('maxlength') && formulario.controls.nombreVisible.touched) {
+                <mat-error>Máximo 150 caracteres.</mat-error>
+              }
+            </mat-form-field>
+            <p class="ds-form__help">Nombre que se muestra en la plataforma.</p>
+          </div>
 
-      <mat-form-field appearance="outline" class="giro-dialog__campo">
-        <mat-label>Nombre visible</mat-label>
-        <mat-icon matPrefix aria-hidden="true">label</mat-icon>
-        <input
-          matInput
-          type="text"
-          formControlName="nombreVisible"
-          maxlength="150"
-          placeholder="ej. Carpinteria y ebanisteria"
-          required
-        />
-        <mat-hint>Nombre que se muestra en la plataforma.</mat-hint>
-        @if (formulario.controls.nombreVisible.hasError('required') && formulario.controls.nombreVisible.touched) {
-          <mat-error>El nombre visible es obligatorio.</mat-error>
-        } @else if (formulario.controls.nombreVisible.hasError('maxlength') && formulario.controls.nombreVisible.touched) {
-          <mat-error>Maximo 150 caracteres.</mat-error>
-        }
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="giro-dialog__campo">
-        <mat-label>Descripcion (opcional)</mat-label>
-        <textarea
-          matInput
-          rows="3"
-          formControlName="descripcion"
-          maxlength="500"
-          placeholder="Describe brevemente las reglas de negocio de este giro…"
-        ></textarea>
-        @if (formulario.controls.descripcion.hasError('maxlength') && formulario.controls.descripcion.touched) {
-          <mat-error>Maximo 500 caracteres.</mat-error>
-        }
-      </mat-form-field>
+          <div class="ds-form__field ds-form__field--full">
+            <mat-form-field appearance="outline">
+              <mat-label>Descripción (opcional)</mat-label>
+              <textarea
+                matInput
+                rows="3"
+                formControlName="descripcion"
+                maxlength="500"
+                placeholder="Describe brevemente las reglas de negocio de este giro…"
+              ></textarea>
+              @if (formulario.controls.descripcion.hasError('maxlength') && formulario.controls.descripcion.touched) {
+                <mat-error>Máximo 500 caracteres.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
     </section>
   </form>
 </mat-dialog-content>

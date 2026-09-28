@@ -21,6 +21,7 @@ import {
 } from '@angular/common/http/testing';
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { provideRouter } from '@angular/router';
 
 import { AdminSesiones } from './sesiones';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog';
@@ -78,6 +79,7 @@ describe('AdminSesiones', () => {
       providers: [
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
+        provideRouter([]),
         { provide: ConfirmDialogService, useValue: confirm },
       ],
     }).compileComponents();

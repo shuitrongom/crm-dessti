@@ -65,7 +65,7 @@ public class UsuarioController {
     public ResponseEntity<UsuarioDto> crear(@Valid @RequestBody CrearUsuarioRequest request) {
         UsuarioDto dto = servicioUsuarios.crearUsuario(
                 new CrearUsuarioCommand(request.identificadorAcceso(), request.password(),
-                        request.nombreVisible(), request.rolIds()));
+                        request.nombreVisible(), request.rolIds(), request.clienteId()));
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 

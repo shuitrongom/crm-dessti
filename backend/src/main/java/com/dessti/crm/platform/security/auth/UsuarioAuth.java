@@ -79,6 +79,14 @@ public class UsuarioAuth {
     @Column(name = "tenant_id")
     private UUID tenantId;
 
+    /**
+     * Cliente asociado a este Usuario para el Portal del Cliente (Req 45); {@code null}
+     * para el staff de la Empresa y el super_admin. Cuando el Usuario tiene rol
+     * {@code cliente_portal}, este identificador acota su acceso al Portal.
+     */
+    @Column(name = "cliente_id")
+    private UUID clienteId;
+
     @Column(name = "identificador_acceso", nullable = false, updatable = false)
     private String identificadorAcceso;
 
@@ -131,6 +139,14 @@ public class UsuarioAuth {
 
     public UUID getTenantId() {
         return tenantId;
+    }
+
+    /**
+     * @return el Cliente asociado para el Portal (Req 45), o {@code null} si el
+     *         Usuario no es de portal (staff de la Empresa o super_admin).
+     */
+    public UUID getClienteId() {
+        return clienteId;
     }
 
     public String getIdentificadorAcceso() {

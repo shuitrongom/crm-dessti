@@ -24,6 +24,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { PerfilService } from '../../../core/auth/perfil.service';
 import { ModulosEmpresaService } from '../../../core/auth/modulos-empresa.service';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 
 /** Validador cruzado: passwordNueva y confirmar deben coincidir. */
@@ -65,6 +66,7 @@ export class CambiarPassword {
   private readonly auth = inject(AuthService);
   private readonly modulosEmpresa = inject(ModulosEmpresaService);
   private readonly toast = inject(NotificacionesService);
+  private readonly overlay = inject(OperacionOverlayService);
   private readonly router = inject(Router);
 
   /** Contrasena actual (temporal) recibida por estado de navegacion desde el login. */
@@ -108,7 +110,12 @@ export class CambiarPassword {
     }
     this.enviando.set(true);
     const passwordNueva = this.formulario.controls.passwordNueva.value;
-    this.perfil.cambiarPassword({ passwordActual: this.passwordActual, passwordNueva }).subscribe({
+    this.overlay
+      .ejecutar(
+        this.perfil.cambiarPassword({ passwordActual: this.passwordActual, passwordNueva }),
+        { tipo: 'guardar', textoProceso: 'Actualizando contraseña…', textoExito: 'Contraseña actualizada' },
+      )
+      .subscribe({
       next: () => {
         this.enviando.set(false);
         this.toast.exito('Tu contrasena se actualizo. Bienvenido.');

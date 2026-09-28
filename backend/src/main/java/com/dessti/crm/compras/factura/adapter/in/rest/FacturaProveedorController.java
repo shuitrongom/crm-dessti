@@ -48,6 +48,10 @@ import jakarta.validation.Valid;
  *       pago desde {@code conciliada}
  *       ({@code @autorizador.tiene('factura_proveedor','cambiar_estado')}); 200 OK;
  *       422 si la factura no esta conciliada (Req 33.7).</li>
+ *   <li>{@code POST /compras/facturas-proveedor/{id}/reabrir} — reabre una factura
+ *       en {@code discrepancia} a {@code registrada} para re-conciliar
+ *       ({@code @autorizador.tiene('factura_proveedor','cambiar_estado')}); 200 OK;
+ *       422 si la factura no esta en discrepancia.</li>
  * </ul>
  *
  * <h2>Autorizacion (Req 3, 27.5)</h2>
@@ -130,6 +134,21 @@ public class FacturaProveedorController {
     @PreAuthorize("@autorizador.moduloHabilitado('compras') and @autorizador.tiene('factura_proveedor','cambiar_estado')")
     public ResponseEntity<FacturaProveedorDto> autorizarPago(@PathVariable("id") UUID id) {
         return ResponseEntity.ok(servicioFacturas.autorizarPago(id));
+    }
+
+    /**
+     * Reabre una factura marcada en {@code discrepancia}, devolviendola a
+     * {@code registrada} para reintentar la Conciliacion_Tres_Vias tras corregir la
+     * causa (mejora enterprise de recuperacion). 422 si la factura no esta en
+     * discrepancia; 404 si no es accesible.
+     *
+     * @param id identificador de la factura.
+     * @return 200 OK con el {@link FacturaProveedorDto} en estado {@code registrada}.
+     */
+    @PostMapping("/{id}/reabrir")
+    @PreAuthorize("@autorizador.moduloHabilitado('compras') and @autorizador.tiene('factura_proveedor','cambiar_estado')")
+    public ResponseEntity<FacturaProveedorDto> reabrir(@PathVariable("id") UUID id) {
+        return ResponseEntity.ok(servicioFacturas.reabrir(id));
     }
 
     /**

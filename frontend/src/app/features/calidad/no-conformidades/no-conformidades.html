@@ -1,0 +1,135 @@
+<app-page-header
+  titulo="No conformidades"
+  subtitulo="Registra las no conformidades del sistema de gestión y da seguimiento a su tratamiento hasta el cierre."
+>
+  @if (puedeCrear) {
+    <button acciones matButton="filled" type="button" (click)="alternarAlta()">
+      <mat-icon>{{ mostrarAlta() ? 'close' : 'add' }}</mat-icon>
+      {{ mostrarAlta() ? 'Cerrar' : 'Registrar' }}
+    </button>
+  }
+</app-page-header>
+
+@if (mostrarAlta() && puedeCrear) {
+  <mat-card appearance="outlined" class="cal-alta">
+    <mat-card-content>
+      <form [formGroup]="formAlta" (ngSubmit)="crear()" novalidate>
+        <h2 class="cal-alta__titulo">Registrar no conformidad</h2>
+        <div class="cal-form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Origen</mat-label>
+            <mat-select formControlName="origen">
+              @for (o of origenes; track o.valor) {
+                <mat-option [value]="o.valor">{{ o.etiqueta }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Proceso afectado</mat-label>
+            <input matInput formControlName="procesoAfectado" autocomplete="off" />
+            <mat-error>El proceso afectado es obligatorio.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="cal-form-grid__ancho">
+            <mat-label>Descripción</mat-label>
+            <textarea matInput formControlName="descripcion" rows="2"></textarea>
+            <mat-error>La descripción es obligatoria.</mat-error>
+          </mat-form-field>
+        </div>
+        <button matButton="filled" type="submit" [disabled]="guardando()">Registrar</button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="No hay no conformidades registradas."
+  (reintentar)="cargar()"
+>
+  @if (hayDatos()) {
+    <!-- Scorecard de no conformidades + composicion (patron dashboard reutilizable) -->
+    <app-dashboard-section layout="apilado">
+      <div kpis>
+        <app-kpi-tile
+          icono="report_problem"
+          tono="error"
+          etiqueta="Abiertas"
+          [valor]="resumen().abiertas"
+        />
+        <app-kpi-tile
+          icono="pending_actions"
+          tono="advertencia"
+          etiqueta="En tratamiento"
+          [valor]="resumen().enTratamiento"
+        />
+        <app-kpi-tile
+          icono="task_alt"
+          tono="exito"
+          etiqueta="Cerradas"
+          [valor]="resumen().cerradas"
+        />
+      </div>
+      <div grafica class="dash-grafica">
+        <app-metric-chart
+          [datos]="[]"
+          tipo="gauge"
+          [porcentaje]="porcentajeCerradas()"
+          titulo="No conformidades cerradas"
+        />
+      </div>
+      <div grafica class="dash-grafica">
+        <app-metric-chart [datos]="composicionEstados()" tipo="dona" titulo="No conformidades por estado" />
+      </div>
+      @if (composicionOrigen().length > 0) {
+        <div grafica class="dash-grafica">
+          <app-metric-chart [datos]="composicionOrigen()" tipo="dona" titulo="No conformidades por origen" />
+        </div>
+      }
+    </app-dashboard-section>
+  }
+
+  <div class="cal-filtros">
+    <mat-form-field appearance="outline">
+      <mat-label>Estado</mat-label>
+      <mat-select [value]="filtroEstado()" (valueChange)="aplicarFiltro($event)">
+        @for (opcion of estadosFiltro; track opcion.valor) {
+          <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="descripcion" let-nc>{{ nc.descripcion }}</ng-template>
+    <ng-template appCelda="origen" let-nc>{{ humanizar(nc.origen) }}</ng-template>
+    <ng-template appCelda="proceso" let-nc>{{ nc.procesoAfectado }}</ng-template>
+    <ng-template appCelda="detectada" let-nc>{{ nc.detectadaEn | date: 'dd/MM/yyyy' }}</ng-template>
+    <ng-template appCelda="estado" let-nc>
+      <app-estado-chip [etiqueta]="humanizar(nc.estado)" [tono]="tono(nc.estado)" />
+    </ng-template>
+    <ng-template appCelda="acciones" let-nc>
+      @if (transiciones(nc).length > 0) {
+        <button matIconButton [matMenuTriggerFor]="menu" aria-label="Acciones de la no conformidad">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+          @for (destino of transiciones(nc); track destino) {
+            <button mat-menu-item type="button" (click)="cambiarEstado(nc, destino)">
+              <mat-icon>arrow_forward</mat-icon> Marcar como {{ humanizar(destino) }}
+            </button>
+          }
+        </mat-menu>
+      } @else {
+        <span class="cal-ayuda">-</span>
+      }
+    </ng-template>
+  </app-data-table>
+</app-state-container>

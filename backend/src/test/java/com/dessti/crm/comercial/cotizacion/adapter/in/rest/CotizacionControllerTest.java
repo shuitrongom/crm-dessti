@@ -90,10 +90,13 @@ class CotizacionControllerTest {
     private static CotizacionDto cotizacionDto(String estado, boolean emisorIncompleto) {
         Instant ahora = Instant.parse("2024-01-01T00:00:00Z");
         PartidaCotizacionDto partida = new PartidaCotizacionDto(
-                UUID.randomUUID(), null, "Anuncio", 2, new BigDecimal("100.00"), new BigDecimal("200.00"));
+                UUID.randomUUID(), null, "Anuncio", 2, new BigDecimal("100.00"),
+                new BigDecimal("0.00"), new BigDecimal("200.00"), "16",
+                new BigDecimal("32.00"), new BigDecimal("200.00"));
         return new CotizacionDto(ID, "COT-2026-0001", CLIENTE, "Anuncios ACME", "AAA010101AAA",
-                "ventas@acme.mx", null, estado, new BigDecimal("200.00"), new BigDecimal("200.00"),
-                "MXN", java.time.LocalDate.of(2026, 1, 15), null, null, null, null,
+                "ventas@acme.mx", null, estado, new BigDecimal("200.00"), new BigDecimal("0.00"),
+                new BigDecimal("32.00"), new BigDecimal("0.00"), new BigDecimal("0.00"),
+                new BigDecimal("232.00"), "MXN", java.time.LocalDate.of(2026, 1, 15), null, null, null, null,
                 List.of(partida), null, 0L, ahora, ahora, emisorIncompleto);
     }
 
@@ -112,7 +115,9 @@ class CotizacionControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(ID.toString()))
                 .andExpect(jsonPath("$.estado").value("borrador"))
-                .andExpect(jsonPath("$.total").value(200.00));
+                .andExpect(jsonPath("$.subtotal").value(200.00))
+                .andExpect(jsonPath("$.iva").value(32.00))
+                .andExpect(jsonPath("$.total").value(232.00));
     }
 
     @Test

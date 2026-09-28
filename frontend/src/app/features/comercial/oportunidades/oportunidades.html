@@ -104,6 +104,13 @@
         <span class="pipeline-kpi__etiqueta">Valor del pipeline abierto</span>
       </span>
     </article>
+    <article class="pipeline-kpi pipeline-kpi--forecast">
+      <span class="pipeline-kpi__icono" aria-hidden="true"><mat-icon>online_prediction</mat-icon></span>
+      <span class="pipeline-kpi__cuerpo">
+        <span class="pipeline-kpi__valor">{{ forecastPonderado() | currency: "MXN" : "symbol-narrow" : "1.0-0" }}</span>
+        <span class="pipeline-kpi__etiqueta">Forecast ponderado</span>
+      </span>
+    </article>
     <article class="pipeline-kpi">
       <span class="pipeline-kpi__icono" aria-hidden="true"><mat-icon>filter_alt</mat-icon></span>
       <span class="pipeline-kpi__cuerpo">
@@ -166,6 +173,11 @@
           </div>
           <p class="pipeline__cabecera-valor">
             {{ columna.valor | currency: "MXN" : "symbol-narrow" : "1.0-0" }}
+            @if (columna.valorPonderado > 0 && columna.valorPonderado !== columna.valor) {
+              <span class="pipeline__cabecera-forecast" matTooltip="Forecast ponderado por probabilidad">
+                · {{ columna.valorPonderado | currency: "MXN" : "symbol-narrow" : "1.0-0" }}
+              </span>
+            }
           </p>
         </header>
         <div class="pipeline__tarjetas">
@@ -174,7 +186,22 @@
               <h3 class="pipeline__tarjeta-titulo">{{ oportunidad.titulo }}</h3>
               <p class="pipeline__tarjeta-valor">
                 {{ oportunidad.valorEstimado | currency: 'MXN' : 'symbol-narrow' }}
+                <span class="pipeline__tarjeta-prob" matTooltip="Probabilidad de cierre">
+                  {{ oportunidad.probabilidad }}%
+                </span>
               </p>
+              @if (oportunidad.fechaCierreEsperada) {
+                <p class="pipeline__tarjeta-cierre">
+                  <mat-icon aria-hidden="true">event</mat-icon>
+                  Cierre: {{ oportunidad.fechaCierreEsperada | date: 'mediumDate' : undefined : 'es-MX' }}
+                </p>
+              }
+              @if (oportunidad.etapa === 'perdido' && oportunidad.motivoPerdida) {
+                <p class="pipeline__tarjeta-perdida" matTooltip="Motivo de la pérdida">
+                  <mat-icon aria-hidden="true">info</mat-icon>
+                  {{ oportunidad.motivoPerdida }}
+                </p>
+              }
 
               <!-- Cliente: enlace navegable a su Ficha 360 (Req 2.4, 7.1) -->
               @if (puedeVerCliente && nombreCliente(oportunidad); as cliente) {

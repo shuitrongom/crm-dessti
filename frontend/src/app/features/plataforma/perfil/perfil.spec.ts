@@ -17,6 +17,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { PlataformaPerfil } from './perfil';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 import { AuthService } from '../../../core/auth/auth.service';
 import { esperarSinViolaciones } from '../../../../testing/axe';
 
@@ -49,6 +50,17 @@ class ToastSpy {
     this.errores.push(m);
   }
   info(): void {}
+}
+
+/**
+ * Stub del OperacionOverlayService: reemite el observable sin montar el overlay
+ * en el DOM (jsdom no monta componentes dinamicos). Asi las pruebas verifican la
+ * peticion HTTP sin efectos de UI.
+ */
+class OperacionOverlayServiceStub {
+  ejecutar<T>(origen: import('rxjs').Observable<T>): import('rxjs').Observable<T> {
+    return origen;
+  }
 }
 
 /** Forma minima del componente accedida por las pruebas. */
@@ -114,6 +126,7 @@ describe('PlataformaPerfil', () => {
       providers: [
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
+        { provide: OperacionOverlayService, useValue: new OperacionOverlayServiceStub() },
         { provide: NotificacionesService, useValue: toast },
         { provide: AuthService, useValue: auth },
       ],

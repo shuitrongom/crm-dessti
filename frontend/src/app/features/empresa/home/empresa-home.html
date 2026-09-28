@@ -1,156 +1,147 @@
 ﻿@let brandingData = branding().datos;
 
-<app-page-header [titulo]="nombreEmpresa()" [subtitulo]="saludo()">
-  @if (brandingData?.logo) {
-    <img acciones class="empresa-home__logo" [src]="brandingData?.logo" alt="Logotipo de la empresa" />
-  }
-</app-page-header>
-
-<!-- Bloque de estrategia (esencia + objetivos): solo si el Modulo 'estrategia'
-     esta contratado y el Usuario tiene permiso; en caso contrario se oculta. -->
-@if (mostrarEstrategia()) {
-  <!-- Mision / Vision / Valores (Req 58.1) -->
-  <section class="empresa-home__seccion" aria-labelledby="titulo-esencia">
-    <div class="empresa-home__seccion-cabecera">
-      <h2 id="titulo-esencia" class="empresa-home__titulo-seccion">Misión, visión y valores</h2>
-      <a matButton routerLink="/empresa/estrategia-vistas">
-        <mat-icon aria-hidden="true">arrow_forward</mat-icon>
-        Ver estrategia
-      </a>
+<!-- ===== ENCABEZADO PREMIUM ===== -->
+<header class="eh-hero">
+  <div class="eh-hero__izq">
+    @if (brandingData?.logo) {
+      <img class="eh-hero__logo" [src]="brandingData?.logo" alt="Logo de la empresa" />
+    } @else {
+      <span class="eh-hero__logo-icono" aria-hidden="true">
+        <mat-icon>domain</mat-icon>
+      </span>
+    }
+    <div>
+      <h1 class="eh-hero__nombre">{{ nombreEmpresa() }}</h1>
+      <p class="eh-hero__saludo">Resumen ejecutivo de tu empresa</p>
     </div>
-    <app-state-container
-      [fase]="esencia().fase"
-      [mensajeError]="esencia().mensajeError"
-      mensajeVacio="Aún no se ha registrado la misión, visión y valores."
-      (reintentar)="cargarEsencia()"
-    >
-      @let esenciaData = esencia().datos;
-      <div class="empresa-home__esencia">
-        <article class="empresa-home__esencia-item">
-          <h3><mat-icon aria-hidden="true">explore</mat-icon>Misión</h3>
-          @if (esenciaData?.mision) {
-            <p>{{ esenciaData?.mision }}</p>
-          } @else {
-            <p class="empresa-home__esencia-vacio">No definida.</p>
-          }
-        </article>
-        <article class="empresa-home__esencia-item">
-          <h3><mat-icon aria-hidden="true">visibility</mat-icon>Visión</h3>
-          @if (esenciaData?.vision) {
-            <p>{{ esenciaData?.vision }}</p>
-          } @else {
-            <p class="empresa-home__esencia-vacio">No definida.</p>
-          }
-        </article>
-        <article class="empresa-home__esencia-item">
-          <h3><mat-icon aria-hidden="true">favorite</mat-icon>Valores</h3>
-          @if (esenciaData?.valores) {
-            <p>{{ esenciaData?.valores }}</p>
-          } @else {
-            <p class="empresa-home__esencia-vacio">No definidos.</p>
-          }
-        </article>
-      </div>
-    </app-state-container>
-  </section>
+  </div>
+  <nav class="eh-hero__accesos" aria-label="Accesos rapidos">
+    <a matButton routerLink="/empresa/reportes/inteligencia" class="eh-hero__btn">
+      <mat-icon>query_stats</mat-icon> Inteligencia
+    </a>
+    @if (mostrarComercial()) {
+      <a matButton routerLink="/empresa/comercial/oportunidades" class="eh-hero__btn">
+        <mat-icon>trending_up</mat-icon> Pipeline
+      </a>
+    }
+    @if (mostrarEstrategia()) {
+      <a matButton routerLink="/empresa/estrategia-vistas" class="eh-hero__btn">
+        <mat-icon>flag_circle</mat-icon> Estrategia
+      </a>
+    }
+  </nav>
+</header>
 
-  <!-- Objetivos estrategicos (Req 58.10) -->
-  <section class="empresa-home__seccion" aria-labelledby="titulo-objetivos">
-    <h2 id="titulo-objetivos" class="empresa-home__titulo-seccion">Objetivos estratégicos</h2>
-    <app-state-container
-      [fase]="objetivos().fase"
-      [mensajeError]="objetivos().mensajeError"
-      mensajeVacio="Aún no hay objetivos estratégicos. Define tu primer OKR desde la vista de estrategia."
-      (reintentar)="cargarObjetivos()"
-    >
-      <ul class="empresa-home__objetivos">
-        @for (objetivo of objetivos().datos; track objetivo.id) {
-          <li class="empresa-home__objetivo">
-            <div class="empresa-home__objetivo-info">
-              <p class="empresa-home__objetivo-nombre">{{ objetivo.nombre }}</p>
-              <p class="empresa-home__objetivo-meta">
-                <mat-icon aria-hidden="true">person</mat-icon>{{ objetivo.responsable }}
-                <span aria-hidden="true">·</span>
-                <mat-icon aria-hidden="true">target</mat-icon>{{ objetivo.meta }}
-              </p>
-            </div>
-            <app-progress-badge [avance]="objetivo.avance" [estado]="objetivo.estadoDerivado" />
-          </li>
-        }
-      </ul>
-    </app-state-container>
-  </section>
-}
-
-<!-- Resumen comercial (Req 6.3): solo si el Modulo 'comercial' esta contratado
-     y el Usuario tiene permiso; en caso contrario se oculta por completo. Los
-     indicadores se CALCULAN en el cliente a partir de las listas (mismo enfoque
-     que la Ficha 360); no se exponen UUIDs. -->
+<!-- ===== RESUMEN COMERCIAL PREMIUM ===== -->
 @if (mostrarComercial()) {
-  <section class="empresa-home__seccion" aria-labelledby="titulo-resumen-comercial">
-    <div class="empresa-home__seccion-cabecera">
-      <h2 id="titulo-resumen-comercial" class="empresa-home__titulo-seccion">Resumen comercial</h2>
-      <a matButton routerLink="/empresa/comercial/oportunidades">
-        <mat-icon aria-hidden="true">arrow_forward</mat-icon>
-        Ver comercial
+  <section class="eh-seccion" aria-labelledby="titulo-comercial">
+    <div class="eh-seccion__head">
+      <h2 id="titulo-comercial" class="eh-seccion__titulo">
+        <mat-icon aria-hidden="true">storefront</mat-icon>
+        Resumen comercial
+      </h2>
+      <a matButton routerLink="/empresa/comercial/oportunidades" class="eh-link">
+        Ver comercial <mat-icon>arrow_forward</mat-icon>
       </a>
     </div>
+
     <app-state-container
       [fase]="resumenComercial().fase"
       [mensajeError]="resumenComercial().mensajeError"
-      mensajeVacio="Aún no hay actividad comercial registrada."
+      mensajeVacio="Aun no hay actividad comercial registrada."
       (reintentar)="cargarResumenComercial()"
     >
-      <div class="empresa-home__resumen-comercial">
+      <div class="eh-kpi-row">
         @if (puedeVerPipeline()) {
-          <app-stat-card
-            icono="payments"
-            tono="exito"
-            etiqueta="Valor en pipeline"
-            [valor]="valorPipelineTexto()"
-            ayuda="Suma de oportunidades abiertas"
-          />
-          <app-stat-card
-            icono="trending_up"
-            tono="info"
-            etiqueta="Oportunidades abiertas"
-            [valor]="resumenComercial().datos?.oportunidadesAbiertas ?? 0"
-            ayuda="En etapas activas del pipeline"
-          />
+          <button
+            type="button"
+            class="eh-kpi-card eh-kpi-card--primario"
+            (click)="abrirInfoComercial('valor_pipeline_abierto', 'Valor en pipeline', resumenComercial().datos?.valorPipeline ?? 0, 'MXN')"
+            aria-label="Ver explicación de Valor en pipeline"
+          >
+            <span class="eh-kpi-card__icono"><mat-icon>payments</mat-icon></span>
+            <mat-icon class="eh-kpi-card__info" aria-hidden="true">info</mat-icon>
+            <span class="eh-kpi-card__valor">{{ valorPipelineTexto() }}</span>
+            <span class="eh-kpi-card__label">Valor en pipeline</span>
+            <span class="eh-kpi-card__sub">Oportunidades abiertas</span>
+          </button>
+          <button
+            type="button"
+            class="eh-kpi-card eh-kpi-card--info"
+            (click)="abrirInfoComercial('oportunidades_pipeline_abierto', 'Oportunidades abiertas', resumenComercial().datos?.oportunidadesAbiertas ?? 0, 'conteo')"
+            aria-label="Ver explicación de Oportunidades abiertas"
+          >
+            <span class="eh-kpi-card__icono"><mat-icon>trending_up</mat-icon></span>
+            <mat-icon class="eh-kpi-card__info" aria-hidden="true">info</mat-icon>
+            <span class="eh-kpi-card__valor">{{ resumenComercial().datos?.oportunidadesAbiertas ?? 0 }}</span>
+            <span class="eh-kpi-card__label">Oportunidades abiertas</span>
+            <span class="eh-kpi-card__sub">En etapas activas del pipeline</span>
+          </button>
         }
         @if (puedeVerCotizaciones()) {
-          <app-stat-card
-            icono="request_quote"
-            tono="neutro"
-            etiqueta="Cotizaciones"
-            [valor]="resumenComercial().datos?.cotizaciones ?? 0"
-            ayuda="Cotizaciones registradas"
-          />
+          <button
+            type="button"
+            class="eh-kpi-card eh-kpi-card--neutro"
+            (click)="abrirInfoComercial('cotizaciones_registradas', 'Cotizaciones', resumenComercial().datos?.cotizaciones ?? 0, 'conteo')"
+            aria-label="Ver explicación de Cotizaciones"
+          >
+            <span class="eh-kpi-card__icono"><mat-icon>request_quote</mat-icon></span>
+            <mat-icon class="eh-kpi-card__info" aria-hidden="true">info</mat-icon>
+            <span class="eh-kpi-card__valor">{{ resumenComercial().datos?.cotizaciones ?? 0 }}</span>
+            <span class="eh-kpi-card__label">Cotizaciones</span>
+            <span class="eh-kpi-card__sub">Registradas en el sistema</span>
+          </button>
         }
       </div>
     </app-state-container>
   </section>
 }
 
-<!-- Tablero de indicadores por area (Req 22): solo si el Modulo 'reportes-bi'
-     esta contratado y el Usuario tiene permiso; en caso contrario se oculta. -->
+<!-- ===== TABLERO DE INDICADORES PREMIUM (Scorecard + Graficas + KPI grid) ===== -->
 @if (mostrarTablero()) {
-  <section class="empresa-home__seccion" aria-labelledby="titulo-tablero">
-    <h2 id="titulo-tablero" class="empresa-home__titulo-seccion">Tablero de indicadores</h2>
+  <section class="eh-seccion" aria-labelledby="titulo-tablero">
+    <div class="eh-seccion__head">
+      <h2 id="titulo-tablero" class="eh-seccion__titulo">
+        <mat-icon aria-hidden="true">dashboard</mat-icon>
+        Tablero de indicadores
+      </h2>
+      <a matButton routerLink="/empresa/reportes/inteligencia" class="eh-link">
+        Ver inteligencia <mat-icon>arrow_forward</mat-icon>
+      </a>
+    </div>
+
     <app-state-container
       [fase]="tablero().fase"
       [mensajeError]="tablero().mensajeError"
-      mensajeVacio="Aun no hay indicadores disponibles para mostrar."
+      mensajeVacio="Aun no hay indicadores disponibles."
       (reintentar)="cargarTablero()"
     >
+      <!-- Scorecard ejecutivo (KPIs top del negocio) -->
+      @if (tableroComoInteligencia(); as inteligencia) {
+        <app-scorecard [datos]="inteligencia" />
+      }
+
+      <!-- Areas de indicadores: grafica + grid de KPIs -->
       @for (area of tablero().datos?.areas; track area.area) {
         @if (area.indicadores.length > 0) {
-          <div class="empresa-home__area">
-            <h3 class="empresa-home__area-titulo">{{ area.area }}</h3>
-            <div class="empresa-home__indicadores">
-              @for (indicador of area.indicadores; track indicador.clave) {
-                <app-indicator-card [indicador]="indicador" />
-              }
+          <div class="eh-area">
+            <div class="eh-area__head">
+              <h3 class="eh-area__titulo">{{ humanizarArea(area.area) }}</h3>
+              <span class="eh-area__badge">{{ area.indicadores.length }}</span>
+            </div>
+            <div class="eh-area__cuerpo">
+              <div class="eh-area__grafica">
+                <app-metric-chart
+                  [datos]="puntosArea(area)"
+                  [tipo]="tipoGraficaArea(area)"
+                  [titulo]="tipoGraficaArea(area) === 'dona' ? 'Distribucion' : 'Indicadores del area'"
+                />
+              </div>
+              <div class="eh-area__kpis">
+                @for (indicador of area.indicadores; track indicador.clave) {
+                  <app-indicator-card [indicador]="indicador" />
+                }
+              </div>
             </div>
           </div>
         }
@@ -159,3 +150,95 @@
   </section>
 }
 
+<!-- ===== ESTRATEGIA: ESENCIA + OBJETIVOS ===== -->
+@if (mostrarEstrategia()) {
+  <!-- Mision / Vision / Valores con cards premium -->
+  <section class="eh-seccion" aria-labelledby="titulo-esencia">
+    <div class="eh-seccion__head">
+      <h2 id="titulo-esencia" class="eh-seccion__titulo">
+        <mat-icon aria-hidden="true">flag_circle</mat-icon>
+        Mision, vision y valores
+      </h2>
+      <a matButton routerLink="/empresa/estrategia-vistas" class="eh-link">
+        Ver estrategia <mat-icon>arrow_forward</mat-icon>
+      </a>
+    </div>
+    <app-state-container
+      [fase]="esencia().fase"
+      [mensajeError]="esencia().mensajeError"
+      mensajeVacio="Aun no se ha registrado la mision, vision y valores."
+      (reintentar)="cargarEsencia()"
+    >
+      @let esenciaData = esencia().datos;
+      <div class="eh-esencia">
+        <article class="eh-esencia-card eh-esencia-card--mision">
+          <div class="eh-esencia-card__top">
+            <span class="eh-esencia-card__icono"><mat-icon>explore</mat-icon></span>
+            <strong class="eh-esencia-card__titulo">Mision</strong>
+          </div>
+          <p class="eh-esencia-card__texto">
+            {{ esenciaData?.mision ?? 'No definida aun.' }}
+          </p>
+        </article>
+        <article class="eh-esencia-card eh-esencia-card--vision">
+          <div class="eh-esencia-card__top">
+            <span class="eh-esencia-card__icono"><mat-icon>visibility</mat-icon></span>
+            <strong class="eh-esencia-card__titulo">Vision</strong>
+          </div>
+          <p class="eh-esencia-card__texto">
+            {{ esenciaData?.vision ?? 'No definida aun.' }}
+          </p>
+        </article>
+        <article class="eh-esencia-card eh-esencia-card--valores">
+          <div class="eh-esencia-card__top">
+            <span class="eh-esencia-card__icono"><mat-icon>favorite</mat-icon></span>
+            <strong class="eh-esencia-card__titulo">Valores</strong>
+          </div>
+          <p class="eh-esencia-card__texto">
+            {{ esenciaData?.valores ?? 'No definidos aun.' }}
+          </p>
+        </article>
+      </div>
+    </app-state-container>
+  </section>
+
+  <!-- Objetivos estrategicos con barra visual premium -->
+  <section class="eh-seccion" aria-labelledby="titulo-objetivos">
+    <div class="eh-seccion__head">
+      <h2 id="titulo-objetivos" class="eh-seccion__titulo">
+        <mat-icon aria-hidden="true">military_tech</mat-icon>
+        Objetivos estrategicos
+      </h2>
+    </div>
+    <app-state-container
+      [fase]="objetivos().fase"
+      [mensajeError]="objetivos().mensajeError"
+      mensajeVacio="Aun no hay objetivos estrategicos. Define tu primer OKR."
+      (reintentar)="cargarObjetivos()"
+    >
+      <ul class="eh-objetivos" role="list">
+        @for (objetivo of objetivos().datos; track objetivo.id) {
+          <li role="listitem">
+            <button
+              type="button"
+              class="eh-objetivo"
+              (click)="abrirObjetivo(objetivo)"
+              [attr.aria-label]="'Ver detalle del objetivo ' + objetivo.nombre"
+            >
+              <div class="eh-objetivo__info">
+                <p class="eh-objetivo__nombre">{{ objetivo.nombre }}</p>
+                <p class="eh-objetivo__meta">
+                  <mat-icon aria-hidden="true">person</mat-icon>{{ objetivo.responsable }}
+                  <span aria-hidden="true">·</span>
+                  <mat-icon aria-hidden="true">adjust</mat-icon>{{ objetivo.meta }}
+                </p>
+              </div>
+              <app-progress-badge [avance]="objetivo.avance" [estado]="objetivo.estadoDerivado" />
+              <mat-icon class="eh-objetivo__info-icon" aria-hidden="true">info</mat-icon>
+            </button>
+          </li>
+        }
+      </ul>
+    </app-state-container>
+  </section>
+}

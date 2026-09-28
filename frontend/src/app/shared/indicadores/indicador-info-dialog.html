@@ -1,0 +1,42 @@
+<div class="iid" [class]="claseTono()">
+  <div class="iid__head" mat-dialog-title>
+    <span class="iid__icon" aria-hidden="true"><mat-icon>{{ ficha().icono }}</mat-icon></span>
+    <div class="iid__head-txt">
+      <span class="iid__titulo">{{ datos.etiqueta }}</span>
+      <span class="iid__corta">{{ ficha().corta }}</span>
+    </div>
+  </div>
+
+  <mat-dialog-content class="iid__body">
+    <div class="iid__valor-fila">
+      <p class="iid__valor">
+        @if (esMonetario()) {
+          <span class="iid__afijo">{{ unidadVisible() }}</span>
+        }
+        <span class="iid__numero">{{ datos.valor | number: '1.0-0' : 'es-MX' }}</span>
+        @if (!esMonetario() && unidadVisible()) {
+          <span class="iid__afijo">{{ unidadVisible() }}</span>
+        }
+      </p>
+      @if (porcentaje() !== null) {
+        <span class="iid__delta" [class.iid__delta--sube]="porcentaje()! >= 0" [class.iid__delta--baja]="porcentaje()! < 0">
+          <mat-icon aria-hidden="true">{{ porcentaje()! >= 0 ? 'trending_up' : 'trending_down' }}</mat-icon>
+          {{ porcentaje()! >= 0 ? '+' : '' }}{{ porcentaje() | number: '1.0-1' : 'es-MX' }}% vs periodo anterior
+        </span>
+      }
+    </div>
+
+    <dl class="iid__def">
+      <dt><mat-icon aria-hidden="true">help</mat-icon> ¿Qué es?</dt>
+      <dd>{{ ficha().que }}</dd>
+      <dt><mat-icon aria-hidden="true">calculate</mat-icon> ¿Cómo se calcula?</dt>
+      <dd>{{ ficha().como }}</dd>
+      <dt><mat-icon aria-hidden="true">lightbulb</mat-icon> ¿Por qué importa?</dt>
+      <dd>{{ ficha().porque }}</dd>
+    </dl>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button matButton="filled" mat-dialog-close>Entendido</button>
+  </mat-dialog-actions>
+</div>

@@ -1,0 +1,78 @@
+<app-page-header
+  titulo="Sistema de Gestión de Calidad"
+  subtitulo="Indicadores de cultura de calidad conforme a ISO 9001:2026: no conformidades, acciones correctivas, quejas y su desempeño."
+/>
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="Aún no hay indicadores de calidad."
+  (reintentar)="cargar()"
+>
+  @if (estado().datos; as d) {
+    <!-- Scorecard SGC + graficas de composicion (patron dashboard reutilizable) -->
+    <app-dashboard-section layout="apilado">
+      <div kpis>
+        <app-kpi-tile
+          icono="report_problem"
+          tono="error"
+          etiqueta="No conformidades abiertas"
+          [valor]="d.noConformidadesAbiertas | number: '1.0-0' : 'es-MX'"
+        />
+        <app-kpi-tile
+          icono="build_circle"
+          tono="advertencia"
+          etiqueta="Acciones correctivas abiertas"
+          [valor]="d.accionesCorrectivasAbiertas | number: '1.0-0' : 'es-MX'"
+        />
+        <app-kpi-tile
+          icono="task_alt"
+          tono="exito"
+          etiqueta="Acciones correctivas cerradas"
+          [valor]="d.accionesCorrectivasCerradas | number: '1.0-0' : 'es-MX'"
+        />
+        <app-kpi-tile
+          icono="schedule"
+          tono="primario"
+          etiqueta="Tiempo medio de cierre"
+          [valor]="d.tiempoMedioCierreDias !== null ? (d.tiempoMedioCierreDias | number: '1.0-1' : 'es-MX') : '—'"
+          [sufijo]="d.tiempoMedioCierreDias !== null ? 'días' : ''"
+        />
+        <app-kpi-tile
+          icono="replay"
+          tono="advertencia"
+          etiqueta="Tasa de reincidencia"
+          [valor]="d.tasaReincidencia !== null ? (d.tasaReincidencia | percent: '1.0-1' : 'es-MX') : '—'"
+        />
+        <app-kpi-tile
+          icono="forum"
+          tono="primario"
+          etiqueta="Quejas atendidas"
+          [valor]="d.quejasAtendidas | number: '1.0-0' : 'es-MX'"
+        />
+      </div>
+      <div grafica class="dash-grafica">
+        <app-metric-chart
+          [datos]="[]"
+          tipo="gauge"
+          [porcentaje]="tasaCierre()"
+          titulo="Tasa de cierre de acciones"
+        />
+      </div>
+      <div grafica class="dash-grafica">
+        <app-metric-chart [datos]="composicionNc()" tipo="dona" titulo="No conformidades por estado" />
+      </div>
+      <div grafica class="dash-grafica">
+        <app-metric-chart [datos]="composicionQuejas()" tipo="dona" titulo="Quejas por estado" />
+      </div>
+      <div grafica class="dash-grafica">
+        <app-metric-chart
+          [datos]="accionesBarras()"
+          tipo="barras"
+          titulo="Acciones correctivas"
+          nombreSerie="Acciones"
+        />
+      </div>
+    </app-dashboard-section>
+  }
+</app-state-container>

@@ -1,41 +1,20 @@
 // =============================================================================
-// Estilos de los diálogos de Estrategia (objetivo / resultado clave) — tokens --ds-*
+// Estilos de los diálogos de Estrategia (objetivo / resultado clave)
+// -----------------------------------------------------------------------------
+// El layout (secciones two-pane, rejilla, ayudas, notas) lo aporta el "form
+// shell" compartido (styles/_form-shell.scss, clases ds-form*). Aquí solo el
+// aire del contenido y el estilo de los íconos de prefijo. Solo tokens --ds-*.
 // =============================================================================
 
-.est-dialog {
-  &__form {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ds-space-3);
-    min-width: min(30rem, 80vw);
-  }
+.est-dialog__content {
+  padding-block: var(--ds-space-2);
+}
 
-  &__intro {
-    margin: 0;
-    color: var(--ds-color-text-muted);
-    font-size: var(--ds-font-size-sm);
-  }
-
-  &__campo {
-    width: 100%;
-  }
-
-  &__grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--ds-space-2);
-
-    @media (min-width: 30rem) {
-      grid-template-columns: 1fr 1fr;
-    }
-  }
-
-  &__error {
-    display: flex;
-    align-items: center;
-    gap: var(--ds-space-2);
-    margin: 0;
-    color: var(--ds-color-error);
-    font-size: var(--ds-font-size-sm);
-  }
+// Íconos de prefijo (flag, person, target, check_circle) dentro de los campos.
+.est-dialog__content mat-icon[matPrefix] {
+  font-size: 20px;
+  inline-size: 20px;
+  block-size: 20px;
+  margin-inline: var(--ds-space-1) var(--ds-space-2);
+  color: var(--ds-color-text-muted);
 }

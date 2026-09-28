@@ -190,8 +190,10 @@ export class PlataformaPlanes {
 
   crear(): void {
     const ref = this.dialog.open(PlanDialog, {
-      width: 'min(760px, 96vw)',
+      width: 'min(920px, 96vw)',
+      maxWidth: 'min(920px, 96vw)',
       maxHeight: '92vh',
+      panelClass: 'ds-dialog-panel',
       autoFocus: 'first-tabbable',
       data: { plan: null },
     });
@@ -205,8 +207,10 @@ export class PlataformaPlanes {
 
   editar(plan: Plan): void {
     const ref = this.dialog.open(PlanDialog, {
-      width: 'min(760px, 96vw)',
+      width: 'min(920px, 96vw)',
+      maxWidth: 'min(920px, 96vw)',
       maxHeight: '92vh',
+      panelClass: 'ds-dialog-panel',
       autoFocus: 'first-tabbable',
       data: { plan },
     });
@@ -264,8 +268,10 @@ export class PlataformaPlanes {
 
   crearPaquete(): void {
     const ref = this.dialog.open(PaqueteSuscripcionDialog, {
-      width: 'min(760px, 96vw)',
+      width: 'min(920px, 96vw)',
+      maxWidth: 'min(920px, 96vw)',
       maxHeight: '92vh',
+      panelClass: 'ds-dialog-panel',
       autoFocus: 'first-tabbable',
       data: { paquete: null },
     });
@@ -279,8 +285,10 @@ export class PlataformaPlanes {
 
   editarPaquete(paquete: PaqueteSuscripcion): void {
     const ref = this.dialog.open(PaqueteSuscripcionDialog, {
-      width: 'min(760px, 96vw)',
+      width: 'min(920px, 96vw)',
+      maxWidth: 'min(920px, 96vw)',
       maxHeight: '92vh',
+      panelClass: 'ds-dialog-panel',
       autoFocus: 'first-tabbable',
       data: { paquete },
     });

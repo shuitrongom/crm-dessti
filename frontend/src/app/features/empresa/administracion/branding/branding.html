@@ -26,33 +26,41 @@
 
           @if (puedeActualizar) {
             <div class="admin-branding__color-controles">
-              <div class="admin-branding__color-selector">
-                <label class="admin-branding__color-selector-label" for="branding-color-selector">
-                  Selector de color
-                </label>
+              <!-- Muestra grande del color actual (swatch circular con anillo).
+                   Al hacer clic abre el selector nativo del sistema (rueda/HSV). -->
+              <label class="admin-branding__swatch" [style.--swatch]="colorSelector()">
+                <span class="admin-branding__swatch-visor" aria-hidden="true"></span>
+                <span class="admin-branding__swatch-texto">
+                  <span class="admin-branding__swatch-titulo">Color de marca</span>
+                  <span class="admin-branding__swatch-valor">
+                    {{ colorVacio() ? 'Tema por defecto' : colorSelector() }}
+                  </span>
+                </span>
                 <input
                   id="branding-color-selector"
                   class="admin-branding__color-input"
                   type="color"
+                  aria-label="Selector visual de color"
                   [value]="colorSelector()"
                   (input)="formulario.controls.colorPrimario.setValue($any($event.target).value)"
                 />
-              </div>
+              </label>
 
               <mat-form-field appearance="outline" class="admin-branding__color-hex">
-                <mat-label>Valor hexadecimal</mat-label>
+                <mat-label>Color (hex, rgb o rgba)</mat-label>
                 <input
                   matInput
                   type="text"
                   inputmode="text"
                   autocomplete="off"
                   spellcheck="false"
-                  placeholder="#35507a"
+                  placeholder="#35507a · rgb(53,80,122) · rgba(53,80,122,1)"
                   formControlName="colorPrimario"
                   aria-describedby="branding-color-valor"
                 />
+                <mat-hint>Acepta hexadecimal (#RRGGBB o #RGB), rgb() y rgba().</mat-hint>
                 @if (colorInvalido()) {
-                  <mat-error>Usa un color hexadecimal valido con formato #RRGGBB.</mat-error>
+                  <mat-error>Formato no reconocido. Usa hex (#35507a), rgb() o rgba().</mat-error>
                 }
               </mat-form-field>
             </div>
@@ -61,7 +69,7 @@
               @if (colorVacio()) {
                 Color actual: Tema corporativo por defecto (sin color de marca).
               } @else {
-                Color actual: {{ (formulario.controls.colorPrimario.value ?? '').trim() }}.
+                Color actual: {{ formulario.controls.colorPrimario.value.trim() }}.
               }
             </p>
 
@@ -70,11 +78,16 @@
                 <button
                   type="button"
                   class="admin-branding__preset"
+                  [class.admin-branding__preset--activo]="colorSelector() === preset.hex"
                   [style.background]="preset.hex"
                   [attr.aria-label]="preset.nombre + ' ' + preset.hex"
-                  [attr.aria-pressed]="(formulario.controls.colorPrimario.value ?? '').trim().toLowerCase() === preset.hex"
+                  [attr.aria-pressed]="colorSelector() === preset.hex"
                   (click)="seleccionarPreset(preset.hex)"
-                ></button>
+                >
+                  @if (colorSelector() === preset.hex) {
+                    <mat-icon aria-hidden="true">check</mat-icon>
+                  }
+                </button>
               }
             </div>
 
@@ -85,6 +98,7 @@
                 [disabled]="colorVacio()"
                 (click)="usarColorPorDefecto()"
               >
+                <mat-icon aria-hidden="true">restart_alt</mat-icon>
                 Usar color por defecto
               </button>
             </div>
@@ -93,7 +107,7 @@
               @if (colorVacio()) {
                 Tema corporativo por defecto (sin color de marca).
               } @else {
-                Color de marca: {{ (formulario.controls.colorPrimario.value ?? '').trim() }}.
+                Color de marca: {{ formulario.controls.colorPrimario.value.trim() }}.
               }
             </p>
           }

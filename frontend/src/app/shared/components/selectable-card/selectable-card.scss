@@ -1,0 +1,124 @@
+// =============================================================================
+// Estilos de SelectableCard — tarjeta seleccionable animada
+// -----------------------------------------------------------------------------
+// Solo tokens del Sistema de Diseño. Estados: normal, hover, seleccionado,
+// deshabilitado, foco. Micro-animación de selección (escala/entrada del check)
+// que respeta prefers-reduced-motion (neutralizada en styles.scss globalmente).
+// =============================================================================
+
+:host {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-3) var(--ds-space-4);
+  border: 1.5px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-surface);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    border-color var(--ds-duration-fast) var(--ds-easing-standard),
+    background-color var(--ds-duration-fast) var(--ds-easing-standard),
+    box-shadow var(--ds-duration-fast) var(--ds-easing-standard),
+    transform var(--ds-duration-fast) var(--ds-easing-standard);
+}
+
+:host(:hover:not(.ds-scard--deshabilitado)) {
+  border-color: color-mix(in srgb, var(--ds-color-primary) 45%, var(--ds-color-border));
+  box-shadow: var(--ds-shadow-sm);
+}
+
+:host(:active:not(.ds-scard--deshabilitado)) {
+  transform: scale(0.99);
+}
+
+:host(:focus-visible) {
+  outline: 2px solid var(--ds-color-focus-ring);
+  outline-offset: 2px;
+}
+
+// Estado seleccionado: superficie de acento + borde primario + realce.
+:host(.ds-scard--seleccionado) {
+  border-color: var(--ds-color-primary);
+  background: var(--ds-color-primary-container);
+  box-shadow: 0 0 0 1px var(--ds-color-primary),
+    0 2px 10px color-mix(in srgb, var(--ds-color-primary) 25%, transparent);
+  // Pulso sutil al pasar a seleccionado.
+  animation: ds-scard-seleccion var(--ds-duration-base) var(--ds-easing-standard);
+}
+
+@keyframes ds-scard-seleccion {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+// Estado deshabilitado: atenuado y sin cursor.
+:host(.ds-scard--deshabilitado) {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+// Indicador de selección (círculo con check).
+.ds-scard__check {
+  flex: 0 0 auto;
+  inline-size: 20px;
+  block-size: 20px;
+  margin-block-start: 1px;
+  border: 2px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    border-color var(--ds-duration-fast) var(--ds-easing-standard),
+    background-color var(--ds-duration-fast) var(--ds-easing-standard);
+}
+
+:host(.ds-scard--seleccionado) .ds-scard__check {
+  border-color: var(--ds-color-primary);
+  background: var(--ds-color-primary);
+}
+
+.ds-scard__check-icon {
+  color: var(--ds-color-text-on-primary);
+  font-size: 12px;
+  line-height: 1;
+  animation: ds-scard-pop var(--ds-duration-base) var(--ds-easing-standard) both;
+}
+
+.ds-scard__content {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+// Micro-animación de aparición del check al seleccionar.
+@keyframes ds-scard-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host,
+  .ds-scard__check {
+    transition: none !important;
+  }
+  :host(.ds-scard--seleccionado) {
+    animation: none !important;
+  }
+  .ds-scard__check-icon {
+    animation: none !important;
+  }
+}

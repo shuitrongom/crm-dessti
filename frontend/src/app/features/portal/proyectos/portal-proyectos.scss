@@ -1,0 +1,47 @@
+// =============================================================================
+// Estilos de la vista "Mis proyectos" del Portal del Cliente (Req 45).
+// Desglose de las cuatro fases de cada sitio (levantamiento, permiso,
+// fabricacion, instalacion) como una linea de progreso legible. Usa tokens del
+// sistema de diseno; no redefine tema ni componentes compartidos.
+// =============================================================================
+
+.portal-fases {
+  list-style: none;
+  margin: var(--ds-space-2, 0.5rem) 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-2, 0.5rem) var(--ds-space-4, 1rem);
+}
+
+.portal-fase {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-1, 0.25rem);
+  font-size: var(--ds-font-size-sm, 0.875rem);
+  color: var(--ds-color-text-muted, #6b6b6b);
+
+  mat-icon {
+    font-size: 1.125rem;
+    inline-size: 1.125rem;
+    block-size: 1.125rem;
+  }
+
+  &--completada {
+    color: var(--ds-color-success, #1b5e20);
+    font-weight: var(--ds-font-weight-medium, 500);
+  }
+}
+
+// Texto solo para lectores de pantalla (el estado no depende solo del color/icono).
+.portal-fase__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

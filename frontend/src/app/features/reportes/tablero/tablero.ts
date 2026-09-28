@@ -1,10 +1,10 @@
 // =============================================================================
 // Vista del Tablero de indicadores por area (Req 22)
 // -----------------------------------------------------------------------------
-// Foto de solo lectura de los indicadores agrupados por area, con filtro por
-// periodo (desde/hasta). Reutiliza IndicatorCard (que ya muestra valor, unidad y
-// comparativo/tendencia accesible). Estados de carga/vacio/error via
-// StateContainer. La exportacion se ofrece si el Usuario tiene el permiso.
+// Foto de solo lectura de los indicadores agrupados por area, en tarjetas KPI
+// premium (valor, unidad, tendencia y mini-comparativo integrado). Filtro por
+// periodo (desde/hasta). Estados de carga/vacio/error via StateContainer. La
+// exportacion se ofrece si el Usuario tiene el permiso.
 // =============================================================================
 
 import { Component, inject, signal } from '@angular/core';
@@ -19,6 +19,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../shared/components/state-container/state-container';
 import { IndicatorCard } from '../../../shared/components/indicator-card/indicator-card';
+import { MetricChart, type MetricPoint } from '../../../shared/components/metric-chart/metric-chart';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
@@ -30,7 +31,7 @@ import {
 } from '../../../shared/models/estado-solicitud';
 
 import { TableroService } from '../services/tablero.service';
-import { Tablero as TableroModel } from '../models/reportes.models';
+import { IndicadoresArea, Tablero as TableroModel } from '../models/reportes.models';
 import { humanizarArea } from '../areas-etiquetas';
 
 @Component({
@@ -45,6 +46,7 @@ import { humanizarArea } from '../areas-etiquetas';
     PageHeader,
     StateContainer,
     IndicatorCard,
+    MetricChart,
   ],
   templateUrl: './tablero.html',
   styleUrl: './tablero.scss',
@@ -68,6 +70,26 @@ export class Tablero {
 
   constructor() {
     this.consultar();
+  }
+
+  /** Puntos para la grafica de un area (etiqueta, valor actual y comparativo). */
+  puntos(grupo: IndicadoresArea): MetricPoint[] {
+    return grupo.indicadores.map((i) => ({
+      etiqueta: i.etiqueta,
+      valor: i.valor,
+      comparativo: i.comparativo,
+      unidad: i.unidad,
+    }));
+  }
+
+  /** Elige dona para varios conteos sin comparativo; barras en el resto. */
+  tipoGrafica(grupo: IndicadoresArea): 'dona' | 'barras' {
+    const hayComparativo = grupo.indicadores.some((i) => i.comparativo != null);
+    const todosConteo = grupo.indicadores.every((i) => (i.unidad ?? '').toLowerCase() === 'conteo');
+    if (!hayComparativo && todosConteo && grupo.indicadores.length >= 3) {
+      return 'dona';
+    }
+    return 'barras';
   }
 
   private filtroActual() {

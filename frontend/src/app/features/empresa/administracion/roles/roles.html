@@ -11,30 +11,40 @@
 >
   <div class="roles__catalogo">
     @for (grupo of grupos(); track grupo.modulo) {
-      <section class="roles__grupo" [attr.aria-label]="'Roles de ' + grupo.modulo">
+      <section
+        class="roles__grupo"
+        [class]="'roles__grupo--' + grupo.tono"
+        [attr.aria-label]="'Roles de ' + grupo.modulo"
+      >
         <header class="roles__grupo-encabezado">
+          <span class="roles__grupo-icono" aria-hidden="true">
+            <mat-icon>{{ grupo.icono }}</mat-icon>
+          </span>
           <h2 class="roles__grupo-titulo">{{ grupo.modulo }}</h2>
           <span
             class="roles__badge"
             [class.roles__badge--administracion]="grupo.esAdministracion"
           >
-            <mat-icon aria-hidden="true">{{
-              grupo.esAdministracion ? 'admin_panel_settings' : 'extension'
-            }}</mat-icon>
             {{ grupo.esAdministracion ? 'Administración' : 'Módulo' }}
           </span>
+          <span class="roles__grupo-conteo">{{ grupo.roles.length }}</span>
         </header>
 
         <div class="roles__tarjetas">
           @for (rol of grupo.roles; track rol.id) {
-            <mat-card appearance="outlined" class="roles__tarjeta">
-              <mat-card-header>
-                <mat-card-title class="roles__tarjeta-nombre">{{ rol.nombre }}</mat-card-title>
-              </mat-card-header>
-              <mat-card-content>
-                <p class="roles__tarjeta-descripcion">{{ rol.descripcion }}</p>
-              </mat-card-content>
-            </mat-card>
+            <button
+              type="button"
+              class="roles__tarjeta"
+              (click)="abrirRol(rol, grupo)"
+              [attr.aria-label]="'Ver detalle del rol ' + rol.nombre"
+            >
+              <span class="roles__tarjeta-icono" aria-hidden="true">
+                <mat-icon>{{ rol.icono }}</mat-icon>
+              </span>
+              <mat-icon class="roles__tarjeta-info" aria-hidden="true">info</mat-icon>
+              <span class="roles__tarjeta-nombre">{{ rol.nombre }}</span>
+              <span class="roles__tarjeta-descripcion">{{ rol.descripcion }}</span>
+            </button>
           }
         </div>
       </section>

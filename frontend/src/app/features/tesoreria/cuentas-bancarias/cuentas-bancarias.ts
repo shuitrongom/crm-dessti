@@ -27,8 +27,10 @@ import {
   DataTable,
 } from '../../../shared/components/data-table/data-table';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
+import { switchMap } from 'rxjs';
 import {
   EstadoSolicitud,
   cargando,
@@ -64,6 +66,7 @@ export class TesoreriaCuentasBancarias {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(TesoreriaService);
   private readonly toast = inject(NotificacionesService);
+  private readonly overlay = inject(OperacionOverlayService);
   private readonly auth = inject(AuthService);
 
   protected readonly puedeCrear = this.auth.tienePermiso('cuenta_bancaria', 'crear');
@@ -156,8 +159,11 @@ export class TesoreriaCuentasBancarias {
     }
     const v = this.formCuenta.getRawValue();
     this.guardando.set(true);
-    this.service
-      .crearCuenta({ nombre: v.nombre, banco: v.banco, clabe: v.clabe || null, moneda: v.moneda || null })
+    this.overlay
+      .ejecutar(
+        this.service.crearCuenta({ nombre: v.nombre, banco: v.banco, clabe: v.clabe || null, moneda: v.moneda || null }),
+        { tipo: 'crear', textoProceso: 'Creando cuenta…', textoExito: 'Cuenta creada' },
+      )
       .subscribe({
         next: () => {
           this.guardando.set(false);
@@ -204,30 +210,32 @@ export class TesoreriaCuentasBancarias {
       descripcion: m.descripcion || null,
     }));
     this.guardando.set(true);
-    this.service
+    // Importar el estado de cuenta y, en cadena, conciliarlo. Ambas operaciones
+    // van bajo un único overlay de "procesar" (importa → concilia).
+    const operacion = this.service
       .importarEstadoCuenta(cuenta.id, {
         referenciaArchivo: v.referenciaArchivo || null,
         periodoInicio: v.periodoInicio,
         periodoFin: v.periodoFin,
         movimientos,
       })
+      .pipe(switchMap((estadoCuenta) => this.service.conciliar(estadoCuenta.id)));
+
+    this.overlay
+      .ejecutar(operacion, {
+        tipo: 'procesar',
+        textoProceso: 'Importando y conciliando…',
+        textoExito: 'Conciliación lista',
+      })
       .subscribe({
-        next: (estadoCuenta) => {
-          this.service.conciliar(estadoCuenta.id).subscribe({
-            next: (conciliacion) => {
-              this.guardando.set(false);
-              this.ultimaConciliacion.set(conciliacion);
-              if (conciliacion.estado === 'completa') {
-                this.toast.exito('Conciliacion completa: diferencia cero.');
-              } else {
-                this.toast.info('Conciliacion en proceso: revisa la diferencia y las excepciones.');
-              }
-            },
-            error: (e: HttpErrorResponse) => {
-              this.guardando.set(false);
-              this.toast.error(mensajeDeError(e));
-            },
-          });
+        next: (conciliacion) => {
+          this.guardando.set(false);
+          this.ultimaConciliacion.set(conciliacion);
+          if (conciliacion.estado === 'completa') {
+            this.toast.exito('Conciliacion completa: diferencia cero.');
+          } else {
+            this.toast.info('Conciliacion en proceso: revisa la diferencia y las excepciones.');
+          }
         },
         error: (e: HttpErrorResponse) => {
           this.guardando.set(false);

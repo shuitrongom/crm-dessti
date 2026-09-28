@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import com.dessti.crm.operacion.proyecto.domain.EstadoConsolidadoMultisitio;
 import com.dessti.crm.operacion.proyecto.domain.EstadoConsolidadoProyecto;
 import com.dessti.crm.operacion.proyecto.domain.Proyecto;
 
@@ -23,10 +24,14 @@ import com.dessti.crm.operacion.proyecto.domain.Proyecto;
  * @param id                 identificador del Proyecto (Req 21.1).
  * @param clienteId          Cliente asociado; permite segmentar el listado (Req 21.5).
  * @param nombre             nombre del Proyecto (Req 21.1).
- * @param estadoConsolidado  etiqueta del estado consolidado derivado (Req 21.4);
- *                           {@code null} en la proyeccion de resumen del listado.
- * @param sitios             Sitios del Proyecto con su avance por fase (Req 21.3,
- *                           21.4); lista vacia en la proyeccion de resumen.
+ * @param estadoConsolidado  etiqueta del estado consolidado de anuncios (Req 21.4);
+ *                           {@code null} en resumen y en giros multi-sitio genericos.
+ * @param sitios             Sitios con su avance por las cuatro fases de anuncios
+ *                           (Req 21.3, 21.4); lista vacia en resumen y en genericos.
+ * @param estadoMultisitio   etiqueta del estado consolidado multi-sitio generico
+ *                           (Req 3.2); {@code null} en resumen y en el giro anuncios.
+ * @param sitiosMultisitio   Sitios con su fase operativa generica (Req 3.2); lista
+ *                           vacia en resumen y en el giro anuncios.
  * @param version            version para concurrencia optimista (Req 49).
  * @param createdAt          instante de alta (UTC).
  * @param updatedAt          instante de la ultima modificacion (UTC).
@@ -37,6 +42,8 @@ public record ProyectoDto(
         String nombre,
         String estadoConsolidado,
         List<SitioAvanceDto> sitios,
+        String estadoMultisitio,
+        List<SitioFaseDto> sitiosMultisitio,
         long version,
         Instant createdAt,
         Instant updatedAt) {
@@ -58,6 +65,33 @@ public record ProyectoDto(
                 proyecto.getNombre(),
                 estado.valorBd(),
                 List.copyOf(sitios),
+                null,
+                List.of(),
+                proyecto.getVersion(),
+                proyecto.getCreatedAt(),
+                proyecto.getUpdatedAt());
+    }
+
+    /**
+     * Proyeccion detallada de un Proyecto multi-sitio de giro <strong>generico</strong>
+     * (Req 3.2, 21.4): incluye el estado consolidado multi-sitio y la lista de Sitios
+     * con su fase operativa. Las fases de anuncios quedan nulas/vacias.
+     *
+     * @param proyecto entidad del Proyecto.
+     * @param estado   estado consolidado multi-sitio derivado de sus Sitios.
+     * @param sitios   Sitios del Proyecto con su fase generica.
+     * @return el DTO detallado (variante multi-sitio generica).
+     */
+    public static ProyectoDto multisitio(Proyecto proyecto, EstadoConsolidadoMultisitio estado,
+                                         List<SitioFaseDto> sitios) {
+        return new ProyectoDto(
+                proyecto.getId(),
+                proyecto.getClienteId(),
+                proyecto.getNombre(),
+                null,
+                List.of(),
+                estado.valorBd(),
+                List.copyOf(sitios),
                 proyecto.getVersion(),
                 proyecto.getCreatedAt(),
                 proyecto.getUpdatedAt());
@@ -76,6 +110,8 @@ public record ProyectoDto(
                 proyecto.getId(),
                 proyecto.getClienteId(),
                 proyecto.getNombre(),
+                null,
+                List.of(),
                 null,
                 List.of(),
                 proyecto.getVersion(),

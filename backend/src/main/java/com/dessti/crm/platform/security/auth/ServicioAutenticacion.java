@@ -286,10 +286,17 @@ public class ServicioAutenticacion {
                 ? null
                 : modulosHabilitados.modulosHabilitadosDe(usuario.getTenantId());
 
+        // Cliente del Portal (Req 45): si el Usuario esta asociado a un Cliente
+        // (rol cliente_portal), su clienteId viaja como claim para acotar el Portal.
+        // Es null para el staff de la Empresa y el super_admin (claim omitido).
+        UUID clientePortalId = usuario.getClienteId();
+
         TokenEmitido acceso = servicioTokens.emitirTokenAcceso(
-                subject, usuario.getTenantId(), roles, permisos, giro, identificadorLegible, modulos);
+                subject, usuario.getTenantId(), roles, permisos, giro, identificadorLegible,
+                modulos, clientePortalId);
         TokenEmitido refresco = servicioTokens.emitirTokenRefresco(
-                subject, usuario.getTenantId(), roles, permisos, giro, identificadorLegible, modulos);
+                subject, usuario.getTenantId(), roles, permisos, giro, identificadorLegible,
+                modulos, clientePortalId);
 
         // Registrar la Sesion (Token_Refresco) para poder listarla/revocarla
         // (Req 68.3). Solo se persisten metadatos, nunca el valor del token.
@@ -358,16 +365,20 @@ public class ServicioAutenticacion {
         // vacia = cero modulos) reemitiendola tal cual.
         List<String> modulos = (claims.tenantId() == null) ? null : claims.modulos();
 
+        // Cliente del Portal (Req 45): se preserva del refresco para que el token
+        // reemitido conserve el acceso al Portal sin acceder a la BD (como giro/modulos).
+        UUID clientePortalId = claims.clienteId();
+
         TokenEmitido acceso = servicioTokens.emitirTokenAcceso(
                 claims.subject(), claims.tenantId(), claims.roles(), claims.permisos(),
-                claims.giro(), claims.identificador(), modulos);
+                claims.giro(), claims.identificador(), modulos, clientePortalId);
 
         // Rotacion del Token_Refresco (Req 68): revocar el jti presentado y
         // emitir/registrar uno nuevo. El refresco anterior queda inutilizable.
         registroSesiones.revocar(claims.jti(), MotivoRevocacion.LOGOUT);
         TokenEmitido nuevoRefresco = servicioTokens.emitirTokenRefresco(
                 claims.subject(), claims.tenantId(), claims.roles(), claims.permisos(),
-                claims.giro(), claims.identificador(), modulos);
+                claims.giro(), claims.identificador(), modulos, clientePortalId);
         if (usuarioId != null) {
             registrarSesion(nuevoRefresco, usuarioId, claims.tenantId());
         }

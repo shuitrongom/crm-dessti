@@ -32,6 +32,19 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
     Optional<Usuario> findByIdAndTenantId(UUID id, UUID tenantId);
 
     /**
+     * Busca una cuenta <strong>activa</strong> por id dentro del ambito de una
+     * Empresa (V81). Sirve para validar que un Usuario referenciado (por ejemplo,
+     * el responsable de una Oportunidad o el propietario de un Cliente) exista y
+     * este activo en el tenant, sin revelar cuentas de otra Empresa ni cuentas
+     * desactivadas. Spring Data deriva la consulta del nombre del metodo.
+     *
+     * @param id       identificador de la cuenta.
+     * @param tenantId Empresa propietaria esperada.
+     * @return la cuenta si pertenece a esa Empresa y esta activa.
+     */
+    Optional<Usuario> findByIdAndTenantIdAndActivoTrue(UUID id, UUID tenantId);
+
+    /**
      * Comprueba si ya existe una cuenta con ese identificador de acceso. El
      * identificador es UNICO <strong>GLOBAL</strong> segun la decision de la
      * migracion V1 ({@code uq_usuario_identificador_acceso}), por lo que la

@@ -1,0 +1,111 @@
+.obj {
+  --obj-accent: var(--ds-color-info, #1b6a8c);
+
+  &--exito { --obj-accent: var(--ds-color-success, #2e7d4f); }
+  &--advertencia { --obj-accent: var(--ds-color-warning, #b3760a); }
+  &--error { --obj-accent: var(--ds-color-error, #b3261e); }
+  &--info { --obj-accent: var(--ds-color-info, #1b6a8c); }
+}
+
+.obj__head {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-weight: 700;
+}
+
+.obj__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  flex: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--obj-accent),
+    color-mix(in srgb, var(--obj-accent) 55%, #fff));
+  color: #fff;
+}
+
+.obj__head-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.obj__titulo {
+  font-size: 1.05rem;
+  line-height: 1.2;
+}
+
+.obj__estado {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--obj-accent);
+}
+
+.obj__avance {
+  padding: 0.4rem 0 0.9rem;
+  border-block-end: 1px solid var(--mat-sys-outline-variant, #e2e0e8);
+  margin-block-end: 0.5rem;
+}
+
+.obj__avance-num {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--obj-accent);
+  line-height: 1;
+}
+
+.obj__barra {
+  height: 8px;
+  margin: 0.5rem 0 0.6rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mat-sys-on-surface, #1d1b20) 8%, transparent);
+  overflow: hidden;
+}
+
+.obj__barra-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--obj-accent);
+}
+
+.obj__estado-exp {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant, #49454f);
+  line-height: 1.4;
+}
+
+.obj__def {
+  margin: 0;
+  display: grid;
+  gap: 0.25rem 0.5rem;
+}
+
+.obj__def dt {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 600;
+  margin-top: 0.6rem;
+  color: var(--mat-sys-on-surface, #1d1b20);
+}
+
+.obj__def dt mat-icon {
+  font-size: 1.15rem;
+  width: 1.15rem;
+  height: 1.15rem;
+  color: var(--obj-accent);
+}
+
+.obj__def dd {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant, #49454f);
+  line-height: 1.4;
+}

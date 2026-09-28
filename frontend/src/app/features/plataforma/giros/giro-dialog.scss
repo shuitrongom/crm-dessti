@@ -5,79 +5,20 @@
 // desbordamiento. Solo tokens del Sistema de Diseno (tema claro y oscuro).
 // =============================================================================
 
-.giro-dialog__form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ds-space-4);
-  inline-size: 100%;
-  max-inline-size: 100%;
-  box-sizing: border-box;
-  padding-block-start: var(--ds-space-2);
+// El layout del formulario (secciones two-pane, rejilla, ayudas, notas) lo aporta
+// el "form shell" compartido (styles/_form-shell.scss, clases ds-form*). Aquí solo
+// viven el aire del contenido, el estilo del ícono de prefijo y el panel de éxito.
+.giro-dialog__content {
+  padding-block: var(--ds-space-2);
 }
 
-// Texto introductorio.
-.giro-dialog__intro {
-  margin: 0;
+// Íconos de prefijo (vpn_key, label) dentro de los campos del form shell.
+.giro-dialog__content mat-icon[matPrefix] {
+  font-size: 20px;
+  inline-size: 20px;
+  block-size: 20px;
+  margin-inline: var(--ds-space-1) var(--ds-space-2);
   color: var(--ds-color-text-muted);
-  font-size: var(--ds-font-size-sm);
-  line-height: var(--ds-line-height-base);
-}
-
-// Mensaje de error (misma ficha que crear-empresa).
-.giro-dialog__error {
-  display: flex;
-  align-items: center;
-  gap: var(--ds-space-2);
-  margin: 0;
-  padding: var(--ds-space-3);
-  border: 1px solid color-mix(in srgb, var(--ds-color-error) 32%, transparent);
-  border-radius: var(--ds-radius-sm);
-  background: color-mix(in srgb, var(--ds-color-error) 12%, transparent);
-  color: var(--ds-color-error);
-  font-size: var(--ds-font-size-sm);
-
-  mat-icon {
-    flex: 0 0 auto;
-    font-size: 20px;
-    inline-size: 20px;
-    block-size: 20px;
-  }
-}
-
-// Seccion-tarjeta del formulario.
-.giro-dialog__seccion {
-  margin: 0;
-  padding: var(--ds-space-4);
-  border: 1px solid var(--ds-color-border);
-  border-radius: var(--ds-radius-md);
-  background: var(--ds-color-surface);
-  display: flex;
-  flex-direction: column;
-  gap: var(--ds-space-3);
-}
-
-.giro-dialog__seccion-titulo {
-  margin: 0 0 var(--ds-space-2);
-  padding-block-end: var(--ds-space-2);
-  border-block-end: 1px solid var(--ds-color-border);
-  font-size: var(--ds-font-size-xs);
-  font-weight: var(--ds-font-weight-medium);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--ds-color-text-muted);
-}
-
-// Cada campo ocupa todo el ancho.
-.giro-dialog__campo {
-  inline-size: 100%;
-
-  mat-icon[matPrefix] {
-    font-size: 20px;
-    inline-size: 20px;
-    block-size: 20px;
-    margin-inline: var(--ds-space-1) var(--ds-space-2);
-    color: var(--ds-color-text-muted);
-  }
 }
 
 // -----------------------------------------------------------------------------

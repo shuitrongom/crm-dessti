@@ -70,12 +70,14 @@ import com.tngtech.archunit.lang.ArchRule;
  * la regla protege de verdad la dependencia núcleo→vertical en producción.</p>
  *
  * <h2>Nota sobre el aislamiento entre verticales (Req 4.6)</h2>
- * <p>Hoy solo existe el vertical de anuncios; el de manufactura llegará en el
- * bloque 12. La regla entre-verticales se expresa como la pareja explícita
- * {@code anuncios ↔ manufactura} (la más clara y directa dado el catálogo de
- * giros del diseño) y se marca con {@code allowEmptyShould(true)}: mientras
- * {@code vertical.manufactura..} no exista, la regla pasa trivialmente y, en
- * cuanto el bloque 12 lo cree, blindará el aislamiento sin tocar este test.</p>
+ * <p>Hoy el único giro completo (con reglas de negocio programadas) es
+ * {@code anuncios-luminosos}. La regla entre-verticales se expresa como la pareja
+ * {@code anuncios ↔ manufactura}, donde {@code manufactura} actúa como
+ * <em>plantilla</em> del segundo vertical y se marca con
+ * {@code allowEmptyShould(true)}: mientras no exista un paquete
+ * {@code vertical.manufactura..}, la regla pasa trivialmente y, en cuanto se
+ * programe un nuevo vertical bajo esa ruta, blindará el aislamiento sin tocar
+ * este test.</p>
  *
  * @see com.dessti.crm.platform.vertical.ContratoVertical
  */

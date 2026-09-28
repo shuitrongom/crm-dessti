@@ -27,6 +27,7 @@ import {
   DataTable,
 } from '../../../shared/components/data-table/data-table';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 import {
@@ -61,6 +62,7 @@ export class ComprasRecepciones {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(ComprasService);
   private readonly toast = inject(NotificacionesService);
+  private readonly overlay = inject(OperacionOverlayService);
   private readonly auth = inject(AuthService);
 
   protected readonly puedeCrear = this.auth.tienePermiso('recepcion_mercancia', 'crear');
@@ -172,7 +174,13 @@ export class ComprasRecepciones {
       return;
     }
     this.guardando.set(true);
-    this.service.registrarRecepcion({ ordenCompraId: v.ordenCompraId, partidas }).subscribe({
+    this.overlay
+      .ejecutar(this.service.registrarRecepcion({ ordenCompraId: v.ordenCompraId, partidas }), {
+        tipo: 'crear',
+        textoProceso: 'Registrando recepción…',
+        textoExito: 'Recepción registrada',
+      })
+      .subscribe({
       next: () => {
         this.guardando.set(false);
         this.toast.exito('Recepcion registrada.');

@@ -197,14 +197,22 @@ public class CotizacionPdfService {
         return tabla;
     }
 
-    /** Tabla de partidas: descripcion, cantidad, precio unitario y subtotal. */
+    /**
+     * Tabla de partidas con desglose fiscal (V80): descripcion, cantidad, precio
+     * unitario, descuento, tasa de IVA, IVA e importe neto. El importe neto es la
+     * base de la partida (bruto - descuento); el IVA se muestra por partida para
+     * respetar tasas mixtas.
+     */
     private PdfPTable construirTablaPartidas(Cotizacion cotizacion) {
-        PdfPTable tabla = tablaAncho(new float[] {52f, 12f, 18f, 18f});
+        PdfPTable tabla = tablaAncho(new float[] {34f, 9f, 15f, 13f, 9f, 10f, 10f});
 
         tabla.addCell(celdaEncabezadoTabla("Descripcion", Element.ALIGN_LEFT));
-        tabla.addCell(celdaEncabezadoTabla("Cantidad", Element.ALIGN_CENTER));
+        tabla.addCell(celdaEncabezadoTabla("Cant.", Element.ALIGN_CENTER));
         tabla.addCell(celdaEncabezadoTabla("P. unitario", Element.ALIGN_RIGHT));
-        tabla.addCell(celdaEncabezadoTabla("Subtotal", Element.ALIGN_RIGHT));
+        tabla.addCell(celdaEncabezadoTabla("Descuento", Element.ALIGN_RIGHT));
+        tabla.addCell(celdaEncabezadoTabla("IVA", Element.ALIGN_CENTER));
+        tabla.addCell(celdaEncabezadoTabla("Importe IVA", Element.ALIGN_RIGHT));
+        tabla.addCell(celdaEncabezadoTabla("Importe", Element.ALIGN_RIGHT));
 
         String moneda = seguro(cotizacion.getMoneda());
         List<PartidaCotizacion> partidas = cotizacion.getPartidas();
@@ -216,31 +224,49 @@ public class CotizacionPdfService {
             tabla.addCell(celdaCelda(
                     formatearMonto(partida.getPrecioUnitario(), moneda), Element.ALIGN_RIGHT, fondo));
             tabla.addCell(celdaCelda(
+                    formatearMonto(partida.getDescuento(), moneda), Element.ALIGN_RIGHT, fondo));
+            tabla.addCell(celdaCelda(etiquetaTasaIva(partida), Element.ALIGN_CENTER, fondo));
+            tabla.addCell(celdaCelda(
+                    formatearMonto(partida.getIva(), moneda), Element.ALIGN_RIGHT, fondo));
+            tabla.addCell(celdaCelda(
                     formatearMonto(partida.getSubtotal(), moneda), Element.ALIGN_RIGHT, fondo));
             cebra = !cebra;
         }
         return tabla;
     }
 
-    /** Subtotal y total prominente alineados a la derecha. */
+    /** Etiqueta legible de la tasa de IVA de una partida para el PDF (16% / Exento). */
+    private String etiquetaTasaIva(PartidaCotizacion partida) {
+        return switch (partida.getTasaIva()) {
+            case DIECISEIS -> "16%";
+            case OCHO -> "8%";
+            case CERO -> "0%";
+            case EXENTO -> "Exento";
+        };
+    }
+
+    /**
+     * Desglose fiscal CFDI (V80) y total prominente, alineados a la derecha:
+     * subtotal, descuento global (si aplica), IVA, retenciones ISR/IVA (si
+     * aplican) y el total. Las lineas con importe cero (descuento/retenciones) se
+     * omiten para no saturar el documento; subtotal, IVA y total siempre se
+     * muestran.
+     */
     private PdfPTable construirTotales(Cotizacion cotizacion) {
         PdfPTable tabla = tablaAncho(new float[] {62f, 38f});
         String moneda = seguro(cotizacion.getMoneda());
 
-        // Subtotal.
-        tabla.addCell(celdaVacia());
-        PdfPCell subtotalCell = new PdfPCell();
-        subtotalCell.setBorder(Rectangle.NO_BORDER);
-        subtotalCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
-        subtotalCell.setPaddingTop(6f);
-        Phrase subtotalPh = new Phrase();
-        subtotalPh.add(new com.lowagie.text.Chunk("Subtotal   ", FUENTE_SUBTOTAL_ETIQUETA));
-        subtotalPh.add(new com.lowagie.text.Chunk(
-                formatearMonto(cotizacion.getSubtotal(), moneda), FUENTE_SUBTOTAL_VALOR));
-        Paragraph subtotalPar = new Paragraph(subtotalPh);
-        subtotalPar.setAlignment(Element.ALIGN_RIGHT);
-        subtotalCell.addElement(subtotalPar);
-        tabla.addCell(subtotalCell);
+        agregarFilaDesglose(tabla, "Subtotal", cotizacion.getSubtotal(), moneda, false);
+        if (cotizacion.getDescuentoGlobal().signum() > 0) {
+            agregarFilaDesglose(tabla, "Descuento", cotizacion.getDescuentoGlobal().negate(), moneda, false);
+        }
+        agregarFilaDesglose(tabla, "IVA", cotizacion.getIva(), moneda, false);
+        if (cotizacion.getRetencionIsr().signum() > 0) {
+            agregarFilaDesglose(tabla, "Ret. ISR", cotizacion.getRetencionIsr().negate(), moneda, false);
+        }
+        if (cotizacion.getRetencionIva().signum() > 0) {
+            agregarFilaDesglose(tabla, "Ret. IVA", cotizacion.getRetencionIva().negate(), moneda, false);
+        }
 
         // Total prominente.
         tabla.addCell(celdaVacia());
@@ -259,6 +285,32 @@ public class CotizacionPdfService {
         tabla.addCell(totalCell);
 
         return tabla;
+    }
+
+    /**
+     * Agrega una fila de desglose (etiqueta + importe) alineada a la derecha,
+     * reutilizando el estilo del subtotal. La celda izquierda queda vacia.
+     *
+     * @param tabla    tabla de totales.
+     * @param etiqueta etiqueta del renglon (Subtotal, IVA, Descuento, ...).
+     * @param importe  importe a mostrar (puede venir negado para restas).
+     * @param moneda   codigo de moneda.
+     * @param ignorado reservado; no se usa (mantiene la firma simple).
+     */
+    private void agregarFilaDesglose(PdfPTable tabla, String etiqueta, BigDecimal importe,
+                                     String moneda, boolean ignorado) {
+        tabla.addCell(celdaVacia());
+        PdfPCell celda = new PdfPCell();
+        celda.setBorder(Rectangle.NO_BORDER);
+        celda.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        celda.setPaddingTop(4f);
+        Phrase ph = new Phrase();
+        ph.add(new com.lowagie.text.Chunk(etiqueta + "   ", FUENTE_SUBTOTAL_ETIQUETA));
+        ph.add(new com.lowagie.text.Chunk(formatearMonto(importe, moneda), FUENTE_SUBTOTAL_VALOR));
+        Paragraph par = new Paragraph(ph);
+        par.setAlignment(Element.ALIGN_RIGHT);
+        celda.addElement(par);
+        tabla.addCell(celda);
     }
 
     /** Agrega los bloques de condiciones y notas al documento, si los hay. */

@@ -14,7 +14,14 @@
 
 import { Component, computed, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
+import { MatDialog } from '@angular/material/dialog';
 import { forkJoin, of } from 'rxjs';
+
+import { ObjetivoInfoDialog, type DatosObjetivoInfo } from './objetivo-info-dialog';
+import {
+  IndicadorInfoDialog,
+  type DatosIndicadorInfo,
+} from '../../../shared/indicadores/indicador-info-dialog';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
@@ -30,7 +37,8 @@ import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../shared/components/state-container/state-container';
 import { ProgressBadge } from '../../../shared/components/progress-badge/progress-badge';
 import { IndicatorCard } from '../../../shared/components/indicator-card/indicator-card';
-import { StatCard } from '../../../shared/components/stat-card/stat-card';
+import { MetricChart, type MetricPoint } from '../../../shared/components/metric-chart/metric-chart';
+import { Scorecard } from '../../reportes/scorecard/scorecard';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 
@@ -39,11 +47,12 @@ import { MiEmpresaService } from '../services/mi-empresa.service';
 import { EstrategiaVistasService } from '../../estrategia-vistas/services/estrategia-vistas.service';
 import { EsenciaEmpresa, ObjetivoEstrategico } from '../../estrategia-vistas/models/estrategia.models';
 import { TableroService } from '../../reportes/services/tablero.service';
-import { Tablero } from '../../reportes/models/reportes.models';
+import { IndicadoresArea, InteligenciaNegocio, Tablero } from '../../reportes/models/reportes.models';
 import { OportunidadesService } from '../../comercial/services/oportunidades.service';
 import { CotizacionesService } from '../../comercial/services/cotizaciones.service';
 import { Oportunidad } from '../../comercial/models/comercial.models';
 import { Branding } from './home.models';
+import { humanizarArea } from '../../reportes/areas-etiquetas';
 
 /** Nombre neutro por defecto cuando no se puede resolver el nombre de la Empresa. */
 const NOMBRE_EMPRESA_POR_DEFECTO = 'Mi empresa';
@@ -80,11 +89,11 @@ function resumenComercialVacio(): ResumenComercial {
   selector: 'app-empresa-home',
   imports: [
     RouterLink,
-    PageHeader,
     StateContainer,
     ProgressBadge,
     IndicatorCard,
-    StatCard,
+    MetricChart,
+    Scorecard,
     MatButtonModule,
     MatIconModule,
   ],
@@ -93,6 +102,7 @@ function resumenComercialVacio(): ResumenComercial {
 })
 export class EmpresaHome {
   private readonly auth = inject(AuthService);
+  private readonly dialog = inject(MatDialog);
   private readonly brandingService = inject(BrandingService);
   private readonly miEmpresaService = inject(MiEmpresaService);
   private readonly estrategiaService = inject(EstrategiaVistasService);
@@ -185,6 +195,91 @@ export class EmpresaHome {
   protected readonly mostrarComercial = computed(
     () => this.puedeVerPipeline() || this.puedeVerCotizaciones(),
   );
+
+  /** Expose humanizarArea para el template. */
+  protected readonly humanizarArea = humanizarArea;
+
+  /**
+   * Convierte el Tablero en un objeto InteligenciaNegocio minimal para alimentar
+   * el Scorecard ejecutivo sin necesitar una llamada HTTP adicional. Solo
+   * se necesitan las areas e indicadores (sin comparativos: el tablero no los
+   * tiene en la vista home).
+   */
+  protected readonly tableroComoInteligencia = computed((): InteligenciaNegocio | null => {
+    const t = this.tablero().datos;
+    if (!t) {
+      return null;
+    }
+    return {
+      generadoEn: t.generadoEn,
+      desde: t.desde,
+      hasta: t.hasta,
+      desdeComparativo: null,
+      hastaComparativo: null,
+      area: null,
+      dimension: null,
+      areas: t.areas,
+    };
+  });
+
+  /**
+   * Puntos para la grafica de un area (etiqueta, valor actual y comparativo).
+   * Replica la logica del Tablero dedicado.
+   */
+  protected puntosArea(grupo: IndicadoresArea): MetricPoint[] {
+    return grupo.indicadores.map((i) => ({
+      etiqueta: i.etiqueta,
+      valor: i.valor,
+      comparativo: i.comparativo,
+      unidad: i.unidad,
+    }));
+  }
+
+  /** Elige dona para varios conteos sin comparativo; barras en el resto. */
+  protected tipoGraficaArea(grupo: IndicadoresArea): 'dona' | 'barras' {
+    const hayComparativo = grupo.indicadores.some((i) => i.comparativo != null);
+    const todosConteo = grupo.indicadores.every(
+      (i) => (i.unidad ?? '').toLowerCase() === 'conteo',
+    );
+    if (!hayComparativo && todosConteo && grupo.indicadores.length >= 3) {
+      return 'dona';
+    }
+    return 'barras';
+  }
+
+  /**
+   * Abre el dialogo explicativo de una tarjeta del resumen comercial, reutilizando
+   * el mismo modal del tablero (mismo catalogo de indicadores). La clave debe
+   * coincidir con una del catalogo para que muestre la explicacion correcta.
+   */
+  protected abrirInfoComercial(clave: string, etiqueta: string, valor: number, unidad: string): void {
+    const datos: DatosIndicadorInfo = { clave, etiqueta, valor, unidad };
+    this.dialog.open(IndicadorInfoDialog, {
+      data: datos,
+      width: '32rem',
+      maxWidth: '92vw',
+      autoFocus: false,
+    });
+  }
+
+  /** Abre el dialogo informativo de un objetivo estrategico (Req 58). */
+  protected abrirObjetivo(objetivo: ObjetivoEstrategico): void {
+    const datos: DatosObjetivoInfo = {
+      nombre: objetivo.nombre,
+      responsable: objetivo.responsable,
+      meta: objetivo.meta,
+      avance: objetivo.avance,
+      estadoDerivado: objetivo.estadoDerivado,
+      periodoInicio: objetivo.periodoInicio,
+      periodoFin: objetivo.periodoFin,
+    };
+    this.dialog.open(ObjetivoInfoDialog, {
+      data: datos,
+      width: '30rem',
+      maxWidth: '92vw',
+      autoFocus: false,
+    });
+  }
 
   constructor() {
     this.cargarMiEmpresa();

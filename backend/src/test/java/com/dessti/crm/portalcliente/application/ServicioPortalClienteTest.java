@@ -50,9 +50,12 @@ class ServicioPortalClienteTest {
     private ClientePortalActualPort clientePortalActual;
     private CotizacionRepository cotizacionRepository;
     private CotizacionConsultaPort cotizacionConsulta;
+    private DecisionCotizacionPort decisionCotizacion;
     private ResumenPruebasDisenoPort resumenPruebasDiseno;
     private ResumenProyectosPort resumenProyectos;
     private ResumenTicketsPort resumenTickets;
+    private RegistroQuejaPortalPort registroQuejaPortal;
+    private PerfilClientePortalPort perfilClientePortal;
     private FacturaRepository facturaRepository;
     private AuditoriaPort auditoria;
     private ServicioPortalCliente servicio;
@@ -62,15 +65,18 @@ class ServicioPortalClienteTest {
         clientePortalActual = mock(ClientePortalActualPort.class);
         cotizacionRepository = mock(CotizacionRepository.class);
         cotizacionConsulta = mock(CotizacionConsultaPort.class);
+        decisionCotizacion = mock(DecisionCotizacionPort.class);
         resumenPruebasDiseno = mock(ResumenPruebasDisenoPort.class);
         resumenProyectos = mock(ResumenProyectosPort.class);
         resumenTickets = mock(ResumenTicketsPort.class);
+        registroQuejaPortal = mock(RegistroQuejaPortalPort.class);
+        perfilClientePortal = mock(PerfilClientePortalPort.class);
         facturaRepository = mock(FacturaRepository.class);
         auditoria = mock(AuditoriaPort.class);
         servicio = new ServicioPortalCliente(
-                clientePortalActual, cotizacionRepository, cotizacionConsulta,
-                resumenPruebasDiseno, resumenProyectos, resumenTickets,
-                facturaRepository, auditoria);
+                clientePortalActual, cotizacionRepository, cotizacionConsulta, decisionCotizacion,
+                resumenPruebasDiseno, resumenProyectos, resumenTickets, registroQuejaPortal,
+                perfilClientePortal, facturaRepository, auditoria);
         TenantContext.set(TENANT);
         when(clientePortalActual.clienteIdActual()).thenReturn(CLIENTE_PORTAL);
     }
@@ -109,5 +115,87 @@ class ServicioPortalClienteTest {
                 .isInstanceOf(RecursoNoEncontradoException.class);
 
         verify(resumenPruebasDiseno, never()).rechazar(any(UUID.class));
+    }
+
+    @Test
+    @DisplayName("aprobarMiCotizacion de una Cotizacion propia delega en el puerto y audita (Req 45.2)")
+    void aprobarCotizacionPropiaDelega() {
+        when(cotizacionConsulta.buscar(COTIZACION)).thenReturn(Optional.of(
+                new CotizacionConsulta(COTIZACION, "enviada", CLIENTE_PORTAL, BigDecimal.TEN)));
+
+        servicio.aprobarMiCotizacion(COTIZACION);
+
+        verify(decisionCotizacion).aprobar(COTIZACION);
+        ArgumentCaptor<EventoAuditoria> ev = ArgumentCaptor.forClass(EventoAuditoria.class);
+        verify(auditoria).registrar(ev.capture());
+        assertThat(ev.getValue().accion()).isEqualTo("aprobar_cotizacion");
+    }
+
+    @Test
+    @DisplayName("aprobarMiCotizacion de una Cotizacion de otro Cliente responde 404 y no delega (Req 45.3)")
+    void aprobarCotizacionAjenaDa404() {
+        when(cotizacionConsulta.buscar(COTIZACION)).thenReturn(Optional.of(
+                new CotizacionConsulta(COTIZACION, "enviada", OTRO_CLIENTE, BigDecimal.TEN)));
+
+        assertThatThrownBy(() -> servicio.aprobarMiCotizacion(COTIZACION))
+                .isInstanceOf(RecursoNoEncontradoException.class);
+
+        verify(decisionCotizacion, never()).aprobar(any(UUID.class));
+        ArgumentCaptor<EventoAuditoria> ev = ArgumentCaptor.forClass(EventoAuditoria.class);
+        verify(auditoria).registrar(ev.capture());
+        assertThat(ev.getValue().accion()).isEqualTo("acceso_denegado");
+    }
+
+    @Test
+    @DisplayName("rechazarMiCotizacion de una Cotizacion inexistente responde 404 y no delega (Req 45.3)")
+    void rechazarCotizacionInexistenteDa404() {
+        when(cotizacionConsulta.buscar(COTIZACION)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> servicio.rechazarMiCotizacion(COTIZACION))
+                .isInstanceOf(RecursoNoEncontradoException.class);
+
+        verify(decisionCotizacion, never()).rechazar(any(UUID.class));
+    }
+
+    @Test
+    @DisplayName("registrarMiQueja registra con el Cliente del Portal y audita (Req 45.2, 70.1)")
+    void registrarQuejaDelegaYAudita() {
+        UUID quejaId = UUID.fromString("77777777-7777-7777-7777-777777777777");
+        when(registroQuejaPortal.registrarDesdePortal(CLIENTE_PORTAL, "No enciende el anuncio"))
+                .thenReturn(new QuejaPortalResumen(
+                        quejaId, "No enciende el anuncio", "registrada",
+                        java.time.Instant.parse("2026-09-24T10:00:00Z")));
+
+        QuejaPortalResumen resumen = servicio.registrarMiQueja("No enciende el anuncio");
+
+        assertThat(resumen.id()).isEqualTo(quejaId);
+        // Se registra SIEMPRE con el Cliente del Portal (nunca de la peticion).
+        verify(registroQuejaPortal).registrarDesdePortal(CLIENTE_PORTAL, "No enciende el anuncio");
+        ArgumentCaptor<EventoAuditoria> ev = ArgumentCaptor.forClass(EventoAuditoria.class);
+        verify(auditoria).registrar(ev.capture());
+        assertThat(ev.getValue().accion()).isEqualTo("registrar_queja");
+    }
+
+    @Test
+    @DisplayName("miPerfil resuelve el Cliente del Portal y devuelve su perfil (Req 45.1)")
+    void miPerfilDelCliente() {
+        when(perfilClientePortal.buscarPerfil(CLIENTE_PORTAL)).thenReturn(Optional.of(
+                new PerfilClienteResumen(CLIENTE_PORTAL, "ACME S.A.", "ACME", "AAA010101AAA",
+                        "contacto@acme.mx", "5555555555", "CDMX", "CDMX", "01000")));
+
+        PerfilClienteResumen perfil = servicio.miPerfil();
+
+        assertThat(perfil.clienteId()).isEqualTo(CLIENTE_PORTAL);
+        assertThat(perfil.nombre()).isEqualTo("ACME S.A.");
+        verify(perfilClientePortal).buscarPerfil(CLIENTE_PORTAL);
+    }
+
+    @Test
+    @DisplayName("miPerfil responde 404 si el Cliente del Portal no es accesible (Req 45.3)")
+    void miPerfilInaccesibleDa404() {
+        when(perfilClientePortal.buscarPerfil(CLIENTE_PORTAL)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> servicio.miPerfil())
+                .isInstanceOf(RecursoNoEncontradoException.class);
     }
 }

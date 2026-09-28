@@ -49,6 +49,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     /** Prefijo de autoridad para roles, convencion de Spring Security. */
     private static final String PREFIJO_ROL = "ROLE_";
 
+    /**
+     * Prefijo de la authority que porta el Cliente del Portal (Req 45). Debe
+     * coincidir con {@code ClientePortalActualDesdeAuthenticationAdapter.PREFIJO_CLIENTE}.
+     */
+    private static final String PREFIJO_CLIENTE_ID = "cliente_id:";
+
     private final ServicioTokensJwt servicioTokens;
 
     public JwtAuthenticationFilter(ServicioTokensJwt servicioTokens) {
@@ -80,10 +86,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private void autenticar(HttpServletRequest request, ClaimsToken claims) {
         UsuarioAutenticado principal = new UsuarioAutenticado(claims.subject(), claims.tenantId());
 
-        List<SimpleGrantedAuthority> autoridades = Stream.concat(
+        List<SimpleGrantedAuthority> autoridades = new java.util.ArrayList<>(Stream.concat(
                 claims.roles().stream().map(r -> new SimpleGrantedAuthority(PREFIJO_ROL + r)),
                 claims.permisos().stream().map(SimpleGrantedAuthority::new)
-        ).toList();
+        ).toList());
+        // Portal del Cliente (Req 45): el claim cliente_id se materializa como la
+        // authority 'cliente_id:<uuid>' que ClientePortalActualPort lee para acotar
+        // el Portal al Cliente del Usuario. Ausente para staff/super_admin.
+        if (claims.clienteId() != null) {
+            autoridades.add(new SimpleGrantedAuthority(PREFIJO_CLIENTE_ID + claims.clienteId()));
+        }
 
         var authentication = new UsernamePasswordAuthenticationToken(principal, null, autoridades);
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

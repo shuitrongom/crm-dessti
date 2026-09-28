@@ -47,6 +47,18 @@
                         [avance]="avanceSitio(s)"
                         [estado]="estadoSitio(s)"
                       />
+                      <ol class="portal-fases" aria-label="Fases del sitio">
+                        @for (fase of fasesDeSitio(s); track fase.etiqueta) {
+                          <li
+                            class="portal-fase"
+                            [class.portal-fase--completada]="fase.completada"
+                          >
+                            <mat-icon aria-hidden="true">{{ fase.completada ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+                            <span>{{ fase.etiqueta }}</span>
+                            <span class="portal-fase__sr">{{ fase.completada ? ': completada' : ': pendiente' }}</span>
+                          </li>
+                        }
+                      </ol>
                     </li>
                   }
                 </ul>

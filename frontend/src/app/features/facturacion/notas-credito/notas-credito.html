@@ -37,6 +37,63 @@
   mensajeVacio="No hay notas de credito registradas."
   (reintentar)="cargar()"
 >
+  @if (hayDatos()) {
+    <!-- Dashboard de notas de credito (patron reutilizable) -->
+    <app-dashboard-section layout="apilado">
+      <div kpis>
+        <app-kpi-tile
+          icono="assignment_return"
+          tono="primario"
+          etiqueta="Monto en notas"
+          [valor]="resumen().monto | currency: 'MXN' : 'symbol-narrow' : '1.0-0' : 'es-MX'"
+        />
+        <app-kpi-tile
+          icono="verified"
+          tono="exito"
+          etiqueta="Timbradas"
+          [valor]="resumen().timbradas"
+        />
+        <app-kpi-tile
+          icono="edit_note"
+          tono="advertencia"
+          etiqueta="En borrador"
+          [valor]="resumen().borradores"
+        />
+        <app-kpi-tile
+          icono="cancel"
+          tono="error"
+          etiqueta="Canceladas"
+          [valor]="resumen().canceladas"
+        />
+      </div>
+      <div grafica class="dash-grafica">
+        <app-metric-chart
+          [datos]="[]"
+          tipo="gauge"
+          [porcentaje]="porcentajeTimbrado()"
+          titulo="Notas timbradas"
+        />
+      </div>
+      <div grafica class="dash-grafica">
+        <app-metric-chart
+          [datos]="composicionEstados()"
+          tipo="dona"
+          titulo="Notas por estado"
+        />
+      </div>
+      @if (montoPorMes().length > 0) {
+        <div grafica class="dash-grafica">
+          <app-metric-chart
+            [datos]="montoPorMes()"
+            tipo="area"
+            titulo="Monto de notas por mes"
+            nombreSerie="Monto (MXN)"
+          />
+        </div>
+      }
+    </app-dashboard-section>
+  }
+
   <div class="fact-filtros">
     <mat-form-field appearance="outline">
       <mat-label>Estado</mat-label>

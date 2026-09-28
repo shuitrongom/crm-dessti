@@ -90,7 +90,7 @@ class ServicioAutenticacionSesionesTest {
     private ClaimsToken claimsRefresco(String jti) {
         return new ClaimsToken(ID.toString(), TENANT, List.of("ventas"),
                 List.of("cliente:crear"), TipoToken.REFRESCO, T0.plusSeconds(604800), jti, GIRO,
-                IDENTIFICADOR, MODULOS);
+                IDENTIFICADOR, MODULOS, null);
     }
 
     // -----------------------------------------------------------------
@@ -105,9 +105,9 @@ class ServicioAutenticacionSesionesTest {
         when(passwordEncoder.matches("buena", HASH)).thenReturn(true);
         when(usuarioRepository.buscarNombresRoles(ID)).thenReturn(List.of("ventas"));
         when(usuarioRepository.buscarPermisos(ID)).thenReturn(List.of("cliente:crear"));
-        when(servicioTokens.emitirTokenAcceso(eq(ID.toString()), eq(TENANT), anyList(), anyList(), eq(GIRO), eq(IDENTIFICADOR), anyList()))
+        when(servicioTokens.emitirTokenAcceso(eq(ID.toString()), eq(TENANT), anyList(), anyList(), eq(GIRO), eq(IDENTIFICADOR), anyList(), any()))
                 .thenReturn(new TokenEmitido("acceso-jwt", T0.plusSeconds(900), "jti-acceso"));
-        when(servicioTokens.emitirTokenRefresco(eq(ID.toString()), eq(TENANT), anyList(), anyList(), eq(GIRO), eq(IDENTIFICADOR), anyList()))
+        when(servicioTokens.emitirTokenRefresco(eq(ID.toString()), eq(TENANT), anyList(), anyList(), eq(GIRO), eq(IDENTIFICADOR), anyList(), any()))
                 .thenReturn(new TokenEmitido("refresco-jwt", T0.plusSeconds(604800), "jti-refresco"));
 
         TokenResponse respuesta = servicio.login(IDENTIFICADOR, "buena", IP);
@@ -135,7 +135,7 @@ class ServicioAutenticacionSesionesTest {
         assertThatThrownBy(() -> servicio.refresh("refresco-x"))
                 .isInstanceOf(AutenticacionException.class);
 
-        verify(servicioTokens, never()).emitirTokenAcceso(any(), any(), anyList(), anyList(), any(), any(), any());
+        verify(servicioTokens, never()).emitirTokenAcceso(any(), any(), anyList(), anyList(), any(), any(), any(), any());
         verify(registroSesiones, never()).revocar(any(), any());
     }
 
@@ -149,7 +149,7 @@ class ServicioAutenticacionSesionesTest {
                 .isInstanceOf(AutenticacionException.class);
 
         verify(registroSesiones, never()).estaRevocado(any());
-        verify(servicioTokens, never()).emitirTokenAcceso(any(), any(), anyList(), anyList(), any(), any(), any());
+        verify(servicioTokens, never()).emitirTokenAcceso(any(), any(), anyList(), anyList(), any(), any(), any(), any());
     }
 
     // -----------------------------------------------------------------
@@ -161,9 +161,9 @@ class ServicioAutenticacionSesionesTest {
     void refreshRotaElTokenRefresco() {
         when(servicioTokens.validarTokenRefresco("refresco-vigente")).thenReturn(claimsRefresco("jti-viejo"));
         when(registroSesiones.estaRevocado("jti-viejo")).thenReturn(false);
-        when(servicioTokens.emitirTokenAcceso(eq(ID.toString()), eq(TENANT), anyList(), anyList(), eq(GIRO), eq(IDENTIFICADOR), anyList()))
+        when(servicioTokens.emitirTokenAcceso(eq(ID.toString()), eq(TENANT), anyList(), anyList(), eq(GIRO), eq(IDENTIFICADOR), anyList(), any()))
                 .thenReturn(new TokenEmitido("nuevo-acceso", T0.plusSeconds(900), "jti-acceso-2"));
-        when(servicioTokens.emitirTokenRefresco(eq(ID.toString()), eq(TENANT), anyList(), anyList(), eq(GIRO), eq(IDENTIFICADOR), anyList()))
+        when(servicioTokens.emitirTokenRefresco(eq(ID.toString()), eq(TENANT), anyList(), anyList(), eq(GIRO), eq(IDENTIFICADOR), anyList(), any()))
                 .thenReturn(new TokenEmitido("nuevo-refresco", T0.plusSeconds(604800), "jti-nuevo"));
 
         TokenResponse respuesta = servicio.refresh("refresco-vigente");

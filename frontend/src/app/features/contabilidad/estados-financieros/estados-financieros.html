@@ -1,0 +1,137 @@
+<app-page-header
+  titulo="Estados financieros"
+  subtitulo="Balance general, estado de resultados y balanza de comprobación del periodo. Todos los importes son agregaciones del sistema."
+/>
+
+<mat-card appearance="outlined" class="cont-alta">
+  <mat-card-content>
+    <form [formGroup]="formPeriodo" (ngSubmit)="consultar()" novalidate>
+      <div class="cont-filtros">
+        <mat-form-field appearance="outline">
+          <mat-label>Desde</mat-label>
+          <input matInput [matDatepicker]="pickerDesde" formControlName="desde" />
+          <mat-datepicker-toggle matSuffix [for]="pickerDesde" />
+          <mat-datepicker #pickerDesde />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Hasta</mat-label>
+          <input matInput [matDatepicker]="pickerHasta" formControlName="hasta" />
+          <mat-datepicker-toggle matSuffix [for]="pickerHasta" />
+          <mat-datepicker #pickerHasta />
+        </mat-form-field>
+        <button matButton="filled" type="submit" [disabled]="cargando()">
+          <mat-icon>search</mat-icon> Consultar
+        </button>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>
+
+@if (error(); as msg) {
+  <div class="cont-error" role="alert">
+    <mat-icon aria-hidden="true">error</mat-icon>
+    <span>{{ msg }}</span>
+  </div>
+}
+
+<mat-tab-group>
+  <!-- Balance general -->
+  <mat-tab label="Balance general">
+    @if (balance(); as b) {
+      <div class="cont-ef-integridad" aria-live="polite">
+        <app-estado-chip
+          [etiqueta]="b.cuadra ? 'Balance cuadrado' : 'Balance descuadrado'"
+          [tono]="b.cuadra ? 'exito' : 'error'"
+        />
+      </div>
+      <div class="cont-resumen">
+        <div class="cont-resumen__kpi">
+          <mat-icon aria-hidden="true">savings</mat-icon>
+          <div>
+            <span class="cont-resumen__valor">{{ b.activo | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span>
+            <span class="cont-resumen__etiqueta">Activo</span>
+          </div>
+        </div>
+        <div class="cont-resumen__kpi">
+          <mat-icon aria-hidden="true">credit_card</mat-icon>
+          <div>
+            <span class="cont-resumen__valor">{{ b.pasivo | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span>
+            <span class="cont-resumen__etiqueta">Pasivo</span>
+          </div>
+        </div>
+        <div class="cont-resumen__kpi">
+          <mat-icon aria-hidden="true">account_balance_wallet</mat-icon>
+          <div>
+            <span class="cont-resumen__valor">{{ b.capital | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span>
+            <span class="cont-resumen__etiqueta">Capital contable</span>
+          </div>
+        </div>
+      </div>
+      <dl class="cont-ef-detalle">
+        <div><dt>Capital base</dt><dd>{{ b.capitalBase | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</dd></div>
+        <div><dt>Resultado del ejercicio</dt><dd>{{ b.resultadoEjercicio | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</dd></div>
+      </dl>
+    } @else if (!cargando()) {
+      <p class="cont-ayuda">Sin datos para el periodo seleccionado.</p>
+    }
+  </mat-tab>
+
+  <!-- Estado de resultados -->
+  <mat-tab label="Estado de resultados">
+    @if (resultados(); as r) {
+      <div class="cont-resumen">
+        <div class="cont-resumen__kpi">
+          <mat-icon aria-hidden="true">trending_up</mat-icon>
+          <div>
+            <span class="cont-resumen__valor">{{ r.ingresos | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span>
+            <span class="cont-resumen__etiqueta">Ingresos</span>
+          </div>
+        </div>
+        <div class="cont-resumen__kpi">
+          <mat-icon aria-hidden="true">trending_down</mat-icon>
+          <div>
+            <span class="cont-resumen__valor">{{ r.gastos | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span>
+            <span class="cont-resumen__etiqueta">Gastos</span>
+          </div>
+        </div>
+        <div class="cont-resumen__kpi" [class.cont-resumen__kpi--negativo]="r.utilidad < 0">
+          <mat-icon aria-hidden="true">{{ r.utilidad < 0 ? 'south' : 'north' }}</mat-icon>
+          <div>
+            <span class="cont-resumen__valor">{{ r.utilidad | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span>
+            <span class="cont-resumen__etiqueta">{{ r.utilidad < 0 ? 'Pérdida del periodo' : 'Utilidad del periodo' }}</span>
+          </div>
+        </div>
+      </div>
+    } @else if (!cargando()) {
+      <p class="cont-ayuda">Sin datos para el periodo seleccionado.</p>
+    }
+  </mat-tab>
+
+  <!-- Balanza de comprobación -->
+  <mat-tab label="Balanza de comprobación">
+    @if (balanza(); as bz) {
+      <div class="cont-ef-integridad" aria-live="polite">
+        <app-estado-chip
+          [etiqueta]="bz.cuadra ? 'Balanza cuadrada' : 'Balanza descuadrada'"
+          [tono]="bz.cuadra ? 'exito' : 'error'"
+        />
+      </div>
+      <app-data-table [columnas]="columnasBalanza" [filas]="bz.renglones" [total]="bz.renglones.length">
+        <ng-template appCelda="codigo" let-r><span class="cont-mono">{{ r.codigo }}</span></ng-template>
+        <ng-template appCelda="nombre" let-r>{{ r.nombre }}</ng-template>
+        <ng-template appCelda="cargos" let-r>
+          <span class="cont-num">{{ r.cargos | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span>
+        </ng-template>
+        <ng-template appCelda="abonos" let-r>
+          <span class="cont-num">{{ r.abonos | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span>
+        </ng-template>
+      </app-data-table>
+      <div class="cont-balance" [class.cont-balance--balanceado]="bz.cuadra" [class.cont-balance--desbalanceado]="!bz.cuadra">
+        <span>Total cargos: {{ bz.totalCargos | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span>
+        <span>Total abonos: {{ bz.totalAbonos | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span>
+      </div>
+    } @else if (!cargando()) {
+      <p class="cont-ayuda">Sin datos para el periodo seleccionado.</p>
+    }
+  </mat-tab>
+</mat-tab-group>

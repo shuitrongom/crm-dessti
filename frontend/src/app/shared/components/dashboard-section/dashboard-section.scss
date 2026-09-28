@@ -1,0 +1,60 @@
+// =============================================================================
+// DashboardSection — layout del tablero. Tokens --ds-*.
+// =============================================================================
+:host {
+  display: block;
+  margin-block-end: var(--ds-space-5);
+}
+
+.dash {
+  display: grid;
+  gap: var(--ds-space-4);
+  grid-template-columns: 1fr;
+
+  // La fila de KPIs: grid fluido de tarjetas (auto-fit) para que siempre llenen
+  // el ancho disponible sin importar cuantas sean.
+  &__kpis {
+    display: grid;
+    gap: var(--ds-space-2);
+    grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+    align-content: start;
+  }
+
+  // La zona de graficas: apila varias graficas con separacion uniforme; cada
+  // hija (p. ej. .dash-grafica) aporta su propia superficie.
+  &__graficas {
+    display: grid;
+    gap: var(--ds-space-4);
+    align-content: start;
+  }
+
+  // ---- Disposicion 'split': KPIs (2fr) izquierda, graficas (1fr) derecha ----
+  &--split {
+    @media (min-width: 64rem) {
+      grid-template-columns: 2fr 1fr;
+      align-items: start;
+    }
+  }
+
+  // ---- Disposicion 'apilado': KPIs arriba a todo el ancho, graficas debajo ----
+  &--apilado {
+    .dash__graficas {
+      grid-auto-flow: row;
+
+      @media (min-width: 48rem) {
+        grid-auto-flow: column;
+        grid-auto-columns: 1fr;
+      }
+    }
+  }
+}
+
+// Superficie estandar para envolver una grafica (surface + borde + sombra).
+// Se expone globalmente (sin :host) para que las vistas la usen en el slot.
+:host ::ng-deep .dash-grafica {
+  padding: var(--ds-space-4);
+  background: var(--mat-sys-surface, #fff);
+  border: 1px solid var(--mat-sys-outline-variant, #e2e0e8);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+}

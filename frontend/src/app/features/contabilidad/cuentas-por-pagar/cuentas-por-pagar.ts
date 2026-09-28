@@ -27,6 +27,7 @@ import {
   DataTable,
 } from '../../../shared/components/data-table/data-table';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 import {
@@ -66,6 +67,7 @@ export class ContabilidadCuentasPorPagar {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(ContabilidadService);
   private readonly toast = inject(NotificacionesService);
+  private readonly overlay = inject(OperacionOverlayService);
   private readonly auth = inject(AuthService);
 
   protected readonly tono = tonoDeEstado;
@@ -147,17 +149,23 @@ export class ContabilidadCuentasPorPagar {
       return;
     }
     this.guardando.set(true);
-    this.service.aplicarPagoCxP(cxp.id, this.formPago.getRawValue().monto).subscribe({
-      next: () => {
-        this.guardando.set(false);
-        this.toast.exito('Pago aplicado.');
-        this.cxpSeleccionada.set(null);
-        this.cargar();
-      },
-      error: (e: HttpErrorResponse) => {
-        this.guardando.set(false);
-        this.toast.error(mensajeDeError(e));
-      },
-    });
+    this.overlay
+      .ejecutar(this.service.aplicarPagoCxP(cxp.id, this.formPago.getRawValue().monto), {
+        tipo: 'procesar',
+        textoProceso: 'Aplicando pago…',
+        textoExito: 'Pago aplicado',
+      })
+      .subscribe({
+        next: () => {
+          this.guardando.set(false);
+          this.toast.exito('Pago aplicado.');
+          this.cxpSeleccionada.set(null);
+          this.cargar();
+        },
+        error: (e: HttpErrorResponse) => {
+          this.guardando.set(false);
+          this.toast.error(mensajeDeError(e));
+        },
+      });
   }
 }

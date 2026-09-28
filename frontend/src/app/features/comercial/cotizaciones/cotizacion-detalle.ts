@@ -43,10 +43,14 @@ import {
   Cotizacion,
   ETIQUETA_ESTADO_COTIZACION,
   ETIQUETA_ESTADO_PRUEBA,
+  ETIQUETA_TASA_IVA,
   EstadoCotizacion,
   MONEDA_POR_DEFECTO,
   Producto,
   PruebaDiseno,
+  TASA_IVA_POR_DEFECTO,
+  TASAS_IVA,
+  TasaIva,
   estadosDestinoCotizacion,
 } from '../models/comercial.models';
 
@@ -101,7 +105,14 @@ export class ComercialCotizacionDetalle implements OnInit {
   protected readonly etiquetaEstado = ETIQUETA_ESTADO_COTIZACION;
   protected readonly etiquetaEstadoPrueba = ETIQUETA_ESTADO_PRUEBA;
   protected readonly tonoEstado = tonoDeEstado;
-  protected readonly columnasPartidas = ['descripcion', 'cantidad', 'precioUnitario', 'subtotal'];
+  protected readonly columnasPartidas = [
+    'descripcion', 'cantidad', 'precioUnitario', 'descuento', 'iva', 'subtotal',
+  ];
+
+  /** Etiqueta legible de la tasa de IVA de una partida para la tabla (V80). */
+  protected etiquetaIva(tasa: TasaIva): string {
+    return ETIQUETA_TASA_IVA[tasa] ?? tasa;
+  }
 
   protected readonly fase = signal<FaseSolicitud>('cargando');
   protected readonly mensajeError = signal<string | undefined>(undefined);
@@ -162,7 +173,12 @@ export class ComercialCotizacionDetalle implements OnInit {
     descripcion: ['', [Validators.required, Validators.maxLength(500)]],
     cantidad: [1, [Validators.required, Validators.min(1), Validators.max(999999)]],
     precioUnitario: [null as number | null, [Validators.min(0.01), Validators.max(999999999.99)]],
+    descuento: [null as number | null, [Validators.min(0), Validators.max(999999999.99)]],
+    tasaIva: [TASA_IVA_POR_DEFECTO as TasaIva],
   });
+
+  /** Opciones de tasa de IVA para el selector de partida (V80). */
+  protected readonly tasasIva = TASAS_IVA;
 
   /** Formulario del dialogo de asignacion de canal (canalId vacio = quitar canal). */
   protected readonly formCanal = this.fb.nonNullable.group({
@@ -324,7 +340,10 @@ export class ComercialCotizacionDetalle implements OnInit {
   alternarFormPartida(): void {
     this.formPartidaAbierto.update((v) => !v);
     if (this.formPartidaAbierto()) {
-      this.formPartida.reset({ productoId: '', descripcion: '', cantidad: 1, precioUnitario: null });
+      this.formPartida.reset({
+        productoId: '', descripcion: '', cantidad: 1, precioUnitario: null,
+        descuento: null, tasaIva: TASA_IVA_POR_DEFECTO,
+      });
     }
   }
 
@@ -342,6 +361,8 @@ export class ComercialCotizacionDetalle implements OnInit {
         descripcion: v.descripcion.trim(),
         cantidad: Number(v.cantidad),
         precioUnitario: v.precioUnitario == null ? null : Number(v.precioUnitario),
+        descuento: v.descuento == null ? null : Number(v.descuento),
+        tasaIva: v.tasaIva ?? TASA_IVA_POR_DEFECTO,
       })
       .subscribe({
         next: (cotizacion) => {

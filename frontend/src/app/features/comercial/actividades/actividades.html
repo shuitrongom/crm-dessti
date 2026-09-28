@@ -1,0 +1,126 @@
+<app-page-header
+  titulo="Actividades y seguimiento"
+  subtitulo="Tu agenda de interacciones y tareas de seguimiento comercial: prioriza pendientes y vencidas para no perder ninguna oportunidad."
+/>
+
+<!-- Indicadores rápidos de la agenda -->
+<section class="agenda-resumen" aria-label="Resumen de la agenda">
+  <div class="agenda-kpi agenda-kpi--pendiente">
+    <mat-icon aria-hidden="true">pending_actions</mat-icon>
+    <div>
+      <span class="agenda-kpi__valor">{{ pendientes() }}</span>
+      <span class="agenda-kpi__etiqueta">Pendientes</span>
+    </div>
+  </div>
+  <div class="agenda-kpi agenda-kpi--vencida">
+    <mat-icon aria-hidden="true">warning</mat-icon>
+    <div>
+      <span class="agenda-kpi__valor">{{ vencidas() }}</span>
+      <span class="agenda-kpi__etiqueta">Vencidas</span>
+    </div>
+  </div>
+</section>
+
+<!-- Filtros -->
+<form class="agenda-filtros" [formGroup]="filtros" (ngSubmit)="cargar()">
+  <mat-form-field appearance="outline">
+    <mat-label>Estado</mat-label>
+    <mat-select formControlName="estado">
+      <mat-option value="">Todos</mat-option>
+      <mat-option value="pendiente">Pendientes</mat-option>
+      <mat-option value="completada">Completadas</mat-option>
+      <mat-option value="cancelada">Canceladas</mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Tipo</mat-label>
+    <mat-select formControlName="tipo">
+      <mat-option value="">Todos</mat-option>
+      @for (t of tiposActividad; track t.valor) {
+        <mat-option [value]="t.valor">{{ t.etiqueta }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <button mat-flat-button color="primary" type="submit">
+    <mat-icon aria-hidden="true">filter_alt</mat-icon>
+    Filtrar
+  </button>
+</form>
+
+<app-state-container
+  [fase]="fase()"
+  [mensajeError]="error()"
+  mensajeVacio="No hay actividades para los filtros seleccionados."
+  etiquetaCarga="Cargando actividades"
+  (reintentar)="cargar()"
+>
+  <ul class="agenda-lista" aria-label="Actividades de seguimiento">
+    @for (a of actividades(); track a.id) {
+      <li
+        class="agenda-item"
+        [class.agenda-item--vencida]="esVencida(a)"
+        [class.agenda-item--completada]="a.estado === 'completada'"
+        [class.agenda-item--cancelada]="a.estado === 'cancelada'"
+      >
+        <div class="agenda-item__icono" [attr.data-tipo]="a.tipo">
+          <mat-icon aria-hidden="true">{{ iconoTipo[a.tipo] }}</mat-icon>
+        </div>
+
+        <div class="agenda-item__cuerpo">
+          <div class="agenda-item__encabezado">
+            <span class="agenda-item__tipo">{{ etiquetaTipo[a.tipo] }}</span>
+            <span
+              class="agenda-item__estado"
+              [class.agenda-item__estado--pendiente]="a.estado === 'pendiente'"
+              [class.agenda-item__estado--completada]="a.estado === 'completada'"
+              [class.agenda-item__estado--cancelada]="a.estado === 'cancelada'"
+            >
+              {{ etiquetaEstado[a.estado] }}
+            </span>
+            @if (esVencida(a)) {
+              <span class="agenda-item__vencida">
+                <mat-icon aria-hidden="true">warning</mat-icon>
+                Vencida
+              </span>
+            }
+          </div>
+          <p class="agenda-item__asunto">{{ a.asunto }}</p>
+          <div class="agenda-item__meta">
+            <span>
+              <mat-icon aria-hidden="true">event</mat-icon>
+              {{ a.fechaProgramada | date: 'medium' }}
+            </span>
+            @if (a.vencimiento) {
+              <span>
+                <mat-icon aria-hidden="true">schedule</mat-icon>
+                Vence: {{ a.vencimiento | date: 'short' }}
+              </span>
+            }
+            <a
+              class="agenda-item__cliente"
+              [routerLink]="['/empresa/comercial/clientes', a.clienteId]"
+            >
+              <mat-icon aria-hidden="true">person</mat-icon>
+              Ver cliente
+            </a>
+          </div>
+        </div>
+
+        @if (puedeActualizar && a.estado === 'pendiente') {
+          <button
+            mat-icon-button
+            type="button"
+            color="primary"
+            matTooltip="Completar"
+            aria-label="Completar actividad"
+            (click)="completar(a)"
+          >
+            <mat-icon aria-hidden="true">check_circle</mat-icon>
+          </button>
+        }
+      </li>
+    }
+  </ul>
+</app-state-container>

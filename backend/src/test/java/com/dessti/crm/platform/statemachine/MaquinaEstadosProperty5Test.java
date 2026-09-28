@@ -384,12 +384,14 @@ class MaquinaEstadosProperty5Test {
             case REGISTRADA -> d == EstadoFacturaProveedor.CONCILIADA
                     || d == EstadoFacturaProveedor.DISCREPANCIA;
             case CONCILIADA -> d == EstadoFacturaProveedor.PAGADA;
-            case DISCREPANCIA, PAGADA -> false; // finales
+            // DISCREPANCIA es recuperable: se reabre a REGISTRADA para re-conciliar.
+            case DISCREPANCIA -> d == EstadoFacturaProveedor.REGISTRADA;
+            case PAGADA -> false; // unico estado final
         };
     }
 
     private static final Set<EstadoFacturaProveedor> FACTURA_PROVEEDOR_FINALES =
-            EnumSet.of(EstadoFacturaProveedor.DISCREPANCIA, EstadoFacturaProveedor.PAGADA);
+            EnumSet.of(EstadoFacturaProveedor.PAGADA);
 
     // Feature: crm-anuncios-luminosos, Property 5: Para cualquier máquina de estado del sistema (Cotización, Orden_Fabricación, Oportunidad, Permiso_Instalación, Orden_Trabajo_Instalación, Ticket_Servicio, Requisición_Compra, Orden_Compra, Factura_Proveedor, Factura CFDI, Nómina y Publicación_Social) y para cualquier par (estado actual, evento), la transición se acepta si y solo si pertenece al conjunto de transiciones definidas para esa máquina; toda transición que parta de un estado final se rechaza y el estado se conserva sin cambios.
     @Property(tries = 1000)

@@ -62,4 +62,9 @@ export class ClientesService {
   asociarContacto(clienteId: string, request: ContactoRequest): Observable<Contacto> {
     return this.http.post<Contacto>(this.api.url(`/clientes/${clienteId}/contactos`), request);
   }
+
+  /** Asigna o limpia el Usuario propietario/vendedor de un Cliente (V81). */
+  asignarPropietario(clienteId: string, usuarioId: string | null): Observable<Cliente> {
+    return this.http.put<Cliente>(this.api.url(`/clientes/${clienteId}/propietario`), { usuarioId });
+  }
 }

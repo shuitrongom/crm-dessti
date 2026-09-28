@@ -14,7 +14,14 @@
         <mat-card-header>
           <mat-card-title>{{ p.nombre }}</mat-card-title>
           @if (p.estadoConsolidado) {
-            <mat-card-subtitle>Estado consolidado: {{ p.estadoConsolidado }}</mat-card-subtitle>
+            <mat-card-subtitle>
+              Estado consolidado: <app-estado-chip [etiqueta]="humanizar(p.estadoConsolidado)" [tono]="tono(p.estadoConsolidado)" />
+            </mat-card-subtitle>
+          }
+          @if (p.estadoMultisitio) {
+            <mat-card-subtitle>
+              Estado consolidado: <app-estado-chip [etiqueta]="humanizar(p.estadoMultisitio)" [tono]="tono(p.estadoMultisitio)" />
+            </mat-card-subtitle>
           }
         </mat-card-header>
         @if (puedeAgregarSitio) {
@@ -26,6 +33,49 @@
           </mat-card-actions>
         }
       </mat-card>
+
+      <!-- Dashboard multi-sitio (giros genericos): sucursales por fase -->
+      @if (esMultisitio() && p.sitiosMultisitio.length > 0) {
+        <app-dashboard-section layout="apilado">
+          <div kpis>
+            <app-kpi-tile
+              icono="store"
+              tono="primario"
+              etiqueta="Sucursales"
+              [valor]="resumenMultisitio().total"
+            />
+            <app-kpi-tile
+              icono="schedule"
+              tono="advertencia"
+              etiqueta="Pendientes"
+              [valor]="resumenMultisitio().pendientes"
+            />
+            <app-kpi-tile
+              icono="engineering"
+              tono="info"
+              etiqueta="En curso"
+              [valor]="resumenMultisitio().enCurso"
+            />
+            <app-kpi-tile
+              icono="check_circle"
+              tono="exito"
+              etiqueta="Entregadas"
+              [valor]="resumenMultisitio().entregados"
+            />
+          </div>
+          <div grafica class="dash-grafica">
+            <app-metric-chart
+              [datos]="[]"
+              tipo="gauge"
+              [porcentaje]="avanceGlobal()"
+              titulo="Avance global del proyecto"
+            />
+          </div>
+          <div grafica class="dash-grafica">
+            <app-metric-chart [datos]="composicionFases()" tipo="dona" titulo="Sucursales por fase" />
+          </div>
+        </app-dashboard-section>
+      }
 
       @if (formularioAbierto()) {
         <mat-card appearance="outlined">
@@ -96,9 +146,70 @@
             </mat-card-content>
           </mat-card>
         } @empty {
-          <p class="proyecto-detalle__vacio">Este proyecto aun no tiene sitios registrados.</p>
+          @if (!esMultisitio()) {
+            <p class="proyecto-detalle__vacio">Este proyecto aun no tiene sitios registrados.</p>
+          }
         }
       </section>
+
+      <!-- Sucursales multi-sitio (giros genericos): fase editable por sitio -->
+      @if (esMultisitio()) {
+        <section class="proyecto-detalle__sitios" aria-label="Sucursales del proyecto">
+          @for (s of p.sitiosMultisitio; track s.sitio.id) {
+            <mat-card appearance="outlined" class="proyecto-detalle__sitio">
+              <mat-card-header>
+                <mat-card-title>{{ s.sitio.nombre }}</mat-card-title>
+                @if (s.sitio.direccion) {
+                  <mat-card-subtitle>{{ s.sitio.direccion }}</mat-card-subtitle>
+                }
+              </mat-card-header>
+              <mat-card-content>
+                <app-progress-badge
+                  [avance]="porcentajeSitio(s)"
+                  [estado]="s.fase === 'entregado' ? 'cumplido' : (s.fase === 'pendiente' ? 'en_riesgo' : 'en_curso')"
+                />
+                <p class="proyecto-ms-fase">
+                  <app-estado-chip [etiqueta]="etiquetaFase[s.fase]" [tono]="tono(s.fase)" />
+                </p>
+                @if (s.evidenciaUrl) {
+                  <p class="proyecto-ms-evidencia">
+                    <mat-icon aria-hidden="true">attachment</mat-icon>
+                    <a [href]="s.evidenciaUrl" target="_blank" rel="noopener noreferrer">Ver evidencia</a>
+                  </p>
+                }
+                <div class="proyecto-ms-acciones">
+                  @if (siguienteFase(s); as destino) {
+                    <button matButton="tonal" type="button" (click)="avanzarSitio(s, destino)">
+                      <mat-icon aria-hidden="true">arrow_forward</mat-icon>
+                      Avanzar a {{ etiquetaFase[destino] }}
+                    </button>
+                  }
+                  @if (puedeCorregir) {
+                    <button matButton [matMenuTriggerFor]="menuCorregir" type="button">
+                      <mat-icon aria-hidden="true">edit</mat-icon>
+                      Corregir fase
+                    </button>
+                    <mat-menu #menuCorregir="matMenu">
+                      @for (f of fasesTodas; track f) {
+                        <button
+                          mat-menu-item
+                          type="button"
+                          [disabled]="f === s.fase"
+                          (click)="corregirFase(s, f)"
+                        >
+                          {{ etiquetaFase[f] }}
+                        </button>
+                      }
+                    </mat-menu>
+                  }
+                </div>
+              </mat-card-content>
+            </mat-card>
+          } @empty {
+            <p class="proyecto-detalle__vacio">Este proyecto aun no tiene sucursales registradas.</p>
+          }
+        </section>
+      }
     </div>
   }
 </app-state-container>

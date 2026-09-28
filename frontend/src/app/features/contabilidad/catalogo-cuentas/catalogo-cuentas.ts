@@ -9,10 +9,11 @@
 
 import { Component, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -27,7 +28,10 @@ import {
   ColumnaTabla,
   DataTable,
 } from '../../../shared/components/data-table/data-table';
-import { mensajeDeError } from '../../../core/services/error-mensajes';
+import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
+import { AuthService } from '../../../core/auth/auth.service';
+import { mensajeDeError, erroresDeCampo } from '../../../core/services/error-mensajes';
 import { EstadoSolicitud, cargando, conDatos, conError } from '../../../shared/models/estado-solicitud';
 
 import { ContabilidadService } from '../services/contabilidad.service';
@@ -42,6 +46,7 @@ import { CodigoAgrupadorSat } from '../models/contabilidad-electronica.models';
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
+    MatSelectModule,
     MatAutocompleteModule,
     MatButtonModule,
     MatIconModule,
@@ -54,8 +59,37 @@ import { CodigoAgrupadorSat } from '../models/contabilidad-electronica.models';
   styleUrl: '../contabilidad.scss',
 })
 export class ContabilidadCatalogoCuentas {
+  private readonly fb = inject(FormBuilder);
   private readonly service = inject(ContabilidadService);
   private readonly ceService = inject(ContabilidadElectronicaService);
+  private readonly toast = inject(NotificacionesService);
+  private readonly overlay = inject(OperacionOverlayService);
+  private readonly auth = inject(AuthService);
+
+  protected readonly puedeCrear = this.auth.tienePermiso('cuenta_contable', 'crear');
+
+  protected readonly tipos = [
+    { valor: 'activo', etiqueta: 'Activo' },
+    { valor: 'pasivo', etiqueta: 'Pasivo' },
+    { valor: 'capital', etiqueta: 'Capital' },
+    { valor: 'ingreso', etiqueta: 'Ingreso' },
+    { valor: 'gasto', etiqueta: 'Gasto' },
+  ];
+
+  protected readonly naturalezas = [
+    { valor: 'deudora', etiqueta: 'Deudora' },
+    { valor: 'acreedora', etiqueta: 'Acreedora' },
+  ];
+
+  protected readonly mostrarAlta = signal(false);
+  protected readonly guardandoAlta = signal(false);
+
+  protected readonly formAlta = this.fb.nonNullable.group({
+    codigo: ['', [Validators.required, Validators.maxLength(40)]],
+    nombre: ['', [Validators.required, Validators.maxLength(200)]],
+    tipo: ['activo', [Validators.required]],
+    naturaleza: ['deudora', [Validators.required]],
+  });
 
   protected readonly columnas: ColumnaTabla[] = [
     { clave: 'codigo', encabezado: 'Código' },
@@ -135,5 +169,56 @@ export class ContabilidadCatalogoCuentas {
         this.error.set(mensajeDeError(e));
       },
     });
+  }
+
+  // --- Alta de cuenta contable (Req 38.1) ------------------------------------
+
+  alternarAlta(): void {
+    this.mostrarAlta.update((v) => !v);
+    if (this.mostrarAlta()) {
+      this.formAlta.reset({ codigo: '', nombre: '', tipo: 'activo', naturaleza: 'deudora' });
+    }
+  }
+
+  crearCuenta(): void {
+    if (this.formAlta.invalid) {
+      this.formAlta.markAllAsTouched();
+      return;
+    }
+    const v = this.formAlta.getRawValue();
+    this.guardandoAlta.set(true);
+    this.overlay
+      .ejecutar(
+        this.service.crearCuentaContable({
+          codigo: v.codigo.trim(),
+          nombre: v.nombre.trim(),
+          tipo: v.tipo,
+          naturaleza: v.naturaleza,
+        }),
+        { tipo: 'crear', textoProceso: 'Creando cuenta…', textoExito: 'Cuenta creada' },
+      )
+      .subscribe({
+        next: () => {
+          this.guardandoAlta.set(false);
+          this.toast.exito('Cuenta contable creada.');
+          this.mostrarAlta.set(false);
+          this.page.set(0);
+          this.cargar();
+        },
+        error: (e: HttpErrorResponse) => {
+          this.guardandoAlta.set(false);
+          if (e.status === 409) {
+            this.formAlta.controls.codigo.setErrors({ duplicado: true });
+            this.toast.error('Ya existe una cuenta con ese código.');
+            return;
+          }
+          if (e.status === 422) {
+            const campos = erroresDeCampo(e);
+            this.toast.error(campos.length ? campos.map((c) => c.mensaje).join(' ') : mensajeDeError(e));
+            return;
+          }
+          this.toast.error(mensajeDeError(e));
+        },
+      });
   }
 }

@@ -48,8 +48,10 @@
   &__marca {
     display: flex;
     align-items: center;
+    gap: var(--ds-space-3);
     padding: var(--ds-space-4) var(--ds-space-5);
     border-bottom: 1px solid var(--ds-color-border);
+    min-width: 0;
   }
 
   &__marca-logo {
@@ -65,13 +67,34 @@
     color: var(--ds-color-primary);
   }
 
+  // Icono de empresa (fallback cuando no hay logo cargado): chip con gradiente.
+  &__marca-icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    inline-size: 2.25rem;
+    block-size: 2.25rem;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--ds-color-primary),
+      color-mix(in srgb, var(--ds-color-primary) 55%, #ffffff));
+    color: #fff;
+
+    mat-icon { font-size: 1.35rem; inline-size: 1.35rem; block-size: 1.35rem; }
+  }
+
   // Nombre visible de la empresa (branding propio del tenant): se ajusta al
   // ancho del drawer sin desbordar, respetando el color de texto del tema.
   &__marca-empresa {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-family: var(--ds-font-family-heading);
+    font-size: var(--ds-font-size-lg);
+    font-weight: var(--ds-font-weight-bold);
+    letter-spacing: -0.01em;
     color: var(--ds-color-text);
+    min-width: 0;
   }
 
   // Logotipo de la empresa: se limita en alto para conservar el ritmo del

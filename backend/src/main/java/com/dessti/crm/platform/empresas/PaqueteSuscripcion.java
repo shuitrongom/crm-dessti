@@ -84,6 +84,9 @@ public class PaqueteSuscripcion {
     /** Duracion maxima de contrato de un Paquete de Suscripcion, en dias (un año). */
     static final int DURACION_MAXIMA_DIAS = 365;
 
+    /** Duracion maxima del periodo de prueba, en meses (regla de negocio). */
+    static final int DURACION_PRUEBA_MAXIMA_MESES = 6;
+
     @Id
     @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
@@ -346,6 +349,10 @@ public class PaqueteSuscripcion {
         if (admitePrueba) {
             if (duracionPruebaMeses == null || duracionPruebaMeses <= 0) {
                 throw new ReglaNegocioException("La duración de la prueba debe ser mayor a 0 meses.");
+            }
+            if (duracionPruebaMeses > DURACION_PRUEBA_MAXIMA_MESES) {
+                throw new ReglaNegocioException(
+                        "La duración de la prueba no puede exceder " + DURACION_PRUEBA_MAXIMA_MESES + " meses.");
             }
             if (duracionPruebaMeses * DIAS_POR_MES > duracionDias) {
                 throw new ReglaNegocioException("La duración de la prueba no puede exceder la duración del contrato.");

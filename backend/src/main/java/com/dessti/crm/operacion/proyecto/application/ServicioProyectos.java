@@ -1,7 +1,9 @@
 package com.dessti.crm.operacion.proyecto.application;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -12,11 +14,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.dessti.crm.operacion.cliente.application.ClienteExistentePort;
+import com.dessti.crm.operacion.proyecto.adapter.out.persistence.AvanceSitioRepository;
 import com.dessti.crm.operacion.proyecto.adapter.out.persistence.ProyectoRepository;
 import com.dessti.crm.operacion.proyecto.adapter.out.persistence.SitioRepository;
 import com.dessti.crm.operacion.proyecto.domain.AvanceFasesSitio;
+import com.dessti.crm.operacion.proyecto.domain.AvanceSitio;
+import com.dessti.crm.operacion.proyecto.domain.DerivacionEstadoMultisitio;
 import com.dessti.crm.operacion.proyecto.domain.DerivacionEstadoProyecto;
+import com.dessti.crm.operacion.proyecto.domain.EstadoConsolidadoMultisitio;
 import com.dessti.crm.operacion.proyecto.domain.EstadoConsolidadoProyecto;
+import com.dessti.crm.operacion.proyecto.domain.FaseProyecto;
+import com.dessti.crm.operacion.proyecto.domain.FaseSitioGenerica;
 import com.dessti.crm.operacion.proyecto.domain.PerfilFasesGiro;
 import com.dessti.crm.operacion.proyecto.domain.Proyecto;
 import com.dessti.crm.operacion.proyecto.domain.Sitio;
@@ -95,6 +103,7 @@ public class ServicioProyectos {
 
     private final ProyectoRepository proyectoRepository;
     private final SitioRepository sitioRepository;
+    private final AvanceSitioRepository avanceSitioRepository;
     private final ClienteExistentePort clienteExistente;
     private final PerfilFasesGiroPort perfilFasesGiro;
     private final AvanceSitioPort avanceProduccion;
@@ -118,6 +127,7 @@ public class ServicioProyectos {
      */
     public ServicioProyectos(ProyectoRepository proyectoRepository,
                              SitioRepository sitioRepository,
+                             AvanceSitioRepository avanceSitioRepository,
                              ClienteExistentePort clienteExistente,
                              PerfilFasesGiroPort perfilFasesGiro,
                              @Qualifier("avanceProduccionAdapter") AvanceSitioPort avanceProduccion,
@@ -125,6 +135,7 @@ public class ServicioProyectos {
                              AuditoriaPort auditoria) {
         this.proyectoRepository = proyectoRepository;
         this.sitioRepository = sitioRepository;
+        this.avanceSitioRepository = avanceSitioRepository;
         this.clienteExistente = clienteExistente;
         this.perfilFasesGiro = perfilFasesGiro;
         this.avanceProduccion = avanceProduccion;
@@ -220,14 +231,23 @@ public class ServicioProyectos {
         Proyecto proyecto = cargarProyecto(proyectoId, actor);
         List<Sitio> sitios = sitioRepository.findByProyectoIdOrderByCreatedAtAsc(proyecto.getId());
 
-        // Resuelve el perfil de fases del giro del tenant y, con el, el adaptador de
-        // avance adecuado: ANUNCIOS -> las cuatro fases; GENERICO -> solo produccion
-        // (Decision D5/D5-b, Req 3.1/3.2/3.5). La derivacion se parametriza tambien
-        // por el perfil para que el estado consolidado considere solo las fases
-        // aplicables al giro.
+        // Bifurcacion por giro (Req 3.1/3.2): el giro anuncios usa el pipeline clasico
+        // de cuatro fases DERIVADAS de otros modulos; el resto de giros usan el
+        // pipeline multi-sitio GENERICO con la fase operativa MATERIALIZADA y editable
+        // de cada Sitio (avance_sitio, V78). Ambos pipelines son independientes.
         PerfilFasesGiro perfil = perfilFasesGiro.perfilDelTenant();
-        AvanceSitioPort avanceSitio = adaptadorDeAvance(perfil);
+        if (perfil.aplica(FaseProyecto.LEVANTAMIENTO)
+                || perfil.aplica(FaseProyecto.PERMISO)
+                || perfil.aplica(FaseProyecto.INSTALACION)) {
+            return consultarAnuncios(proyecto, sitios, perfil);
+        }
+        return consultarMultisitio(proyecto, sitios);
+    }
 
+    /** Consulta detallada para el giro anuncios (cuatro fases derivadas). */
+    private ProyectoDto consultarAnuncios(Proyecto proyecto, List<Sitio> sitios,
+                                          PerfilFasesGiro perfil) {
+        AvanceSitioPort avanceSitio = adaptadorDeAvance(perfil);
         List<AvanceFasesSitio> avances = new ArrayList<>(sitios.size());
         List<SitioAvanceDto> sitiosDto = new ArrayList<>(sitios.size());
         for (Sitio sitio : sitios) {
@@ -237,6 +257,113 @@ public class ServicioProyectos {
         }
         EstadoConsolidadoProyecto estado = DerivacionEstadoProyecto.derivar(perfil, avances);
         return ProyectoDto.consolidado(proyecto, estado, sitiosDto);
+    }
+
+    /**
+     * Consulta detallada multi-sitio para giros genericos (Req 3.2): compone la fase
+     * operativa materializada de cada Sitio (avance_sitio; PENDIENTE si aun no existe)
+     * y deriva el estado consolidado con {@link DerivacionEstadoMultisitio}.
+     */
+    private ProyectoDto consultarMultisitio(Proyecto proyecto, List<Sitio> sitios) {
+        List<UUID> ids = new ArrayList<>(sitios.size());
+        for (Sitio sitio : sitios) {
+            ids.add(sitio.getId());
+        }
+        // Carga los avances existentes de todos los Sitios en una sola consulta.
+        Map<UUID, AvanceSitio> avancePorSitio = new HashMap<>();
+        if (!ids.isEmpty()) {
+            for (AvanceSitio avance : avanceSitioRepository.findBySitioIdIn(ids)) {
+                avancePorSitio.put(avance.getSitioId(), avance);
+            }
+        }
+
+        List<FaseSitioGenerica> fases = new ArrayList<>(sitios.size());
+        List<SitioFaseDto> sitiosDto = new ArrayList<>(sitios.size());
+        for (Sitio sitio : sitios) {
+            AvanceSitio avance = avancePorSitio.get(sitio.getId());
+            fases.add(avance == null ? FaseSitioGenerica.PENDIENTE : avance.getFase());
+            sitiosDto.add(SitioFaseDto.de(sitio, avance));
+        }
+        EstadoConsolidadoMultisitio estado = DerivacionEstadoMultisitio.derivar(fases);
+        return ProyectoDto.multisitio(proyecto, estado, sitiosDto);
+    }
+
+    /**
+     * Avanza la fase operativa generica de un Sitio de un Proyecto multi-sitio siguiendo
+     * la maquina lineal (Req 3.2). Operacion de uso comun ({@code proyecto:actualizar}).
+     * Idempotente en la creacion del avance: si el Sitio aun no tiene fila en
+     * {@code avance_sitio}, se crea en {@code PENDIENTE} y luego se transita.
+     *
+     * @param proyectoId   Proyecto al que pertenece el Sitio (para verificar acceso).
+     * @param sitioId      Sitio cuya fase se avanza.
+     * @param destino      fase destino (posterior o igual a la actual).
+     * @param nota         nota opcional del avance.
+     * @param evidenciaUrl referencia opcional a la evidencia que respalda la fase.
+     * @return el DTO detallado multi-sitio del Proyecto tras el cambio.
+     * @throws RecursoNoEncontradoException si el Proyecto o el Sitio no son accesibles (404).
+     * @throws com.dessti.crm.platform.error.TransicionInvalidaException si la transicion
+     *         de fase no respeta la secuencia lineal (409).
+     */
+    @Transactional
+    public ProyectoDto avanzarAvanceSitio(UUID proyectoId, UUID sitioId,
+                                          FaseSitioGenerica destino, String nota,
+                                          String evidenciaUrl) {
+        return cambiarAvanceSitio(proyectoId, sitioId, destino, nota, evidenciaUrl, false);
+    }
+
+    /**
+     * Corrige (incluido RETROCESO) la fase de un Sitio de un Proyecto multi-sitio
+     * (Req 3.2). Operacion administrativa gobernada por {@code proyecto:cambiar_estado};
+     * no aplica la restriccion de la maquina lineal, para deshacer avances marcados por
+     * error. Se audita como correccion.
+     *
+     * @param proyectoId   Proyecto al que pertenece el Sitio.
+     * @param sitioId      Sitio cuya fase se corrige.
+     * @param destino      fase destino (puede ser anterior a la actual).
+     * @param nota         nota opcional (motivo de la correccion).
+     * @param evidenciaUrl referencia opcional a la evidencia.
+     * @return el DTO detallado multi-sitio del Proyecto tras la correccion.
+     */
+    @Transactional
+    public ProyectoDto corregirAvanceSitio(UUID proyectoId, UUID sitioId,
+                                           FaseSitioGenerica destino, String nota,
+                                           String evidenciaUrl) {
+        return cambiarAvanceSitio(proyectoId, sitioId, destino, nota, evidenciaUrl, true);
+    }
+
+    /**
+     * Nucleo compartido de avanzar/corregir la fase de un Sitio. Verifica el acceso al
+     * Proyecto y al Sitio (404), crea el avance en {@code PENDIENTE} si aun no existe
+     * (idempotente), aplica el cambio via el dominio (que valida la maquina de estados
+     * salvo en correccion), persiste y audita.
+     *
+     * @param esCorreccion {@code true} permite retroceder/saltar fases (correccion);
+     *                     {@code false} exige avance lineal.
+     */
+    private ProyectoDto cambiarAvanceSitio(UUID proyectoId, UUID sitioId,
+                                           FaseSitioGenerica destino, String nota,
+                                           String evidenciaUrl, boolean esCorreccion) {
+        String actor = actorActual();
+        Proyecto proyecto = cargarProyecto(proyectoId, actor);
+        Sitio sitio = sitioRepository.findById(sitioId)
+                .filter(s -> s.getProyectoId().equals(proyecto.getId()))
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "No se encontro el Sitio solicitado en el Proyecto."));
+
+        AvanceSitio avance = avanceSitioRepository.findBySitioId(sitio.getId())
+                .orElseGet(() -> AvanceSitio.inicial(sitio.getId(), actor));
+        if (esCorreccion) {
+            avance.corregirFase(destino, nota, evidenciaUrl, actor);
+        } else {
+            avance.avanzarFase(destino, nota, evidenciaUrl, actor);
+        }
+        avanceSitioRepository.save(avance);
+        auditar(actor, esCorreccion ? "corregir_avance_sitio" : "avanzar_avance_sitio",
+                RECURSO_SITIO, sitio.getId(),
+                "fase del Sitio " + (esCorreccion ? "corregida" : "avanzada") + " a '"
+                        + destino.valorBd() + "' en el Proyecto [" + proyecto.getId() + "]");
+        return consultarMultisitio(proyecto,
+                sitioRepository.findByProyectoIdOrderByCreatedAtAsc(proyecto.getId()));
     }
 
     /**

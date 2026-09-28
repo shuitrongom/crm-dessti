@@ -26,8 +26,8 @@ import jakarta.validation.constraints.Size;
  * @param admitePrueba        indica si el Paquete admite periodo de prueba.
  * @param duracionPruebaMeses nueva duracion del periodo de prueba en meses;
  *                            opcional ({@code null} cuando no admite prueba). Si
- *                            se indica debe ser {@code >= 1}; la coherencia con
- *                            {@code admitePrueba} se valida en el dominio.
+ *                            se indica debe estar en {@code 1..6}; la coherencia
+ *                            con {@code admitePrueba} se valida en el dominio.
  * @param giroId              nuevo Giro del Paquete; obligatorio.
  * @param monedaCodigo        nuevo codigo ISO 4217 de la moneda; obligatorio
  *                            (3 letras).
@@ -40,7 +40,7 @@ public record ActualizarPaqueteSuscripcionRequest(
         @Min(0) int maxUsuarios,
         @Min(1) @Max(365) int duracionDias,
         boolean admitePrueba,
-        @Min(1) Integer duracionPruebaMeses,
+        @Min(1) @Max(6) Integer duracionPruebaMeses,
         @NotNull UUID giroId,
         @NotBlank @Size(min = 3, max = 3) String monedaCodigo,
         @NotNull Map<@NotBlank @Size(max = 60) String, @NotNull BigDecimal> preciosModulos) {

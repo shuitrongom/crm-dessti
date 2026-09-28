@@ -124,7 +124,10 @@ class ServicioCotizacionesTest {
 
         assertThat(dto.estado()).isEqualTo("borrador");
         assertThat(dto.clienteId()).isEqualTo(CLIENTE);
-        assertThat(dto.total()).isEqualByComparingTo("200.00");
+        // base 200.00 + IVA 16% (32.00) = 232.00 (V80: IVA por defecto 16%)
+        assertThat(dto.subtotal()).isEqualByComparingTo("200.00");
+        assertThat(dto.iva()).isEqualByComparingTo("32.00");
+        assertThat(dto.total()).isEqualByComparingTo("232.00");
         assertThat(dto.partidas()).hasSize(1);
         ArgumentCaptor<EventoAuditoria> ev = ArgumentCaptor.forClass(EventoAuditoria.class);
         verify(auditoria).registrar(ev.capture());
@@ -162,7 +165,8 @@ class ServicioCotizacionesTest {
         CotizacionDto dto = servicio.crearCotizacion(comando);
 
         assertThat(dto.partidas().get(0).precioUnitario()).isEqualByComparingTo("250.00");
-        assertThat(dto.total()).isEqualByComparingTo("500.00");
+        // base 500.00 + IVA 16% (80.00) = 580.00
+        assertThat(dto.total()).isEqualByComparingTo("580.00");
         verify(sugerenciaPrecio).sugerirPrecioUnitario(any(ConsultaSugerenciaPrecio.class));
     }
 
@@ -211,7 +215,9 @@ class ServicioCotizacionesTest {
                 new CrearPartidaCommand(null, "Extra", 3, new BigDecimal("10.00")));
 
         assertThat(dto.partidas()).hasSize(2);
-        assertThat(dto.total()).isEqualByComparingTo("130.00");
+        // base 100.00 + 30.00 = 130.00; IVA 16% = 20.80; total = 150.80 (V80)
+        assertThat(dto.subtotal()).isEqualByComparingTo("130.00");
+        assertThat(dto.total()).isEqualByComparingTo("150.80");
         ArgumentCaptor<EventoAuditoria> ev = ArgumentCaptor.forClass(EventoAuditoria.class);
         verify(auditoria).registrar(ev.capture());
         assertThat(ev.getValue().accion()).isEqualTo("agregar_partida");

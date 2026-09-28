@@ -20,10 +20,11 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 
 import { UsuariosService, RolAsignable, Usuario } from '../services/usuarios.service';
 import { mensajeDeError } from '../../../../core/services/error-mensajes';
+import { SelectableCard } from '../../../../shared/components/selectable-card/selectable-card';
+import { OperacionOverlayService } from '../../../../shared/components/operacion-overlay/operacion-overlay';
 
 @Component({
   selector: 'app-crear-usuario-dialog',
@@ -34,7 +35,7 @@ import { mensajeDeError } from '../../../../core/services/error-mensajes';
     MatInputModule,
     MatButtonModule,
     MatIconModule,
-    MatCheckboxModule,
+    SelectableCard,
   ],
   templateUrl: './crear-usuario-dialog.html',
   styleUrl: './usuario-dialog.scss',
@@ -43,6 +44,7 @@ export class CrearUsuarioDialog {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(UsuariosService);
   private readonly dialogRef = inject(MatDialogRef<CrearUsuarioDialog, Usuario>);
+  private readonly overlay = inject(OperacionOverlayService);
 
   protected readonly guardando = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -104,13 +106,16 @@ export class CrearUsuarioDialog {
     }
     this.guardando.set(true);
     const v = this.formulario.getRawValue();
-    this.service
-      .crear({
-        identificadorAcceso: v.identificadorAcceso.trim(),
-        password: v.password,
-        nombreVisible: this.opcional(v.nombreVisible),
-        rolIds: Array.from(this.seleccion()),
-      })
+    this.overlay
+      .ejecutar(
+        this.service.crear({
+          identificadorAcceso: v.identificadorAcceso.trim(),
+          password: v.password,
+          nombreVisible: this.opcional(v.nombreVisible),
+          rolIds: Array.from(this.seleccion()),
+        }),
+        { tipo: 'crear', textoProceso: 'Creando usuario…', textoExito: 'Usuario creado' },
+      )
       .subscribe({
         next: (usuario) => {
           this.guardando.set(false);

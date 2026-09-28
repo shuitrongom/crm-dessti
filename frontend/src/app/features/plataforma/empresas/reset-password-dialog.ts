@@ -33,6 +33,7 @@ import { EmpresasService } from '../services/empresas.service';
 import { ResetPasswordAdmin } from '../models/plataforma.models';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 
 /** Datos de entrada del dialogo: la Empresa cuyo admin se restablece. */
 export interface ResetPasswordDialogData {
@@ -95,6 +96,7 @@ export class ResetPasswordDialog {
   private readonly fb = inject(FormBuilder);
   private readonly empresasService = inject(EmpresasService);
   private readonly toast = inject(NotificacionesService);
+  private readonly overlay = inject(OperacionOverlayService);
   private readonly dialogRef = inject(MatDialogRef<ResetPasswordDialog, boolean>);
   protected readonly data = inject<ResetPasswordDialogData>(MAT_DIALOG_DATA);
 
@@ -158,7 +160,13 @@ export class ResetPasswordDialog {
         : undefined;
 
     this.enviando.set(true);
-    this.empresasService.restablecerPasswordAdmin(this.data.empresaId, body).subscribe({
+    this.overlay
+      .ejecutar(this.empresasService.restablecerPasswordAdmin(this.data.empresaId, body), {
+        tipo: 'procesar',
+        textoProceso: 'Restableciendo contraseña…',
+        textoExito: 'Contraseña restablecida',
+      })
+      .subscribe({
       next: (resultado) => {
         this.enviando.set(false);
         if (resultado.passwordTemporal) {

@@ -83,4 +83,27 @@ public interface OrdenCompraRepository extends JpaRepository<OrdenCompra, UUID> 
     List<Object[]> contarPorEstado(
             @Param("desde") Instant desde,
             @Param("hasta") Instant hasta);
+
+    /**
+     * Agregacion de <strong>solo lectura</strong> del gasto en compras del periodo
+     * (Req 62.8): suma el {@code total} de las Ordenes de Compra del tenant vigente que
+     * NO estan canceladas, acotada por su fecha de creacion. Representa el egreso real
+     * comprometido por compras del periodo. El filtro global de Hibernate y la RLS
+     * acotan la consulta al {@code tenant_id} vigente (Req 23); no modifica dato alguno.
+     *
+     * @param desde limite inferior de {@code created_at} (inclusivo); NO admite
+     *              {@code null}: el llamador pasa una cota centinela.
+     * @param hasta limite superior de {@code created_at} (exclusivo); NO admite
+     *              {@code null}: el llamador pasa una cota centinela.
+     * @return el total en compras (no canceladas) del periodo, o {@code 0}.
+     */
+    @Query("""
+            SELECT COALESCE(SUM(o.total), 0) FROM OrdenCompra o
+            WHERE o.estado <> com.dessti.crm.compras.ordencompra.domain.EstadoOrdenCompra.CANCELADA
+              AND o.createdAt >= :desde
+              AND o.createdAt < :hasta
+            """)
+    java.math.BigDecimal sumarComprasPeriodo(
+            @Param("desde") Instant desde,
+            @Param("hasta") Instant hasta);
 }

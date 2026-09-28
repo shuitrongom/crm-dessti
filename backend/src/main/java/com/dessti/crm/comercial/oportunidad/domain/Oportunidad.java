@@ -90,6 +90,22 @@ public class Oportunidad extends TenantScopedEntity {
     @Column(name = "canal_venta_id")
     private UUID canalVentaId;
 
+    /**
+     * Probabilidad de cierre en porcentaje entero [0, 100] (V81, forecast). Se
+     * inicializa con la sugerencia de la etapa y se ajusta automaticamente al
+     * cambiar de etapa, salvo que el usuario la haya fijado a mano.
+     */
+    @Column(name = "probabilidad", nullable = false)
+    private int probabilidad;
+
+    /** Fecha esperada de cierre (ganar); {@code null} si no se estima (V81). */
+    @Column(name = "fecha_cierre_esperada")
+    private java.time.LocalDate fechaCierreEsperada;
+
+    /** Motivo de perdida; obligatorio al pasar a {@code perdido}; nulo en otras etapas (V81). */
+    @Column(name = "motivo_perdida")
+    private String motivoPerdida;
+
     protected Oportunidad() {
         // Requerido por JPA.
     }
@@ -122,6 +138,9 @@ public class Oportunidad extends TenantScopedEntity {
         oportunidad.etapa = EtapaOportunidad.NUEVO;
         oportunidad.responsableUsuarioId = null;
         oportunidad.cotizacionId = null;
+        oportunidad.probabilidad = EtapaOportunidad.NUEVO.probabilidadSugerida();
+        oportunidad.fechaCierreEsperada = null;
+        oportunidad.motivoPerdida = null;
         oportunidad.setCreatedBy(actor);
         oportunidad.setUpdatedBy(actor);
         return oportunidad;
@@ -158,6 +177,30 @@ public class Oportunidad extends TenantScopedEntity {
      * @throws TransicionInvalidaException  si la transicion no esta permitida (409).
      */
     public void cambiarEtapa(EtapaOportunidad nuevaEtapa, String actor) {
+        cambiarEtapa(nuevaEtapa, null, actor);
+    }
+
+    /**
+     * Cambia la etapa aplicando la maquina de estados y, ademas (V81, forecast):
+     * <ul>
+     *   <li>exige el <strong>motivo de perdida</strong> al pasar a
+     *       {@link EtapaOportunidad#PERDIDO} (422 si falta); en otras transiciones
+     *       el motivo se ignora y se limpia;</li>
+     *   <li>ajusta la <strong>probabilidad</strong> a la sugerida por la nueva
+     *       etapa (nuevo=10 ... ganado=100, perdido=0), manteniendo el forecast
+     *       coherente con la etapa. El usuario puede afinarla luego con
+     *       {@link #ajustarForecast(Integer, java.time.LocalDate, String)}.</li>
+     * </ul>
+     *
+     * @param nuevaEtapa    etapa destino; obligatoria.
+     * @param motivoPerdida motivo de perdida; obligatorio si la etapa destino es
+     *                      {@code perdido}, ignorado en otro caso.
+     * @param actor         identificador de quien realiza el cambio.
+     * @throws ReglaNegocioException        si la etapa es nula, o si falta el
+     *         motivo al perder (422).
+     * @throws TransicionInvalidaException  si la transicion no esta permitida (409).
+     */
+    public void cambiarEtapa(EtapaOportunidad nuevaEtapa, String motivoPerdida, String actor) {
         if (nuevaEtapa == null) {
             throw new ReglaNegocioException("La etapa destino es obligatoria.");
         }
@@ -166,7 +209,46 @@ public class Oportunidad extends TenantScopedEntity {
                     "Transicion de etapa invalida: de '" + this.etapa.valorBd()
                             + "' a '" + nuevaEtapa.valorBd() + "'.");
         }
+        if (nuevaEtapa == EtapaOportunidad.PERDIDO) {
+            if (motivoPerdida == null || motivoPerdida.isBlank()) {
+                throw new ReglaNegocioException(
+                        "El motivo de perdida es obligatorio al marcar la Oportunidad como perdida.");
+            }
+            String motivo = motivoPerdida.strip();
+            if (motivo.length() > 500) {
+                throw new ReglaNegocioException("El motivo de perdida no puede exceder 500 caracteres.");
+            }
+            this.motivoPerdida = motivo;
+        } else {
+            // Al salir de/entrar a una etapa no perdida, el motivo de perdida no aplica.
+            this.motivoPerdida = null;
+        }
         this.etapa = nuevaEtapa;
+        this.probabilidad = nuevaEtapa.probabilidadSugerida();
+        this.setUpdatedBy(actor);
+    }
+
+    /**
+     * Ajusta el forecast de la Oportunidad (V81): la probabilidad de cierre
+     * (0..100) y la fecha esperada de cierre. Ambos parametros son opcionales
+     * ({@code null} deja el valor actual sin cambio para la probabilidad; para la
+     * fecha, {@code null} la limpia solo si {@code limpiarFecha} lo indica no
+     * aplica aqui: la fecha nula simplemente la deja sin estimar). Permite afinar
+     * la probabilidad sugerida por la etapa.
+     *
+     * @param probabilidad        nueva probabilidad [0,100]; {@code null} no cambia.
+     * @param fechaCierreEsperada fecha esperada de cierre; {@code null} la deja sin estimar.
+     * @param actor               identificador de quien ajusta, para {@code updated_by}.
+     * @throws ReglaNegocioException si la probabilidad esta fuera de [0,100] (422).
+     */
+    public void ajustarForecast(Integer probabilidad, java.time.LocalDate fechaCierreEsperada, String actor) {
+        if (probabilidad != null) {
+            if (probabilidad < 0 || probabilidad > 100) {
+                throw new ReglaNegocioException("La probabilidad debe estar entre 0 y 100.");
+            }
+            this.probabilidad = probabilidad;
+        }
+        this.fechaCierreEsperada = fechaCierreEsperada;
         this.setUpdatedBy(actor);
     }
 
@@ -248,5 +330,20 @@ public class Oportunidad extends TenantScopedEntity {
 
     public UUID getCanalVentaId() {
         return canalVentaId;
+    }
+
+    /** Probabilidad de cierre en porcentaje entero [0,100] (V81, forecast). */
+    public int getProbabilidad() {
+        return probabilidad;
+    }
+
+    /** Fecha esperada de cierre; {@code null} si no se estima (V81). */
+    public java.time.LocalDate getFechaCierreEsperada() {
+        return fechaCierreEsperada;
+    }
+
+    /** Motivo de perdida; {@code null} salvo etapa {@code perdido} (V81). */
+    public String getMotivoPerdida() {
+        return motivoPerdida;
     }
 }

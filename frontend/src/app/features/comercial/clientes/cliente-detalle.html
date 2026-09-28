@@ -107,6 +107,10 @@
               <dd>{{ c.notas }}</dd>
             </div>
           }
+          <div class="ficha-dato">
+            <dt>Propietario / vendedor</dt>
+            <dd>{{ c.propietarioUsuarioId ? 'Asignado' : 'Sin asignar' }}</dd>
+          </div>
         </dl>
       </mat-card-content>
     </mat-card>
@@ -123,6 +127,9 @@
         </p>
       </mat-card-content>
     </mat-card>
+
+    <!-- Actividades y seguimiento del cliente (timeline, V79) -->
+    <app-comercial-timeline-actividades [clienteId]="c.id" class="ficha-seccion" />
 
     <!-- Oportunidades del cliente (gated por permiso, Req 1.4) -->
     @if (puedeListarOportunidades) {

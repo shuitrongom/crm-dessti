@@ -1,0 +1,80 @@
+// =============================================================================
+// Estilos compartidos del modulo Calidad / SGC ISO 9001 (Req 52) — mobile-first
+// -----------------------------------------------------------------------------
+// Reutiliza los tokens del sistema de diseno (--ds-* / --mat-sys-*); no redefine
+// el tema. Replica el patron de los dashboards de activos/tesoreria.
+// =============================================================================
+
+.cal-alta {
+  margin-block-end: var(--ds-space-5);
+}
+
+.cal-alta__titulo {
+  margin: 0 0 var(--ds-space-3);
+  font-size: var(--ds-font-size-lg);
+  font-weight: var(--ds-font-weight-medium);
+}
+
+.cal-ayuda {
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-sm);
+}
+
+.cal-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-3);
+  margin-block-end: var(--ds-space-4);
+
+  mat-form-field {
+    min-width: 12rem;
+  }
+}
+
+.cal-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-space-2);
+
+  @media (min-width: 40rem) {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  &__ancho {
+    @media (min-width: 40rem) {
+      grid-column: 1 / -1;
+    }
+  }
+}
+
+// El dashboard SGC (scorecard + composicion) de todas las vistas de calidad ahora
+// usa los componentes compartidos <app-dashboard-section> + <app-kpi-tile>. Sus
+// estilos viven en esos componentes; aqui ya no se duplican.
+
+// -------- Badge de nivel de riesgo (color por severidad) --------
+.cal-nivel {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+
+  &--bajo {
+    background: color-mix(in srgb, var(--ds-color-success, #12805c) 16%, transparent);
+    color: var(--ds-color-success, #0f6b4d);
+  }
+  &--medio {
+    background: color-mix(in srgb, #b26a00 18%, transparent);
+    color: #8a5200;
+  }
+  &--alto {
+    background: color-mix(in srgb, #d97706 20%, transparent);
+    color: #b45309;
+  }
+  &--critico {
+    background: color-mix(in srgb, var(--ds-color-danger, #d32f2f) 18%, transparent);
+    color: var(--ds-color-danger, #c62828);
+  }
+}

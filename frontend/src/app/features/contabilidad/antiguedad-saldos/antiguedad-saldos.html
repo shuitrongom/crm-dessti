@@ -1,0 +1,82 @@
+<app-page-header
+  titulo="Antigüedad de saldos"
+  subtitulo="Clasificación de los saldos pendientes por rango de días de vencimiento. La cartera vencida agrupa 61-90 y más de 90 días."
+/>
+
+<mat-tab-group>
+  <!-- Por cobrar -->
+  @if (puedeVerCxC) {
+    <mat-tab label="Por cobrar (clientes)">
+      <div class="cont-resumen" role="status" aria-live="polite">
+        <div class="cont-resumen__kpi">
+          <mat-icon aria-hidden="true">account_balance_wallet</mat-icon>
+          <div>
+            <span class="cont-resumen__valor">{{ kpisCxC().total | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span>
+            <span class="cont-resumen__etiqueta">Saldo total por cobrar</span>
+          </div>
+        </div>
+        <div class="cont-resumen__kpi" [class.cont-resumen__kpi--negativo]="kpisCxC().vencido > 0">
+          <mat-icon aria-hidden="true">warning</mat-icon>
+          <div>
+            <span class="cont-resumen__valor">{{ kpisCxC().vencido | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span>
+            <span class="cont-resumen__etiqueta">Cartera vencida (+60 días)</span>
+          </div>
+        </div>
+      </div>
+
+      <app-state-container
+        [fase]="cxc().fase"
+        [mensajeError]="cxc().mensajeError"
+        mensajeVacio="No hay saldos por cobrar pendientes."
+        (reintentar)="cargarCxC()"
+      >
+        <app-data-table [columnas]="columnasCxC" [filas]="cxc().datos ?? []" [total]="(cxc().datos ?? []).length">
+          <ng-template appCelda="entidad" let-r><span class="cont-mono">{{ etiqueta(r.clienteId) }}</span></ng-template>
+          <ng-template appCelda="rango0a30" let-r><span class="cont-num">{{ r.rango0a30 | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span></ng-template>
+          <ng-template appCelda="rango31a60" let-r><span class="cont-num">{{ r.rango31a60 | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span></ng-template>
+          <ng-template appCelda="rango61a90" let-r><span class="cont-num cont-aging-vencido">{{ r.rango61a90 | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span></ng-template>
+          <ng-template appCelda="rangoMas90" let-r><span class="cont-num cont-aging-vencido">{{ r.rangoMas90 | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span></ng-template>
+          <ng-template appCelda="saldoTotal" let-r><span class="cont-num cont-aging-total">{{ r.saldoTotal | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span></ng-template>
+        </app-data-table>
+      </app-state-container>
+    </mat-tab>
+  }
+
+  <!-- Por pagar -->
+  @if (puedeVerCxP) {
+    <mat-tab label="Por pagar (proveedores)">
+      <div class="cont-resumen" role="status" aria-live="polite">
+        <div class="cont-resumen__kpi">
+          <mat-icon aria-hidden="true">payments</mat-icon>
+          <div>
+            <span class="cont-resumen__valor">{{ kpisCxP().total | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span>
+            <span class="cont-resumen__etiqueta">Saldo total por pagar</span>
+          </div>
+        </div>
+        <div class="cont-resumen__kpi" [class.cont-resumen__kpi--negativo]="kpisCxP().vencido > 0">
+          <mat-icon aria-hidden="true">warning</mat-icon>
+          <div>
+            <span class="cont-resumen__valor">{{ kpisCxP().vencido | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span>
+            <span class="cont-resumen__etiqueta">Vencido (+60 días)</span>
+          </div>
+        </div>
+      </div>
+
+      <app-state-container
+        [fase]="cxp().fase"
+        [mensajeError]="cxp().mensajeError"
+        mensajeVacio="No hay saldos por pagar pendientes."
+        (reintentar)="cargarCxP()"
+      >
+        <app-data-table [columnas]="columnasCxP" [filas]="cxp().datos ?? []" [total]="(cxp().datos ?? []).length">
+          <ng-template appCelda="entidad" let-r><span class="cont-mono">{{ etiqueta(r.proveedorId) }}</span></ng-template>
+          <ng-template appCelda="rango0a30" let-r><span class="cont-num">{{ r.rango0a30 | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span></ng-template>
+          <ng-template appCelda="rango31a60" let-r><span class="cont-num">{{ r.rango31a60 | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span></ng-template>
+          <ng-template appCelda="rango61a90" let-r><span class="cont-num cont-aging-vencido">{{ r.rango61a90 | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span></ng-template>
+          <ng-template appCelda="rangoMas90" let-r><span class="cont-num cont-aging-vencido">{{ r.rangoMas90 | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span></ng-template>
+          <ng-template appCelda="saldoTotal" let-r><span class="cont-num cont-aging-total">{{ r.saldoTotal | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span></ng-template>
+        </app-data-table>
+      </app-state-container>
+    </mat-tab>
+  }
+</mat-tab-group>

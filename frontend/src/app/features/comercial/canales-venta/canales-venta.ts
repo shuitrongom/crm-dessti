@@ -16,6 +16,7 @@ import { MatIconModule } from '@angular/material/icon';
 
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../shared/components/state-container/state-container';
+import { KpiTile } from '../../../shared/components/kpi-tile/kpi-tile';
 import {
   CeldaTablaDirective,
   ColumnaTabla,
@@ -41,6 +42,7 @@ import { CanalVenta } from '../models/comercial.models';
     MatIconModule,
     PageHeader,
     StateContainer,
+    KpiTile,
     DataTable,
     CeldaTablaDirective,
   ],

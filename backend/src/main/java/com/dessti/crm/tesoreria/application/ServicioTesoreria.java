@@ -25,9 +25,11 @@ import com.dessti.crm.tesoreria.adapter.out.persistence.ConciliacionBancariaRepo
 import com.dessti.crm.tesoreria.adapter.out.persistence.CuentaBancariaRepository;
 import com.dessti.crm.tesoreria.adapter.out.persistence.EstadoCuentaBancarioRepository;
 import com.dessti.crm.tesoreria.adapter.out.persistence.MovimientoBancarioRepository;
+import com.dessti.crm.tesoreria.adapter.out.persistence.TransferenciaBancariaRepository;
 import com.dessti.crm.tesoreria.domain.CandidatoConciliacion;
 import com.dessti.crm.tesoreria.domain.ConciliacionBancaria;
 import com.dessti.crm.tesoreria.domain.CuentaBancaria;
+import com.dessti.crm.tesoreria.domain.TransferenciaBancaria;
 import com.dessti.crm.tesoreria.domain.EstadoConciliacionBancaria;
 import com.dessti.crm.tesoreria.domain.EstadoConciliacionMovimiento;
 import com.dessti.crm.tesoreria.domain.EstadoCuentaBancario;
@@ -84,10 +86,14 @@ public class ServicioTesoreria {
     /** Tipo de recurso de auditoria/RBAC del Movimiento_Bancario. */
     static final String RECURSO_MOVIMIENTO = "movimiento_bancario";
 
+    /** Tipo de recurso de auditoria/RBAC de la Transferencia_Bancaria. */
+    static final String RECURSO_TRANSFERENCIA = "transferencia_bancaria";
+
     private final CuentaBancariaRepository cuentaBancariaRepository;
     private final EstadoCuentaBancarioRepository estadoCuentaBancarioRepository;
     private final MovimientoBancarioRepository movimientoBancarioRepository;
     private final ConciliacionBancariaRepository conciliacionBancariaRepository;
+    private final TransferenciaBancariaRepository transferenciaBancariaRepository;
     private final ImportacionBancariaPort importacionBancariaPort;
     private final PolizaConciliablePort polizaConciliablePort;
     private final AuditoriaPort auditoria;
@@ -98,6 +104,7 @@ public class ServicioTesoreria {
                              EstadoCuentaBancarioRepository estadoCuentaBancarioRepository,
                              MovimientoBancarioRepository movimientoBancarioRepository,
                              ConciliacionBancariaRepository conciliacionBancariaRepository,
+                             TransferenciaBancariaRepository transferenciaBancariaRepository,
                              ImportacionBancariaPort importacionBancariaPort,
                              PolizaConciliablePort polizaConciliablePort,
                              AuditoriaPort auditoria,
@@ -107,6 +114,7 @@ public class ServicioTesoreria {
         this.estadoCuentaBancarioRepository = estadoCuentaBancarioRepository;
         this.movimientoBancarioRepository = movimientoBancarioRepository;
         this.conciliacionBancariaRepository = conciliacionBancariaRepository;
+        this.transferenciaBancariaRepository = transferenciaBancariaRepository;
         this.importacionBancariaPort = importacionBancariaPort;
         this.polizaConciliablePort = polizaConciliablePort;
         this.auditoria = auditoria;
@@ -336,6 +344,87 @@ public class ServicioTesoreria {
     }
 
     // ------------------------------------------------------------------
+    // Transferencia_Bancaria (traspaso entre cuentas propias, Req 43)
+    // ------------------------------------------------------------------
+
+    /**
+     * Registra una Transferencia_Bancaria entre dos Cuentas_Bancarias de la Empresa
+     * (Req 43). Valida que ambas cuentas existan y sean accesibles en el tenant, que
+     * sean distintas, que esten activas y que compartan moneda; el dominio garantiza
+     * las invariantes puras (cuentas distintas y monto positivo). Audita el registro.
+     *
+     * @param comando datos del traspaso (origen, destino, monto, fecha, concepto).
+     * @return el DTO de la Transferencia_Bancaria registrada.
+     * @throws RecursoNoEncontradoException si alguna cuenta no es accesible (404).
+     * @throws ReglaNegocioException si las cuentas coinciden, estan inactivas, tienen
+     *         monedas distintas o el monto no es positivo (422).
+     */
+    @Transactional
+    public TransferenciaBancariaDto registrarTransferencia(RegistrarTransferenciaCommand comando) {
+        String actor = actorActual();
+        if (comando == null) {
+            throw new ReglaNegocioException("Los datos de la transferencia son obligatorios.");
+        }
+        CuentaBancaria origen = cargarCuenta(comando.cuentaOrigenId(), actor);
+        CuentaBancaria destino = cargarCuenta(comando.cuentaDestinoId(), actor);
+        if (!origen.isActiva() || !destino.isActiva()) {
+            throw new ReglaNegocioException(
+                    "Ambas cuentas de la transferencia deben estar activas.");
+        }
+        if (!origen.getMoneda().equals(destino.getMoneda())) {
+            throw new ReglaNegocioException(
+                    "La transferencia requiere que ambas cuentas compartan la misma moneda ("
+                            + origen.getMoneda() + " vs " + destino.getMoneda() + ").");
+        }
+        TransferenciaBancaria transferencia = TransferenciaBancaria.registrar(
+                comando.cuentaOrigenId(), comando.cuentaDestinoId(), comando.monto(),
+                comando.fecha(), comando.concepto(), actor);
+        TransferenciaBancaria guardada = transferenciaBancariaRepository.save(transferencia);
+        auditar(actor, "crear", RECURSO_TRANSFERENCIA, guardada.getId(),
+                "registrada Transferencia_Bancaria [origen=" + guardada.getCuentaOrigenId()
+                        + ", destino=" + guardada.getCuentaDestinoId() + ", monto="
+                        + guardada.getMonto().toPlainString() + "]");
+        return TransferenciaBancariaDto.de(guardada);
+    }
+
+    /**
+     * Consulta puntual de una Transferencia_Bancaria del tenant (Req 23.3).
+     *
+     * @param id identificador de la transferencia.
+     * @return el DTO de la Transferencia_Bancaria.
+     * @throws RecursoNoEncontradoException si no es accesible (404).
+     */
+    @Transactional(readOnly = true)
+    public TransferenciaBancariaDto consultarTransferencia(UUID id) {
+        String actor = actorActual();
+        if (id == null) {
+            throw new RecursoNoEncontradoException(
+                    "No se encontro la Transferencia_Bancaria solicitada.");
+        }
+        TransferenciaBancaria transferencia = transferenciaBancariaRepository.findById(id)
+                .orElseGet(() -> {
+                    auditarAccesoCruzado(actor, RECURSO_TRANSFERENCIA, id);
+                    throw new RecursoNoEncontradoException(
+                            "No se encontro la Transferencia_Bancaria solicitada.");
+                });
+        return TransferenciaBancariaDto.de(transferencia);
+    }
+
+    /**
+     * Listado paginado de Transferencias_Bancarias del tenant con filtro opcional por
+     * Cuenta_Bancaria (origen o destino), mas recientes primero (Req 43).
+     *
+     * @param cuentaId Cuenta_Bancaria a filtrar; {@code null} no filtra.
+     * @param pageable parametros de paginacion ya acotados (20/100).
+     * @return la pagina de Transferencias_Bancarias como DTOs.
+     */
+    @Transactional(readOnly = true)
+    public Page<TransferenciaBancariaDto> listarTransferencias(UUID cuentaId, Pageable pageable) {
+        return transferenciaBancariaRepository.buscarConFiltros(cuentaId, pageable)
+                .map(TransferenciaBancariaDto::de);
+    }
+
+    // ------------------------------------------------------------------
     // Reglas internas
     // ------------------------------------------------------------------
 
@@ -388,6 +477,57 @@ public class ServicioTesoreria {
                     throw new RecursoNoEncontradoException(
                             "No se encontro el Estado_Cuenta_Bancario solicitado.");
                 });
+    }
+
+    // ------------------------------------------------------------------
+    // Flujo de caja / posicion de liquidez (suite Tesoreria)
+    // ------------------------------------------------------------------
+
+    /**
+     * Compone la <strong>posicion de liquidez y el flujo de caja</strong> del periodo
+     * (solo lectura): saldo bancario acumulado, entradas y salidas del rango, flujo neto,
+     * cuentas activas, partidas por conciliar y el desglose mensual del flujo para la
+     * grafica. No modifica dato alguno (Req 22.2). Audita la consulta (Req 43.7).
+     *
+     * @param desde inicio del periodo (inclusivo); {@code null} = sin limite inferior.
+     * @param hasta fin del periodo (inclusivo); {@code null} = sin limite superior.
+     * @return el {@link FlujoCajaDto} con la posicion y el desglose mensual.
+     */
+    @Transactional(readOnly = true)
+    public FlujoCajaDto flujoCaja(LocalDate desde, LocalDate hasta) {
+        String actor = actorActual();
+        LocalDate desdeCota = com.dessti.crm.reportesbi.application.indicadores.RangoPeriodo
+                .fechaDesdeOMinima(desde);
+        LocalDate hastaCota = com.dessti.crm.reportesbi.application.indicadores.RangoPeriodo
+                .fechaHastaOMaxima(hasta);
+
+        BigDecimal saldo = valorOCero(movimientoBancarioRepository.sumarSaldoBancario(desdeCota, hastaCota));
+        BigDecimal entradas = valorOCero(movimientoBancarioRepository.sumarEntradas(desdeCota, hastaCota));
+        BigDecimal salidasConSigno = valorOCero(movimientoBancarioRepository.sumarSalidas(desdeCota, hastaCota));
+        BigDecimal salidas = salidasConSigno.abs();
+        BigDecimal flujoNeto = entradas.subtract(salidas);
+        long cuentasActivas = cuentaBancariaRepository.countByActivaTrue();
+        long porConciliar = movimientoBancarioRepository.contarPendientesConciliacion(desdeCota, hastaCota);
+
+        List<FlujoCajaDto.FlujoMensualDto> meses = new java.util.ArrayList<>();
+        for (Object[] fila : movimientoBancarioRepository.flujoMensual(desdeCota, hastaCota)) {
+            int anio = ((Number) fila[0]).intValue();
+            int mes = ((Number) fila[1]).intValue();
+            BigDecimal ent = valorOCero((BigDecimal) fila[2]);
+            BigDecimal sal = valorOCero((BigDecimal) fila[3]).abs();
+            String periodo = String.format("%04d-%02d", anio, mes);
+            meses.add(new FlujoCajaDto.FlujoMensualDto(periodo, ent, sal, ent.subtract(sal)));
+        }
+
+        auditar(actor, "consultar", RECURSO_MOVIMIENTO, null,
+                "consulta de flujo de caja [desde=" + desde + ", hasta=" + hasta + "]");
+
+        return new FlujoCajaDto(clock.instant(), desde, hasta, saldo, entradas, salidas,
+                flujoNeto, cuentasActivas, porConciliar, meses);
+    }
+
+    private static BigDecimal valorOCero(BigDecimal valor) {
+        return (valor != null ? valor : BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP);
     }
 
     private void auditar(String actor, String accion, String recurso, UUID recursoId,

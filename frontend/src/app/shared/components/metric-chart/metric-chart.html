@@ -1,0 +1,27 @@
+@if (hayDatos()) {
+  <div class="metric-chart">
+    @if (titulo()) {
+      <p class="metric-chart__titulo">{{ titulo() }}</p>
+    }
+    <apx-chart
+      [series]="opciones().series!"
+      [chart]="opciones().chart!"
+      [colors]="opciones().colors!"
+      [plotOptions]="opciones().plotOptions!"
+      [dataLabels]="opciones().dataLabels!"
+      [labels]="opciones().labels!"
+      [legend]="opciones().legend!"
+      [stroke]="opciones().stroke!"
+      [fill]="opciones().fill!"
+      [markers]="opciones().markers!"
+      [grid]="opciones().grid!"
+      [xaxis]="opciones().xaxis!"
+      [yaxis]="opciones().yaxis!"
+      [tooltip]="opciones().tooltip!"
+    />
+  </div>
+} @else {
+  <div class="metric-chart metric-chart--vacio">
+    <span>Sin datos para graficar en este periodo.</span>
+  </div>
+}

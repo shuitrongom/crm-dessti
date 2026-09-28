@@ -9,13 +9,14 @@
 // =============================================================================
 
 import { Component, computed, inject, signal } from '@angular/core';
-import { CurrencyPipe } from '@angular/common';
+import { CurrencyPipe, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
@@ -45,6 +46,7 @@ import {
   EtapaOportunidad,
   Oportunidad,
   etapasDestino,
+  valorPonderado,
 } from '../models/comercial.models';
 
 /** Columna del tablero: una etapa con sus Oportunidades y su valor agregado. */
@@ -54,6 +56,8 @@ interface ColumnaPipeline {
   oportunidades: Oportunidad[];
   /** Suma del valor estimado de las Oportunidades de la columna (MXN). */
   valor: number;
+  /** Suma del valor ponderado por probabilidad (forecast) de la columna (MXN, V81). */
+  valorPonderado: number;
 }
 
 /** Etapas terminales del embudo: NO cuentan como pipeline abierto. */
@@ -67,6 +71,7 @@ const ETAPAS_TERMINALES: ReadonlySet<EtapaOportunidad> = new Set<EtapaOportunida
   imports: [
     ReactiveFormsModule,
     CurrencyPipe,
+    DatePipe,
     RouterLink,
     MatCardModule,
     MatFormFieldModule,
@@ -75,6 +80,7 @@ const ETAPAS_TERMINALES: ReadonlySet<EtapaOportunidad> = new Set<EtapaOportunida
     MatButtonModule,
     MatMenuModule,
     MatIconModule,
+    MatTooltipModule,
     PageHeader,
     StateContainer,
     EntitySelect,
@@ -132,7 +138,14 @@ export class ComercialOportunidades {
     return ETAPAS_PIPELINE.map((etapa) => {
       const oportunidades = items.filter((o) => o.etapa === etapa);
       const valor = oportunidades.reduce((acc, o) => acc + (Number(o.valorEstimado) || 0), 0);
-      return { etapa, etiqueta: ETIQUETA_ETAPA[etapa], oportunidades, valor };
+      const valorPond = oportunidades.reduce((acc, o) => acc + valorPonderado(o), 0);
+      return {
+        etapa,
+        etiqueta: ETIQUETA_ETAPA[etapa],
+        oportunidades,
+        valor,
+        valorPonderado: Math.round((valorPond + Number.EPSILON) * 100) / 100,
+      };
     });
   });
 
@@ -152,6 +165,13 @@ export class ComercialOportunidades {
   /** Valor total del pipeline ABIERTO (MXN): suma del valor estimado de las abiertas. */
   protected readonly valorPipeline = computed<number>(() =>
     this.abiertas().reduce((acc, o) => acc + (Number(o.valorEstimado) || 0), 0),
+  );
+
+  /** Forecast ponderado del pipeline abierto (MXN): Σ valor * probabilidad / 100 (V81). */
+  protected readonly forecastPonderado = computed<number>(() =>
+    Math.round(
+      (this.abiertas().reduce((acc, o) => acc + valorPonderado(o), 0) + Number.EPSILON) * 100,
+    ) / 100,
   );
 
   /** Ticket promedio del pipeline abierto (MXN); 0 si no hay abiertas. */
@@ -311,9 +331,21 @@ export class ComercialOportunidades {
       });
   }
 
-  /** Cambia la etapa de una Oportunidad segun la maquina de estados (Req 14.3). */
+  /**
+   * Cambia la etapa de una Oportunidad segun la maquina de estados (Req 14.3).
+   * Al mover a 'perdido' se solicita el motivo de perdida obligatorio (V81): si el
+   * Usuario cancela la captura, la transicion no se realiza.
+   */
   cambiarEtapa(oportunidad: Oportunidad, etapa: EtapaOportunidad): void {
-    this.service.cambiarEtapa(oportunidad.id, etapa).subscribe({
+    let motivo: string | null = null;
+    if (etapa === 'perdido') {
+      motivo = (window.prompt('Motivo de la pérdida (obligatorio):') ?? '').trim();
+      if (!motivo) {
+        this.toast.info('Se requiere un motivo para marcar la oportunidad como perdida.');
+        return;
+      }
+    }
+    this.service.cambiarEtapa(oportunidad.id, etapa, motivo).subscribe({
       next: () => {
         this.toast.exito(`Oportunidad movida a "${ETIQUETA_ETAPA[etapa]}".`);
         this.cargar();

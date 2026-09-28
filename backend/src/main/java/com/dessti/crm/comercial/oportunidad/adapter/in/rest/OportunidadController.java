@@ -114,7 +114,25 @@ public class OportunidadController {
     @PreAuthorize("@autorizador.moduloHabilitado('comercial') and @autorizador.tiene('oportunidad','cambiar_estado')")
     public ResponseEntity<OportunidadDto> cambiarEtapa(@PathVariable("id") UUID id,
                                                        @Valid @RequestBody CambiarEtapaRequest request) {
-        return ResponseEntity.ok(servicioOportunidades.cambiarEtapa(id, request.etapa()));
+        return ResponseEntity.ok(
+                servicioOportunidades.cambiarEtapa(id, request.etapa(), request.motivoPerdida()));
+    }
+
+    /**
+     * Ajusta el forecast de una Oportunidad (V81): probabilidad de cierre (0..100)
+     * y fecha esperada de cierre. Se guarda con el permiso de actualizacion. 404 si
+     * no es accesible; 422 si la probabilidad esta fuera de rango.
+     *
+     * @param id      identificador de la Oportunidad.
+     * @param request probabilidad y fecha esperada de cierre.
+     * @return 200 OK con el {@link OportunidadDto} con su forecast actualizado.
+     */
+    @PutMapping("/{id}/forecast")
+    @PreAuthorize("@autorizador.moduloHabilitado('comercial') and @autorizador.tiene('oportunidad','actualizar')")
+    public ResponseEntity<OportunidadDto> ajustarForecast(@PathVariable("id") UUID id,
+                                                          @Valid @RequestBody AjustarForecastRequest request) {
+        return ResponseEntity.ok(servicioOportunidades.ajustarForecast(
+                id, request.probabilidad(), request.fechaCierreEsperada()));
     }
 
     /**

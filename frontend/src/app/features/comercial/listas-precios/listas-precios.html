@@ -114,20 +114,10 @@
      listado cargo correctamente para no distraer en vacio. -->
 @if (fase() === "ok") {
   <section class="comercial-kpis" aria-label="Indicadores de listas de precios">
-    <article class="comercial-kpi comercial-kpi--valor">
-      <span class="comercial-kpi__icono" aria-hidden="true"><mat-icon>sell</mat-icon></span>
-      <span class="comercial-kpi__cuerpo">
-        <span class="comercial-kpi__valor">{{ total() }}</span>
-        <span class="comercial-kpi__etiqueta">Listas de precios</span>
-      </span>
-    </article>
-    <article class="comercial-kpi comercial-kpi--exito">
-      <span class="comercial-kpi__icono" aria-hidden="true"><mat-icon>event_available</mat-icon></span>
-      <span class="comercial-kpi__cuerpo">
-        <span class="comercial-kpi__valor">{{ listasVigentes() }}</span>
-        <span class="comercial-kpi__etiqueta">Vigentes hoy en esta página</span>
-      </span>
-    </article>
+    <app-kpi-tile icono="sell" tono="primario" etiqueta="Listas de precios"
+      sublabel="Total en el catálogo" [valor]="total()" />
+    <app-kpi-tile icono="event_available" tono="exito" etiqueta="Vigentes hoy"
+      sublabel="En esta página" [valor]="listasVigentes()" />
   </section>
 }
 

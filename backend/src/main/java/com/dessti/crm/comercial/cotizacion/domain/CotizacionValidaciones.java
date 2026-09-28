@@ -205,4 +205,97 @@ public final class CotizacionValidaciones {
     public static BigDecimal normalizarMonto(BigDecimal valor) {
         return valor.setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
     }
+
+    // ------------------------------------------------------------------
+    // Aritmetica fiscal CFDI (V80): descuentos, IVA por partida y retenciones.
+    // Todo a escala 2 half-up, coherente con el resto de la aritmetica del
+    // agregado. El IVA se calcula por partida sobre su base neta (importe bruto
+    // menos descuento de partida) para respetar tasas mixtas.
+    // ------------------------------------------------------------------
+
+    /**
+     * Calcula el importe bruto de una partida como {@code round(cantidad *
+     * precio_unitario, 2)} half-up. Es la base antes de aplicar el descuento de
+     * partida. Identico al antiguo {@link #calcularSubtotalPartida(int, BigDecimal)}.
+     *
+     * @param cantidad       cantidad de la partida (>= 1).
+     * @param precioUnitario precio unitario ya normalizado a escala 2.
+     * @return el importe bruto a escala 2 (half-up).
+     */
+    public static BigDecimal calcularImporteBruto(int cantidad, BigDecimal precioUnitario) {
+        return calcularSubtotalPartida(cantidad, precioUnitario);
+    }
+
+    /**
+     * Valida y normaliza el descuento (monto) de una partida: no puede ser nulo
+     * negativo ni exceder el importe bruto de la partida (no se admite un
+     * descuento mayor que el importe). Un valor nulo se interpreta como 0.
+     *
+     * @param descuento    descuento a validar; {@code null} equivale a 0.
+     * @param importeBruto importe bruto de la partida (base del tope).
+     * @return el descuento normalizado a escala 2 (0 &le; descuento &le; importeBruto).
+     * @throws ReglaNegocioException si es negativo o excede el importe bruto (422).
+     */
+    public static BigDecimal validarDescuentoPartida(BigDecimal descuento, BigDecimal importeBruto) {
+        BigDecimal valor = (descuento == null) ? BigDecimal.ZERO : descuento;
+        BigDecimal normalizado = valor.setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
+        if (normalizado.signum() < 0) {
+            throw new ReglaNegocioException("El descuento de la partida no puede ser negativo.");
+        }
+        if (normalizado.compareTo(importeBruto) > 0) {
+            throw new ReglaNegocioException(
+                    "El descuento de la partida (" + normalizado.toPlainString()
+                            + ") no puede exceder su importe (" + importeBruto.toPlainString() + ").");
+        }
+        return normalizado;
+    }
+
+    /**
+     * Calcula la base neta de una partida: {@code importeBruto - descuento},
+     * normalizada a escala 2. Es la base sobre la que se calcula el IVA de la
+     * partida y la que suma al subtotal de la Cotizacion.
+     *
+     * @param importeBruto importe bruto de la partida (ya a escala 2).
+     * @param descuento    descuento de la partida ya validado (ya a escala 2).
+     * @return la base neta a escala 2 (nunca negativa: el descuento se acota al bruto).
+     */
+    public static BigDecimal calcularBaseNetaPartida(BigDecimal importeBruto, BigDecimal descuento) {
+        return normalizarMonto(importeBruto.subtract(descuento));
+    }
+
+    /**
+     * Calcula el IVA de una partida como {@code round(baseNeta * factorTasa, 2)}
+     * half-up. Para las tasas {@code 0} y {@code exento} el factor es 0, de modo
+     * que el IVA es 0.
+     *
+     * @param baseNeta base neta de la partida (ya a escala 2).
+     * @param tasa     tasa de IVA de la partida; obligatoria.
+     * @return el IVA de la partida a escala 2 (half-up).
+     * @throws ReglaNegocioException si la tasa es nula (422).
+     */
+    public static BigDecimal calcularIvaPartida(BigDecimal baseNeta, TasaIva tasa) {
+        if (tasa == null) {
+            throw new ReglaNegocioException("La tasa de IVA de la partida es obligatoria.");
+        }
+        return baseNeta.multiply(tasa.factor()).setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Valida y normaliza un monto fiscal opcional a nivel Cotizacion (descuento
+     * global o retencion): no puede ser negativo. Un valor nulo se interpreta
+     * como 0.
+     *
+     * @param valor  monto a validar; {@code null} equivale a 0.
+     * @param nombre nombre del campo para el mensaje de error.
+     * @return el monto normalizado a escala 2 (&ge; 0).
+     * @throws ReglaNegocioException si es negativo (422).
+     */
+    public static BigDecimal validarMontoFiscalNoNegativo(BigDecimal valor, String nombre) {
+        BigDecimal base = (valor == null) ? BigDecimal.ZERO : valor;
+        BigDecimal normalizado = base.setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
+        if (normalizado.signum() < 0) {
+            throw new ReglaNegocioException("El campo '" + nombre + "' no puede ser negativo.");
+        }
+        return normalizado;
+    }
 }

@@ -1,6 +1,8 @@
 package com.dessti.crm.facturacion.factura.application;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -69,19 +71,22 @@ public class ServicioFacturas {
     private final PacPort pac;
     private final AuditoriaPort auditoria;
     private final CuentaPorCobrarPort cuentaPorCobrar;
+    private final PolizaVentaPort polizaVenta;
 
     public ServicioFacturas(FacturaRepository facturaRepository,
                             CotizacionAprobadaPort cotizacionAprobada,
                             OrdenFabricacionParaFacturaPort ordenFabricacionParaFactura,
                             PacPort pac,
                             AuditoriaPort auditoria,
-                            CuentaPorCobrarPort cuentaPorCobrar) {
+                            CuentaPorCobrarPort cuentaPorCobrar,
+                            PolizaVentaPort polizaVenta) {
         this.facturaRepository = facturaRepository;
         this.cotizacionAprobada = cotizacionAprobada;
         this.ordenFabricacionParaFactura = ordenFabricacionParaFactura;
         this.pac = pac;
         this.auditoria = auditoria;
         this.cuentaPorCobrar = cuentaPorCobrar;
+        this.polizaVenta = polizaVenta;
     }
 
     /**
@@ -205,6 +210,20 @@ public class ServicioFacturas {
         // saldo = total (idempotente en la implementacion de CxC).
         cuentaPorCobrar.registrarPorFacturaTimbrada(
                 guardada.getId(), guardada.getClienteId(), guardada.getTotal());
+        // Req 38.2: poliza de ingreso automatica. Degradacion gracil: si el catalogo
+        // contable no define las cuentas estandar o el periodo esta cerrado, se omite
+        // la poliza sin revertir el CFDI ya timbrado (el adaptador devuelve empty).
+        LocalDate fechaPoliza = LocalDate.ofInstant(
+                guardada.getFechaTimbrado(), ZoneOffset.UTC);
+        polizaVenta.generarPolizaVenta(
+                        fechaPoliza, guardada.getId(), guardada.getSubtotal(),
+                        guardada.getIva(), guardada.getRetenciones(), guardada.getTotal())
+                .ifPresentOrElse(
+                        polizaId -> auditar(actor, "poliza_venta", guardada.getId(),
+                                "poliza de ingreso generada [poliza=" + polizaId + "]", null, null),
+                        () -> auditar(actor, "poliza_venta_omitida", guardada.getId(),
+                                "no se genero poliza de ingreso (catalogo incompleto o periodo cerrado)",
+                                null, null));
         return FacturaDto.de(guardada);
     }
 

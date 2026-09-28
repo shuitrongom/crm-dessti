@@ -9,7 +9,7 @@
 // de estados (borrador -> timbrada -> cancelada).
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CurrencyPipe, DatePipe } from '@angular/common';
@@ -31,6 +31,7 @@ import {
 } from '../../../shared/components/data-table/data-table';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 import {
@@ -42,6 +43,10 @@ import {
 
 import { EstadoChip } from '../../finanzas-comun/estado-chip/estado-chip';
 import { humanizarEstado, tonoDeEstado } from '../../finanzas-comun/tono-estado';
+import { aCentavos, aPesos } from '../../finanzas-comun/dinero';
+import { MetricChart, MetricPoint } from '../../../shared/components/metric-chart/metric-chart';
+import { KpiTile } from '../../../shared/components/kpi-tile/kpi-tile';
+import { DashboardSection } from '../../../shared/components/dashboard-section/dashboard-section';
 import { FacturacionService } from '../services/facturacion.service';
 import { Factura, MOTIVOS_CANCELACION_SAT } from '../models/facturacion.models';
 
@@ -63,6 +68,9 @@ import { Factura, MOTIVOS_CANCELACION_SAT } from '../models/facturacion.models';
     DataTable,
     CeldaTablaDirective,
     EstadoChip,
+    MetricChart,
+    KpiTile,
+    DashboardSection,
   ],
   templateUrl: './facturas.html',
   styleUrl: '../facturacion.scss',
@@ -72,6 +80,7 @@ export class FacturacionFacturas {
   private readonly service = inject(FacturacionService);
   private readonly confirm = inject(ConfirmDialogService);
   private readonly toast = inject(NotificacionesService);
+  private readonly overlay = inject(OperacionOverlayService);
   private readonly auth = inject(AuthService);
 
   protected readonly tono = tonoDeEstado;
@@ -121,6 +130,101 @@ export class FacturacionFacturas {
     this.cargar();
   }
 
+  /**
+   * Nombres cortos de mes (es-MX) para etiquetar la serie temporal de facturacion.
+   * Indice 0 = enero. Se usan en la grafica de columnas del dashboard.
+   */
+  private static readonly MESES = [
+    'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic',
+  ];
+
+  /**
+   * Scorecard de la pagina cargada: monto timbrado (CFDI vigentes), IVA trasladado,
+   * total de comprobantes y desglose borrador/cancelada. Se calcula en centavos para
+   * evitar errores de coma flotante y se expresa de vuelta en pesos. Es una
+   * previsualizacion del cliente; el agregado oficial lo da el modulo de Reportes BI.
+   */
+  protected readonly resumen = computed(() => {
+    const facturas = this.estado().datos ?? [];
+    let timbradoC = 0;
+    let ivaC = 0;
+    let timbradas = 0;
+    let borradores = 0;
+    let canceladas = 0;
+    for (const f of facturas) {
+      if (f.estado === 'timbrada') {
+        timbradoC += aCentavos(f.total);
+        ivaC += aCentavos(f.iva);
+        timbradas += 1;
+      } else if (f.estado === 'borrador') {
+        borradores += 1;
+      } else if (f.estado === 'cancelada' || f.estado === 'cancelacion_en_proceso') {
+        canceladas += 1;
+      }
+    }
+    return {
+      timbrado: aPesos(timbradoC),
+      iva: aPesos(ivaC),
+      documentos: facturas.length,
+      timbradas,
+      borradores,
+      canceladas,
+    };
+  });
+
+  /** Puntos de la dona: numero de comprobantes por estado del CFDI. */
+  protected readonly composicionEstados = computed<MetricPoint[]>(() => {
+    const r = this.resumen();
+    return [
+      { etiqueta: 'Timbradas', valor: r.timbradas },
+      { etiqueta: 'Borrador', valor: r.borradores },
+      { etiqueta: 'Canceladas', valor: r.canceladas },
+    ];
+  });
+
+  /**
+   * Serie temporal (ultimos 6 meses) del monto TIMBRADO por mes de timbrado, para la
+   * grafica de columnas. Solo considera facturas timbradas con fecha; agrupa por
+   * año-mes y ordena cronologicamente.
+   */
+  protected readonly facturacionPorMes = computed<MetricPoint[]>(() => {
+    const facturas = this.estado().datos ?? [];
+    const porMes = new Map<string, number>();
+    for (const f of facturas) {
+      if (f.estado !== 'timbrada' || !f.fechaTimbrado) {
+        continue;
+      }
+      const fecha = new Date(f.fechaTimbrado);
+      if (Number.isNaN(fecha.getTime())) {
+        continue;
+      }
+      const clave = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+      porMes.set(clave, (porMes.get(clave) ?? 0) + aCentavos(f.total));
+    }
+    return [...porMes.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-6)
+      .map(([clave, centavos]) => {
+        const mes = Number(clave.slice(5, 7)) - 1;
+        return { etiqueta: FacturacionFacturas.MESES[mes] ?? clave, valor: aPesos(centavos), unidad: 'MXN' };
+      });
+  });
+
+  /**
+   * Gauge: porcentaje de comprobantes ya timbrados respecto al total de la pagina
+   * (0-100). Mide que tan al dia esta el timbrado fiscal.
+   */
+  protected readonly porcentajeTimbrado = computed<number>(() => {
+    const r = this.resumen();
+    if (r.documentos <= 0) {
+      return 0;
+    }
+    return Math.max(0, Math.min(100, Math.round((r.timbradas / r.documentos) * 100)));
+  });
+
+  /** Indica si hay datos para pintar el dashboard (evita graficas vacias). */
+  protected readonly hayDatos = computed(() => (this.estado().datos ?? []).length > 0);
+
   cargar(): void {
     this.estado.set(cargando());
     this.service.listarFacturas(null, this.filtroEstado() || null, this.page(), this.size()).subscribe({
@@ -155,17 +259,20 @@ export class FacturacionFacturas {
     }
     const v = this.formAlta.getRawValue();
     this.guardando.set(true);
-    this.service
-      .emitirFactura({
-        cotizacionId: v.origen === 'cotizacion' ? v.origenId : null,
-        ordenFabricacionId: v.origen === 'orden_fabricacion' ? v.origenId : null,
-        receptorRfc: v.receptorRfc,
-        receptorNombre: v.receptorNombre,
-        receptorCp: v.receptorCp,
-        receptorRegimenFiscal: v.receptorRegimenFiscal,
-        usoCfdi: v.usoCfdi,
-        tasaRetencion: v.tasaRetencion ?? null,
-      })
+    this.overlay
+      .ejecutar(
+        this.service.emitirFactura({
+          cotizacionId: v.origen === 'cotizacion' ? v.origenId : null,
+          ordenFabricacionId: v.origen === 'orden_fabricacion' ? v.origenId : null,
+          receptorRfc: v.receptorRfc,
+          receptorNombre: v.receptorNombre,
+          receptorCp: v.receptorCp,
+          receptorRegimenFiscal: v.receptorRegimenFiscal,
+          usoCfdi: v.usoCfdi,
+          tasaRetencion: v.tasaRetencion ?? null,
+        }),
+        { tipo: 'crear', textoProceso: 'Emitiendo factura…', textoExito: 'Factura emitida' },
+      )
       .subscribe({
         next: () => {
           this.guardando.set(false);
@@ -202,13 +309,19 @@ export class FacturacionFacturas {
     if (!ok) {
       return;
     }
-    this.service.timbrarFactura(f.id).subscribe({
-      next: () => {
-        this.toast.exito('Factura timbrada.');
-        this.cargar();
-      },
-      error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
-    });
+    this.overlay
+      .ejecutar(this.service.timbrarFactura(f.id), {
+        tipo: 'procesar',
+        textoProceso: 'Timbrando factura…',
+        textoExito: 'Factura timbrada',
+      })
+      .subscribe({
+        next: () => {
+          this.toast.exito('Factura timbrada.');
+          this.cargar();
+        },
+        error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
+      });
   }
 
   async cancelar(f: Factura, motivoSat: string): Promise<void> {
@@ -221,12 +334,18 @@ export class FacturacionFacturas {
     if (!ok) {
       return;
     }
-    this.service.cancelarFactura(f.id, motivoSat).subscribe({
-      next: () => {
-        this.toast.exito('Cancelación solicitada.');
-        this.cargar();
-      },
-      error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
-    });
+    this.overlay
+      .ejecutar(this.service.cancelarFactura(f.id, motivoSat), {
+        tipo: 'eliminar',
+        textoProceso: 'Cancelando CFDI…',
+        textoExito: 'Cancelación solicitada',
+      })
+      .subscribe({
+        next: () => {
+          this.toast.exito('Cancelación solicitada.');
+          this.cargar();
+        },
+        error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
+      });
   }
 }

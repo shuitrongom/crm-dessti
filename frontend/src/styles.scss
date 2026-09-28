@@ -15,6 +15,10 @@
 // Tema de Angular Material coherente con los tokens.
 @use 'styles/material-theme';
 
+// "Form Shell" enterprise: layout two-pane responsivo para formularios/diálogos
+// (clases globales ds-form-*), reutilizable en toda la aplicación.
+@use 'styles/form-shell';
+
 // -----------------------------------------------------------------------------
 // Puente de tematización Material <-> tokens de marca (Req 3, 7)
 // -----------------------------------------------------------------------------
@@ -548,4 +552,36 @@ a {
       color: var(--ds-color-text-muted);
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+// Campos de formulario mas compactos (Req 52) — aplica a TODO el proyecto
+// -----------------------------------------------------------------------------
+// Ademas de la densidad -1 del tema (altura de los controles), se reduce el
+// tamano tipografico del texto de entrada, la etiqueta flotante y los mensajes
+// de ayuda/error de los mat-form-field, para un look enterprise donde los campos
+// no se ven "enormes". Solo ajusta tipografia (no altera colores ni el tema).
+.mat-mdc-form-field {
+  // Texto que escribe el usuario y valor mostrado.
+  --mat-form-field-container-text-size: 0.9rem;
+  // Etiqueta flotante (label) en su tamano contraido y expandido.
+  --mat-form-field-outlined-label-text-size: 0.9rem;
+  --mdc-outlined-text-field-label-text-size: 0.9rem;
+  font-size: 0.9rem;
+
+  // Texto de ayuda y de error bajo el campo: mas pequeno y discreto.
+  .mat-mdc-form-field-subscript-wrapper {
+    font-size: 0.72rem;
+  }
+}
+
+// Placeholder (cuando el campo no tiene label flotante) tambien mas discreto.
+.mat-mdc-input-element::placeholder {
+  font-size: 0.9rem;
+}
+
+// Opciones de los selects/menus desplegables: acordes al nuevo tamano de campo.
+.mat-mdc-option {
+  font-size: 0.9rem;
+  min-height: 2.5rem;
 }

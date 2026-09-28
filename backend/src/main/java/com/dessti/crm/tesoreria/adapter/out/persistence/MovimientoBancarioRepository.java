@@ -98,4 +98,66 @@ public interface MovimientoBancarioRepository
     long contarPendientesConciliacion(
             @Param("desde") LocalDate desde,
             @Param("hasta") LocalDate hasta);
+
+    /**
+     * Agregacion de <strong>solo lectura</strong> de las ENTRADAS de efectivo del tenant
+     * vigente en el rango: suma los {@code monto} positivos (depositos) de los
+     * Movimiento_Bancario. Base del flujo de caja del periodo (posicion de liquidez).
+     *
+     * @param desde fecha minima (inclusiva); no admite {@code null}.
+     * @param hasta fecha maxima (inclusiva); no admite {@code null}.
+     * @return el total de entradas (>= 0) del periodo, o {@code 0}.
+     */
+    @Query("""
+            SELECT COALESCE(SUM(m.monto), 0) FROM MovimientoBancario m
+            WHERE m.monto > 0
+              AND m.fecha >= :desde
+              AND m.fecha <= :hasta
+            """)
+    BigDecimal sumarEntradas(
+            @Param("desde") LocalDate desde,
+            @Param("hasta") LocalDate hasta);
+
+    /**
+     * Agregacion de <strong>solo lectura</strong> de las SALIDAS de efectivo del tenant
+     * vigente en el rango: suma los {@code monto} negativos (retiros/pagos) de los
+     * Movimiento_Bancario. Devuelve un importe <= 0 (con signo).
+     *
+     * @param desde fecha minima (inclusiva); no admite {@code null}.
+     * @param hasta fecha maxima (inclusiva); no admite {@code null}.
+     * @return el total de salidas (<= 0, con signo) del periodo, o {@code 0}.
+     */
+    @Query("""
+            SELECT COALESCE(SUM(m.monto), 0) FROM MovimientoBancario m
+            WHERE m.monto < 0
+              AND m.fecha >= :desde
+              AND m.fecha <= :hasta
+            """)
+    BigDecimal sumarSalidas(
+            @Param("desde") LocalDate desde,
+            @Param("hasta") LocalDate hasta);
+
+    /**
+     * Desglose mensual del flujo de caja (solo lectura) del tenant vigente en el rango:
+     * por cada mes con movimientos devuelve el ano, el mes, las entradas (suma de montos
+     * positivos) y las salidas (suma de montos negativos, con signo). Ordenado
+     * cronologicamente. Alimenta la grafica de flujo del dashboard de liquidez.
+     *
+     * @param desde fecha minima (inclusiva); no admite {@code null}.
+     * @param hasta fecha maxima (inclusiva); no admite {@code null}.
+     * @return filas {@code [anio, mes, entradas, salidas]} por mes con movimientos.
+     */
+    @Query("""
+            SELECT EXTRACT(YEAR FROM m.fecha), EXTRACT(MONTH FROM m.fecha),
+                   COALESCE(SUM(CASE WHEN m.monto > 0 THEN m.monto ELSE 0 END), 0),
+                   COALESCE(SUM(CASE WHEN m.monto < 0 THEN m.monto ELSE 0 END), 0)
+            FROM MovimientoBancario m
+            WHERE m.fecha >= :desde
+              AND m.fecha <= :hasta
+            GROUP BY EXTRACT(YEAR FROM m.fecha), EXTRACT(MONTH FROM m.fecha)
+            ORDER BY EXTRACT(YEAR FROM m.fecha), EXTRACT(MONTH FROM m.fecha)
+            """)
+    java.util.List<Object[]> flujoMensual(
+            @Param("desde") LocalDate desde,
+            @Param("hasta") LocalDate hasta);
 }

@@ -1,0 +1,184 @@
+<app-page-header
+  titulo="Proveedores"
+  subtitulo="Catálogo de proveedores del abastecimiento. Un proveedor es el origen de las órdenes de compra."
+>
+  @if (puedeCrear) {
+    <button acciones matButton="filled" type="button" (click)="mostrarForm() ? cancelar() : nuevo()">
+      <mat-icon>{{ mostrarForm() ? 'close' : 'add' }}</mat-icon>
+      {{ mostrarForm() ? 'Cerrar' : 'Nuevo proveedor' }}
+    </button>
+  }
+</app-page-header>
+
+@if (mostrarForm() && (puedeCrear || puedeActualizar)) {
+  <mat-card appearance="outlined" class="compras-alta">
+    <mat-card-content>
+      <form class="ds-form" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+        <header class="ds-form__header">
+          <h2 class="ds-form__header-title">{{ tituloFormulario() }}</h2>
+          <p class="ds-form__header-subtitle">
+            Identifica al proveedor con su razón social y RFC, y al menos un medio de contacto.
+          </p>
+        </header>
+
+        <!-- Sección: Identificación (two-pane) -->
+        <section class="ds-form__section">
+          <div class="ds-form__section-aside">
+            <h3 class="ds-form__section-title">Identificación</h3>
+            <p class="ds-form__section-desc">
+              Razón social y RFC. El RFC debe ser único entre proveedores activos.
+            </p>
+          </div>
+
+          <div class="ds-form__section-body">
+            <div class="ds-form__grid">
+              <div class="ds-form__field ds-form__field--full">
+                <mat-form-field appearance="outline">
+                  <mat-label>Nombre / razón social</mat-label>
+                  <input matInput type="text" formControlName="nombre" maxlength="200" required
+                         autocomplete="off" placeholder="ej. Aceros del Norte S.A. de C.V." />
+                  @if (formulario.controls.nombre.hasError('required') && formulario.controls.nombre.touched) {
+                    <mat-error>El nombre es obligatorio.</mat-error>
+                  } @else if (formulario.controls.nombre.hasError('maxlength') && formulario.controls.nombre.touched) {
+                    <mat-error>Máximo 200 caracteres.</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+
+              <div class="ds-form__field ds-form__field--full">
+                <mat-form-field appearance="outline">
+                  <mat-label>RFC</mat-label>
+                  <mat-icon matPrefix aria-hidden="true">badge</mat-icon>
+                  <input matInput type="text" formControlName="rfc" maxlength="13" required
+                         autocomplete="off" (input)="normalizarRfc($event)" placeholder="ej. ABC010101AB1" />
+                  @if (formulario.controls.rfc.hasError('required') && formulario.controls.rfc.touched) {
+                    <mat-error>El RFC es obligatorio.</mat-error>
+                  } @else if (formulario.controls.rfc.hasError('duplicado')) {
+                    <mat-error>Ya existe un proveedor activo con ese RFC.</mat-error>
+                  } @else if (formulario.controls.rfc.hasError('maxlength') && formulario.controls.rfc.touched) {
+                    <mat-error>Máximo 20 caracteres.</mat-error>
+                  }
+                </mat-form-field>
+                <p class="ds-form__help">Solo mayúsculas, números y &amp;. Se normaliza automáticamente.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Sección: Contacto (two-pane) -->
+        <section class="ds-form__section">
+          <div class="ds-form__section-aside">
+            <h3 class="ds-form__section-title">Contacto</h3>
+            <p class="ds-form__section-desc">
+              Al menos un dato de contacto (correo o teléfono) es obligatorio.
+            </p>
+          </div>
+
+          <div class="ds-form__section-body">
+            <div class="ds-form__grid">
+              <div class="ds-form__field">
+                <mat-form-field appearance="outline">
+                  <mat-label>Correo</mat-label>
+                  <mat-icon matPrefix aria-hidden="true">mail</mat-icon>
+                  <input matInput type="email" formControlName="email" autocomplete="off"
+                         placeholder="compras@proveedor.com" />
+                  @if (formulario.controls.email.hasError('email') && formulario.controls.email.touched) {
+                    <mat-error>Correo no válido.</mat-error>
+                  } @else if (formulario.controls.email.hasError('contactoRequerido')) {
+                    <mat-error>Captura correo o teléfono.</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+
+              <div class="ds-form__field">
+                <mat-form-field appearance="outline">
+                  <mat-label>Teléfono</mat-label>
+                  <mat-icon matPrefix aria-hidden="true">call</mat-icon>
+                  <input matInput type="tel" formControlName="telefono" inputmode="numeric"
+                         maxlength="10" autocomplete="off" (input)="soloDigitos($event)" />
+                </mat-form-field>
+                <p class="ds-form__help">10 dígitos.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="compras-acciones">
+          <button matButton type="button" (click)="cancelar()">Cancelar</button>
+          <button matButton="filled" type="submit" [disabled]="guardando()">
+            {{ editandoId() ? 'Guardar cambios' : 'Crear proveedor' }}
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="No hay proveedores registrados."
+  (reintentar)="cargar()"
+>
+  <div class="compras-filtros">
+    <mat-form-field appearance="outline">
+      <mat-label>Buscar por nombre o RFC</mat-label>
+      <mat-icon matPrefix aria-hidden="true">search</mat-icon>
+      <input matInput type="text" [value]="filtro()"
+             (keyup.enter)="aplicarFiltro($any($event.target).value)"
+             placeholder="Escribe y presiona Enter" />
+    </mat-form-field>
+  </div>
+
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="nombre" let-r>
+      <span class="proveedor-nombre">{{ r.nombre }}</span>
+    </ng-template>
+    <ng-template appCelda="rfc" let-r>
+      <span class="compras-mono">{{ r.rfc }}</span>
+    </ng-template>
+    <ng-template appCelda="contacto" let-r>
+      @if (r.email || r.telefono) {
+        <div class="proveedor-contacto">
+          @if (r.email) { <span>{{ r.email }}</span> }
+          @if (r.telefono) { <span class="compras-ayuda">{{ r.telefono }}</span> }
+        </div>
+      } @else {
+        <span class="compras-ayuda">-</span>
+      }
+    </ng-template>
+    <ng-template appCelda="estado" let-r>
+      <app-estado-chip
+        [etiqueta]="r.activo ? 'Activo' : 'Inactivo'"
+        [tono]="r.activo ? 'exito' : 'neutro'"
+      />
+    </ng-template>
+    <ng-template appCelda="alta" let-r>{{ r.createdAt | date: 'dd/MM/yyyy' }}</ng-template>
+    <ng-template appCelda="acciones" let-r>
+      @if (puedeActualizar && r.activo) {
+        <button matIconButton [matMenuTriggerFor]="menu" aria-label="Acciones del proveedor">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+          <button mat-menu-item type="button" (click)="editar(r)">
+            <mat-icon>edit</mat-icon>
+            <span>Editar</span>
+          </button>
+          <button mat-menu-item type="button" (click)="desactivar(r)">
+            <mat-icon>block</mat-icon>
+            <span>Dar de baja</span>
+          </button>
+        </mat-menu>
+      } @else {
+        <span class="compras-ayuda">-</span>
+      }
+    </ng-template>
+  </app-data-table>
+</app-state-container>

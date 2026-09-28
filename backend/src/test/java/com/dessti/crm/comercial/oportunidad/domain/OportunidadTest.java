@@ -90,7 +90,7 @@ class OportunidadTest {
     @DisplayName("cambiarEtapa desde una etapa final lanza 409 (Req 14.4)")
     void cambiarEtapaDesdeFinal() {
         Oportunidad o = nueva();
-        o.cambiarEtapa(EtapaOportunidad.PERDIDO, "ventas");
+        o.cambiarEtapa(EtapaOportunidad.PERDIDO, "sin presupuesto", "ventas");
         assertThat(o.getEtapa()).isEqualTo(EtapaOportunidad.PERDIDO);
         assertThatThrownBy(() -> o.cambiarEtapa(EtapaOportunidad.CALIFICADO, "ventas"))
                 .isInstanceOf(TransicionInvalidaException.class);
@@ -110,5 +110,51 @@ class OportunidadTest {
         UUID cotizacion = UUID.randomUUID();
         o.marcarConvertida(cotizacion, "ventas");
         assertThat(o.getCotizacionId()).isEqualTo(cotizacion);
+    }
+
+    @Test
+    @DisplayName("crear inicializa la probabilidad sugerida de la etapa 'nuevo' (V81)")
+    void crearProbabilidadSugerida() {
+        Oportunidad o = nueva();
+        assertThat(o.getProbabilidad()).isEqualTo(10); // NUEVO
+        assertThat(o.getFechaCierreEsperada()).isNull();
+        assertThat(o.getMotivoPerdida()).isNull();
+    }
+
+    @Test
+    @DisplayName("cambiarEtapa ajusta la probabilidad a la sugerida de la nueva etapa (V81)")
+    void cambiarEtapaAjustaProbabilidad() {
+        Oportunidad o = nueva();
+        o.cambiarEtapa(EtapaOportunidad.CALIFICADO, "ventas");
+        assertThat(o.getProbabilidad()).isEqualTo(30);
+        o.cambiarEtapa(EtapaOportunidad.PROPUESTA, "ventas");
+        assertThat(o.getProbabilidad()).isEqualTo(50);
+    }
+
+    @Test
+    @DisplayName("pasar a 'perdido' exige motivo de perdida (V81 -> 422)")
+    void perdidoExigeMotivo() {
+        Oportunidad o = nueva();
+        assertThatThrownBy(() -> o.cambiarEtapa(EtapaOportunidad.PERDIDO, "ventas"))
+                .isInstanceOf(ReglaNegocioException.class);
+        assertThat(o.getEtapa()).isEqualTo(EtapaOportunidad.NUEVO);
+
+        o.cambiarEtapa(EtapaOportunidad.PERDIDO, "precio muy alto", "ventas");
+        assertThat(o.getEtapa()).isEqualTo(EtapaOportunidad.PERDIDO);
+        assertThat(o.getMotivoPerdida()).isEqualTo("precio muy alto");
+        assertThat(o.getProbabilidad()).isZero();
+    }
+
+    @Test
+    @DisplayName("ajustarForecast fija probabilidad y fecha; rechaza probabilidad fuera de [0,100] (V81)")
+    void ajustarForecast() {
+        Oportunidad o = nueva();
+        java.time.LocalDate cierre = java.time.LocalDate.of(2026, 12, 31);
+        o.ajustarForecast(65, cierre, "ventas");
+        assertThat(o.getProbabilidad()).isEqualTo(65);
+        assertThat(o.getFechaCierreEsperada()).isEqualTo(cierre);
+
+        assertThatThrownBy(() -> o.ajustarForecast(150, null, "ventas"))
+                .isInstanceOf(ReglaNegocioException.class);
     }
 }

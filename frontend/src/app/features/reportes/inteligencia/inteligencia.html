@@ -24,11 +24,11 @@
     <mat-datepicker #pickerHasta />
   </mat-form-field>
   <mat-form-field appearance="outline">
-    <mat-label>Area</mat-label>
+    <mat-label>Área</mat-label>
     <input matInput formControlName="area" autocomplete="off" />
   </mat-form-field>
   <mat-form-field appearance="outline">
-    <mat-label>Dimension</mat-label>
+    <mat-label>Dimensión</mat-label>
     <input matInput formControlName="dimension" autocomplete="off" />
   </mat-form-field>
   <button matButton="filled" type="submit">
@@ -36,59 +36,135 @@
   </button>
 </form>
 
+<!-- ====================== Copiloto de IA (foco principal) ====================== -->
+<section class="insights-card" aria-label="Resumen ejecutivo con inteligencia artificial">
+  <div class="insights-card__glow" aria-hidden="true"></div>
+
+  <div class="insights-card__encabezado">
+    <div class="insights-card__titulo">
+      <span class="insights-card__chip" aria-hidden="true">
+        <mat-icon>auto_awesome</mat-icon>
+      </span>
+      <div class="insights-card__titulo-texto">
+        <span class="insights-card__titulo-principal">Resumen ejecutivo</span>
+        <span class="insights-card__titulo-sub">Análisis inteligente del periodo</span>
+      </div>
+    </div>
+
+    <div class="insights-card__acciones">
+      @if (insights(); as ins) {
+        <span
+          class="insights-card__origen"
+          [class.insights-card__origen--ia]="ins.generadoPorIa"
+          [attr.aria-label]="ins.generadoPorIa
+            ? 'Generado por inteligencia artificial'
+            : 'Generado por análisis heurístico'"
+        >
+          <mat-icon aria-hidden="true">{{ ins.generadoPorIa ? 'smart_toy' : 'calculate' }}</mat-icon>
+          {{ ins.generadoPorIa ? 'Generado por IA' : 'Análisis heurístico' }}
+        </span>
+      }
+      @if (!insightsCargando()) {
+        <button
+          matIconButton
+          type="button"
+          (click)="consultarInsights()"
+          aria-label="Regenerar resumen"
+          matTooltip="Regenerar"
+        >
+          <mat-icon>refresh</mat-icon>
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (insightsCargando()) {
+    <div class="insights-card__cargando">
+      <mat-progress-spinner mode="indeterminate" diameter="22" />
+      <span>Analizando los indicadores del periodo…</span>
+    </div>
+  } @else if (insightsError()) {
+    <p class="insights-card__error">
+      <mat-icon aria-hidden="true">error_outline</mat-icon>
+      No se pudo generar el resumen ejecutivo. {{ insightsError() }}
+      <button matButton type="button" (click)="consultarInsights()">Reintentar</button>
+    </p>
+  } @else if (insights(); as ins) {
+    <p class="insights-card__resumen">{{ ins.resumenEjecutivo }}</p>
+    @if (ins.hallazgos.length > 0) {
+      <ul class="insights-card__hallazgos">
+        @for (hallazgo of ins.hallazgos; track hallazgo) {
+          <li class="insights-card__hallazgo" [class]="'insights-card__hallazgo--' + tonoHallazgo(hallazgo)">
+            <mat-icon class="insights-card__hallazgo-icono" aria-hidden="true">
+              {{ iconoHallazgo(hallazgo) }}
+            </mat-icon>
+            <span>{{ hallazgo }}</span>
+          </li>
+        }
+      </ul>
+    }
+  }
+</section>
+
+<!-- ====================== Indicadores por área ====================== -->
 <app-state-container
   [fase]="estado().fase"
   [mensajeError]="estado().mensajeError"
-  mensajeVacio="No hay analisis consolidado para los filtros seleccionados."
+  mensajeVacio="No hay análisis consolidado para los filtros seleccionados."
   (reintentar)="consultar()"
 >
   @if (estado().datos; as datos) {
+    <app-scorecard [datos]="datos" />
+
     @if (datos.desdeComparativo && datos.hastaComparativo) {
       <p class="inteligencia-leyenda">
-        Comparado contra el periodo anterior
-        ({{ datos.desdeComparativo }} a {{ datos.hastaComparativo }}).
+        <mat-icon aria-hidden="true">compare_arrows</mat-icon>
+        Comparado contra el periodo anterior ({{ datos.desdeComparativo }} a {{ datos.hastaComparativo }}).
       </p>
     }
 
-    @for (grupo of datos.areas; track grupo.area) {
-      <section class="reportes-area" [attr.aria-label]="'Indicadores de ' + humanizarArea(grupo.area)">
-        <h2 class="reportes-area__titulo">{{ humanizarArea(grupo.area) }}</h2>
-        <div class="inteligencia-indicadores">
-          @for (indicador of grupo.indicadores; track indicador.clave) {
-            <mat-card appearance="outlined" class="inteligencia-card">
-              <mat-card-content>
-                <div class="inteligencia-card__etiqueta">{{ indicador.etiqueta }}</div>
-                <div class="inteligencia-card__valor">
-                  {{ indicador.valor | number: '1.0-2' : 'es-MX' }}
-                  <span class="inteligencia-card__unidad">{{ indicador.unidad }}</span>
-                </div>
+    @for (grupo of datos.areas; track grupo.area; let idx = $index) {
+      @if (grupo.indicadores.length > 0) {
+        <section
+          class="cockpit-area ds-anim-aparecer"
+          [style.animation-delay.ms]="idx * 70"
+          [attr.aria-label]="'Indicadores de ' + humanizarArea(grupo.area)"
+        >
+          <div class="cockpit-area__head">
+            <h2 class="cockpit-area__titulo">{{ humanizarArea(grupo.area) }}</h2>
+            <span class="cockpit-area__conteo">{{ grupo.indicadores.length }} indicadores</span>
+          </div>
 
-                @if (comparativo(indicador).variacion !== null) {
-                  <div class="inteligencia-delta" [class]="claseTendencia(indicador)">
-                    <mat-icon aria-hidden="true">{{ comparativo(indicador).icono }}</mat-icon>
-                    <span>
-                      @if (comparativo(indicador).porcentaje !== null) {
-                        {{ comparativo(indicador).porcentaje | number: '1.0-2' : 'es-MX' }}%
-                      } @else {
-                        {{ comparativo(indicador).variacion | number: '1.0-2' : 'es-MX' }}
-                      }
-                    </span>
-                    <span class="inteligencia-delta__texto">
-                      {{ comparativo(indicador).texto }}
-                    </span>
-                  </div>
-                  <div class="inteligencia-card__previo">
-                    Periodo anterior: {{ indicador.comparativo | number: '1.0-2' : 'es-MX' }}
-                    {{ indicador.unidad }}
-                  </div>
-                } @else {
-                  <div class="inteligencia-card__previo">Sin comparativo del periodo anterior.</div>
-                }
-              </mat-card-content>
-            </mat-card>
-          }
-        </div>
-      </section>
+          <div class="cockpit-area__cuerpo">
+            <!-- Gauge del KPI principal del area -->
+            <div class="cockpit-panel cockpit-panel--gauge">
+              <app-metric-chart
+                [datos]="puntoGauge(grupo)"
+                tipo="gauge"
+                [porcentaje]="porcentajeGauge(grupo)"
+                titulo="Cumplimiento"
+              />
+              <p class="cockpit-panel__gauge-label">{{ indicadorPrincipal(grupo).etiqueta }}</p>
+            </div>
+
+            <!-- Grafica de distribucion / comparativo del area -->
+            <div class="cockpit-panel cockpit-panel--chart">
+              <app-metric-chart
+                [datos]="puntos(grupo)"
+                [tipo]="tipoGrafica(grupo)"
+                [titulo]="tipoGrafica(grupo) === 'dona' ? 'Distribución' : 'Actual vs anterior'"
+              />
+            </div>
+          </div>
+
+          <!-- Grid de KPIs del area -->
+          <div class="cockpit-kpis">
+            @for (indicador of grupo.indicadores; track indicador.clave) {
+              <app-indicator-card [indicador]="indicador" />
+            }
+          </div>
+        </section>
+      }
     }
   }
 </app-state-container>

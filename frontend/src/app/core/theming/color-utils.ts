@@ -175,3 +175,40 @@ export function mezclar(a: string, b: string, t: number): string {
   const bAzul = ba + (bb - ba) * tAcotado;
   return `#${aDosHex(r)}${aDosHex(g)}${aDosHex(bAzul)}`;
 }
+
+/**
+ * Normaliza un color escrito por el usuario a `#RRGGBB` en minúsculas, admitiendo
+ * varios formatos de entrada:
+ *   - Hex de 6 dígitos:  `#35507a` / `35507a`
+ *   - Hex de 3 dígitos:  `#abc`     -> `#aabbcc`
+ *   - RGB / RGBA:        `rgb(53, 80, 122)` / `rgba(53,80,122,0.5)`
+ * El canal alfa (rgba) se ignora: el branding persiste un color sólido `#RRGGBB`.
+ * Devuelve `null` si la cadena está vacía o no representa un color reconocible
+ * (para que la capa llamante lo trate como "sin color de marca").
+ *
+ * @param entrada Color escrito por el usuario en cualquiera de los formatos.
+ * @returns `#rrggbb` en minúsculas, o `null` si no se pudo interpretar.
+ */
+export function aHex6(entrada: string): string | null {
+  const v = (entrada ?? '').trim().toLowerCase();
+  if (v === '') {
+    return null;
+  }
+  // Hex de 6 dígitos (con o sin #).
+  const hex6 = /^#?([0-9a-f]{6})$/.exec(v);
+  if (hex6) {
+    return `#${hex6[1]}`;
+  }
+  // Hex de 3 dígitos (con o sin #): se expande duplicando cada dígito.
+  const hex3 = /^#?([0-9a-f]{3})$/.exec(v);
+  if (hex3) {
+    const [r, g, b] = hex3[1].split('');
+    return `#${r}${r}${g}${g}${b}${b}`;
+  }
+  // rgb() / rgba(): se toman los tres primeros números como R,G,B (alfa ignorado).
+  const rgb = /^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*(?:,\s*[\d.]+\s*)?\)$/.exec(v);
+  if (rgb) {
+    return `#${aDosHex(Number(rgb[1]))}${aDosHex(Number(rgb[2]))}${aDosHex(Number(rgb[3]))}`;
+  }
+  return null;
+}

@@ -1,0 +1,89 @@
+<app-page-header
+  titulo="Transferencias entre cuentas"
+  subtitulo="Registra traspasos internos de fondos entre tus cuentas bancarias y consulta el histórico."
+>
+  @if (puedeCrear) {
+    <button acciones matButton="filled" type="button" (click)="alternarForm()">
+      <mat-icon>{{ mostrarForm() ? 'close' : 'swap_horiz' }}</mat-icon>
+      {{ mostrarForm() ? 'Cerrar' : 'Nueva transferencia' }}
+    </button>
+  }
+</app-page-header>
+
+@if (mostrarForm() && puedeCrear) {
+  <mat-card appearance="outlined" class="tes-alta">
+    <mat-card-content>
+      <form [formGroup]="formulario" (ngSubmit)="registrar()" novalidate>
+        <h2 class="tes-alta__titulo">Nueva transferencia</h2>
+        <div class="tes-form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Cuenta de origen</mat-label>
+            <mat-select formControlName="cuentaOrigenId">
+              @for (cuenta of cuentas(); track cuenta.id) {
+                <mat-option [value]="cuenta.id">{{ cuenta.nombre }} · {{ cuenta.banco }} ({{ cuenta.moneda }})</mat-option>
+              }
+            </mat-select>
+            <mat-error>Selecciona la cuenta de origen.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Cuenta de destino</mat-label>
+            <mat-select formControlName="cuentaDestinoId">
+              @for (cuenta of cuentas(); track cuenta.id) {
+                <mat-option [value]="cuenta.id">{{ cuenta.nombre }} · {{ cuenta.banco }} ({{ cuenta.moneda }})</mat-option>
+              }
+            </mat-select>
+            @if (formulario.controls.cuentaDestinoId.hasError('mismaCuenta')) {
+              <mat-error>Debe ser distinta de la cuenta de origen.</mat-error>
+            } @else {
+              <mat-error>Selecciona la cuenta de destino.</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Monto</mat-label>
+            <input matInput type="number" step="0.01" min="0.01" formControlName="monto" />
+            <mat-error>El monto debe ser mayor que cero.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha</mat-label>
+            <input matInput [matDatepicker]="pickerFecha" formControlName="fecha" />
+            <mat-datepicker-toggle matSuffix [for]="pickerFecha" />
+            <mat-datepicker #pickerFecha />
+            <mat-error>La fecha es obligatoria.</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Concepto (opcional)</mat-label>
+            <input matInput formControlName="concepto" maxlength="300" autocomplete="off" />
+          </mat-form-field>
+        </div>
+        <div class="tes-filtros">
+          <button matButton="filled" type="submit" [disabled]="guardando()">Registrar transferencia</button>
+          <button matButton type="button" (click)="alternarForm()">Cancelar</button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}
+
+<app-state-container
+  [fase]="estado().fase"
+  [mensajeError]="estado().mensajeError"
+  mensajeVacio="No hay transferencias registradas."
+  (reintentar)="cargar()"
+>
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="estado().datos ?? []"
+    [total]="total()"
+    [page]="page()"
+    [size]="size()"
+    (cambioPagina)="cambiarPagina($event)"
+  >
+    <ng-template appCelda="fecha" let-t>{{ t.fecha | date: 'dd/MM/yyyy' }}</ng-template>
+    <ng-template appCelda="origen" let-t>{{ nombreCuenta(t.cuentaOrigenId) }}</ng-template>
+    <ng-template appCelda="destino" let-t>{{ nombreCuenta(t.cuentaDestinoId) }}</ng-template>
+    <ng-template appCelda="concepto" let-t>{{ t.concepto ?? '—' }}</ng-template>
+    <ng-template appCelda="monto" let-t>
+      <span class="tes-num">{{ t.monto | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</span>
+    </ng-template>
+  </app-data-table>
+</app-state-container>

@@ -59,6 +59,7 @@ public class ServicioOportunidades {
     private final OportunidadRepository oportunidadRepository;
     private final ClienteExistentePort clienteExistente;
     private final CanalVentaExistentePort canalVentaExistente;
+    private final UsuarioExistentePort usuarioExistente;
     private final AuditoriaPort auditoria;
 
     /**
@@ -71,11 +72,13 @@ public class ServicioOportunidades {
     public ServicioOportunidades(OportunidadRepository oportunidadRepository,
                                  ClienteExistentePort clienteExistente,
                                  CanalVentaExistentePort canalVentaExistente,
+                                 UsuarioExistentePort usuarioExistente,
                                  AuditoriaPort auditoria,
                                  Optional<CreacionCotizacionPort> creacionCotizacion) {
         this.oportunidadRepository = oportunidadRepository;
         this.clienteExistente = clienteExistente;
         this.canalVentaExistente = canalVentaExistente;
+        this.usuarioExistente = usuarioExistente;
         this.auditoria = auditoria;
         this.creacionCotizacion = creacionCotizacion;
     }
@@ -125,10 +128,46 @@ public class ServicioOportunidades {
     public OportunidadDto asignarResponsable(UUID oportunidadId, UUID usuarioId) {
         String actor = actorActual();
         Oportunidad oportunidad = cargar(oportunidadId, actor);
+        // V81: valida que el Usuario responsable exista y este activo en el tenant
+        // (antes se asignaba cualquier UUID sin comprobar). Un usuario nulo/inexistente
+        // se rechaza; para desasignar no se ofrece esta ruta (asignar exige usuario).
+        if (usuarioId == null) {
+            throw new ReglaNegocioException("El Usuario responsable es obligatorio.");
+        }
+        if (!usuarioExistente.existeUsuarioActivo(usuarioId)) {
+            auditarAccesoCruzado(actor, "usuario", usuarioId);
+            throw new RecursoNoEncontradoException(
+                    "No se encontro el Usuario indicado como responsable en el tenant.");
+        }
         oportunidad.asignarResponsable(usuarioId, actor);
         Oportunidad guardada = oportunidadRepository.save(oportunidad);
         auditar(actor, "asignar_responsable", guardada.getId(),
                 "asignado responsable [usuario=" + usuarioId + "]", null, null);
+        return OportunidadDto.de(guardada);
+    }
+
+    /**
+     * Ajusta el forecast de una Oportunidad (V81): probabilidad de cierre (0..100)
+     * y fecha esperada de cierre. Permite afinar la probabilidad sugerida por la
+     * etapa.
+     *
+     * @param oportunidadId       identificador de la Oportunidad.
+     * @param probabilidad        nueva probabilidad [0,100]; {@code null} no cambia.
+     * @param fechaCierreEsperada fecha esperada de cierre; {@code null} la deja sin estimar.
+     * @return el DTO de la Oportunidad con su forecast actualizado.
+     * @throws RecursoNoEncontradoException si no es accesible (404).
+     * @throws ReglaNegocioException si la probabilidad esta fuera de rango (422).
+     */
+    @Transactional
+    public OportunidadDto ajustarForecast(UUID oportunidadId, Integer probabilidad,
+                                          java.time.LocalDate fechaCierreEsperada) {
+        String actor = actorActual();
+        Oportunidad oportunidad = cargar(oportunidadId, actor);
+        oportunidad.ajustarForecast(probabilidad, fechaCierreEsperada, actor);
+        Oportunidad guardada = oportunidadRepository.save(oportunidad);
+        auditar(actor, "ajustar_forecast", guardada.getId(),
+                "forecast actualizado [probabilidad=" + guardada.getProbabilidad()
+                        + ", cierre=" + guardada.getFechaCierreEsperada() + "]", null, null);
         return OportunidadDto.de(guardada);
     }
 
@@ -180,11 +219,29 @@ public class ServicioOportunidades {
      */
     @Transactional
     public OportunidadDto cambiarEtapa(UUID oportunidadId, String nuevaEtapa) {
+        return cambiarEtapa(oportunidadId, nuevaEtapa, null);
+    }
+
+    /**
+     * Cambia la etapa y, cuando la etapa destino es {@code perdido}, registra el
+     * motivo de perdida obligatorio (V81, forecast). Ademas ajusta la probabilidad
+     * a la sugerida por la nueva etapa.
+     *
+     * @param oportunidadId identificador de la Oportunidad.
+     * @param nuevaEtapa    etiqueta de la etapa destino; obligatoria.
+     * @param motivoPerdida motivo de perdida; obligatorio si la etapa es {@code perdido}.
+     * @return el DTO de la Oportunidad con su nueva etapa.
+     * @throws RecursoNoEncontradoException si no es accesible (404).
+     * @throws ReglaNegocioException si la etapa es desconocida o falta el motivo al perder (422).
+     * @throws com.dessti.crm.platform.error.TransicionInvalidaException si la transicion es invalida (409).
+     */
+    @Transactional
+    public OportunidadDto cambiarEtapa(UUID oportunidadId, String nuevaEtapa, String motivoPerdida) {
         String actor = actorActual();
         EtapaOportunidad destino = interpretarEtapa(nuevaEtapa);
         Oportunidad oportunidad = cargar(oportunidadId, actor);
         EtapaOportunidad anterior = oportunidad.getEtapa();
-        oportunidad.cambiarEtapa(destino, actor);
+        oportunidad.cambiarEtapa(destino, motivoPerdida, actor);
         Oportunidad guardada = oportunidadRepository.save(oportunidad);
         auditar(actor, "cambiar_etapa", guardada.getId(),
                 "cambio de etapa '" + anterior.valorBd() + "' -> '" + destino.valorBd() + "'",

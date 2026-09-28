@@ -26,6 +26,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { EstrategiaVistasService } from '../services/estrategia-vistas.service';
 import { ObjetivoEstrategico } from '../models/estrategia.models';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 
 /**
  * Validador de grupo: el periodo fin no puede ser anterior al inicio. Solo
@@ -58,6 +59,7 @@ export class ObjetivoDialog {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(EstrategiaVistasService);
   private readonly dialogRef = inject(MatDialogRef<ObjetivoDialog, ObjetivoEstrategico>);
+  private readonly overlay = inject(OperacionOverlayService);
 
   protected readonly guardando = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -82,16 +84,22 @@ export class ObjetivoDialog {
     }
     this.guardando.set(true);
     const v = this.formulario.getRawValue();
-    this.service.crearObjetivo(v).subscribe({
-      next: (objetivo) => {
-        this.guardando.set(false);
-        this.dialogRef.close(objetivo);
-      },
-      error: (e: HttpErrorResponse) => {
-        this.guardando.set(false);
-        this.error.set(mensajeDeError(e));
-      },
-    });
+    this.overlay
+      .ejecutar(this.service.crearObjetivo(v), {
+        tipo: 'crear',
+        textoProceso: 'Creando objetivo…',
+        textoExito: 'Objetivo creado',
+      })
+      .subscribe({
+        next: (objetivo) => {
+          this.guardando.set(false);
+          this.dialogRef.close(objetivo);
+        },
+        error: (e: HttpErrorResponse) => {
+          this.guardando.set(false);
+          this.error.set(mensajeDeError(e));
+        },
+      });
   }
 
   /** Cancela el alta. */

@@ -9,88 +9,11 @@
 
 @use '../../../../styles/breakpoints' as bp;
 
-.editar-empresa__form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ds-space-4);
-  min-inline-size: 0;
-  inline-size: 100%;
-  max-inline-size: 100%;
-  box-sizing: border-box;
-  padding-block-start: var(--ds-space-2);
-}
-
-// -----------------------------------------------------------------------------
-// Mensajes
-// -----------------------------------------------------------------------------
-.editar-empresa__error {
-  display: flex;
-  align-items: center;
-  gap: var(--ds-space-2);
-  margin: 0;
-  padding: var(--ds-space-3);
-  border: 1px solid color-mix(in srgb, var(--ds-color-error) 32%, transparent);
-  border-radius: var(--ds-radius-sm);
-  background: color-mix(in srgb, var(--ds-color-error) 12%, transparent);
-  color: var(--ds-color-error);
-  font-size: var(--ds-font-size-sm);
-
-  mat-icon {
-    flex: 0 0 auto;
-    font-size: 20px;
-    inline-size: 20px;
-    block-size: 20px;
-  }
-
-  &--inline {
-    padding: var(--ds-space-2) var(--ds-space-3);
-  }
-}
-
-// -----------------------------------------------------------------------------
-// Secciones del formulario (tarjeta con encabezado)
-// -----------------------------------------------------------------------------
-.editar-empresa__seccion {
-  margin: 0;
-  padding: var(--ds-space-4);
-  border: 1px solid var(--ds-color-border);
-  border-radius: var(--ds-radius-md);
-  background: var(--ds-color-surface);
-  min-inline-size: 0;
-}
-
-.editar-empresa__seccion-titulo {
-  margin: 0 0 var(--ds-space-3);
-  padding-block-end: var(--ds-space-2);
-  border-block-end: 1px solid var(--ds-color-border);
-  font-size: var(--ds-font-size-xs);
-  font-weight: var(--ds-font-weight-medium);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--ds-color-text-muted);
-}
-
-// Rejilla responsive de campos: 1 columna en movil, 2 en escritorio.
-.editar-empresa__grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--ds-space-3) var(--ds-space-4);
-
-  @include bp.from('sm') {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  mat-form-field {
-    min-inline-size: 0;
-    inline-size: 100%;
-  }
-}
-
-// Campo que ocupa las dos columnas (evita huerfanos en filas impares).
-.editar-empresa__campo--ancho {
-  @include bp.from('sm') {
-    grid-column: 1 / -1;
-  }
+// El layout (secciones two-pane, rejilla, ayudas, notas) lo aporta el "form shell"
+// compartido (styles/_form-shell.scss, clases ds-form*). Aquí solo el aire del
+// contenido y la carga de logo.
+.editar-empresa__content {
+  padding-block: var(--ds-space-2);
 }
 
 // -----------------------------------------------------------------------------

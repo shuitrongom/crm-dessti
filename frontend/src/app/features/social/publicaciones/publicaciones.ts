@@ -30,6 +30,7 @@ import {
 } from '../../../shared/components/data-table/data-table';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 import {
@@ -74,6 +75,7 @@ export class Publicaciones {
   private readonly cuentasService = inject(CuentasCanalService);
   private readonly confirm = inject(ConfirmDialogService);
   private readonly toast = inject(NotificacionesService);
+  private readonly overlay = inject(OperacionOverlayService);
   private readonly auth = inject(AuthService);
 
   protected readonly tono = tonoDeEstado;
@@ -184,13 +186,16 @@ export class Publicaciones {
     }
     const v = this.formAlta.getRawValue();
     this.guardando.set(true);
-    this.service
-      .crear({
-        cuentaCanalSocialId: v.cuentaCanalSocialId,
-        contenido: v.contenido,
-        // Convierte el datetime-local a instante UTC ISO-8601.
-        fechaProgramada: new Date(v.fechaProgramada).toISOString(),
-      })
+    this.overlay
+      .ejecutar(
+        this.service.crear({
+          cuentaCanalSocialId: v.cuentaCanalSocialId,
+          contenido: v.contenido,
+          // Convierte el datetime-local a instante UTC ISO-8601.
+          fechaProgramada: new Date(v.fechaProgramada).toISOString(),
+        }),
+        { tipo: 'crear', textoProceso: 'Creando publicación…', textoExito: 'Publicación creada' },
+      )
       .subscribe({
         next: () => {
           this.guardando.set(false);
@@ -216,13 +221,19 @@ export class Publicaciones {
     if (!ok) {
       return;
     }
-    this.service.cambiarEstado(p.id, 'programada').subscribe({
-      next: () => {
-        this.toast.exito('Publicacion programada.');
-        this.cargar();
-      },
-      error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
-    });
+    this.overlay
+      .ejecutar(this.service.cambiarEstado(p.id, 'programada'), {
+        tipo: 'procesar',
+        textoProceso: 'Programando publicación…',
+        textoExito: 'Publicación programada',
+      })
+      .subscribe({
+        next: () => {
+          this.toast.exito('Publicacion programada.');
+          this.cargar();
+        },
+        error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
+      });
   }
 
   async publicar(p: PublicacionSocial): Promise<void> {
@@ -234,16 +245,22 @@ export class Publicaciones {
     if (!ok) {
       return;
     }
-    this.service.publicar(p.id).subscribe({
-      next: (resultado) => {
-        if (resultado.estado === 'publicada') {
-          this.toast.exito('Publicacion publicada.');
-        } else {
-          this.toast.error(resultado.motivoFallo ?? 'La publicacion no pudo completarse.');
-        }
-        this.cargar();
-      },
-      error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
-    });
+    this.overlay
+      .ejecutar(this.service.publicar(p.id), {
+        tipo: 'procesar',
+        textoProceso: 'Publicando…',
+        textoExito: 'Publicación enviada',
+      })
+      .subscribe({
+        next: (resultado) => {
+          if (resultado.estado === 'publicada') {
+            this.toast.exito('Publicacion publicada.');
+          } else {
+            this.toast.error(resultado.motivoFallo ?? 'La publicacion no pudo completarse.');
+          }
+          this.cargar();
+        },
+        error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
+      });
   }
 }

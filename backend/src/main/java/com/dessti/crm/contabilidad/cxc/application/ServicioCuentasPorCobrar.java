@@ -91,19 +91,22 @@ public class ServicioCuentasPorCobrar implements CuentaPorCobrarPort {
     private final PacPort pac;
     private final AuditoriaPort auditoria;
     private final Clock clock;
+    private final PolizaCobroPort polizaCobro;
 
     public ServicioCuentasPorCobrar(CuentaPorCobrarRepository cuentaPorCobrarRepository,
                                     PagoClienteRepository pagoClienteRepository,
                                     AplicacionPagoRepository aplicacionPagoRepository,
                                     PacPort pac,
                                     AuditoriaPort auditoria,
-                                    Clock clock) {
+                                    Clock clock,
+                                    PolizaCobroPort polizaCobro) {
         this.cuentaPorCobrarRepository = cuentaPorCobrarRepository;
         this.pagoClienteRepository = pagoClienteRepository;
         this.aplicacionPagoRepository = aplicacionPagoRepository;
         this.pac = pac;
         this.auditoria = auditoria;
         this.clock = clock;
+        this.polizaCobro = polizaCobro;
     }
 
     // ------------------------------------------------------------------
@@ -246,6 +249,21 @@ public class ServicioCuentasPorCobrar implements CuentaPorCobrarPort {
                 "registrado Pago_Cliente [cliente=" + pagoGuardado.getClienteId() + ", monto="
                         + pagoGuardado.getMonto().toPlainString() + ", parcialidad="
                         + pagoGuardado.isEsParcialidad() + "]", null, null);
+
+        // Req 38.2: poliza de cobro automatica (cargo a bancos, abono a clientes).
+        // Degradacion gracil: si el catalogo contable no define las cuentas estandar
+        // o el periodo esta cerrado, se omite la poliza sin revertir el pago.
+        final UUID pagoIdFinal = pagoGuardado.getId();
+        final BigDecimal montoFinal = pagoGuardado.getMonto();
+        polizaCobro.generarPolizaCobro(
+                        LocalDate.ofInstant(pagoGuardado.getFechaPago(), ZoneOffset.UTC),
+                        pagoIdFinal, montoFinal)
+                .ifPresentOrElse(
+                        polizaId -> auditar(actor, "poliza_cobro", RECURSO_PAGO_CLIENTE, pagoIdFinal,
+                                "poliza de cobro generada [poliza=" + polizaId + "]", null, null),
+                        () -> auditar(actor, "poliza_cobro_omitida", RECURSO_PAGO_CLIENTE, pagoIdFinal,
+                                "no se genero poliza de cobro (catalogo incompleto o periodo cerrado)",
+                                null, null));
         return PagoClienteDto.de(pagoGuardado, aplicaciones);
     }
 

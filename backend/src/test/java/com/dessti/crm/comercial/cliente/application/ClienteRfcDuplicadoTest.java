@@ -40,6 +40,7 @@ class ClienteRfcDuplicadoTest {
 
     private ClienteRepository clienteRepository;
     private ContactoRepository contactoRepository;
+    private com.dessti.crm.comercial.cliente.application.UsuarioExistentePort usuarioExistente;
     private AuditoriaPort auditoria;
     private ServicioClientes servicio;
 
@@ -47,8 +48,9 @@ class ClienteRfcDuplicadoTest {
     void setUp() {
         clienteRepository = mock(ClienteRepository.class);
         contactoRepository = mock(ContactoRepository.class);
+        usuarioExistente = mock(com.dessti.crm.comercial.cliente.application.UsuarioExistentePort.class);
         auditoria = mock(AuditoriaPort.class);
-        servicio = new ServicioClientes(clienteRepository, contactoRepository, auditoria);
+        servicio = new ServicioClientes(clienteRepository, contactoRepository, usuarioExistente, auditoria);
         // El servicio deriva el tenant del contexto para auditar (Req 23.4).
         TenantContext.set(TENANT);
     }

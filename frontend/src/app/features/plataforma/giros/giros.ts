@@ -208,8 +208,10 @@ export class PlataformaGiros {
   /** Abre el dialogo de alta de Giro (Req 9). */
   crear(): void {
     const ref = this.dialog.open(GiroDialog, {
-      width: 'min(560px, 96vw)',
+      width: 'min(760px, 96vw)',
+      maxWidth: 'min(760px, 96vw)',
       maxHeight: '92vh',
+      panelClass: 'ds-dialog-panel',
       autoFocus: 'first-tabbable',
     });
     ref.afterClosed().subscribe((creado) => {
@@ -224,8 +226,10 @@ export class PlataformaGiros {
   /** Abre el dialogo de edicion de un Giro (nombre visible y descripcion). */
   editar(giro: Giro): void {
     const ref = this.dialog.open(GiroDialog, {
-      width: 'min(560px, 96vw)',
+      width: 'min(760px, 96vw)',
+      maxWidth: 'min(760px, 96vw)',
       maxHeight: '92vh',
+      panelClass: 'ds-dialog-panel',
       autoFocus: 'first-tabbable',
       data: { giro },
     });

@@ -37,6 +37,7 @@ import {
   AddressAutocomplete,
   DireccionAutocompletada,
 } from '../../../shared/components/address-autocomplete/address-autocomplete';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 
 /** Datos de entrada del dialogo: la Empresa a editar (para prellenar). */
 export interface EditarEmpresaDialogData {
@@ -67,6 +68,7 @@ export class EditarEmpresaDialog {
   private readonly empresasService = inject(EmpresasService);
   private readonly dialogRef = inject(MatDialogRef<EditarEmpresaDialog, Empresa>);
   private readonly data = inject<EditarEmpresaDialogData>(MAT_DIALOG_DATA);
+  private readonly overlay = inject(OperacionOverlayService);
 
   protected readonly guardando = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -224,22 +226,25 @@ export class EditarEmpresaDialog {
     }
     this.guardando.set(true);
     const v = this.formulario.getRawValue();
-    this.empresasService
-      .actualizarEmpresa(this.data.empresa.id, {
-        nombre: v.nombre.trim(),
-        rfc: v.rfc.trim().toUpperCase(),
-        emailContacto: v.emailContacto.trim(),
-        nombreComercial: this.opcional(v.nombreComercial),
-        telefono: this.opcional(v.telefono),
-        sitioWeb: this.opcional(v.sitioWeb),
-        direccionCalle: this.opcional(v.direccionCalle),
-        direccionCiudad: this.opcional(v.direccionCiudad),
-        direccionEstado: this.opcional(v.direccionEstado),
-        direccionCp: this.opcional(v.direccionCp),
-        direccionPais: this.opcional(v.direccionPais),
-        notas: this.opcional(v.notas),
-        logo: this.logo(),
-      })
+    this.overlay
+      .ejecutar(
+        this.empresasService.actualizarEmpresa(this.data.empresa.id, {
+          nombre: v.nombre.trim(),
+          rfc: v.rfc.trim().toUpperCase(),
+          emailContacto: v.emailContacto.trim(),
+          nombreComercial: this.opcional(v.nombreComercial),
+          telefono: this.opcional(v.telefono),
+          sitioWeb: this.opcional(v.sitioWeb),
+          direccionCalle: this.opcional(v.direccionCalle),
+          direccionCiudad: this.opcional(v.direccionCiudad),
+          direccionEstado: this.opcional(v.direccionEstado),
+          direccionCp: this.opcional(v.direccionCp),
+          direccionPais: this.opcional(v.direccionPais),
+          notas: this.opcional(v.notas),
+          logo: this.logo(),
+        }),
+        { tipo: 'guardar', textoProceso: 'Guardando cambios…', textoExito: 'Cambios guardados' },
+      )
       .subscribe({
         next: (empresa) => {
           this.guardando.set(false);

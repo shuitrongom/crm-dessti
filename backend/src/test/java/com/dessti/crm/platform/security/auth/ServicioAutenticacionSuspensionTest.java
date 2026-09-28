@@ -99,7 +99,7 @@ class ServicioAutenticacionSuspensionTest {
 
         // No se compara la contrasena ni se emiten tokens de una Empresa bloqueada.
         verify(passwordEncoder, never()).matches(any(), any());
-        verify(servicioTokens, never()).emitirTokenAcceso(any(), any(), anyList(), anyList(), any(), any(), any());
+        verify(servicioTokens, never()).emitirTokenAcceso(any(), any(), anyList(), anyList(), any(), any(), any(), any());
 
         // El motivo se registra en la auditoria interna (Req 24.6).
         ArgumentCaptor<EventoAuditoria> captor = ArgumentCaptor.forClass(EventoAuditoria.class);
@@ -116,9 +116,9 @@ class ServicioAutenticacionSuspensionTest {
         when(passwordEncoder.matches("buena", HASH)).thenReturn(true);
         when(usuarioRepository.buscarNombresRoles(ID)).thenReturn(List.of("ventas"));
         when(usuarioRepository.buscarPermisos(ID)).thenReturn(List.of("cliente:crear"));
-        when(servicioTokens.emitirTokenAcceso(eq(ID.toString()), eq(TENANT), anyList(), anyList(), any(), any(), any()))
+        when(servicioTokens.emitirTokenAcceso(eq(ID.toString()), eq(TENANT), anyList(), anyList(), any(), any(), any(), any()))
                 .thenReturn(new TokenEmitido("acceso-jwt", T0.plusSeconds(900)));
-        when(servicioTokens.emitirTokenRefresco(eq(ID.toString()), eq(TENANT), anyList(), anyList(), any(), any(), any()))
+        when(servicioTokens.emitirTokenRefresco(eq(ID.toString()), eq(TENANT), anyList(), anyList(), any(), any(), any(), any()))
                 .thenReturn(new TokenEmitido("refresco-jwt", T0.plusSeconds(604800)));
 
         TokenResponse respuesta = servicio.login(IDENTIFICADOR, "buena", IP);
@@ -137,9 +137,9 @@ class ServicioAutenticacionSuspensionTest {
         when(usuarioRepository.buscarNombresRoles(ID)).thenReturn(List.of("super_admin"));
         when(usuarioRepository.buscarPermisos(ID)).thenReturn(List.of("empresa:listar"));
         // El super_admin (tenant nulo) no lleva Giro: el claim se emite con giro null.
-        when(servicioTokens.emitirTokenAcceso(eq(ID.toString()), any(), anyList(), anyList(), any(), any(), any()))
+        when(servicioTokens.emitirTokenAcceso(eq(ID.toString()), any(), anyList(), anyList(), any(), any(), any(), any()))
                 .thenReturn(new TokenEmitido("acceso-jwt", T0.plusSeconds(900)));
-        when(servicioTokens.emitirTokenRefresco(eq(ID.toString()), any(), anyList(), anyList(), any(), any(), any()))
+        when(servicioTokens.emitirTokenRefresco(eq(ID.toString()), any(), anyList(), anyList(), any(), any(), any(), any()))
                 .thenReturn(new TokenEmitido("refresco-jwt", T0.plusSeconds(604800)));
 
         TokenResponse respuesta = servicio.login("root@plataforma", "buena", IP);
@@ -164,6 +164,6 @@ class ServicioAutenticacionSuspensionTest {
                 .hasMessage("Credenciales invalidas");
 
         verify(passwordEncoder, never()).matches(any(), any());
-        verify(servicioTokens, never()).emitirTokenAcceso(any(), any(), anyList(), anyList(), any(), any(), any());
+        verify(servicioTokens, never()).emitirTokenAcceso(any(), any(), anyList(), anyList(), any(), any(), any(), any());
     }
 }

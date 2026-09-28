@@ -1,6 +1,7 @@
 package com.dessti.crm.contabilidad.polizas.application;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -69,13 +70,16 @@ public class ServicioContabilidad implements PolizaContablePort {
     private final CuentaContableRepository cuentaContableRepository;
     private final PolizaContableRepository polizaContableRepository;
     private final AuditoriaPort auditoria;
+    private final PeriodoContablePort periodoContablePort;
 
     public ServicioContabilidad(CuentaContableRepository cuentaContableRepository,
                                 PolizaContableRepository polizaContableRepository,
-                                AuditoriaPort auditoria) {
+                                AuditoriaPort auditoria,
+                                PeriodoContablePort periodoContablePort) {
         this.cuentaContableRepository = cuentaContableRepository;
         this.polizaContableRepository = polizaContableRepository;
         this.auditoria = auditoria;
+        this.periodoContablePort = periodoContablePort;
     }
 
     // ------------------------------------------------------------------
@@ -165,6 +169,8 @@ public class ServicioContabilidad implements PolizaContablePort {
     public PolizaContableDto registrarPoliza(RegistrarPolizaCommand comando) {
         String actor = actorActual();
         PolizaContable poliza = construirPoliza(comando, actor);
+        // Candado contable: rechaza polizas cuya fecha caiga en un periodo cerrado.
+        validarPeriodoAbierto(poliza.getFecha());
         PolizaContable guardada = polizaContableRepository.save(poliza);
         auditar(actor, "crear", RECURSO_POLIZA, guardada.getId(),
                 "registrada Poliza_Contable balanceada [fecha=" + guardada.getFecha()
@@ -188,6 +194,8 @@ public class ServicioContabilidad implements PolizaContablePort {
         String actor = actorActual();
         PolizaContable original = cargarPoliza(polizaId, actor);
         LocalDate fechaReverso = (fecha != null) ? fecha : original.getFecha();
+        // Candado contable: el reverso no puede afectar un periodo cerrado.
+        validarPeriodoAbierto(fechaReverso);
         PolizaContable reverso = original.reversar(fechaReverso, actor);
         PolizaContable guardada = polizaContableRepository.save(reverso);
         auditar(actor, "reversar", RECURSO_POLIZA, guardada.getId(),
@@ -286,6 +294,28 @@ public class ServicioContabilidad implements PolizaContablePort {
         return tieneCargo
                 ? MovimientoPoliza.cargo(linea.cuentaContableId(), linea.cargo(), actor)
                 : MovimientoPoliza.abono(linea.cuentaContableId(), linea.abono(), actor);
+    }
+
+    /**
+     * Candado contable (cierre de periodo): si la {@code fecha} de la poliza (o de su
+     * reverso) cae en un periodo mensual CERRADO, rechaza con 422 sin persistir nada.
+     * Cubre por igual la captura manual y los eventos automaticos, por ser el unico
+     * punto de entrada de polizas. Un periodo abierto o inexistente no bloquea.
+     *
+     * @param fecha fecha contable de la poliza a validar.
+     * @throws ReglaNegocioException si el periodo de la fecha esta cerrado (422).
+     */
+    private void validarPeriodoAbierto(LocalDate fecha) {
+        if (fecha == null) {
+            return;
+        }
+        YearMonth ym = YearMonth.from(fecha);
+        if (periodoContablePort.estaCerrado(ym.getYear(), ym.getMonthValue())) {
+            throw new ReglaNegocioException(String.format(
+                    "El periodo %04d-%02d esta cerrado; no admite nuevas polizas ni reversos."
+                            + " Reabra el periodo o use una fecha en un periodo abierto.",
+                    ym.getYear(), ym.getMonthValue()));
+        }
     }
 
     private CuentaContable cargarCuenta(UUID cuentaId, String actor) {

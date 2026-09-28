@@ -1,0 +1,315 @@
+// =============================================================================
+// Estilos del timeline de actividades de seguimiento (V79)
+// -----------------------------------------------------------------------------
+// Línea de tiempo vertical premium con marcadores por tipo, estados con color
+// semántico y resaltado de actividades vencidas. Densidad compacta coherente
+// con el sistema de diseño.
+// =============================================================================
+
+.timeline-actividades {
+  margin-top: 1.5rem;
+
+  &__cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  &__titulo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+
+    mat-icon {
+      color: var(--mat-sys-primary, #3f51b5);
+      font-size: 1.6rem;
+      width: 1.6rem;
+      height: 1.6rem;
+    }
+
+    h3 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+  }
+
+  &__sub {
+    margin: 0.1rem 0 0;
+    font-size: 0.8rem;
+    opacity: 0.7;
+  }
+
+  // --- Indicadores ---------------------------------------------------------
+  &__kpis {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin: 1rem 0;
+  }
+
+  .kpi {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 0.5rem;
+    border-radius: 0.75rem;
+    background: color-mix(in srgb, var(--mat-sys-surface-variant, #e7e9f0) 55%, transparent);
+
+    &__valor {
+      font-size: 1.5rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    &__etiqueta {
+      margin-top: 0.25rem;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      opacity: 0.7;
+    }
+
+    &--pendiente .kpi__valor {
+      color: #b26a00;
+    }
+
+    &--vencida .kpi__valor {
+      color: #c62828;
+    }
+
+    &--completada .kpi__valor {
+      color: #2e7d32;
+    }
+  }
+
+  // --- Formulario de alta --------------------------------------------------
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 0.75rem;
+    border: 1px dashed color-mix(in srgb, var(--mat-sys-outline, #79747e) 45%, transparent);
+    background: color-mix(in srgb, var(--mat-sys-surface-variant, #e7e9f0) 30%, transparent);
+  }
+
+  &__form-fila {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+
+    mat-form-field {
+      flex: 1 1 220px;
+    }
+
+    .campo-tipo {
+      flex: 0 1 180px;
+    }
+  }
+
+  .campo-descripcion {
+    width: 100%;
+  }
+
+  &__form-acciones {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+}
+
+// --- Línea de tiempo -------------------------------------------------------
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem 0 0;
+  position: relative;
+
+  &__item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0.85rem;
+    padding: 0.9rem 0;
+    position: relative;
+
+    // Línea conectora vertical entre marcadores.
+    &:not(:last-child)::before {
+      content: '';
+      position: absolute;
+      left: 1.15rem;
+      top: 2.6rem;
+      bottom: -0.3rem;
+      width: 2px;
+      background: color-mix(in srgb, var(--mat-sys-outline, #79747e) 30%, transparent);
+    }
+
+    &--completada .timeline__asunto {
+      text-decoration: none;
+    }
+
+    &--cancelada {
+      opacity: 0.6;
+
+      .timeline__asunto {
+        text-decoration: line-through;
+      }
+    }
+
+    &--vencida .timeline__marcador {
+      box-shadow: 0 0 0 3px color-mix(in srgb, #c62828 25%, transparent);
+    }
+  }
+
+  &__marcador {
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--mat-sys-primary, #3f51b5) 14%, var(--mat-sys-surface, #fff));
+    color: var(--mat-sys-primary, #3f51b5);
+    z-index: 1;
+
+    mat-icon {
+      font-size: 1.25rem;
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+
+    &[data-tipo='llamada'] {
+      background: color-mix(in srgb, #1565c0 16%, var(--mat-sys-surface, #fff));
+      color: #1565c0;
+    }
+    &[data-tipo='correo'] {
+      background: color-mix(in srgb, #6a1b9a 16%, var(--mat-sys-surface, #fff));
+      color: #6a1b9a;
+    }
+    &[data-tipo='reunion'] {
+      background: color-mix(in srgb, #00838f 16%, var(--mat-sys-surface, #fff));
+      color: #00838f;
+    }
+    &[data-tipo='tarea'] {
+      background: color-mix(in srgb, #b26a00 16%, var(--mat-sys-surface, #fff));
+      color: #b26a00;
+    }
+    &[data-tipo='nota'] {
+      background: color-mix(in srgb, #455a64 16%, var(--mat-sys-surface, #fff));
+      color: #455a64;
+    }
+  }
+
+  &__contenido {
+    min-width: 0;
+  }
+
+  &__encabezado {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  &__tipo {
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  &__estado {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+
+    &--pendiente {
+      background: color-mix(in srgb, #b26a00 18%, transparent);
+      color: #8a5200;
+    }
+    &--completada {
+      background: color-mix(in srgb, #2e7d32 18%, transparent);
+      color: #1b5e20;
+    }
+    &--cancelada {
+      background: color-mix(in srgb, #757575 22%, transparent);
+      color: #424242;
+    }
+  }
+
+  &__vencida {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    font-size: 0.72rem;
+    color: #c62828;
+    font-weight: 600;
+
+    mat-icon {
+      font-size: 0.95rem;
+      width: 0.95rem;
+      height: 0.95rem;
+    }
+  }
+
+  &__asunto {
+    margin: 0.35rem 0 0;
+    font-size: 0.92rem;
+  }
+
+  &__descripcion {
+    margin: 0.2rem 0 0;
+    font-size: 0.82rem;
+    opacity: 0.8;
+    white-space: pre-wrap;
+  }
+
+  &__fechas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+    margin-top: 0.4rem;
+    font-size: 0.75rem;
+    opacity: 0.75;
+
+    span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    mat-icon {
+      font-size: 0.9rem;
+      width: 0.9rem;
+      height: 0.9rem;
+    }
+  }
+
+  &__edicion {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-top: 0.5rem;
+
+    .campo-asunto,
+    .campo-descripcion {
+      width: 100%;
+    }
+  }
+
+  &__edicion-acciones {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .timeline-actividades__kpis {
+    grid-template-columns: 1fr;
+  }
+}

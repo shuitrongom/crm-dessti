@@ -50,36 +50,52 @@
         </button>
       </div>
       @if (v.destacar) {
-        <app-estado-chip etiqueta="Desviacion supera umbral" tono="advertencia" />
+        <app-estado-chip etiqueta="Desviación supera umbral" tono="advertencia" />
       }
-      <div class="pre-variacion">
-        <div>
-          <h3 class="pre-alta__titulo">Ingresos</h3>
-          <div class="pre-num">Estimado: {{ v.ingresosEstimados | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</div>
-          <div class="pre-num">Real: {{ v.ingresosReales | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</div>
-          <div
-            class="pre-renglon__valor"
-            [class.pre-renglon__valor--favorable]="v.ingresosFavorable"
-            [class.pre-renglon__valor--desfavorable]="!v.ingresosFavorable"
-          >
-            Variacion: {{ v.variacionIngresosImporte | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}
-            ({{ v.variacionIngresosPorcentaje | number: '1.2-2' }}%)
-            · {{ v.ingresosFavorable ? 'favorable' : 'desfavorable' }}
-          </div>
+
+      <div class="pre-var2">
+        <!-- Gráfica comparativa real vs estimado -->
+        <div class="pre-var2__grafica">
+          <app-metric-chart
+            [datos]="puntosVariacion(v)"
+            tipo="barras"
+            titulo="Real vs estimado"
+          />
         </div>
-        <div>
-          <h3 class="pre-alta__titulo">Egresos</h3>
-          <div class="pre-num">Estimado: {{ v.egresosEstimados | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</div>
-          <div class="pre-num">Real: {{ v.egresosReales | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</div>
-          <div
-            class="pre-renglon__valor"
-            [class.pre-renglon__valor--favorable]="v.egresosFavorable"
-            [class.pre-renglon__valor--desfavorable]="!v.egresosFavorable"
-          >
-            Variacion: {{ v.variacionEgresosImporte | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}
-            ({{ v.variacionEgresosPorcentaje | number: '1.2-2' }}%)
-            · {{ v.egresosFavorable ? 'favorable' : 'desfavorable' }}
-          </div>
+
+        <!-- Tarjetas KPI de variación con color semántico (favorable/desfavorable) -->
+        <div class="pre-var2__kpis">
+          <article class="pre-kpi" [class.pre-kpi--ok]="v.ingresosFavorable" [class.pre-kpi--mal]="!v.ingresosFavorable">
+            <div class="pre-kpi__top">
+              <span class="pre-kpi__label">Ingresos</span>
+              <span class="pre-kpi__delta">
+                <mat-icon aria-hidden="true">{{ v.ingresosFavorable ? 'trending_up' : 'trending_down' }}</mat-icon>
+                {{ v.variacionIngresosPorcentaje | number: '1.0-1' : 'es-MX' }}%
+              </span>
+            </div>
+            <div class="pre-kpi__real">{{ v.ingresosReales | currency: 'MXN' : 'symbol-narrow' : '1.0-0' : 'es-MX' }}</div>
+            <div class="pre-kpi__est">Estimado {{ v.ingresosEstimados | currency: 'MXN' : 'symbol-narrow' : '1.0-0' : 'es-MX' }}</div>
+            <div class="pre-kpi__pie">
+              {{ v.ingresosFavorable ? 'Favorable' : 'Desfavorable' }}
+              · {{ v.variacionIngresosImporte | currency: 'MXN' : 'symbol-narrow' : '1.0-0' : 'es-MX' }}
+            </div>
+          </article>
+
+          <article class="pre-kpi" [class.pre-kpi--ok]="v.egresosFavorable" [class.pre-kpi--mal]="!v.egresosFavorable">
+            <div class="pre-kpi__top">
+              <span class="pre-kpi__label">Egresos</span>
+              <span class="pre-kpi__delta">
+                <mat-icon aria-hidden="true">{{ v.egresosFavorable ? 'trending_down' : 'trending_up' }}</mat-icon>
+                {{ v.variacionEgresosPorcentaje | number: '1.0-1' : 'es-MX' }}%
+              </span>
+            </div>
+            <div class="pre-kpi__real">{{ v.egresosReales | currency: 'MXN' : 'symbol-narrow' : '1.0-0' : 'es-MX' }}</div>
+            <div class="pre-kpi__est">Estimado {{ v.egresosEstimados | currency: 'MXN' : 'symbol-narrow' : '1.0-0' : 'es-MX' }}</div>
+            <div class="pre-kpi__pie">
+              {{ v.egresosFavorable ? 'Favorable' : 'Desfavorable' }}
+              · {{ v.variacionEgresosImporte | currency: 'MXN' : 'symbol-narrow' : '1.0-0' : 'es-MX' }}
+            </div>
+          </article>
         </div>
       </div>
     </mat-card-content>

@@ -30,15 +30,15 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { GuardarPlanRequest, PlanesService } from '../services/planes.service';
 import { GirosService } from '../services/giros.service';
 import { DependenciasModulos, Giro, Moneda, ModuloCatalogo, Plan } from '../models/plataforma.models';
 import { GrupoModulos, TITULO_NUCLEO, humanizarGiro } from '../models/modulos-agrupados';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
+import { SelectableCard } from '../../../shared/components/selectable-card/selectable-card';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 
 /** Datos de entrada del dialogo: el Plan a editar o `null` para crear. */
 export interface DatosPlanDialog {
@@ -102,9 +102,8 @@ function ordenarPorBloques(modulos: readonly ModuloCatalogo[]): ModuloCatalogo[]
     MatInputModule,
     MatSelectModule,
     MatButtonModule,
-    MatCheckboxModule,
     MatIconModule,
-    MatProgressSpinnerModule,
+    SelectableCard,
   ],
   templateUrl: './plan-dialog.html',
   styleUrl: './plan-dialog.scss',
@@ -115,6 +114,7 @@ export class PlanDialog {
   private readonly girosService = inject(GirosService);
   private readonly datos = inject<DatosPlanDialog>(MAT_DIALOG_DATA);
   private readonly dialogRef = inject(MatDialogRef<PlanDialog, Plan>);
+  private readonly overlay = inject(OperacionOverlayService);
 
   protected readonly guardando = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -475,16 +475,24 @@ export class PlanDialog {
       ? this.service.actualizarPlan(this.datos.plan!.id, request)
       : this.service.crearPlan(request);
 
-    peticion.subscribe({
-      next: (plan) => {
-        this.guardando.set(false);
-        this.dialogRef.close(plan);
-      },
-      error: (e: HttpErrorResponse) => {
-        this.guardando.set(false);
-        this.error.set(mensajeDeError(e));
-      },
-    });
+    // Feedback visual animado durante el guardado (overlay central con remate
+    // de éxito), coherente en todo el sistema.
+    this.overlay
+      .ejecutar(peticion, {
+        tipo: this.esEdicion ? 'guardar' : 'crear',
+        textoProceso: this.esEdicion ? 'Guardando plan…' : 'Creando plan…',
+        textoExito: this.esEdicion ? 'Plan guardado' : 'Plan creado',
+      })
+      .subscribe({
+        next: (plan) => {
+          this.guardando.set(false);
+          this.dialogRef.close(plan);
+        },
+        error: (e: HttpErrorResponse) => {
+          this.guardando.set(false);
+          this.error.set(mensajeDeError(e));
+        },
+      });
   }
 
   protected cancelar(): void {

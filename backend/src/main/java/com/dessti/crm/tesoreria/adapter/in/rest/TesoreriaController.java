@@ -24,10 +24,13 @@ import com.dessti.crm.tesoreria.application.ConciliacionBancariaDto;
 import com.dessti.crm.tesoreria.application.CrearCuentaBancariaCommand;
 import com.dessti.crm.tesoreria.application.CuentaBancariaDto;
 import com.dessti.crm.tesoreria.application.EstadoCuentaBancarioDto;
+import com.dessti.crm.tesoreria.application.FlujoCajaDto;
 import com.dessti.crm.tesoreria.application.ImportarEstadoCuentaCommand;
 import com.dessti.crm.tesoreria.application.MovimientoBancarioDto;
 import com.dessti.crm.tesoreria.application.MovimientoImportado;
+import com.dessti.crm.tesoreria.application.RegistrarTransferenciaCommand;
 import com.dessti.crm.tesoreria.application.ServicioTesoreria;
+import com.dessti.crm.tesoreria.application.TransferenciaBancariaDto;
 import com.dessti.crm.tesoreria.domain.EstadoConciliacionBancaria;
 import com.dessti.crm.tesoreria.domain.EstadoConciliacionMovimiento;
 
@@ -233,6 +236,85 @@ public class TesoreriaController {
         EstadoConciliacionBancaria estadoInterpretado = interpretarEstadoConciliacion(estado);
         return PaginaResponse.de(servicioTesoreria.listarConciliaciones(
                 cuentaBancariaId, desde, hasta, estadoInterpretado, pageable));
+    }
+
+    // ------------------------------------------------------------------
+    // Flujo de caja / posicion de liquidez (suite Tesoreria)
+    // ------------------------------------------------------------------
+
+    /**
+     * Posicion de liquidez y flujo de caja del periodo (Req 43): saldo acumulado,
+     * entradas/salidas y flujo neto del rango, cuentas activas, partidas por conciliar y
+     * desglose mensual para la grafica de flujo. Solo lectura.
+     *
+     * @param desde inicio del periodo (inclusivo); opcional.
+     * @param hasta fin del periodo (inclusivo); opcional.
+     * @return 200 OK con el {@link FlujoCajaDto}.
+     */
+    @GetMapping("/flujo-caja")
+    @PreAuthorize("@autorizador.moduloHabilitado('tesoreria') and @autorizador.tiene('movimiento_bancario','leer')")
+    public ResponseEntity<FlujoCajaDto> flujoCaja(
+            @RequestParam(name = "desde", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam(name = "hasta", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+        return ResponseEntity.ok(servicioTesoreria.flujoCaja(desde, hasta));
+    }
+
+    // ------------------------------------------------------------------
+    // Transferencia_Bancaria (traspaso entre cuentas propias, Req 43)
+    // ------------------------------------------------------------------
+
+    /**
+     * Registra una Transferencia_Bancaria entre dos Cuentas_Bancarias de la Empresa
+     * (Req 43). Ambas cuentas deben existir, estar activas y compartir moneda.
+     *
+     * @param request datos del traspaso.
+     * @return 201 Created con el {@link TransferenciaBancariaDto} registrado.
+     */
+    @PostMapping("/transferencias")
+    @PreAuthorize("@autorizador.moduloHabilitado('tesoreria') and @autorizador.tiene('transferencia_bancaria','crear')")
+    public ResponseEntity<TransferenciaBancariaDto> registrarTransferencia(
+            @Valid @RequestBody RegistrarTransferenciaRequest request) {
+        RegistrarTransferenciaCommand comando = new RegistrarTransferenciaCommand(
+                request.cuentaOrigenId(), request.cuentaDestinoId(), request.monto(),
+                request.fecha(), request.concepto());
+        TransferenciaBancariaDto dto = servicioTesoreria.registrarTransferencia(comando);
+        return ResponseEntity.status(HttpStatus.CREATED).body(dto);
+    }
+
+    /**
+     * Consulta una Transferencia_Bancaria por su identificador (Req 23.3). 404 si no
+     * es accesible.
+     *
+     * @param id identificador de la transferencia.
+     * @return 200 OK con el {@link TransferenciaBancariaDto}.
+     */
+    @GetMapping("/transferencias/{id}")
+    @PreAuthorize("@autorizador.moduloHabilitado('tesoreria') and @autorizador.tiene('transferencia_bancaria','leer')")
+    public ResponseEntity<TransferenciaBancariaDto> consultarTransferencia(
+            @PathVariable("id") UUID id) {
+        return ResponseEntity.ok(servicioTesoreria.consultarTransferencia(id));
+    }
+
+    /**
+     * Lista las Transferencias_Bancarias del tenant de forma paginada (20 por
+     * defecto, 100 maximo) con filtro opcional por Cuenta_Bancaria (origen o destino)
+     * (Req 43).
+     *
+     * @param cuentaId Cuenta_Bancaria a filtrar; opcional.
+     * @param page     numero de pagina 0-index; opcional.
+     * @param size     tamano de pagina; opcional (por defecto 20, maximo 100).
+     * @return 200 OK con la pagina de {@link TransferenciaBancariaDto}.
+     */
+    @GetMapping("/transferencias")
+    @PreAuthorize("@autorizador.moduloHabilitado('tesoreria') and @autorizador.tiene('transferencia_bancaria','listar')")
+    public PaginaResponse<TransferenciaBancariaDto> listarTransferencias(
+            @RequestParam(name = "cuentaId", required = false) UUID cuentaId,
+            @RequestParam(name = "page", required = false) Integer page,
+            @RequestParam(name = "size", required = false) Integer size) {
+        Pageable pageable = PageRequestFactory.acotando(page, size);
+        return PaginaResponse.de(servicioTesoreria.listarTransferencias(cuentaId, pageable));
     }
 
     private static EstadoConciliacionMovimiento interpretarEstadoMovimiento(String valor) {

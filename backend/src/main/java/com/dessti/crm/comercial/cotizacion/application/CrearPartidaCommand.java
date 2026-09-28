@@ -19,10 +19,30 @@ import java.util.UUID;
  * @param cantidad       cantidad; entero en [1, 999,999] (Req 6.3, 6.4).
  * @param precioUnitario precio unitario; en [0.01, 999,999,999.99]. Si es
  *                       {@code null} y hay {@code productoId}, se intenta sugerir.
+ * @param descuento      descuento (monto) de la partida; {@code null}=0, no
+ *                       negativo, no mayor que el importe bruto (V80).
+ * @param tasaIva        etiqueta de la tasa de IVA ({@code 16}/{@code 8}/{@code 0}/
+ *                       {@code exento}); {@code null}/blanco usa 16% (V80).
  */
 public record CrearPartidaCommand(
         UUID productoId,
         String descripcion,
         int cantidad,
-        BigDecimal precioUnitario) {
+        BigDecimal precioUnitario,
+        BigDecimal descuento,
+        String tasaIva) {
+
+    /**
+     * Constructor de conveniencia sin desglose fiscal (descuento 0, IVA por
+     * defecto 16%). Preserva el contrato previo a V80.
+     *
+     * @param productoId     Producto referido; opcional.
+     * @param descripcion    descripcion de la partida.
+     * @param cantidad       cantidad.
+     * @param precioUnitario precio unitario; opcional.
+     */
+    public CrearPartidaCommand(UUID productoId, String descripcion, int cantidad,
+                               BigDecimal precioUnitario) {
+        this(productoId, descripcion, cantidad, precioUnitario, null, null);
+    }
 }

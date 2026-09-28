@@ -21,7 +21,7 @@
 //     del Paquete (misma regla que el backend, ~30 dias/mes).
 // =============================================================================
 
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -32,8 +32,9 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
+import { SelectableCard } from '../../../shared/components/selectable-card/selectable-card';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 import {
   GuardarPaqueteSuscripcionRequest,
   PaquetesSuscripcionService,
@@ -63,6 +64,9 @@ const DURACION_MAXIMA_DIAS = 365;
 
 /** Aproximacion de dias por mes usada para validar la prueba (espejo del backend). */
 const DIAS_POR_MES = 30;
+
+/** Duracion maxima del periodo de prueba en meses (regla de negocio). */
+const DURACION_PRUEBA_MAXIMA_MESES = 6;
 
 /**
  * Orden canonico de los bloques (modulos) tal como aparecen en el documento de
@@ -120,7 +124,7 @@ function ordenarPorBloques(modulos: readonly ModuloCatalogo[]): ModuloCatalogo[]
     MatButtonModule,
     MatCheckboxModule,
     MatIconModule,
-    MatProgressSpinnerModule,
+    SelectableCard,
   ],
   templateUrl: './paquete-suscripcion-dialog.html',
   styleUrl: './paquete-suscripcion-dialog.scss',
@@ -132,6 +136,7 @@ export class PaqueteSuscripcionDialog {
   private readonly girosService = inject(GirosService);
   private readonly datos = inject<DatosPaqueteSuscripcionDialog>(MAT_DIALOG_DATA);
   private readonly dialogRef = inject(MatDialogRef<PaqueteSuscripcionDialog, PaqueteSuscripcion>);
+  private readonly overlay = inject(OperacionOverlayService);
 
   protected readonly guardando = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -187,7 +192,7 @@ export class PaqueteSuscripcionDialog {
     ],
     admitePrueba: [this.datos.paquete?.admitePrueba ?? false],
     // Meses de prueba: obligatoria (>= 1) SOLO cuando admite prueba; se habilita
-    // dinamicamente en el effect de sincronizacion de la casilla.
+    // imperativamente en sincronizarCampoPrueba (llamado desde cambiarAdmitePrueba).
     duracionPruebaMeses: [this.datos.paquete?.duracionPruebaMeses ?? null as number | null],
     giroId: [this.datos.paquete?.giroId ?? '', [Validators.required]],
     monedaCodigo: [this.datos.paquete?.monedaCodigo ?? '', [Validators.required]],
@@ -211,6 +216,30 @@ export class PaqueteSuscripcionDialog {
   protected cambiarAdmitePrueba(admite: boolean): void {
     this.formulario.controls.admitePrueba.setValue(admite);
     this.admitePrueba.set(admite);
+    this.sincronizarCampoPrueba(admite);
+  }
+
+  /**
+   * Habilita/valida el campo de meses de prueba segun admita o no prueba:
+   *   - admite  -> habilitado y obligatorio (>= 1).
+   *   - no admite -> deshabilitado, sin validadores y limpio (no invalida el form).
+   * Imperativo (no effect) para no pisar el valor que escribe el Usuario.
+   */
+  private sincronizarCampoPrueba(admite: boolean): void {
+    const control = this.formulario.controls.duracionPruebaMeses;
+    if (admite) {
+      control.setValidators([
+        Validators.required,
+        Validators.min(1),
+        Validators.max(DURACION_PRUEBA_MAXIMA_MESES),
+      ]);
+      control.enable({ emitEvent: false });
+    } else {
+      control.clearValidators();
+      control.setValue(null, { emitEvent: false });
+      control.disable({ emitEvent: false });
+    }
+    control.updateValueAndValidity({ emitEvent: false });
   }
 
   /** Clave del Giro seleccionado, o `null` si aun no se elige (para filtrar). */
@@ -300,20 +329,10 @@ export class PaqueteSuscripcionDialog {
   });
 
   constructor() {
-    // Sincroniza validadores del campo de prueba con el estado de la casilla:
-    // obligatoria (>= 1) al admitir prueba; sin validadores (y limpia) al no.
-    effect(() => {
-      const control = this.formulario.controls.duracionPruebaMeses;
-      if (this.admitePrueba()) {
-        control.setValidators([Validators.required, Validators.min(1)]);
-        control.enable({ emitEvent: false });
-      } else {
-        control.clearValidators();
-        control.setValue(null, { emitEvent: false });
-        control.disable({ emitEvent: false });
-      }
-      control.updateValueAndValidity({ emitEvent: false });
-    });
+    // Estado INICIAL del campo de prueba segun el paquete precargado. La
+    // sincronizacion posterior es IMPERATIVA (en cambiarAdmitePrueba) para
+    // evitar que un effect reactivo pise el valor recien escrito por el Usuario.
+    this.sincronizarCampoPrueba(this.admitePrueba());
 
     // Precarga de precios/seleccion en modo edicion desde el Paquete.
     if (this.datos.paquete) {
@@ -500,30 +519,72 @@ export class PaqueteSuscripcionDialog {
     return Number.isFinite(n) && n >= 0 ? n : 0;
   }
 
+  /**
+   * Construye un mensaje es-MX con los campos obligatorios pendientes, para que
+   * al pulsar "Crear/Guardar" con el formulario invalido el Usuario vea SIEMPRE
+   * una razon (nunca un boton que "no hace nada").
+   */
+  private mensajeCamposFaltantes(): string {
+    const c = this.formulario.controls;
+    const faltantes: string[] = [];
+    if (c.nombre.invalid) {
+      faltantes.push('nombre del paquete');
+    }
+    if (c.maxUsuarios.invalid) {
+      faltantes.push('máximo de usuarios');
+    }
+    if (c.duracionDias.invalid) {
+      faltantes.push('duración (1 a 365 días)');
+    }
+    if (c.giroId.invalid) {
+      faltantes.push('giro');
+    }
+    if (c.monedaCodigo.invalid) {
+      faltantes.push('moneda');
+    }
+    if (this.admitePrueba() && c.duracionPruebaMeses.invalid) {
+      faltantes.push('duración de la prueba (meses)');
+    }
+    if (faltantes.length === 0) {
+      return 'Revisa los datos del formulario antes de continuar.';
+    }
+    return `Faltan datos obligatorios: ${this.unir(faltantes)}.`;
+  }
+
   protected guardar(): void {
     this.error.set(null);
     if (this.formulario.invalid) {
+      // Nunca dejar el guardado "sin respuesta": se marca el formulario y se
+      // muestra un mensaje visible indicando qué falta por capturar.
       this.formulario.markAllAsTouched();
+      this.error.set(this.mensajeCamposFaltantes());
       return;
     }
     const v = this.formulario.getRawValue();
 
-    // Coherencia del periodo de prueba (espejo del backend, ~30 dias/mes): cuando
-    // admite prueba, los meses (>= 1) equivalen a meses*30 dias, que no pueden
-    // exceder la duracion del Paquete.
+    // Periodo de prueba: cuando admite prueba, los meses deben estar entre 1 y el
+    // maximo permitido (regla de negocio: 6 meses) y su equivalente en dias
+    // (~30 dias/mes, espejo del backend) no puede exceder la duracion del contrato.
     const admite = v.admitePrueba;
     const meses = admite ? Number(v.duracionPruebaMeses) : null;
     if (admite) {
       if (meses === null || !Number.isFinite(meses) || meses < 1) {
-        this.error.set('El periodo de prueba debe ser de al menos 1 mes.');
+        this.error.set('El período de prueba debe ser de al menos 1 mes.');
+        this.formulario.markAllAsTouched();
+        return;
+      }
+      if (meses > DURACION_PRUEBA_MAXIMA_MESES) {
+        this.error.set(
+          `El período de prueba no puede exceder ${DURACION_PRUEBA_MAXIMA_MESES} meses.`,
+        );
         this.formulario.markAllAsTouched();
         return;
       }
       const diasPrueba = meses * DIAS_POR_MES;
       if (diasPrueba > Number(v.duracionDias)) {
         this.error.set(
-          `El periodo de prueba (${meses} meses \u2248 ${diasPrueba} dias) no puede exceder ` +
-            `la duracion del paquete (${Number(v.duracionDias)} dias).`,
+          `El período de prueba (${meses} meses ≈ ${diasPrueba} días) no puede exceder ` +
+            `la duración del paquete (${Number(v.duracionDias)} días).`,
         );
         this.formulario.markAllAsTouched();
         return;
@@ -532,11 +593,14 @@ export class PaqueteSuscripcionDialog {
 
     this.guardando.set(true);
 
-    // preciosModulos SOLO con los modulos marcados; su precio (>= 0), 0 si vacio.
+    // preciosModulos SOLO con los modulos marcados. En modo prueba NO hay cobro:
+    // todos los modulos van a 0. Fuera de prueba, su precio capturado (>= 0, 0 si vacio).
     const preciosModulos: Record<string, number> = {};
     const precios = this.precios();
     for (const clave of this.seleccion()) {
-      preciosModulos[clave] = Math.round(this.aNumero(precios.get(clave)) * 100) / 100;
+      preciosModulos[clave] = admite
+        ? 0
+        : Math.round(this.aNumero(precios.get(clave)) * 100) / 100;
     }
 
     const request: GuardarPaqueteSuscripcionRequest = {
@@ -553,16 +617,23 @@ export class PaqueteSuscripcionDialog {
       ? this.service.actualizarPaquete(this.datos.paquete!.id, request)
       : this.service.crearPaquete(request);
 
-    peticion.subscribe({
-      next: (paquete) => {
-        this.guardando.set(false);
-        this.dialogRef.close(paquete);
-      },
-      error: (e: HttpErrorResponse) => {
-        this.guardando.set(false);
-        this.error.set(mensajeDeError(e));
-      },
-    });
+    // Envuelve la operación con el overlay animado de guardado (feedback premium).
+    this.overlay
+      .ejecutar(peticion, {
+        tipo: this.esEdicion ? 'guardar' : 'crear',
+        textoProceso: this.esEdicion ? 'Guardando cambios…' : 'Creando paquete…',
+        textoExito: this.esEdicion ? 'Cambios guardados' : 'Paquete creado',
+      })
+      .subscribe({
+        next: (paquete) => {
+          this.guardando.set(false);
+          this.dialogRef.close(paquete);
+        },
+        error: (e: HttpErrorResponse) => {
+          this.guardando.set(false);
+          this.error.set(mensajeDeError(e));
+        },
+      });
   }
 
   protected cancelar(): void {

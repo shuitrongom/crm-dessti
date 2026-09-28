@@ -212,6 +212,18 @@
                 <mat-label>Precio unitario (opcional)</mat-label>
                 <input matInput type="number" formControlName="precioUnitario" min="0.01" step="0.01" />
               </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Descuento (opcional)</mat-label>
+                <input matInput type="number" formControlName="descuento" min="0" step="0.01" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>IVA</mat-label>
+                <mat-select formControlName="tasaIva">
+                  @for (t of tasasIva; track t.valor) {
+                    <mat-option [value]="t.valor">{{ t.etiqueta }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
               <div class="cotizacion-detalle__form-acciones">
                 <button matButton type="button" (click)="alternarFormPartida()" [disabled]="guardando()">
                   Cancelar
@@ -236,8 +248,25 @@
                 {{ p.precioUnitario | currency: moneda() : 'symbol-narrow' : '1.2-2' : 'es-MX' }}
               </td>
             </ng-container>
+            <ng-container matColumnDef="descuento">
+              <th mat-header-cell *matHeaderCellDef class="cotizacion-detalle__num">Descuento</th>
+              <td mat-cell *matCellDef="let p" class="cotizacion-detalle__num">
+                {{ p.descuento | currency: moneda() : 'symbol-narrow' : '1.2-2' : 'es-MX' }}
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="iva">
+              <th mat-header-cell *matHeaderCellDef class="cotizacion-detalle__num">IVA</th>
+              <td mat-cell *matCellDef="let p" class="cotizacion-detalle__num">
+                {{ etiquetaIva(p.tasaIva) }}
+                @if (p.iva > 0) {
+                  <span class="cotizacion-detalle__iva-monto">
+                    ({{ p.iva | currency: moneda() : 'symbol-narrow' : '1.2-2' : 'es-MX' }})
+                  </span>
+                }
+              </td>
+            </ng-container>
             <ng-container matColumnDef="subtotal">
-              <th mat-header-cell *matHeaderCellDef class="cotizacion-detalle__num">Subtotal</th>
+              <th mat-header-cell *matHeaderCellDef class="cotizacion-detalle__num">Importe</th>
               <td mat-cell *matCellDef="let p" class="cotizacion-detalle__num">
                 {{ p.subtotal | currency: moneda() : 'symbol-narrow' : '1.2-2' : 'es-MX' }}
               </td>
@@ -251,6 +280,28 @@
               <dt>Subtotal</dt>
               <dd>{{ c.subtotal | currency: moneda() : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</dd>
             </div>
+            @if (c.descuentoGlobal > 0) {
+              <div>
+                <dt>Descuento global</dt>
+                <dd>− {{ c.descuentoGlobal | currency: moneda() : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</dd>
+              </div>
+            }
+            <div>
+              <dt>IVA</dt>
+              <dd>{{ c.iva | currency: moneda() : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</dd>
+            </div>
+            @if (c.retencionIsr > 0) {
+              <div>
+                <dt>Retención ISR</dt>
+                <dd>− {{ c.retencionIsr | currency: moneda() : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</dd>
+              </div>
+            }
+            @if (c.retencionIva > 0) {
+              <div>
+                <dt>Retención IVA</dt>
+                <dd>− {{ c.retencionIva | currency: moneda() : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</dd>
+              </div>
+            }
             <div class="cotizacion-detalle__total">
               <dt>Total</dt>
               <dd>{{ c.total | currency: moneda() : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</dd>
