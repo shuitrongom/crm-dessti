@@ -106,7 +106,7 @@ class OportunidadControllerTest {
     @Test
     void cambiarEtapa_devuelve200_conNuevaEtapa() throws Exception {
         when(autorizador.tiene("oportunidad", "cambiar_estado")).thenReturn(true);
-        when(servicioOportunidades.cambiarEtapa(eq(ID), eq("calificado")))
+        when(servicioOportunidades.cambiarEtapa(eq(ID), eq("calificado"), any()))
                 .thenReturn(oportunidadDto("calificado"));
 
         mockMvc.perform(put("/oportunidades/{id}/etapa", ID).with(user("ventas")).with(csrf())
@@ -121,7 +121,7 @@ class OportunidadControllerTest {
     @Test
     void cambiarEtapa_propaga409_cuandoTransicionInvalida() throws Exception {
         when(autorizador.tiene("oportunidad", "cambiar_estado")).thenReturn(true);
-        when(servicioOportunidades.cambiarEtapa(eq(ID), eq("ganado")))
+        when(servicioOportunidades.cambiarEtapa(eq(ID), eq("ganado"), any()))
                 .thenThrow(new TransicionInvalidaException("Transicion de etapa invalida."));
 
         mockMvc.perform(put("/oportunidades/{id}/etapa", ID).with(user("ventas")).with(csrf())
