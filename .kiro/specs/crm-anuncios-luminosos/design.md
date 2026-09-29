@@ -980,7 +980,7 @@ Muchos criterios de aceptación se rigen por transiciones de estado explícitas.
 
 ### Cotización (Req 6.6, 6.7)
 
-`borrador → enviada → {aprobada | rechazada}`
+`borrador → enviada → {aprobada | rechazada}`. Además de las transiciones de la máquina pura, la capa de aplicación aplica una **guarda de vigencia** (Req 6.11): pasar a `enviada` o a `aprobada` exige que la Cotización no esté vencida (`valido_hasta ≥ hoy`, con `hoy` de un reloj UTC inyectable); una Cotización vencida se rechaza con 422 conservando el estado. El día de vigencia es aún válido (frontera inclusiva) y una Cotización sin `valido_hasta` no expira. `rechazada` no queda restringida por la vigencia.
 
 ```mermaid
 stateDiagram-v2
@@ -1017,7 +1017,7 @@ stateDiagram-v2
 
 ### Orden de Trabajo de Instalación (Req 19.5, 19.6)
 
-`programada → {en_curso | cancelada}`, `en_curso → {completada | cancelada}`. `completada` requiere Lista_Pendientes sin ítems abiertos. Finales: `completada`, `cancelada`.
+`programada → {en_curso | cancelada}`, `en_curso → {completada | cancelada}`. `completada` requiere **dos** guardas de negocio, verificadas en la capa de aplicación tras validar la transición: (1) al menos una evidencia fotográfica adjunta (`evidencia_instalacion`), y (2) Lista_Pendientes sin ítems abiertos. No se puede cerrar una instalación sin evidencia que la respalde. Finales: `completada`, `cancelada`.
 
 ### Ticket de Servicio (Req 20.4, 20.5)
 
@@ -1150,6 +1150,12 @@ Las siguientes propiedades se derivan del análisis de prework de los criterios 
 
 **Validates: Requirements 6.4, 31.4**
 
+### Property 3-bis: Guarda de vigencia de la Cotización
+
+*Para cualquier* Cotización con una fecha de vigencia `valido_hasta` y cualquier fecha actual `hoy`, la transición a `enviada` o a `aprobada` (incluido el envío por correo que promueve a `enviada`) se acepta **solo si** la Cotización no está vencida, es decir `valido_hasta ≥ hoy` (frontera inclusiva); si `valido_hasta < hoy` la transición se rechaza con 422 y el estado se conserva. Una Cotización con `valido_hasta` nula nunca está vencida. La transición a `rechazada` no queda restringida por la vigencia. El predicado de vigencia es una función pura del dominio (`estaVencida(hoy)`) y la fecha actual proviene de un reloj UTC inyectable.
+
+**Validates: Requirements 6.11**
+
 ### Property 4: Cálculo fiscal de la Factura (CFDI)
 
 *Para cualquier* Factura con subtotal válido y retenciones aplicables, el IVA es igual a `round(subtotal × 0.16, 2)` y el total es igual a `round(subtotal + IVA − retenciones, 2)`, con aritmética decimal.
@@ -1164,7 +1170,7 @@ Las siguientes propiedades se derivan del análisis de prework de los criterios 
 
 ### Property 6: Guarda de cierre de Orden de Trabajo de Instalación
 
-*Para cualquier* Orden_Trabajo_Instalacion, la transición a "completada" se permite si y solo si su Lista_Pendientes no contiene ningún elemento sin resolver.
+*Para cualquier* Orden_Trabajo_Instalacion en un estado desde el que "completada" es una transición válida, la transición a "completada" se permite si y solo si se cumplen **ambas** condiciones: (a) la OTI tiene al menos una evidencia fotográfica adjunta, y (b) su Lista_Pendientes no contiene ningún elemento sin resolver. Si falta la evidencia se rechaza con 422 antes de evaluar los pendientes; si hay evidencia pero quedan pendientes sin resolver se rechaza con 422 enumerando sus descripciones. En cualquier rechazo el estado se conserva.
 
 **Validates: Requirements 19.6**
 
@@ -1179,6 +1185,18 @@ Las siguientes propiedades se derivan del análisis de prework de los criterios 
 *Para cualquier* Prueba_Diseno en estado "pendiente" que sea rechazada, el sistema conserva el historial y genera una nueva Prueba_Diseno con número de versión igual al anterior más 1 y estado "pendiente".
 
 **Validates: Requirements 15.3, 15.4**
+
+### Property 8-bis: Guarda de baja de Cliente con actividad comercial abierta
+
+*Para cualquier* Cliente activo, la baja lógica (marcar como inactivo) se permite **si y solo si** el Cliente no tiene actividad comercial abierta: ninguna Oportunidad en etapa no final (distinta de "ganado"/"perdido") y ninguna Cotizacion en estado "borrador" o "enviada". Si tiene al menos una de ellas, la baja se rechaza con 422 y el Cliente se conserva activo. La verificación es de solo lectura, acotada al tenant vigente, y vive en la capa de aplicación (`ServicioClientes`) porque cruza los agregados de Oportunidad y Cotizacion mediante puertos de solo lectura.
+
+**Validates: Requirements 5.10**
+
+### Property 8-ter: Conversión única de Oportunidad ganada
+
+*Para cualquier* Oportunidad, la conversión en Cotizacion se permite **si y solo si** su etapa es "ganado" **y** aún no tiene una Cotizacion vinculada. Si ya fue convertida (tiene `cotizacion_id`), un nuevo intento se rechaza con 422 sin crear una segunda Cotizacion y conservando el vínculo existente; una Oportunidad se convierte a lo sumo una vez. El predicado de conversión previa (`estaConvertida`) es una función pura del dominio, y la guarda se aplica en la capa de aplicación **antes** de invocar la creación de la Cotizacion, para no generar una Cotizacion huérfana.
+
+**Validates: Requirements 14.5, 14.6, 14.7**
 
 ### Property 9: No negatividad de existencias de inventario
 

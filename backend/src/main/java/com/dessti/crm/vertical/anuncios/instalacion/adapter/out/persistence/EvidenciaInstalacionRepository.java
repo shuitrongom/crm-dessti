@@ -28,4 +28,14 @@ public interface EvidenciaInstalacionRepository extends JpaRepository<EvidenciaI
      */
     List<EvidenciaInstalacion> findByOrdenTrabajoInstalacionIdOrderByCreatedAtAsc(
             UUID ordenTrabajoInstalacionId);
+
+    /**
+     * Indica si una Orden_Trabajo_Instalacion del tenant vigente tiene al menos una
+     * evidencia fotografica adjunta (Req 19.6). Sustenta la guarda de cierre: una OTI
+     * no puede completarse sin evidencia que respalde la instalacion.
+     *
+     * @param ordenTrabajoInstalacionId OTI cuya existencia de evidencias se comprueba.
+     * @return {@code true} si existe al menos una evidencia; {@code false} en otro caso.
+     */
+    boolean existsByOrdenTrabajoInstalacionId(UUID ordenTrabajoInstalacionId);
 }

@@ -163,11 +163,37 @@ class MaterialTest {
     }
 
     @Test
-    @DisplayName("desactivar realiza la baja logica del Material (Req 18, 3.1)")
+    @DisplayName("desactivar realiza la baja logica del Material sin existencias (Req 18, 3.1)")
     void desactivarBajaLogica() {
         Material material = Material.crear("Soldadura", "kg", BigDecimal.ZERO, ACTOR);
 
         material.desactivar(ACTOR);
+
+        assertThat(material.isActivo()).isFalse();
+    }
+
+    @Test
+    @DisplayName("desactivar rechaza dar de baja un Material con existencias > 0 (regla de negocio, 422)")
+    void desactivarConExistenciasRechaza() {
+        Material material = materialConExistencias(new BigDecimal("5"), BigDecimal.ZERO);
+
+        assertThatThrownBy(() -> material.desactivar(ACTOR))
+                .isInstanceOf(ReglaNegocioException.class);
+        // El Material se conserva ACTIVO (la baja no se aplica).
+        assertThat(material.isActivo()).isTrue();
+        assertThat(material.getExistencias()).isEqualByComparingTo("5");
+    }
+
+    @Test
+    @DisplayName("desactivar es idempotente sobre un Material ya inactivo aunque tenga existencias")
+    void desactivarInactivoEsIdempotente() {
+        // Un Material con existencias que ya se dio de baja (p. ej. antes de tener saldo)
+        // no revalida: desactivarlo de nuevo no falla ni cambia su estado.
+        Material material = Material.crear("Cable", "metro", BigDecimal.ZERO, ACTOR);
+        material.desactivar(ACTOR); // baja con 0 existencias
+        material.aplicarMovimiento(TipoMovimientoInventario.ENTRADA, new BigDecimal("3"), ACTOR);
+
+        material.desactivar(ACTOR); // idempotente: ya esta inactivo
 
         assertThat(material.isActivo()).isFalse();
     }

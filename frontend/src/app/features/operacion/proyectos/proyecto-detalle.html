@@ -1,4 +1,7 @@
-<app-page-header titulo="Detalle de proyecto" subtitulo="Consulta el estado consolidado del proyecto y el avance de cada uno de sus sitios.">
+<app-page-header
+  [titulo]="proyecto()?.nombre || 'Detalle del proyecto'"
+  subtitulo="Consulta el avance consolidado del proyecto y gestiona sus sitios."
+>
   <div acciones>
     <a matButton routerLink=".." aria-label="Volver al listado de proyectos">
       <mat-icon aria-hidden="true">arrow_back</mat-icon>
@@ -26,7 +29,7 @@
         </mat-card-header>
         @if (puedeAgregarSitio) {
           <mat-card-actions>
-            <button matButton="tonal" type="button" (click)="alternarFormulario()">
+            <button matButton="tonal" type="button" (click)="nuevoSitio()">
               <mat-icon aria-hidden="true">add_location_alt</mat-icon>
               Agregar sitio
             </button>
@@ -38,30 +41,58 @@
       @if (esMultisitio() && p.sitiosMultisitio.length > 0) {
         <app-dashboard-section layout="apilado">
           <div kpis>
-            <app-kpi-tile
-              icono="store"
-              tono="primario"
-              etiqueta="Sucursales"
-              [valor]="resumenMultisitio().total"
-            />
-            <app-kpi-tile
-              icono="schedule"
-              tono="advertencia"
-              etiqueta="Pendientes"
-              [valor]="resumenMultisitio().pendientes"
-            />
-            <app-kpi-tile
-              icono="engineering"
-              tono="info"
-              etiqueta="En curso"
-              [valor]="resumenMultisitio().enCurso"
-            />
-            <app-kpi-tile
-              icono="check_circle"
-              tono="exito"
-              etiqueta="Entregadas"
-              [valor]="resumenMultisitio().entregados"
-            />
+            <button
+              type="button"
+              class="kpi-boton"
+              (click)="abrirInfoKpi('proyecto_sucursales_total', 'Sucursales', resumenMultisitio().total, 'conteo')"
+              aria-label="Ver explicación de Sucursales"
+            >
+              <app-kpi-tile
+                icono="store"
+                tono="primario"
+                etiqueta="Sucursales"
+                [valor]="resumenMultisitio().total"
+              />
+            </button>
+            <button
+              type="button"
+              class="kpi-boton"
+              (click)="abrirInfoKpi('proyecto_sucursales_pendientes', 'Pendientes', resumenMultisitio().pendientes, 'conteo')"
+              aria-label="Ver explicación de Pendientes"
+            >
+              <app-kpi-tile
+                icono="schedule"
+                tono="advertencia"
+                etiqueta="Pendientes"
+                [valor]="resumenMultisitio().pendientes"
+              />
+            </button>
+            <button
+              type="button"
+              class="kpi-boton"
+              (click)="abrirInfoKpi('proyecto_sucursales_en_curso', 'En curso', resumenMultisitio().enCurso, 'conteo')"
+              aria-label="Ver explicación de En curso"
+            >
+              <app-kpi-tile
+                icono="engineering"
+                tono="info"
+                etiqueta="En curso"
+                [valor]="resumenMultisitio().enCurso"
+              />
+            </button>
+            <button
+              type="button"
+              class="kpi-boton"
+              (click)="abrirInfoKpi('proyecto_sucursales_entregadas', 'Entregadas', resumenMultisitio().entregados, 'conteo')"
+              aria-label="Ver explicación de Entregadas"
+            >
+              <app-kpi-tile
+                icono="check_circle"
+                tono="exito"
+                etiqueta="Entregadas"
+                [valor]="resumenMultisitio().entregados"
+              />
+            </button>
           </div>
           <div grafica class="dash-grafica">
             <app-metric-chart
@@ -75,35 +106,6 @@
             <app-metric-chart [datos]="composicionFases()" tipo="dona" titulo="Sucursales por fase" />
           </div>
         </app-dashboard-section>
-      }
-
-      @if (formularioAbierto()) {
-        <mat-card appearance="outlined">
-          <mat-card-header>
-            <mat-card-title>Nuevo sitio</mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            <form class="ds-dialog-form" [formGroup]="form" (ngSubmit)="agregarSitio()" novalidate>
-              <mat-form-field appearance="outline">
-                <mat-label>Nombre del sitio</mat-label>
-                <input matInput type="text" formControlName="nombre" required />
-                @if (form.controls.nombre.hasError('required') && form.controls.nombre.touched) {
-                  <mat-error>El nombre es obligatorio.</mat-error>
-                }
-              </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>Dirección (opcional)</mat-label>
-                <input matInput type="text" formControlName="direccion" />
-              </mat-form-field>
-              <div class="proyecto-detalle__form-acciones">
-                <button matButton type="button" (click)="alternarFormulario()" [disabled]="guardando()">
-                  Cancelar
-                </button>
-                <button matButton="filled" type="submit" [disabled]="guardando()">Agregar</button>
-              </div>
-            </form>
-          </mat-card-content>
-        </mat-card>
       }
 
       <section class="proyecto-detalle__sitios" aria-label="Sitios del proyecto">
@@ -152,61 +154,97 @@
         }
       </section>
 
-      <!-- Sucursales multi-sitio (giros genericos): fase editable por sitio -->
+      <!-- Tablero Kanban de sucursales por fase (giros genericos, Req 3.2) -->
       @if (esMultisitio()) {
-        <section class="proyecto-detalle__sitios" aria-label="Sucursales del proyecto">
-          @for (s of p.sitiosMultisitio; track s.sitio.id) {
-            <mat-card appearance="outlined" class="proyecto-detalle__sitio">
-              <mat-card-header>
-                <mat-card-title>{{ s.sitio.nombre }}</mat-card-title>
-                @if (s.sitio.direccion) {
-                  <mat-card-subtitle>{{ s.sitio.direccion }}</mat-card-subtitle>
-                }
-              </mat-card-header>
-              <mat-card-content>
-                <app-progress-badge
-                  [avance]="porcentajeSitio(s)"
-                  [estado]="s.fase === 'entregado' ? 'cumplido' : (s.fase === 'pendiente' ? 'en_riesgo' : 'en_curso')"
-                />
-                <p class="proyecto-ms-fase">
-                  <app-estado-chip [etiqueta]="etiquetaFase[s.fase]" [tono]="tono(s.fase)" />
-                </p>
-                @if (s.evidenciaUrl) {
-                  <p class="proyecto-ms-evidencia">
-                    <mat-icon aria-hidden="true">attachment</mat-icon>
-                    <a [href]="s.evidenciaUrl" target="_blank" rel="noopener noreferrer">Ver evidencia</a>
-                  </p>
-                }
-                <div class="proyecto-ms-acciones">
-                  @if (siguienteFase(s); as destino) {
-                    <button matButton="tonal" type="button" (click)="avanzarSitio(s, destino)">
-                      <mat-icon aria-hidden="true">arrow_forward</mat-icon>
-                      Avanzar a {{ etiquetaFase[destino] }}
-                    </button>
-                  }
-                  @if (puedeCorregir) {
-                    <button matButton [matMenuTriggerFor]="menuCorregir" type="button">
-                      <mat-icon aria-hidden="true">edit</mat-icon>
-                      Corregir fase
-                    </button>
-                    <mat-menu #menuCorregir="matMenu">
-                      @for (f of fasesTodas; track f) {
+        <section class="kanban" aria-label="Tablero de sucursales por fase">
+          @for (col of columnasKanban(); track col.fase) {
+            <div class="kanban__col" [class]="'kanban__col--' + col.fase">
+              <header class="kanban__col-head">
+                <span class="kanban__col-icono" aria-hidden="true">
+                  <mat-icon>{{ col.icono }}</mat-icon>
+                </span>
+                <h3 class="kanban__col-titulo">{{ col.etiqueta }}</h3>
+                <span class="kanban__col-conteo" [attr.aria-label]="col.sitios.length + ' sucursales'">
+                  {{ col.sitios.length }}
+                </span>
+              </header>
+
+              <div class="kanban__col-body">
+                @for (s of col.sitios; track s.sitio.id) {
+                  <article
+                    class="kanban-card"
+                    [class.kanban-card--animada]="sitioAnimado() === s.sitio.id"
+                  >
+                    <div class="kanban-card__top">
+                      <span class="kanban-card__icono" aria-hidden="true">
+                        <mat-icon>{{ col.icono }}</mat-icon>
+                      </span>
+                      <div class="kanban-card__ident">
+                        <h4 class="kanban-card__nombre">{{ s.sitio.nombre }}</h4>
+                        @if (s.sitio.direccion) {
+                          <p class="kanban-card__dir">{{ s.sitio.direccion }}</p>
+                        }
+                      </div>
+                    </div>
+
+                    <app-progress-badge
+                      [avance]="porcentajeSitio(s)"
+                      [estado]="s.fase === 'entregado' ? 'cumplido' : (s.fase === 'pendiente' ? 'en_riesgo' : 'en_curso')"
+                    />
+
+                    @if (s.evidenciaUrl) {
+                      <p class="kanban-card__evidencia">
+                        <mat-icon aria-hidden="true">attachment</mat-icon>
+                        <a [href]="s.evidenciaUrl" target="_blank" rel="noopener noreferrer">Ver evidencia</a>
+                      </p>
+                    }
+
+                    <div class="kanban-card__acciones">
+                      @if (siguienteFase(s); as destino) {
                         <button
-                          mat-menu-item
+                          matButton="filled"
                           type="button"
-                          [disabled]="f === s.fase"
-                          (click)="corregirFase(s, f)"
+                          class="kanban-card__avanzar"
+                          (click)="avanzarSitio(s, destino)"
+                          [matTooltip]="'Avanzar a ' + etiquetaFase[destino]"
                         >
-                          {{ etiquetaFase[f] }}
+                          <mat-icon aria-hidden="true">{{ iconoFase[destino] }}</mat-icon>
+                          Avanzar
                         </button>
                       }
-                    </mat-menu>
-                  }
-                </div>
-              </mat-card-content>
-            </mat-card>
-          } @empty {
-            <p class="proyecto-detalle__vacio">Este proyecto aun no tiene sucursales registradas.</p>
+                      <button matIconButton type="button" (click)="abrirEvidencias(s)" matTooltip="Evidencias" aria-label="Evidencias de la sucursal">
+                        <mat-icon aria-hidden="true">photo_library</mat-icon>
+                      </button>
+                      @if (puedeAgregarSitio) {
+                        <button matIconButton type="button" (click)="editarSitio(s)" matTooltip="Editar sitio" aria-label="Editar sitio">
+                          <mat-icon aria-hidden="true">edit_location_alt</mat-icon>
+                        </button>
+                      }
+                      @if (puedeCorregir) {
+                        <button matIconButton [matMenuTriggerFor]="menuCorregir" type="button" matTooltip="Corregir fase" aria-label="Corregir fase">
+                          <mat-icon aria-hidden="true">more_vert</mat-icon>
+                        </button>
+                        <mat-menu #menuCorregir="matMenu">
+                          @for (f of fasesTodas; track f) {
+                            <button
+                              mat-menu-item
+                              type="button"
+                              [disabled]="f === s.fase"
+                              (click)="corregirFase(s, f)"
+                            >
+                              <mat-icon aria-hidden="true">{{ iconoFase[f] }}</mat-icon>
+                              {{ etiquetaFase[f] }}
+                            </button>
+                          }
+                        </mat-menu>
+                      }
+                    </div>
+                  </article>
+                } @empty {
+                  <p class="kanban__vacio">Sin sucursales</p>
+                }
+              </div>
+            </div>
           }
         </section>
       }

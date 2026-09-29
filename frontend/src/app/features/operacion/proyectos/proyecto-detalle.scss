@@ -5,13 +5,6 @@
   flex-direction: column;
   gap: var(--ds-space-4);
 
-  &__form-acciones {
-    display: flex;
-    justify-content: flex-end;
-    gap: var(--ds-space-2);
-    margin-top: var(--ds-space-2);
-  }
-
   &__sitios {
     display: grid;
     gap: var(--ds-space-3);
@@ -51,28 +44,218 @@
 // componentes compartidos <app-dashboard-section> + <app-kpi-tile>. Sus estilos
 // viven en esos componentes; aqui ya no se duplican.
 
-.proyecto-ms-fase {
-  margin: var(--ds-space-3) 0;
-}
+// =============================================================================
+// Tablero Kanban de sucursales por fase (Req 3.2) — vista premium
+// -----------------------------------------------------------------------------
+// Cuatro columnas (Pendiente, En preparacion, En instalacion, Entregado) con
+// cabecera coloreada por fase; cada sucursal es una tarjeta dentro de su columna.
+// Al avanzar/corregir, la tarjeta reaparece en su nueva columna con una animacion
+// de entrada. El color nunca es el unico portador de significado: cada columna y
+// tarjeta llevan titulo/etiqueta textual e icono.
+// =============================================================================
+.kanban {
+  display: grid;
+  gap: var(--ds-space-3);
+  grid-template-columns: 1fr;
+  align-items: start;
 
-.proyecto-ms-evidencia {
-  display: flex;
-  align-items: center;
-  gap: var(--ds-space-2);
-  margin: var(--ds-space-2) 0;
-  font-size: var(--ds-font-size-sm);
+  @include bp.from('md') {
+    grid-template-columns: repeat(2, 1fr);
+  }
 
-  mat-icon {
-    font-size: 1.1rem;
-    width: 1.1rem;
-    height: 1.1rem;
+  @include bp.from('lg') {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  &__col {
+    --k-accent: var(--ds-color-primary);
+
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: color-mix(in srgb, var(--k-accent) 5%, var(--mat-sys-surface, #fff));
+    border: 1px solid var(--mat-sys-outline-variant, #e2e0e8);
+    border-top: 3px solid var(--k-accent);
+    border-radius: 14px;
+    padding: var(--ds-space-3);
+    gap: var(--ds-space-3);
+
+    &--pendiente { --k-accent: var(--ds-color-warning, #b3760a); }
+    &--en_preparacion { --k-accent: var(--ds-color-info, #2563eb); }
+    &--en_instalacion { --k-accent: #7c4dff; }
+    &--entregado { --k-accent: var(--ds-color-success, #2e7d4f); }
+  }
+
+  &__col-head {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-2);
+  }
+
+  &__col-icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    inline-size: 2rem;
+    block-size: 2rem;
+    border-radius: 9px;
+    background: linear-gradient(135deg, var(--k-accent),
+      color-mix(in srgb, var(--k-accent) 55%, #fff));
+    color: #fff;
+
+    mat-icon { font-size: 1.15rem; inline-size: 1.15rem; block-size: 1.15rem; }
+  }
+
+  &__col-titulo {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    font-size: var(--ds-font-size-sm);
+    font-weight: var(--ds-font-weight-bold);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--mat-sys-on-surface, #1d1b20);
+  }
+
+  &__col-conteo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-inline-size: 1.5rem;
+    block-size: 1.5rem;
+    padding: 0 0.4rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    background: color-mix(in srgb, var(--k-accent) 18%, transparent);
+    color: var(--k-accent);
+  }
+
+  &__col-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-3);
+    min-height: 40px;
+  }
+
+  &__vacio {
+    margin: 0;
+    padding: var(--ds-space-3) 0;
+    text-align: center;
+    font-size: var(--ds-font-size-sm);
     color: var(--ds-color-text-muted);
   }
 }
 
-.proyecto-ms-acciones {
+// ---- Tarjeta de sucursal dentro de una columna ----
+.kanban-card {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: var(--ds-space-2);
-  margin-top: var(--ds-space-2);
+  padding: var(--ds-space-3);
+  background: var(--mat-sys-surface, #fff);
+  border: 1px solid var(--mat-sys-outline-variant, #e2e0e8);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.06);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(16, 24, 40, 0.1);
+  }
+
+  // Animacion de "llegada" a la nueva columna tras avanzar/corregir fase.
+  &--animada {
+    animation: kanban-entrada 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  &__top {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ds-space-2);
+  }
+
+  &__icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    inline-size: 2rem;
+    block-size: 2rem;
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--ds-color-primary) 12%, transparent);
+    color: var(--ds-color-primary);
+
+    mat-icon { font-size: 1.2rem; inline-size: 1.2rem; block-size: 1.2rem; }
+  }
+
+  &__ident {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  &__nombre {
+    margin: 0;
+    font-size: var(--ds-font-size-sm);
+    font-weight: var(--ds-font-weight-bold);
+    color: var(--mat-sys-on-surface, #1d1b20);
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  &__dir {
+    margin: 0.1rem 0 0;
+    font-size: 0.75rem;
+    color: var(--ds-color-text-muted);
+    overflow-wrap: anywhere;
+  }
+
+  &__evidencia {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-1);
+    margin: 0;
+    font-size: 0.75rem;
+
+    mat-icon { font-size: 1rem; width: 1rem; height: 1rem; color: var(--ds-color-text-muted); }
+    a { color: var(--ds-color-primary); overflow-wrap: anywhere; }
+  }
+
+  &__acciones {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-1);
+    margin-top: var(--ds-space-1);
+    padding-top: var(--ds-space-2);
+    border-top: 1px solid var(--ds-color-border);
+  }
+
+  &__avanzar {
+    flex: 1 1 auto;
+    border-radius: var(--ds-radius-pill) !important;
+    mat-icon { font-size: 1.05rem; width: 1.05rem; height: 1.05rem; }
+  }
+}
+
+@keyframes kanban-entrada {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.94);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(0) scale(1.03);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kanban-card {
+    transition: none;
+    &:hover { transform: none; }
+    &--animada { animation: none; }
+  }
 }

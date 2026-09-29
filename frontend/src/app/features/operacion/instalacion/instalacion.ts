@@ -1,39 +1,37 @@
 // =============================================================================
-// Vista de Ordenes de Trabajo de Instalacion / OTI (Req 19)
+// Vista de Ordenes de Trabajo de Instalacion / OTI (Req 19) — listado premium
 // -----------------------------------------------------------------------------
 // Listado paginado (DataTable) con filtros por estado, por Cliente (por NOMBRE
-// via app-entity-select; Req 11.2) y por Cuadrilla, programacion de una OTI a
-// partir de una Orden de Fabricacion terminada (con Cuadrilla y fecha), registro
-// de avance (pendientes/evidencias/resoluciones) y transiciones de estado
-// validas segun la maquina de estados. Acciones gobernadas por permiso
+// via app-entity-select; Req 11.2) y por Cuadrilla. La programacion de una OTI y
+// el registro de avance se hacen en MODALES animados (OtiFormDialog,
+// OtiAvanceDialog). Las transiciones de estado validas se ofrecen en un menu. Los
+// KPIs (programadas/en curso/completadas, con conteos reales del backend) abren el
+// modal explicativo del indicador. Acciones gobernadas por permiso
 // orden_trabajo_instalacion:{...}.
 //
 // NOTA SOBRE EL FILTRO DE CUADRILLA (Req 11.2): el backend NO expone un catalogo
 // de Cuadrillas — `cuadrilla_id` es una referencia debil (sin tabla `cuadrilla`
 // ni endpoint REST de listado; ver `NombresOperacionService.cuadrillas()`, que es
-// una lista vacia por diseno). Por ello, y siguiendo el mismo patron que el resto
-// del modulo (p. ej. el formulario de programacion, que captura la Cuadrilla por
-// identificador), el filtro de Cuadrilla se ofrece por identificador con seleccion
-// asistida en lugar de un selector por nombre. NO se inventa un endpoint. Cuando
-// el backend publique el catalogo de Cuadrillas, este filtro migrara a
-// app-entity-select igual que el de Cliente.
+// una lista vacia por diseno). Por ello el filtro (y la captura en el modal) se
+// ofrecen por identificador en lugar de un selector por nombre. NO se inventa un
+// endpoint. Cuando el backend publique el catalogo, migrara a app-entity-select.
 // =============================================================================
 
 import { Component, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Observable, of } from 'rxjs';
-import { MatCardModule } from '@angular/material/card';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { Observable, firstValueFrom, of } from 'rxjs';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDialog } from '@angular/material/dialog';
 
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../shared/components/state-container/state-container';
+import { KpiTile } from '../../../shared/components/kpi-tile/kpi-tile';
 import { ChipEstado, VarianteChipEstado } from '../../../shared/components/chip-estado/chip-estado';
 import { EntitySelect } from '../../../shared/components/entity-select/entity-select';
 import {
@@ -43,6 +41,10 @@ import {
 } from '../../../shared/components/data-table/data-table';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import {
+  IndicadorInfoDialog,
+  type DatosIndicadorInfo,
+} from '../../../shared/indicadores/indicador-info-dialog';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 import { FaseSolicitud } from '../../../shared/models/estado-solicitud';
@@ -57,21 +59,22 @@ import {
   OrdenTrabajoInstalacion,
   estadosDestinoOti,
 } from '../models/operacion.models';
+import { OtiFormDialog } from './oti-form-dialog';
+import { OtiAvanceDialog, OtiAvanceDialogData } from './oti-avance-dialog';
 
 @Component({
   selector: 'app-operacion-instalacion',
   imports: [
     ReactiveFormsModule,
-    MatCardModule,
     MatFormFieldModule,
     MatInputModule,
-    MatDatepickerModule,
     MatSelectModule,
     MatButtonModule,
     MatMenuModule,
     MatIconModule,
     PageHeader,
     StateContainer,
+    KpiTile,
     ChipEstado,
     EntitySelect,
     DataTable,
@@ -87,6 +90,7 @@ export class OperacionInstalacion {
   private readonly confirm = inject(ConfirmDialogService);
   private readonly toast = inject(NotificacionesService);
   private readonly auth = inject(AuthService);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly puedeCrear = this.auth.tienePermiso('orden_trabajo_instalacion', 'crear');
   protected readonly puedeGestionar = this.auth.tienePermiso(
@@ -108,10 +112,10 @@ export class OperacionInstalacion {
   /** Cuadrilla seleccionada en el filtro (identificador; sin catalogo backend). */
   protected readonly cuadrillaId = signal<string>('');
 
-  protected readonly guardando = signal(false);
-  protected readonly formularioAbierto = signal(false);
-  /** OTI sobre la que se registra avance (o null). */
-  protected readonly avanceDe = signal<OrdenTrabajoInstalacion | null>(null);
+  /** Conteos reales del backend para los indicadores (independientes del filtro). */
+  protected readonly totalProgramadas = signal<number | null>(null);
+  protected readonly totalEnCurso = signal<number | null>(null);
+  protected readonly totalCompletadas = signal<number | null>(null);
 
   protected readonly columnas: ColumnaTabla[] = [
     { clave: 'cliente', encabezado: 'Cliente' },
@@ -119,13 +123,6 @@ export class OperacionInstalacion {
     { clave: 'estado', encabezado: 'Estado' },
     { clave: 'acciones', encabezado: 'Acciones', alineacion: 'fin' },
   ];
-
-  protected readonly form = this.fb.nonNullable.group({
-    ordenFabricacionId: ['', [Validators.required]],
-    sitioId: ['', [Validators.required]],
-    cuadrillaId: ['', [Validators.required]],
-    fechaProgramada: ['', [Validators.required]],
-  });
 
   /**
    * Filtros del listado: Cliente por NOMBRE (app-entity-select expone el id
@@ -135,11 +132,6 @@ export class OperacionInstalacion {
   protected readonly formFiltro = this.fb.nonNullable.group({
     clienteId: [''],
     cuadrillaId: [''],
-  });
-
-  protected readonly formAvance = this.fb.nonNullable.group({
-    nuevosPendientes: [''],
-    evidencias: [''],
   });
 
   /**
@@ -165,10 +157,16 @@ export class OperacionInstalacion {
 
   constructor() {
     // Carga los catalogos de nombres (Cliente) para el selector por nombre y el
-    // render de la columna Cliente sin exponer UUIDs; luego el listado.
+    // render de la columna Cliente sin exponer UUIDs; luego el listado y conteos.
     this.nombres.cargar().subscribe({
-      next: () => this.cargar(),
-      error: () => this.cargar(),
+      next: () => {
+        this.cargar();
+        this.cargarConteos();
+      },
+      error: () => {
+        this.cargar();
+        this.cargarConteos();
+      },
     });
     // Aplica el filtro por Cliente al elegir/limpiar una opcion del selector.
     this.formFiltro.controls.clienteId.valueChanges.subscribe((valor) => {
@@ -227,6 +225,25 @@ export class OperacionInstalacion {
       });
   }
 
+  /**
+   * Carga los conteos de los indicadores con consultas de tamano 1 (solo
+   * totalElements), independientes del filtro de la tabla.
+   */
+  cargarConteos(): void {
+    this.service.listar({ estado: 'programada' }, 0, 1).subscribe({
+      next: (p) => this.totalProgramadas.set(p.totalElements),
+      error: () => this.totalProgramadas.set(null),
+    });
+    this.service.listar({ estado: 'en_curso' }, 0, 1).subscribe({
+      next: (p) => this.totalEnCurso.set(p.totalElements),
+      error: () => this.totalEnCurso.set(null),
+    });
+    this.service.listar({ estado: 'completada' }, 0, 1).subscribe({
+      next: (p) => this.totalCompletadas.set(p.totalElements),
+      error: () => this.totalCompletadas.set(null),
+    });
+  }
+
   cambiarFiltro(valor: EstadoOti | ''): void {
     this.estado.set(valor);
     this.page.set(0);
@@ -265,45 +282,71 @@ export class OperacionInstalacion {
     return estadosDestinoOti(oti.estado);
   }
 
-  alternarFormulario(): void {
-    this.formularioAbierto.update((v) => !v);
-    this.avanceDe.set(null);
-    if (this.formularioAbierto()) {
-      this.form.reset({ ordenFabricacionId: '', sitioId: '', cuadrillaId: '', fechaProgramada: '' });
-    }
+  /** Abre el modal de programacion de OTI y recarga si se programó. */
+  nuevo(): void {
+    const ref = this.dialog.open(OtiFormDialog, {
+      width: 'min(760px, 96vw)',
+      maxWidth: 'min(760px, 96vw)',
+      maxHeight: '92vh',
+      autoFocus: 'first-tabbable',
+      panelClass: 'ds-dialog-panel',
+    });
+    ref.afterClosed().subscribe((creada?: OrdenTrabajoInstalacion) => {
+      if (creada) {
+        this.toast.exito('Orden de trabajo programada.');
+        this.cargar();
+        this.cargarConteos();
+      }
+    });
   }
 
-  /** Programa una OTI a partir de una Orden de Fabricacion terminada (Req 19.1). */
-  programar(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
-    const v = this.form.getRawValue();
-    this.guardando.set(true);
-    this.service
-      .programar({
-        ordenFabricacionId: v.ordenFabricacionId.trim(),
-        sitioId: v.sitioId.trim(),
-        cuadrillaId: v.cuadrillaId.trim(),
-        fechaProgramada: v.fechaProgramada,
-      })
-      .subscribe({
-        next: () => {
-          this.guardando.set(false);
-          this.toast.exito('Orden de trabajo programada.');
-          this.formularioAbierto.set(false);
-          this.cargar();
-        },
-        error: (e: HttpErrorResponse) => {
-          this.guardando.set(false);
-          this.toast.error(mensajeDeError(e));
-        },
-      });
+  /** Abre el modal de registro de avance de una OTI. */
+  abrirAvance(oti: OrdenTrabajoInstalacion): void {
+    const data: OtiAvanceDialogData = { oti, nombreCliente: this.nombreCliente(oti.clienteId) };
+    const ref = this.dialog.open(OtiAvanceDialog, {
+      width: 'min(720px, 96vw)',
+      maxWidth: 'min(720px, 96vw)',
+      maxHeight: '92vh',
+      autoFocus: 'first-tabbable',
+      panelClass: 'ds-dialog-panel',
+      data,
+    });
+    ref.afterClosed().subscribe((registrado?: boolean) => {
+      if (registrado) {
+        this.toast.exito('Avance registrado.');
+        this.cargar();
+      }
+    });
+  }
+
+  /**
+   * Abre el dialogo explicativo de un indicador de OTIs. La clave debe coincidir
+   * con una del catálogo de indicadores.
+   */
+  abrirInfoKpi(clave: string, etiqueta: string, valor: number, unidad: string): void {
+    const datos: DatosIndicadorInfo = { clave, etiqueta, valor, unidad };
+    this.dialog.open(IndicadorInfoDialog, {
+      data: datos,
+      width: '32rem',
+      maxWidth: '92vw',
+      autoFocus: false,
+    });
   }
 
   /** Cambia el estado de una OTI con confirmacion (Req 19.5). */
   async cambiarEstado(oti: OrdenTrabajoInstalacion, estado: EstadoOti): Promise<void> {
+    // Guarda preventiva del cierre (Req 19.6): una OTI no puede completarse sin al
+    // menos una evidencia fotografica. Se verifica ANTES de confirmar consultando
+    // el detalle (que trae pendientes y evidencias), para no lanzar una peticion
+    // condenada al 422 y explicar al usuario que falta. El backend aplica la misma
+    // regla como fuente de verdad; esto solo mejora la experiencia.
+    if (estado === 'completada') {
+      const puede = await this.validarCierrePreventivo(oti);
+      if (!puede) {
+        return;
+      }
+    }
+
     const ok = await this.confirm.confirmar({
       titulo: 'Cambiar estado de la OTI',
       mensaje: `La orden de trabajo pasara a "${ETIQUETA_ESTADO_OTI[estado]}". Deseas continuar?`,
@@ -317,54 +360,41 @@ export class OperacionInstalacion {
       next: () => {
         this.toast.exito('Estado actualizado.');
         this.cargar();
+        this.cargarConteos();
       },
       error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
     });
   }
 
-  /** Abre/cierra el panel de registro de avance de una OTI. */
-  abrirAvance(oti: OrdenTrabajoInstalacion): void {
-    this.avanceDe.set(oti);
-    this.formularioAbierto.set(false);
-    this.formAvance.reset({ nuevosPendientes: '', evidencias: '' });
-  }
-
-  cerrarAvance(): void {
-    this.avanceDe.set(null);
-  }
-
-  /** Registra el avance (pendientes/evidencias) de la OTI seleccionada (Req 19.4). */
-  registrarAvance(): void {
-    const oti = this.avanceDe();
-    if (!oti) {
-      return;
+  /**
+   * Verifica preventivamente las guardas de cierre de una OTI (Req 19.6) antes de
+   * intentar completarla: (1) al menos una evidencia fotografica adjunta, y (2) sin
+   * pendientes por resolver. Devuelve `true` si el cierre puede proceder; si no,
+   * muestra un mensaje explicativo (es-MX) y devuelve `false`. Ante un error de red
+   * al consultar el detalle, deja que el flujo continue y sea el backend quien
+   * decida (fuente de verdad), evitando bloquear por un fallo transitorio.
+   */
+  private async validarCierrePreventivo(oti: OrdenTrabajoInstalacion): Promise<boolean> {
+    try {
+      const detalle = await firstValueFrom(this.service.consultarDetalle(oti.id));
+      if (detalle.evidencias.length === 0) {
+        this.toast.error(
+          'No se puede completar: la instalacion requiere al menos una evidencia fotografica. ' +
+            'Registra evidencia desde "Avance" antes de completar.',
+        );
+        return false;
+      }
+      const sinResolver = detalle.pendientes.filter((p) => !p.resuelto);
+      if (sinResolver.length > 0) {
+        const descripciones = sinResolver.map((p) => `«${p.descripcion}»`).join(', ');
+        this.toast.error(`No se puede completar: pendientes por resolver: [${descripciones}].`);
+        return false;
+      }
+      return true;
+    } catch {
+      // Fallo al consultar el detalle: no bloqueamos localmente; el backend
+      // aplicara la regla y devolvera 422 si corresponde.
+      return true;
     }
-    const v = this.formAvance.getRawValue();
-    const nuevosPendientes = this.aLista(v.nuevosPendientes);
-    const evidencias = this.aLista(v.evidencias);
-    if (nuevosPendientes.length === 0 && evidencias.length === 0) {
-      this.toast.info('Agrega al menos un pendiente o una evidencia.');
-      return;
-    }
-    this.guardando.set(true);
-    this.service.registrarAvance(oti.id, { nuevosPendientes, evidencias }).subscribe({
-      next: () => {
-        this.guardando.set(false);
-        this.toast.exito('Avance registrado.');
-        this.avanceDe.set(null);
-      },
-      error: (e: HttpErrorResponse) => {
-        this.guardando.set(false);
-        this.toast.error(mensajeDeError(e));
-      },
-    });
-  }
-
-  /** Convierte texto por lineas o comas en una lista sin vacios. */
-  private aLista(texto: string): string[] {
-    return texto
-      .split(/[\n,]/)
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
   }
 }

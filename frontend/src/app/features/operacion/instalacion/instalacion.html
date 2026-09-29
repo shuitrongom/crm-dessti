@@ -1,7 +1,7 @@
 <app-page-header titulo="Instalación (OTIs)" subtitulo="Gestiona las órdenes de trabajo de instalación (OTIs) y su avance en campo.">
   <div acciones>
     @if (puedeCrear) {
-      <button matButton="filled" type="button" (click)="alternarFormulario()">
+      <button matButton="filled" type="button" (click)="nuevo()">
         <mat-icon aria-hidden="true">add</mat-icon>
         Programar OTI
       </button>
@@ -9,78 +9,36 @@
   </div>
 </app-page-header>
 
-@if (formularioAbierto()) {
-  <mat-card appearance="outlined" class="operacion-form">
-    <mat-card-header>
-      <mat-card-title>Programar orden de trabajo</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      <form class="ds-dialog-form" [formGroup]="form" (ngSubmit)="programar()" novalidate>
-        <mat-form-field appearance="outline">
-          <mat-label>Orden de fabricacion terminada (identificador)</mat-label>
-          <input matInput type="text" formControlName="ordenFabricacionId" required />
-          @if (form.controls.ordenFabricacionId.hasError('required') && form.controls.ordenFabricacionId.touched) {
-            <mat-error>La orden de fabricacion es obligatoria.</mat-error>
-          }
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Sitio (identificador)</mat-label>
-          <input matInput type="text" formControlName="sitioId" required />
-          @if (form.controls.sitioId.hasError('required') && form.controls.sitioId.touched) {
-            <mat-error>El sitio es obligatorio.</mat-error>
-          }
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Cuadrilla (identificador)</mat-label>
-          <input matInput type="text" formControlName="cuadrillaId" required />
-          @if (form.controls.cuadrillaId.hasError('required') && form.controls.cuadrillaId.touched) {
-            <mat-error>La cuadrilla es obligatoria.</mat-error>
-          }
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Fecha programada</mat-label>
-          <input matInput [matDatepicker]="pickerFechaProgramada" formControlName="fechaProgramada" required />
-          <mat-datepicker-toggle matSuffix [for]="pickerFechaProgramada" />
-          <mat-datepicker #pickerFechaProgramada />
-          @if (form.controls.fechaProgramada.hasError('required') && form.controls.fechaProgramada.touched) {
-            <mat-error>La fecha programada es obligatoria.</mat-error>
-          }
-        </mat-form-field>
-        <div class="operacion-form__acciones">
-          <button matButton type="button" (click)="alternarFormulario()" [disabled]="guardando()">
-            Cancelar
-          </button>
-          <button matButton="filled" type="submit" [disabled]="guardando()">Programar</button>
-        </div>
-      </form>
-    </mat-card-content>
-  </mat-card>
-}
-
-@if (avanceDe(); as oti) {
-  <mat-card appearance="outlined" class="operacion-form">
-    <mat-card-header>
-      <mat-card-title>Registrar avance de la OTI de {{ nombreCliente(oti.clienteId) }}</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      <form class="ds-dialog-form" [formGroup]="formAvance" (ngSubmit)="registrarAvance()" novalidate>
-        <mat-form-field appearance="outline">
-          <mat-label>Nuevos pendientes</mat-label>
-          <textarea matInput rows="2" formControlName="nuevosPendientes"></textarea>
-          <mat-hint>Uno por linea o separados por comas.</mat-hint>
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Evidencias (referencias)</mat-label>
-          <textarea matInput rows="2" formControlName="evidencias"></textarea>
-          <mat-hint>URLs o claves; una por linea o separadas por comas.</mat-hint>
-        </mat-form-field>
-        <div class="operacion-form__acciones">
-          <button matButton type="button" (click)="cerrarAvance()" [disabled]="guardando()">Cancelar</button>
-          <button matButton="filled" type="submit" [disabled]="guardando()">Registrar avance</button>
-        </div>
-      </form>
-    </mat-card-content>
-  </mat-card>
+@if (fase() === "ok") {
+  <section class="operacion-kpis" aria-label="Indicadores de instalación">
+    <button
+      type="button"
+      class="kpi-boton"
+      (click)="abrirInfoKpi('otis_programadas', 'Programadas', totalProgramadas() ?? 0, 'conteo')"
+      aria-label="Ver explicación de OTIs programadas"
+    >
+      <app-kpi-tile icono="event" tono="info" etiqueta="Programadas"
+        sublabel="Instalaciones agendadas" [valor]="totalProgramadas()" />
+    </button>
+    <button
+      type="button"
+      class="kpi-boton"
+      (click)="abrirInfoKpi('otis_en_curso', 'En curso', totalEnCurso() ?? 0, 'conteo')"
+      aria-label="Ver explicación de OTIs en curso"
+    >
+      <app-kpi-tile icono="engineering" tono="advertencia" etiqueta="En curso"
+        sublabel="Instalando ahora" [valor]="totalEnCurso()" />
+    </button>
+    <button
+      type="button"
+      class="kpi-boton"
+      (click)="abrirInfoKpi('otis_completadas', 'Completadas', totalCompletadas() ?? 0, 'conteo')"
+      aria-label="Ver explicación de OTIs completadas"
+    >
+      <app-kpi-tile icono="check_circle" tono="exito" etiqueta="Completadas"
+        sublabel="Instalaciones terminadas" [valor]="totalCompletadas()" />
+    </button>
+  </section>
 }
 
 <div class="operacion-filtros" [formGroup]="formFiltro">

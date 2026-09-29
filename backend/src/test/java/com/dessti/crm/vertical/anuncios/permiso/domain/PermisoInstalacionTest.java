@@ -171,4 +171,64 @@ class PermisoInstalacionTest {
 
         assertThat(p.venceEnProximosDias(30, RELOJ)).isTrue();
     }
+
+    // ------------------------------------------------------------------
+    // Vigencia para autorizar instalacion (Req 17.4, 19.3)
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("estaVigente es falso si el permiso NO esta aprobado (solo solicitado) (Req 17.4)")
+    void vigenteRequiereAprobado() {
+        PermisoInstalacion p = PermisoInstalacion.crear(
+                TipoPermisoInstalacion.MUNICIPAL, VENCE, SITIO, "instalacion");
+
+        // Solicitado: aunque no este vencido, no autoriza instalar.
+        assertThat(p.estaVigente(RELOJ)).isFalse();
+    }
+
+    @Test
+    @DisplayName("estaVigente es verdadero para un permiso aprobado y no vencido (Req 17.4)")
+    void vigenteAprobadoNoVencido() {
+        PermisoInstalacion p = PermisoInstalacion.crear(
+                TipoPermisoInstalacion.MUNICIPAL, VENCE, SITIO, "instalacion");
+        p.aprobar("supervisor", RELOJ);
+
+        // VENCE (2025-05-01) es muy posterior a AHORA (2024-05-01): vigente.
+        assertThat(p.estaVigente(RELOJ)).isTrue();
+    }
+
+    @Test
+    @DisplayName("estaVigente es verdadero justo el dia del vencimiento (limite inclusivo) (Req 17.4)")
+    void vigenteEnElDiaDeVencimiento() {
+        // Vence exactamente hoy (2024-05-01): aun autoriza el mismo dia.
+        PermisoInstalacion p = PermisoInstalacion.crear(
+                TipoPermisoInstalacion.MUNICIPAL, LocalDate.of(2024, 5, 1), SITIO, "instalacion");
+        p.aprobar("supervisor", RELOJ);
+
+        assertThat(p.estaVigente(RELOJ)).isTrue();
+    }
+
+    @Test
+    @DisplayName("estaVigente es falso para un permiso aprobado pero VENCIDO (Req 17.4, 19.3)")
+    void aprobadoPeroVencidoNoEstaVigente() {
+        // Vencio ayer (2024-04-30) respecto de AHORA (2024-05-01): aprobado pero
+        // vencido NO autoriza programar una instalacion.
+        PermisoInstalacion p = PermisoInstalacion.crear(
+                TipoPermisoInstalacion.MUNICIPAL, LocalDate.of(2024, 4, 30), SITIO, "instalacion");
+        p.aprobar("supervisor", RELOJ);
+
+        assertThat(p.estaAprobado()).isTrue();
+        assertThat(p.estaVigente(RELOJ)).isFalse();
+    }
+
+    @Test
+    @DisplayName("estaVigente rechaza reloj nulo (422)")
+    void vigenteSinReloj() {
+        PermisoInstalacion p = PermisoInstalacion.crear(
+                TipoPermisoInstalacion.MUNICIPAL, VENCE, SITIO, "instalacion");
+        p.aprobar("supervisor", RELOJ);
+
+        assertThatThrownBy(() -> p.estaVigente(null))
+                .isInstanceOf(ReglaNegocioException.class);
+    }
 }

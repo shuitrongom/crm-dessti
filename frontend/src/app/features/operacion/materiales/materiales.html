@@ -1,10 +1,7 @@
-<app-page-header
-  titulo="Materiales"
-  subtitulo="Catálogo base de materiales del inventario. Sobre estos materiales opera el Inventario avanzado (almacenes, existencias y Kardex)."
->
+<app-page-header titulo="Materiales" subtitulo="Administra los insumos de tu inventario: da de alta, ajusta existencias con movimientos y controla el stock mínimo.">
   <div acciones>
     @if (puedeCrear) {
-      <button matButton="filled" type="button" (click)="alternarFormulario()">
+      <button matButton="filled" type="button" (click)="nuevo()">
         <mat-icon aria-hidden="true">add</mat-icon>
         Nuevo material
       </button>
@@ -12,77 +9,47 @@
   </div>
 </app-page-header>
 
-@if (formularioAbierto()) {
-  <mat-card appearance="outlined" class="operacion-form">
-    <mat-card-header>
-      <mat-card-title>Nuevo material</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      <form class="ds-dialog-form" [formGroup]="form" (ngSubmit)="crear()" novalidate>
-        <mat-form-field appearance="outline">
-          <mat-label>Nombre</mat-label>
-          <input matInput type="text" formControlName="nombre" required />
-          @if (form.controls.nombre.hasError('required') && form.controls.nombre.touched) {
-            <mat-error>El nombre es obligatorio.</mat-error>
-          }
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Unidad de medida</mat-label>
-          <input matInput type="text" formControlName="unidadMedida" required />
-          @if (form.controls.unidadMedida.hasError('required') && form.controls.unidadMedida.touched) {
-            <mat-error>La unidad es obligatoria.</mat-error>
-          }
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Stock minimo</mat-label>
-          <input matInput type="number" formControlName="stockMinimo" min="0" step="0.01" required />
-          @if (form.controls.stockMinimo.invalid && form.controls.stockMinimo.touched) {
-            <mat-error>El stock mínimo debe ser mayor o igual a 0.</mat-error>
-          }
-        </mat-form-field>
-        <div class="operacion-form__acciones">
-          <button matButton type="button" (click)="alternarFormulario()" [disabled]="guardando()">
-            Cancelar
-          </button>
-          <button matButton="filled" type="submit" [disabled]="guardando()">Crear</button>
-        </div>
-      </form>
-    </mat-card-content>
-  </mat-card>
-}
-
-@if (movimientoDe(); as material) {
-  <mat-card appearance="outlined" class="operacion-form">
-    <mat-card-header>
-      <mat-card-title>Registrar movimiento — {{ material.nombre }}</mat-card-title>
-      <mat-card-subtitle>Existencias actuales: {{ material.existencias }}</mat-card-subtitle>
-    </mat-card-header>
-    <mat-card-content>
-      <form class="ds-dialog-form" [formGroup]="formMovimiento" (ngSubmit)="registrarMovimiento()" novalidate>
-        <mat-form-field appearance="outline">
-          <mat-label>Tipo</mat-label>
-          <mat-select formControlName="tipo" required>
-            @for (opcion of tipos; track opcion) {
-              <mat-option [value]="opcion">{{ etiquetaTipo[opcion] }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Cantidad</mat-label>
-          <input matInput type="number" formControlName="cantidad" step="0.01" required />
-          <mat-hint>En ajuste, el signo indica el sentido.</mat-hint>
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Motivo (opcional)</mat-label>
-          <input matInput type="text" formControlName="motivo" />
-        </mat-form-field>
-        <div class="operacion-form__acciones">
-          <button matButton type="button" (click)="cerrarMovimiento()" [disabled]="guardando()">Cancelar</button>
-          <button matButton="filled" type="submit" [disabled]="guardando()">Registrar</button>
-        </div>
-      </form>
-    </mat-card-content>
-  </mat-card>
+<!-- Tira de indicadores (patron enterprise: outcome-first). Solo cuando el
+     listado cargo correctamente para no distraer en vacio. -->
+@if (fase() === "ok") {
+  <section class="operacion-kpis" aria-label="Indicadores de materiales">
+    <button
+      type="button"
+      class="kpi-boton"
+      (click)="abrirInfoKpi('materiales_total', 'Materiales', totalCatalogo() ?? 0, 'conteo')"
+      aria-label="Ver explicación de Materiales"
+    >
+      <app-kpi-tile icono="inventory_2" tono="primario" etiqueta="Materiales"
+        sublabel="Total en el catálogo" [valor]="totalCatalogo()" />
+    </button>
+    <button
+      type="button"
+      class="kpi-boton"
+      (click)="abrirInfoKpi('materiales_activos', 'Activos', totalActivos() ?? 0, 'conteo')"
+      aria-label="Ver explicación de Activos"
+    >
+      <app-kpi-tile icono="check_circle" tono="exito" etiqueta="Activos"
+        sublabel="Disponibles para operar" [valor]="totalActivos()" />
+    </button>
+    <button
+      type="button"
+      class="kpi-boton"
+      (click)="verStockBajo()"
+      aria-label="Ver materiales por reabastecer y filtrar por stock bajo"
+    >
+      <app-kpi-tile icono="production_quantity_limits" tono="advertencia" etiqueta="Por reabastecer"
+        sublabel="Bajo el stock mínimo" [valor]="totalStockBajo()" />
+    </button>
+    <button
+      type="button"
+      class="kpi-boton"
+      (click)="abrirInfoKpi('materiales_inactivos', 'Inactivos', totalInactivos() ?? 0, 'conteo')"
+      aria-label="Ver explicación de Inactivos"
+    >
+      <app-kpi-tile icono="inventory" tono="neutro" etiqueta="Inactivos"
+        sublabel="Dados de baja" [valor]="totalInactivos()" />
+    </button>
+  </section>
 }
 
 <div class="operacion-filtros">
@@ -91,6 +58,16 @@
     <input matInput type="search" [value]="nombre()" (change)="filtrarNombre($any($event.target).value)" />
     <mat-icon matSuffix aria-hidden="true">search</mat-icon>
   </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Estado</mat-label>
+    <mat-select [value]="estado()" (valueChange)="cambiarEstado($event)">
+      <mat-option value="activo">Activos</mat-option>
+      <mat-option value="inactivo">Inactivos</mat-option>
+      <mat-option value="todos">Todos</mat-option>
+    </mat-select>
+  </mat-form-field>
+
   <mat-checkbox [checked]="soloStockBajo()" (change)="alternarStockBajo($event.checked)">
     Solo stock bajo
   </mat-checkbox>
@@ -116,36 +93,61 @@
     <ng-template appCelda="existencias" let-fila>{{ fila.existencias }}</ng-template>
     <ng-template appCelda="stockMinimo" let-fila>{{ fila.stockMinimo }}</ng-template>
     <ng-template appCelda="estado" let-fila>
-      <span
-        class="materiales-estado"
-        [class.materiales-estado--bajo]="fila.stockBajo"
-        [class.materiales-estado--suficiente]="!fila.stockBajo"
-      >
-        <mat-icon
-          class="materiales-estado-icono"
-          [attr.aria-label]="fila.stockBajo ? 'Stock bajo' : 'Existencias suficientes'"
-          >{{ fila.stockBajo ? 'warning' : 'check_circle' }}</mat-icon
+      @if (!fila.activo) {
+        <span class="materiales-estado materiales-estado--inactivo">
+          <mat-icon class="materiales-estado-icono" aria-label="Inactivo">block</mat-icon>
+          Inactivo
+        </span>
+      } @else {
+        <span
+          class="materiales-estado"
+          [class.materiales-estado--bajo]="fila.stockBajo"
+          [class.materiales-estado--suficiente]="!fila.stockBajo"
         >
-        {{ fila.stockBajo ? 'Stock bajo' : 'Suficiente' }}
-      </span>
+          <mat-icon
+            class="materiales-estado-icono"
+            [attr.aria-label]="fila.stockBajo ? 'Stock bajo' : 'Existencias suficientes'"
+            >{{ fila.stockBajo ? 'warning' : 'check_circle' }}</mat-icon
+          >
+          {{ fila.stockBajo ? 'Stock bajo' : 'Suficiente' }}
+        </span>
+      }
     </ng-template>
     <ng-template appCelda="acciones" let-fila>
       <div class="operacion-acciones-fila">
-        @if (puedeMovimiento) {
-          <button matIconButton type="button" (click)="abrirMovimiento(fila)" aria-label="Registrar movimiento">
-            <mat-icon aria-hidden="true">swap_vert</mat-icon>
-          </button>
-        }
-        @if (puedeEliminar) {
-          <button
-            matIconButton
-            type="button"
-            class="ds-boton-destructivo"
-            (click)="eliminar(fila)"
-            aria-label="Dar de baja material"
-          >
-            <mat-icon aria-hidden="true">delete</mat-icon>
-          </button>
+        @if (fila.activo) {
+          @if (puedeMovimiento) {
+            <button matIconButton type="button" (click)="abrirMovimiento(fila)" matTooltip="Registrar movimiento" aria-label="Registrar movimiento">
+              <mat-icon aria-hidden="true">swap_vert</mat-icon>
+            </button>
+          }
+          @if (puedeActualizar) {
+            <button matIconButton type="button" (click)="editar(fila)" matTooltip="Editar" aria-label="Editar material">
+              <mat-icon aria-hidden="true">edit</mat-icon>
+            </button>
+          }
+          @if (puedeEliminar) {
+            <button
+              matIconButton
+              type="button"
+              class="ds-boton-destructivo"
+              (click)="eliminar(fila)"
+              [disabled]="fila.existencias > 0"
+              [matTooltip]="fila.existencias > 0
+                ? 'No se puede dar de baja: el material aún tiene existencias. Ajústalas a 0 primero.'
+                : 'Dar de baja'"
+              aria-label="Dar de baja material"
+            >
+              <mat-icon aria-hidden="true">delete</mat-icon>
+            </button>
+          }
+        } @else {
+          @if (puedeActualizar) {
+            <button matButton type="button" (click)="activar(fila)" matTooltip="Reactivar" aria-label="Reactivar material">
+              <mat-icon aria-hidden="true">restore</mat-icon>
+              Reactivar
+            </button>
+          }
         }
       </div>
     </ng-template>

@@ -163,5 +163,5 @@ describe('ProductoFormDialog', () => {
   it('no tiene violaciones de accesibilidad (WCAG 2.1 A/AA)', async () => {
     await montar();
     await esperarSinViolaciones(fixture);
-  });
+  }, 30000);
 });

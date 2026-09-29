@@ -1,12 +1,9 @@
-.operacion-form {
+// Tira de KPIs premium (mismo lenguaje visual que el ambito Comercial).
+.operacion-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--ds-space-3);
   margin-bottom: var(--ds-space-4);
-
-  &__acciones {
-    display: flex;
-    justify-content: flex-end;
-    gap: var(--ds-space-2);
-    margin-top: var(--ds-space-2);
-  }
 }
 
 .operacion-filtros {

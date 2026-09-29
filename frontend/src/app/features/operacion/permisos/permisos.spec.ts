@@ -75,18 +75,26 @@ describe('OperacionPermisos', () => {
     }
   });
 
-  /** Responde el GET del listado de permisos. */
+  /**
+   * Responde los GET de arranque: el listado principal y los tres conteos de KPIs
+   * (estado=solicitado|aprobado|rechazado, size=1). Todos van a la misma URL base;
+   * el primero lleva el contenido y los conteos se resuelven con una pagina de
+   * tamano 1 para no dejar peticiones pendientes.
+   */
   function resolverListado(permisos: Record<string, unknown>[]): void {
-    const req = http.expectOne(
+    const reqs = http.match(
       (r) => r.url === '/api/v1/permisos-instalacion' && r.method === 'GET',
     );
-    req.flush({
+    reqs[0].flush({
       content: permisos,
       page: 0,
       size: 20,
       totalElements: permisos.length,
       totalPages: permisos.length === 0 ? 0 : 1,
     });
+    for (const r of reqs.slice(1)) {
+      r.flush({ content: [], page: 0, size: 1, totalElements: 0, totalPages: 0 });
+    }
     fixture.detectChanges();
   }
 
@@ -108,9 +116,13 @@ describe('OperacionPermisos', () => {
 
   it('muestra el estado de error cuando el listado falla', () => {
     montar();
-    http
-      .expectOne((r) => r.url === '/api/v1/permisos-instalacion' && r.method === 'GET')
-      .flush({ detail: 'Error interno' }, { status: 500, statusText: 'Server Error' });
+    // El primer GET es el listado principal (falla); los conteos se resuelven
+    // para no dejar peticiones pendientes.
+    const reqs = http.match((r) => r.url === '/api/v1/permisos-instalacion' && r.method === 'GET');
+    reqs[0].flush({ detail: 'Error interno' }, { status: 500, statusText: 'Server Error' });
+    for (const r of reqs.slice(1)) {
+      r.flush({ content: [], page: 0, size: 1, totalElements: 0, totalPages: 0 });
+    }
     fixture.detectChanges();
     expect((fixture.componentInstance as unknown as { fase(): string }).fase()).toBe('error');
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Reintentar');

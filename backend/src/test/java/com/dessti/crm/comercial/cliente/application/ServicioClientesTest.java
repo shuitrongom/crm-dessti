@@ -52,6 +52,7 @@ class ServicioClientesTest {
     private ClienteRepository clienteRepository;
     private ContactoRepository contactoRepository;
     private com.dessti.crm.comercial.cliente.application.UsuarioExistentePort usuarioExistente;
+    private PipelineClientePort pipelineCliente;
     private AuditoriaPort auditoria;
     private ServicioClientes servicio;
 
@@ -60,8 +61,12 @@ class ServicioClientesTest {
         clienteRepository = mock(ClienteRepository.class);
         contactoRepository = mock(ContactoRepository.class);
         usuarioExistente = mock(com.dessti.crm.comercial.cliente.application.UsuarioExistentePort.class);
+        pipelineCliente = mock(PipelineClientePort.class);
         auditoria = mock(AuditoriaPort.class);
-        servicio = new ServicioClientes(clienteRepository, contactoRepository, usuarioExistente, auditoria);
+        // Por defecto, sin actividad comercial abierta (los tests de baja lo asumen);
+        // los tests de la guarda (Req 5.10) lo sobreescriben explicitamente.
+        servicio = new ServicioClientes(clienteRepository, contactoRepository, usuarioExistente,
+                pipelineCliente, auditoria);
         // El servicio deriva el tenant del contexto (Req 23.4) para auditar.
         TenantContext.set(TENANT);
     }
@@ -222,6 +227,49 @@ class ServicioClientesTest {
         ArgumentCaptor<EventoAuditoria> ev = ArgumentCaptor.forClass(EventoAuditoria.class);
         verify(auditoria).registrar(ev.capture());
         assertThat(ev.getValue().accion()).isEqualTo("eliminar");
+    }
+
+    @Test
+    @DisplayName("desactivarCliente con Oportunidades abiertas devuelve 422 y conserva el Cliente activo (Req 5.10)")
+    void desactivarClienteConOportunidadesAbiertasRechaza() {
+        Cliente existente = Cliente.crear("Acme", RFC, "a@b.com", null, "ventas");
+        when(clienteRepository.findByIdAndActivoTrue(existente.getId())).thenReturn(Optional.of(existente));
+        when(pipelineCliente.clienteTieneOportunidadesAbiertas(existente.getId())).thenReturn(true);
+
+        assertThatThrownBy(() -> servicio.desactivarCliente(existente.getId()))
+                .isInstanceOf(com.dessti.crm.platform.error.ReglaNegocioException.class)
+                .hasMessageContaining("Oportunidades");
+        assertThat(existente.isActivo()).isTrue();
+        verify(clienteRepository, never()).save(any(Cliente.class));
+    }
+
+    @Test
+    @DisplayName("desactivarCliente con Cotizaciones abiertas devuelve 422 y conserva el Cliente activo (Req 5.10)")
+    void desactivarClienteConCotizacionesAbiertasRechaza() {
+        Cliente existente = Cliente.crear("Acme", RFC, "a@b.com", null, "ventas");
+        when(clienteRepository.findByIdAndActivoTrue(existente.getId())).thenReturn(Optional.of(existente));
+        // Sin oportunidades abiertas (mock por defecto false), pero con cotizaciones abiertas.
+        when(pipelineCliente.clienteTieneCotizacionesAbiertas(existente.getId())).thenReturn(true);
+
+        assertThatThrownBy(() -> servicio.desactivarCliente(existente.getId()))
+                .isInstanceOf(com.dessti.crm.platform.error.ReglaNegocioException.class)
+                .hasMessageContaining("Cotizaciones");
+        assertThat(existente.isActivo()).isTrue();
+        verify(clienteRepository, never()).save(any(Cliente.class));
+    }
+
+    @Test
+    @DisplayName("desactivarCliente sin actividad comercial abierta procede (Req 5.9, 5.10)")
+    void desactivarClienteSinPipelineProcede() {
+        Cliente existente = Cliente.crear("Acme", RFC, "a@b.com", null, "ventas");
+        when(clienteRepository.findByIdAndActivoTrue(existente.getId())).thenReturn(Optional.of(existente));
+        when(clienteRepository.save(any(Cliente.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(pipelineCliente.clienteTieneOportunidadesAbiertas(existente.getId())).thenReturn(false);
+        when(pipelineCliente.clienteTieneCotizacionesAbiertas(existente.getId())).thenReturn(false);
+
+        ClienteDto dto = servicio.desactivarCliente(existente.getId());
+
+        assertThat(dto.activo()).isFalse();
     }
 
     @Test

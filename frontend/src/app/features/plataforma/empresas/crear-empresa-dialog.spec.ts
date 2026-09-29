@@ -483,7 +483,7 @@ describe('CrearEmpresaDialog', () => {
     c.formulario.patchValue({ paqueteSuscripcionId: 'q1' });
     fixture.detectChanges();
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('Otorgar periodo de prueba');
+    expect(texto).toContain('Iniciar la empresa en período de prueba');
   });
 
   it("el checkbox 'Otorgar periodo de prueba' NO aparece con un paquete que no admite prueba", () => {

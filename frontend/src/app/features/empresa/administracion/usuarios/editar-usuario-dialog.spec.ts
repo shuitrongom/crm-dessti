@@ -134,14 +134,15 @@ describe('EditarUsuarioDialog', () => {
     expect(dialogRef.cerradoCon).toBeTruthy();
   });
 
-  it('sin cambios cierra sin peticiones', async () => {
+  it('sin cambios no hace peticiones y NO cierra (avisa "no hay cambios")', async () => {
     await crearFixture({ usuario: usuario() });
     resolverRoles([rol({ id: 'r1' })]);
     const c = componenteDe();
     c.guardar();
     http.expectNone('/api/v1/usuarios/u5');
     http.expectNone('/api/v1/usuarios/u5/roles');
-    expect(dialogRef.cerradoCon).toBeUndefined();
+    // Diseño: sin cambios el diálogo NO se cierra (el usuario ajusta o cancela).
+    expect(dialogRef.cerradoCon).toBe('no-cerrado');
   });
 
   it('no tiene violaciones de accesibilidad (WCAG 2.1 A/AA)', async () => {

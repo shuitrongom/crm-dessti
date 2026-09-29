@@ -22,6 +22,18 @@
         </div>
       }
 
+      <!-- Aviso de vigencia: cotización vencida (Req 6.11) -->
+      @if (estaVencida()) {
+        <div class="cotizacion-detalle__aviso-vencida" role="alert">
+          <mat-icon aria-hidden="true">event_busy</mat-icon>
+          <p>
+            Esta cotización está <strong>vencida</strong> (válido hasta
+            {{ c.validoHasta | date: 'dd/MM/yyyy' }}). No puede enviarse ni aprobarse; actualiza su
+            fecha de vigencia para continuar. Aún puedes rechazarla.
+          </p>
+        </div>
+      }
+
       <!-- Encabezado: folio, estado y datos de emision -->
       <mat-card appearance="outlined">
         <mat-card-content>
@@ -37,7 +49,12 @@
               </div>
               <div>
                 <dt>Valido hasta</dt>
-                <dd>{{ c.validoHasta ? (c.validoHasta | date: 'dd/MM/yyyy') : '—' }}</dd>
+                <dd>
+                  {{ c.validoHasta ? (c.validoHasta | date: 'dd/MM/yyyy') : '—' }}
+                  @if (estaVencida()) {
+                    <span class="cotizacion-detalle__vencida-tag">Vencida</span>
+                  }
+                </dd>
               </div>
               <div>
                 <dt>Moneda</dt>

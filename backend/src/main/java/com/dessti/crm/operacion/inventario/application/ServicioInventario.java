@@ -229,11 +229,42 @@ public class ServicioInventario implements ConsumoMaterialPort, RecepcionMateria
      * @return la pagina de Materiales como DTOs.
      */
     @Transactional(readOnly = true)
-    public Page<MaterialDto> listarMateriales(String nombre, boolean soloStockBajo,
+    public Page<MaterialDto> listarMateriales(String nombre, Boolean activo, boolean soloStockBajo,
                                               Pageable pageable) {
         String filtroNombre = (nombre == null || nombre.isBlank()) ? null : nombre.trim();
-        return materialRepository.buscarConFiltros(filtroNombre, soloStockBajo, pageable)
+        return materialRepository
+                .buscarPorNombreEstadoYStock(filtroNombre, activo, soloStockBajo, pageable)
                 .map(MaterialDto::de);
+    }
+
+    /**
+     * Edita los datos de un Material (nombre, unidad de medida y stock minimo) y audita
+     * (Req 18). Resuelve el Material aunque este inactivo, para permitir corregir sus
+     * datos antes o despues de reactivarlo. Las existencias no se tocan aqui (solo
+     * cambian por movimientos).
+     *
+     * @param materialId   identificador del Material.
+     * @param nombre       nuevo nombre; obligatorio (1..200).
+     * @param unidadMedida nueva unidad de medida; obligatoria.
+     * @param stockMinimo  nuevo stock minimo; obligatorio y &gt;= 0.
+     * @return el DTO del Material actualizado.
+     * @throws RecursoNoEncontradoException si no es accesible (404).
+     * @throws ReglaNegocioException si algun dato es invalido (422).
+     */
+    @Transactional
+    public MaterialDto editar(UUID materialId, String nombre, String unidadMedida,
+                              BigDecimal stockMinimo) {
+        String actor = actorActual();
+        Material material = cargarCualquiera(materialId, actor);
+        String antes = "nombre=" + material.getNombre() + ", unidad=" + material.getUnidadMedida()
+                + ", stockMinimo=" + material.getStockMinimo();
+        material.actualizar(nombre, unidadMedida, stockMinimo, actor);
+        Material guardado = materialRepository.save(material);
+        String despues = "nombre=" + guardado.getNombre() + ", unidad=" + guardado.getUnidadMedida()
+                + ", stockMinimo=" + guardado.getStockMinimo();
+        auditar(actor, "actualizar", RECURSO_MATERIAL, guardado.getId(),
+                "actualizacion del Material '" + guardado.getNombre() + "'", antes, despues);
+        return MaterialDto.de(guardado);
     }
 
     /**
@@ -251,6 +282,25 @@ public class ServicioInventario implements ConsumoMaterialPort, RecepcionMateria
         Material guardado = materialRepository.save(material);
         auditar(actor, "eliminar", RECURSO_MATERIAL, guardado.getId(),
                 "baja logica del Material '" + guardado.getNombre() + "'", "activo", "inactivo");
+        return MaterialDto.de(guardado);
+    }
+
+    /**
+     * Reactiva un Material dado de baja (Req 18, 3.1) y audita. Resuelve el Material
+     * aunque este inactivo. Idempotente.
+     *
+     * @param materialId identificador del Material.
+     * @return el DTO del Material reactivado.
+     * @throws RecursoNoEncontradoException si no es accesible (404).
+     */
+    @Transactional
+    public MaterialDto activar(UUID materialId) {
+        String actor = actorActual();
+        Material material = cargarCualquiera(materialId, actor);
+        material.activar(actor);
+        Material guardado = materialRepository.save(material);
+        auditar(actor, "actualizar", RECURSO_MATERIAL, guardado.getId(),
+                "reactivacion del Material '" + guardado.getNombre() + "'", "inactivo", "activo");
         return MaterialDto.de(guardado);
     }
 
@@ -298,6 +348,22 @@ public class ServicioInventario implements ConsumoMaterialPort, RecepcionMateria
             throw new RecursoNoEncontradoException("No se encontro el Material solicitado.");
         }
         return materialRepository.findByIdAndActivoTrue(materialId)
+                .orElseGet(() -> {
+                    auditarAccesoCruzado(actor, RECURSO_MATERIAL, materialId);
+                    throw new RecursoNoEncontradoException("No se encontro el Material solicitado.");
+                });
+    }
+
+    /**
+     * Carga un Material del tenant vigente <strong>sin</strong> exigir que este activo,
+     * para editarlo o reactivarlo (Req 18, 3.1). Un Material inexistente o de otro tenant
+     * se traduce a 404 y audita el intento de acceso cruzado (Req 23.3).
+     */
+    private Material cargarCualquiera(UUID materialId, String actor) {
+        if (materialId == null) {
+            throw new RecursoNoEncontradoException("No se encontro el Material solicitado.");
+        }
+        return materialRepository.findById(materialId)
                 .orElseGet(() -> {
                     auditarAccesoCruzado(actor, RECURSO_MATERIAL, materialId);
                     throw new RecursoNoEncontradoException("No se encontro el Material solicitado.");

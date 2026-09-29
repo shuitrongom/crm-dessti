@@ -1,0 +1,63 @@
+<mat-dialog-content class="material-movimiento__content">
+  <form class="ds-form" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+    <header class="ds-form__header">
+      <h2 class="ds-form__header-title" mat-dialog-title>Registrar movimiento — {{ material.nombre }}</h2>
+      <p class="ds-form__header-subtitle">{{ subtitulo() }}</p>
+    </header>
+
+    @if (error()) {
+      <p class="ds-form__note ds-form__note--warn" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </p>
+    }
+
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Movimiento</h3>
+        <p class="ds-form__section-desc">
+          Una entrada suma existencias, una salida las resta y un ajuste aplica el signo indicado.
+        </p>
+      </div>
+
+      <div class="ds-form__section-body">
+        <div class="ds-form__grid">
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Tipo</mat-label>
+              <mat-select formControlName="tipo" required>
+                @for (opcion of tipos; track opcion) {
+                  <mat-option [value]="opcion">{{ etiquetaTipo[opcion] }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Cantidad</mat-label>
+              <input matInput type="number" formControlName="cantidad" step="0.01" required />
+              @if (form.controls.cantidad.hasError('required') && form.controls.cantidad.touched) {
+                <mat-error>La cantidad es obligatoria.</mat-error>
+              }
+            </mat-form-field>
+            <p class="ds-form__help">En ajuste, el signo indica el sentido (positivo suma, negativo resta).</p>
+          </div>
+
+          <div class="ds-form__field ds-form__field--full">
+            <mat-form-field appearance="outline">
+              <mat-label>Motivo (opcional)</mat-label>
+              <input matInput type="text" formControlName="motivo" autocomplete="off" maxlength="500" />
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+    </section>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancelar()" [disabled]="guardando()">Cancelar</button>
+  <button matButton="filled" type="button" (click)="guardar()" [disabled]="guardando() || form.invalid">
+    Registrar
+  </button>
+</mat-dialog-actions>

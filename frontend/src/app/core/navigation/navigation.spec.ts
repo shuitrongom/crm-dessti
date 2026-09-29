@@ -79,16 +79,17 @@ const RUTAS_VERTICAL = [
   '/empresa/operacion/levantamientos',
   '/empresa/operacion/permisos',
   '/empresa/operacion/instalacion',
-  '/empresa/operacion/proyectos',
   '/empresa/mantenimiento/contratos',
   '/empresa/mantenimiento/tickets',
 ];
 
-/** Rutas de Nucleo que NO deben depender del giro (incluye inventario base). */
+/** Rutas de Nucleo que NO deben depender del giro (incluye inventario base y
+ * Proyectos, que es multi-sitio comun a todos los giros: solo modulo + permiso). */
 const RUTAS_NUCLEO = [
   '/empresa/comercial/clientes',
   '/empresa/operacion/materiales',
   '/empresa/operacion/inventario-avanzado',
+  '/empresa/operacion/proyectos',
   '/empresa/compras/requisiciones',
   '/empresa/facturacion/facturas',
 ];
@@ -267,8 +268,10 @@ describe('NavigationService (secciones del menu de empresa)', () => {
     const grupos = nav.grupos();
     const titulos = grupos.map((g) => g.titulo);
 
-    // Exactamente las dos secciones esperadas, en orden (Cuenta antes de Estrategia).
-    expect(titulos).toEqual(['Cuenta', 'Estrategia']);
+    // Secciones esperadas, en orden. Calidad (ISO 9001) es COMUN a todos los giros
+    // y se gatea SOLO por permiso (sin modulo), por lo que aparece cuando el authFake
+    // concede permisos, con independencia de los modulos contratados (V82).
+    expect(titulos).toEqual(['Cuenta', 'Estrategia', 'Calidad (ISO 9001)']);
 
     // La seccion Estrategia contiene la unica entrada, etiquetada "Estrategia".
     const estrategia = grupos.find((g) => g.titulo === 'Estrategia');
@@ -287,7 +290,9 @@ describe('NavigationService (secciones del menu de empresa)', () => {
       authFake({ tieneModulo: (c) => c === 'comercial' || c === 'facturacion' }),
     );
     const titulos = nav.grupos().map((g) => g.titulo);
-    expect(titulos).toEqual(['Cuenta', 'Comercial (CRM)', 'Facturación (CFDI)']);
+    // Calidad (ISO 9001) se gatea solo por permiso (V82), por lo que aparece con el
+    // authFake por defecto además de las secciones de los módulos contratados.
+    expect(titulos).toEqual(['Cuenta', 'Comercial (CRM)', 'Facturación (CFDI)', 'Calidad (ISO 9001)']);
   });
 
   it('todos los items del ambito empresa llevan seccion (ningun grupo sin titulo)', () => {

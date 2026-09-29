@@ -103,4 +103,27 @@ public class Lote extends TenantScopedEntity {
     public LocalDate getFechaCaducidad() {
         return fechaCaducidad;
     }
+
+    /**
+     * Indica si el Lote esta CADUCADO respecto a la fecha dada (Req 60). Un Lote SIN
+     * fecha de caducidad ({@code fechaCaducidad == null}) NUNCA caduca. Con fecha, se
+     * considera caducado a partir del dia SIGUIENTE al de caducidad: el propio dia de
+     * caducidad sigue siendo utilizable (frontera inclusiva), coherente con
+     * {@code PermisoInstalacion.estaVigente} donde el dia de vencimiento aun es valido.
+     *
+     * <p>La comparacion es de dominio puro sobre {@link LocalDate}; la capa de aplicacion
+     * calcula {@code hoy} con el {@link java.time.Clock} inyectado (UTC), para ser
+     * determinista en pruebas.</p>
+     *
+     * @param hoy fecha de referencia (normalmente hoy en UTC); obligatoria.
+     * @return {@code true} si el Lote tiene caducidad y esta ya vencida antes de {@code hoy}.
+     * @throws ReglaNegocioException si {@code hoy} es nulo (422).
+     */
+    public boolean estaCaducado(LocalDate hoy) {
+        if (hoy == null) {
+            throw new ReglaNegocioException(
+                    "La fecha de referencia para evaluar la caducidad es obligatoria.");
+        }
+        return fechaCaducidad != null && fechaCaducidad.isBefore(hoy);
+    }
 }

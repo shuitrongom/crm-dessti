@@ -1,0 +1,23 @@
+.avance-sitio__content {
+  padding-block: var(--ds-space-2);
+}
+
+.avance-sitio__titulo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+}
+
+.avance-sitio__icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--ds-color-primary),
+    color-mix(in srgb, var(--ds-color-primary) 55%, #fff));
+  color: #fff;
+
+  mat-icon { font-size: 1.2rem; inline-size: 1.2rem; block-size: 1.2rem; }
+}

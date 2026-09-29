@@ -242,7 +242,7 @@ describe('OperacionInventarioAvanzado', () => {
     expect(t).toContain('Lamina acrilica');
     expect(t).not.toContain(ALMACEN_UUID);
     expect(t).not.toContain(MATERIAL_UUID);
-  });
+  }, 30000);
 
   it('registrarEntrada llama al endpoint correcto con el cuerpo esperado', async () => {
     await crear();

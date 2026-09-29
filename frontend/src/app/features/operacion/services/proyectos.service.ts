@@ -50,9 +50,32 @@ export class ProyectosService {
     return this.http.post<Proyecto>(this.api.url('/proyectos'), request);
   }
 
+  /**
+   * Edita el nombre de un Proyecto existente (Req 21.1, 21.6). Devuelve el Proyecto
+   * detallado tras el cambio. El Cliente asociado es inmutable.
+   */
+  editar(proyectoId: string, request: { nombre: string }): Observable<Proyecto> {
+    return this.http.put<Proyecto>(this.api.url(`/proyectos/${proyectoId}`), request);
+  }
+
   /** Agrega un Sitio a un Proyecto existente (Req 21.2). */
   agregarSitio(proyectoId: string, request: SitioRequest): Observable<Sitio> {
     return this.http.post<Sitio>(this.api.url(`/proyectos/${proyectoId}/sitios`), request);
+  }
+
+  /**
+   * Edita los datos descriptivos (nombre y direccion) de un Sitio de un Proyecto
+   * (Req 21.2, 21.6). Devuelve el Proyecto detallado tras el cambio.
+   */
+  editarSitio(
+    proyectoId: string,
+    sitioId: string,
+    request: SitioRequest,
+  ): Observable<Proyecto> {
+    return this.http.put<Proyecto>(
+      this.api.url(`/proyectos/${proyectoId}/sitios/${sitioId}`),
+      request,
+    );
   }
 
   /**

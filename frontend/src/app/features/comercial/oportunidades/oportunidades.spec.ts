@@ -107,6 +107,7 @@ function oportunidadDto(over: Partial<Oportunidad> = {}): Oportunidad {
 /** Superficie protegida del componente para las pruebas. */
 interface Probe {
   puedeAsignarCanal: boolean;
+  convertir(oportunidad: Oportunidad): Promise<void>;
   soltarEnColumna(evento: { item: { data: Oportunidad } }, destino: EtapaOportunidad): void;
 }
 
@@ -246,6 +247,27 @@ describe('ComercialOportunidades', () => {
     expect(comp().puedeAsignarCanal).toBe(false);
     const host = fixture.nativeElement as HTMLElement;
     expect(host.querySelector('button[aria-label^="Asignar canal de venta"]')).toBeNull();
+  });
+
+  it('una oportunidad ganada ya convertida muestra "Cotizada" y NO ofrece el boton Cotizar (Req 14.7)', () => {
+    configurar();
+    resolverCargaInicial([oportunidadDto({ etapa: 'ganado', probabilidad: 100, cotizacionId: 'cot-9' })]);
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.textContent).toContain('Cotizada');
+    const botones = Array.from(host.querySelectorAll('button')).map((b) => b.textContent ?? '');
+    expect(botones.some((t) => t.includes('Cotizar'))).toBe(false);
+  });
+
+  it('convertir() no llama al backend si la oportunidad ya tiene cotizacion vinculada (Req 14.7)', async () => {
+    configurar();
+    resolverCargaInicial([oportunidadDto()]);
+    const yaConvertida = oportunidadDto({ etapa: 'ganado', probabilidad: 100, cotizacionId: 'cot-9' });
+
+    await comp().convertir(yaConvertida);
+
+    // No debe intentarse la conversion (guarda preventiva) ni notificar exito.
+    http.expectNone((r) => r.url === `/api/v1/oportunidades/${yaConvertida.id}/convertir`);
+    expect(toast.errores.some((m) => m.includes('ya fue convertida'))).toBe(true);
   });
 
   it('no tiene violaciones de accesibilidad (WCAG 2.1 A/AA)', async () => {

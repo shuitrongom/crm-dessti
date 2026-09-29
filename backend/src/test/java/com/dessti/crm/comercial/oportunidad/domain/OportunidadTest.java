@@ -107,9 +107,45 @@ class OportunidadTest {
         o.cambiarEtapa(EtapaOportunidad.GANADO, "ventas");
         assertThat(o.esConvertible()).isTrue();
 
+        assertThat(o.estaConvertida()).isFalse();
         UUID cotizacion = UUID.randomUUID();
         o.marcarConvertida(cotizacion, "ventas");
         assertThat(o.getCotizacionId()).isEqualTo(cotizacion);
+        assertThat(o.estaConvertida()).isTrue();
+    }
+
+    @Test
+    @DisplayName("marcarConvertida es idempotente para la misma Cotizacion (reintento seguro, Req 14.7)")
+    void marcarConvertidaIdempotenteMismaCotizacion() {
+        Oportunidad o = nueva();
+        o.cambiarEtapa(EtapaOportunidad.CALIFICADO, "ventas");
+        o.cambiarEtapa(EtapaOportunidad.PROPUESTA, "ventas");
+        o.cambiarEtapa(EtapaOportunidad.NEGOCIACION, "ventas");
+        o.cambiarEtapa(EtapaOportunidad.GANADO, "ventas");
+        UUID cotizacion = UUID.randomUUID();
+        o.marcarConvertida(cotizacion, "ventas");
+
+        // Reintento con el MISMO id: no falla y conserva el vinculo.
+        o.marcarConvertida(cotizacion, "ventas");
+        assertThat(o.getCotizacionId()).isEqualTo(cotizacion);
+    }
+
+    @Test
+    @DisplayName("marcarConvertida rechaza vincular una Cotizacion distinta si ya esta convertida (Req 14.7, 422)")
+    void marcarConvertidaRechazaOtraCotizacion() {
+        Oportunidad o = nueva();
+        o.cambiarEtapa(EtapaOportunidad.CALIFICADO, "ventas");
+        o.cambiarEtapa(EtapaOportunidad.PROPUESTA, "ventas");
+        o.cambiarEtapa(EtapaOportunidad.NEGOCIACION, "ventas");
+        o.cambiarEtapa(EtapaOportunidad.GANADO, "ventas");
+        UUID original = UUID.randomUUID();
+        o.marcarConvertida(original, "ventas");
+
+        assertThatThrownBy(() -> o.marcarConvertida(UUID.randomUUID(), "ventas"))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("ya fue convertida");
+        // El vinculo original se conserva intacto.
+        assertThat(o.getCotizacionId()).isEqualTo(original);
     }
 
     @Test

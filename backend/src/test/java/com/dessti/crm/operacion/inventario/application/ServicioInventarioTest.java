@@ -252,31 +252,97 @@ class ServicioInventarioTest {
     }
 
     @Test
+    @DisplayName("desactivar un Material con existencias devuelve 422 y NO persiste ni audita (regla de negocio)")
+    void desactivarConExistenciasRechaza() {
+        Material material = materialConExistencias(new BigDecimal("7"), BigDecimal.ZERO);
+        when(materialRepository.findByIdAndActivoTrue(material.getId()))
+                .thenReturn(Optional.of(material));
+
+        assertThatThrownBy(() -> servicio.desactivar(material.getId()))
+                .isInstanceOf(ReglaNegocioException.class);
+
+        // El dominio rechaza la baja antes de mutar: no se persiste el cambio.
+        assertThat(material.isActivo()).isTrue();
+        verify(materialRepository, never()).save(any(Material.class));
+    }
+
+    @Test
     @DisplayName("listarMateriales pasa el filtro por nombre y por stock bajo al repositorio (Req 18.6)")
     void listarConFiltros() {
         Material material = materialConExistencias(new BigDecimal("1"), new BigDecimal("5"));
         Pageable pageable = PageRequest.of(0, 20);
         Page<Material> pagina = new PageImpl<>(List.of(material), pageable, 1);
-        when(materialRepository.buscarConFiltros(eq("perfil"), eq(true), any(Pageable.class)))
+        when(materialRepository.buscarPorNombreEstadoYStock(
+                eq("perfil"), eq(Boolean.TRUE), eq(true), any(Pageable.class)))
                 .thenReturn(pagina);
 
-        Page<MaterialDto> resultado = servicio.listarMateriales("perfil", true, pageable);
+        Page<MaterialDto> resultado =
+                servicio.listarMateriales("perfil", Boolean.TRUE, true, pageable);
 
         assertThat(resultado.getContent()).hasSize(1);
         assertThat(resultado.getContent().get(0).stockBajo()).isTrue();
-        verify(materialRepository).buscarConFiltros(eq("perfil"), eq(true), any(Pageable.class));
+        verify(materialRepository).buscarPorNombreEstadoYStock(
+                eq("perfil"), eq(Boolean.TRUE), eq(true), any(Pageable.class));
     }
 
     @Test
-    @DisplayName("listarMateriales sin filtros pasa nombre nulo y stockBajo false (Req 18.6)")
+    @DisplayName("listarMateriales sin filtros pasa nombre nulo, estado nulo y stockBajo false (Req 18.6)")
     void listarSinFiltros() {
         Pageable pageable = PageRequest.of(0, 20);
-        when(materialRepository.buscarConFiltros(eq(null), eq(false), any(Pageable.class)))
+        when(materialRepository.buscarPorNombreEstadoYStock(
+                eq(null), eq(null), eq(false), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(), pageable, 0));
 
-        Page<MaterialDto> resultado = servicio.listarMateriales("   ", false, pageable);
+        Page<MaterialDto> resultado = servicio.listarMateriales("   ", null, false, pageable);
 
         assertThat(resultado.getTotalElements()).isZero();
-        verify(materialRepository).buscarConFiltros(eq(null), eq(false), any(Pageable.class));
+        verify(materialRepository).buscarPorNombreEstadoYStock(
+                eq(null), eq(null), eq(false), any(Pageable.class));
+    }
+
+    @Test
+    @DisplayName("editar actualiza nombre/unidad/stockMinimo y audita (Req 18)")
+    void editarMaterial() {
+        Material material = materialConExistencias(new BigDecimal("2"), new BigDecimal("5"));
+        when(materialRepository.findById(material.getId())).thenReturn(Optional.of(material));
+
+        MaterialDto dto = servicio.editar(
+                material.getId(), "Perfil reforzado", "pieza", new BigDecimal("8"));
+
+        assertThat(dto.nombre()).isEqualTo("Perfil reforzado");
+        assertThat(dto.unidadMedida()).isEqualTo("pieza");
+        assertThat(dto.stockMinimo()).isEqualByComparingTo("8");
+        // Las existencias no se tocan al editar.
+        assertThat(dto.existencias()).isEqualByComparingTo("2");
+
+        ArgumentCaptor<EventoAuditoria> ev = ArgumentCaptor.forClass(EventoAuditoria.class);
+        verify(auditoria).registrar(ev.capture());
+        assertThat(ev.getValue().accion()).isEqualTo("actualizar");
+        assertThat(ev.getValue().recurso()).isEqualTo("material");
+    }
+
+    @Test
+    @DisplayName("editar lanza 404 cuando el Material no es accesible (Req 23.3)")
+    void editarNoAccesible() {
+        when(materialRepository.findById(MATERIAL_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> servicio.editar(MATERIAL_ID, "X", "pieza", BigDecimal.ONE))
+                .isInstanceOf(RecursoNoEncontradoException.class);
+        verify(materialRepository, never()).save(any(Material.class));
+    }
+
+    @Test
+    @DisplayName("activar reactiva un Material dado de baja y audita (Req 18, 3.1)")
+    void activarMaterial() {
+        Material material = materialConExistencias(BigDecimal.ZERO, new BigDecimal("5"));
+        material.desactivar("almacen");
+        when(materialRepository.findById(material.getId())).thenReturn(Optional.of(material));
+
+        MaterialDto dto = servicio.activar(material.getId());
+
+        assertThat(dto.activo()).isTrue();
+        ArgumentCaptor<EventoAuditoria> ev = ArgumentCaptor.forClass(EventoAuditoria.class);
+        verify(auditoria).registrar(ev.capture());
+        assertThat(ev.getValue().accion()).isEqualTo("actualizar");
     }
 }

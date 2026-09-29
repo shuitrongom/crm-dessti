@@ -1,24 +1,25 @@
 // =============================================================================
-// Vista de Permisos de Instalacion (Req 17) — listado + alta + aprobar/rechazar
+// Vista de Permisos de Instalacion (Req 17) — listado premium
 // -----------------------------------------------------------------------------
-// Listado paginado (DataTable) con filtros por tipo y estado, alta de permiso y
-// decision (aprobar/rechazar) solo cuando esta solicitado. Acciones gobernadas
-// por permiso permiso_instalacion:{...}.
+// Listado paginado (DataTable) con filtros por tipo y estado. El alta se hace en
+// un MODAL animado (PermisoFormDialog) y la decision (aprobar/rechazar) pide
+// confirmacion, solo cuando el permiso esta solicitado. Los KPIs (solicitados/
+// aprobados/rechazados, con conteos reales del backend) abren el modal
+// explicativo del indicador. Acciones gobernadas por permiso
+// permiso_instalacion:{...}.
 // =============================================================================
 
 import { Component, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDialog } from '@angular/material/dialog';
 
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../shared/components/state-container/state-container';
+import { KpiTile } from '../../../shared/components/kpi-tile/kpi-tile';
 import {
   ChipEstado,
   VarianteChipEstado,
@@ -30,6 +31,10 @@ import {
 } from '../../../shared/components/data-table/data-table';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import {
+  IndicadorInfoDialog,
+  type DatosIndicadorInfo,
+} from '../../../shared/indicadores/indicador-info-dialog';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 import { FaseSolicitud } from '../../../shared/models/estado-solicitud';
@@ -42,20 +47,18 @@ import {
   PermisoInstalacion,
   TipoPermiso,
 } from '../models/operacion.models';
+import { PermisoFormDialog } from './permiso-form-dialog';
 
 @Component({
   selector: 'app-operacion-permisos',
   imports: [
-    ReactiveFormsModule,
-    MatCardModule,
     MatFormFieldModule,
-    MatInputModule,
-    MatDatepickerModule,
     MatSelectModule,
     MatButtonModule,
     MatIconModule,
     PageHeader,
     StateContainer,
+    KpiTile,
     DataTable,
     CeldaTablaDirective,
     ChipEstado,
@@ -64,11 +67,11 @@ import {
   styleUrl: './permisos.scss',
 })
 export class OperacionPermisos {
-  private readonly fb = inject(FormBuilder);
   private readonly service = inject(PermisosService);
   private readonly confirm = inject(ConfirmDialogService);
   private readonly toast = inject(NotificacionesService);
   private readonly auth = inject(AuthService);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly puedeCrear = this.auth.tienePermiso('permiso_instalacion', 'crear');
   protected readonly puedeDecidir = this.auth.tienePermiso('permiso_instalacion', 'cambiar_estado');
@@ -86,8 +89,10 @@ export class OperacionPermisos {
   protected readonly tipoFiltro = signal<TipoPermiso | ''>('');
   protected readonly estadoFiltro = signal<EstadoPermiso | ''>('');
 
-  protected readonly guardando = signal(false);
-  protected readonly formularioAbierto = signal(false);
+  /** Conteos reales del backend para los indicadores (independientes del filtro). */
+  protected readonly totalSolicitados = signal<number | null>(null);
+  protected readonly totalAprobados = signal<number | null>(null);
+  protected readonly totalRechazados = signal<number | null>(null);
 
   protected readonly columnas: ColumnaTabla[] = [
     { clave: 'tipo', encabezado: 'Tipo' },
@@ -96,14 +101,9 @@ export class OperacionPermisos {
     { clave: 'acciones', encabezado: 'Acciones', alineacion: 'fin' },
   ];
 
-  protected readonly form = this.fb.nonNullable.group({
-    tipo: ['municipal' as TipoPermiso, [Validators.required]],
-    fechaVencimiento: ['', [Validators.required]],
-    sitioId: ['', [Validators.required]],
-  });
-
   constructor() {
     this.cargar();
+    this.cargarConteos();
   }
 
   /** Etiqueta legible del tipo de permiso; devuelve el valor crudo si no mapea. */
@@ -143,6 +143,25 @@ export class OperacionPermisos {
       });
   }
 
+  /**
+   * Carga los conteos de los indicadores con consultas de tamano 1 (solo
+   * totalElements), independientes del filtro de la tabla.
+   */
+  cargarConteos(): void {
+    this.service.listar(null, 'solicitado', 0, 1).subscribe({
+      next: (p) => this.totalSolicitados.set(p.totalElements),
+      error: () => this.totalSolicitados.set(null),
+    });
+    this.service.listar(null, 'aprobado', 0, 1).subscribe({
+      next: (p) => this.totalAprobados.set(p.totalElements),
+      error: () => this.totalAprobados.set(null),
+    });
+    this.service.listar(null, 'rechazado', 0, 1).subscribe({
+      next: (p) => this.totalRechazados.set(p.totalElements),
+      error: () => this.totalRechazados.set(null),
+    });
+  }
+
   cambiarTipo(valor: TipoPermiso | ''): void {
     this.tipoFiltro.set(valor);
     this.page.set(0);
@@ -161,35 +180,36 @@ export class OperacionPermisos {
     this.cargar();
   }
 
-  alternarFormulario(): void {
-    this.formularioAbierto.update((v) => !v);
-    if (this.formularioAbierto()) {
-      this.form.reset({ tipo: 'municipal', fechaVencimiento: '', sitioId: '' });
-    }
+  /** Abre el modal de alta de Permiso y recarga si se registró. */
+  nuevo(): void {
+    const ref = this.dialog.open(PermisoFormDialog, {
+      width: 'min(680px, 96vw)',
+      maxWidth: 'min(680px, 96vw)',
+      maxHeight: '92vh',
+      autoFocus: 'first-tabbable',
+      panelClass: 'ds-dialog-panel',
+    });
+    ref.afterClosed().subscribe((creado?: PermisoInstalacion) => {
+      if (creado) {
+        this.toast.exito('Permiso registrado.');
+        this.cargar();
+        this.cargarConteos();
+      }
+    });
   }
 
-  /** Crea un Permiso de Instalacion en estado solicitado (Req 17.1). */
-  crear(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
-    const v = this.form.getRawValue();
-    this.guardando.set(true);
-    this.service
-      .crear({ tipo: v.tipo, fechaVencimiento: v.fechaVencimiento, sitioId: v.sitioId.trim() })
-      .subscribe({
-        next: () => {
-          this.guardando.set(false);
-          this.toast.exito('Permiso registrado.');
-          this.formularioAbierto.set(false);
-          this.cargar();
-        },
-        error: (e: HttpErrorResponse) => {
-          this.guardando.set(false);
-          this.toast.error(mensajeDeError(e));
-        },
-      });
+  /**
+   * Abre el dialogo explicativo de un indicador de permisos. La clave debe
+   * coincidir con una del catálogo de indicadores.
+   */
+  abrirInfoKpi(clave: string, etiqueta: string, valor: number, unidad: string): void {
+    const datos: DatosIndicadorInfo = { clave, etiqueta, valor, unidad };
+    this.dialog.open(IndicadorInfoDialog, {
+      data: datos,
+      width: '32rem',
+      maxWidth: '92vw',
+      autoFocus: false,
+    });
   }
 
   /** Aprueba o rechaza un Permiso solicitado con confirmacion (Req 17.2). */
@@ -207,6 +227,7 @@ export class OperacionPermisos {
       next: () => {
         this.toast.exito(accion === 'aprobar' ? 'Permiso aprobado.' : 'Permiso rechazado.');
         this.cargar();
+        this.cargarConteos();
       },
       error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
     });

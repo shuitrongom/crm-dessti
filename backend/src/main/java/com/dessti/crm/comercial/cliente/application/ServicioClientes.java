@@ -36,8 +36,11 @@ import com.dessti.crm.platform.tenant.TenantContext;
  *       audita el alta.</li>
  *   <li><strong>actualizarCliente (Req 5.4):</strong> persiste los cambios y
  *       audita; 404 si el Cliente no existe/pertenece a otro tenant.</li>
- *   <li><strong>desactivarCliente (Req 5.9):</strong> borrado logico
- *       ({@code activo=false}) conservando el historico; audita.</li>
+ *   <li><strong>desactivarCliente (Req 5.9, 5.10):</strong> borrado logico
+ *       ({@code activo=false}) conservando el historico; audita. Rechaza con 422 la
+ *       baja de un Cliente con actividad comercial abierta (Oportunidad en etapa no
+ *       final o Cotizacion en borrador/enviada), verificada via
+ *       {@link PipelineClientePort}.</li>
  *   <li><strong>listarClientes (Req 5.7, 5.8):</strong> listado paginado
  *       (20/100) filtrable por nombre o RFC sin distinguir mayusculas.</li>
  *   <li><strong>consultarCliente (Req 4.3, 23.3):</strong> consulta puntual;
@@ -74,15 +77,18 @@ public class ServicioClientes {
     private final ClienteRepository clienteRepository;
     private final ContactoRepository contactoRepository;
     private final UsuarioExistentePort usuarioExistente;
+    private final PipelineClientePort pipelineCliente;
     private final AuditoriaPort auditoria;
 
     public ServicioClientes(ClienteRepository clienteRepository,
                             ContactoRepository contactoRepository,
                             UsuarioExistentePort usuarioExistente,
+                            PipelineClientePort pipelineCliente,
                             AuditoriaPort auditoria) {
         this.clienteRepository = clienteRepository;
         this.contactoRepository = contactoRepository;
         this.usuarioExistente = usuarioExistente;
+        this.pipelineCliente = pipelineCliente;
         this.auditoria = auditoria;
     }
 
@@ -163,22 +169,57 @@ public class ServicioClientes {
 
     /**
      * Realiza el borrado logico de un Cliente activo del tenant (Req 5.9):
-     * marca {@code activo=false} conservando el historico y audita.
+     * marca {@code activo=false} conservando el historico y audita. Antes de dar de
+     * baja, verifica que el Cliente no tenga actividad comercial abierta (Req 5.10):
+     * una Oportunidad en etapa no final o una Cotizacion en borrador/enviada impiden
+     * la baja (422), conservando el Cliente activo.
      *
      * @param clienteId identificador del Cliente.
      * @return el DTO del Cliente desactivado.
      * @throws RecursoNoEncontradoException si el Cliente no existe, ya esta
      *         inactivo o pertenece a otro tenant (404, Req 23.3).
+     * @throws com.dessti.crm.platform.error.ReglaNegocioException si el Cliente tiene
+     *         Oportunidades o Cotizaciones abiertas (422, Req 5.10).
      */
     @Transactional
     public ClienteDto desactivarCliente(UUID clienteId) {
         String actor = actorActual();
         Cliente cliente = cargarClienteActivo(clienteId, actor);
+
+        // Guarda de baja (Req 5.10): no se puede dar de baja un Cliente con actividad
+        // comercial ABIERTA (Oportunidad en etapa no final o Cotizacion en
+        // borrador/enviada). Vive en el servicio porque cruza los agregados de
+        // Oportunidad y Cotizacion via un puerto de solo lectura. El Cliente se
+        // conserva activo ante el rechazo (la excepcion aborta antes de mutar).
+        boolean tieneOportunidades = pipelineCliente.clienteTieneOportunidadesAbiertas(clienteId);
+        boolean tieneCotizaciones = pipelineCliente.clienteTieneCotizacionesAbiertas(clienteId);
+        if (tieneOportunidades || tieneCotizaciones) {
+            String pendiente = motivoPipelineAbierto(tieneOportunidades, tieneCotizaciones);
+            throw new com.dessti.crm.platform.error.ReglaNegocioException(
+                    "No se puede dar de baja el Cliente porque tiene " + pendiente
+                            + ". Cierra o reasigna esa actividad (gana/pierde la Oportunidad, "
+                            + "o aprueba/rechaza la Cotizacion) antes de darlo de baja.");
+        }
+
         cliente.desactivar(actor);
         Cliente guardado = clienteRepository.save(cliente);
         auditarCliente(actor, "eliminar", guardado.getId(),
                 "baja logica del cliente '" + guardado.getNombre() + "' (rfc=" + guardado.getRfc() + ")");
         return ClienteDto.de(guardado);
+    }
+
+    /**
+     * Describe, en es-MX, la actividad comercial abierta que impide dar de baja al
+     * Cliente (Req 5.10), para incluirla en el mensaje del 422.
+     */
+    private static String motivoPipelineAbierto(boolean oportunidades, boolean cotizaciones) {
+        if (oportunidades && cotizaciones) {
+            return "Oportunidades y Cotizaciones abiertas";
+        }
+        if (oportunidades) {
+            return "Oportunidades abiertas (en una etapa no final)";
+        }
+        return "Cotizaciones abiertas (en borrador o enviada)";
     }
 
     /**

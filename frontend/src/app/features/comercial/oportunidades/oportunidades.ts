@@ -387,6 +387,16 @@ export class ComercialOportunidades {
 
   /** Convierte una Oportunidad ganada en Cotizacion y navega a su detalle (Req 14.5). */
   async convertir(oportunidad: Oportunidad): Promise<void> {
+    // Guarda preventiva de conversion unica (Req 14.7): si la Oportunidad ya tiene
+    // una Cotizacion vinculada, no se vuelve a convertir. La UI ya oculta el boton en
+    // ese caso; esta guarda evita una segunda conversion si el estado en memoria
+    // quedo desactualizado. El backend aplica la misma regla y responde 422.
+    if (oportunidad.cotizacionId) {
+      this.toast.error(
+        'Esta oportunidad ya fue convertida en una cotizacion. Abre la cotizacion existente desde "Ver cotizacion".',
+      );
+      return;
+    }
     const ok = await this.confirm.confirmar({
       titulo: 'Convertir en cotizacion',
       mensaje: `Se generara una cotizacion a partir de "${oportunidad.titulo}". Deseas continuar?`,

@@ -1,7 +1,7 @@
 <app-page-header titulo="Permisos de instalación" subtitulo="Administra los permisos de instalación: trámites municipales y autorizaciones del arrendador.">
   <div acciones>
     @if (puedeCrear) {
-      <button matButton="filled" type="button" (click)="alternarFormulario()">
+      <button matButton="filled" type="button" (click)="nuevo()">
         <mat-icon aria-hidden="true">add</mat-icon>
         Nuevo permiso
       </button>
@@ -9,46 +9,36 @@
   </div>
 </app-page-header>
 
-@if (formularioAbierto()) {
-  <mat-card appearance="outlined" class="operacion-form">
-    <mat-card-header>
-      <mat-card-title>Nuevo permiso</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      <form class="ds-dialog-form" [formGroup]="form" (ngSubmit)="crear()" novalidate>
-        <mat-form-field appearance="outline">
-          <mat-label>Tipo</mat-label>
-          <mat-select formControlName="tipo" required>
-            @for (opcion of tipos; track opcion) {
-              <mat-option [value]="opcion">{{ etiquetaTipo(opcion) }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Fecha de vencimiento</mat-label>
-          <input matInput [matDatepicker]="pickerFechaVencimiento" formControlName="fechaVencimiento" required />
-          <mat-datepicker-toggle matSuffix [for]="pickerFechaVencimiento" />
-          <mat-datepicker #pickerFechaVencimiento />
-          @if (form.controls.fechaVencimiento.hasError('required') && form.controls.fechaVencimiento.touched) {
-            <mat-error>La fecha de vencimiento es obligatoria.</mat-error>
-          }
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Sitio (identificador)</mat-label>
-          <input matInput type="text" formControlName="sitioId" required />
-          @if (form.controls.sitioId.hasError('required') && form.controls.sitioId.touched) {
-            <mat-error>El sitio es obligatorio.</mat-error>
-          }
-        </mat-form-field>
-        <div class="operacion-form__acciones">
-          <button matButton type="button" (click)="alternarFormulario()" [disabled]="guardando()">
-            Cancelar
-          </button>
-          <button matButton="filled" type="submit" [disabled]="guardando()">Registrar</button>
-        </div>
-      </form>
-    </mat-card-content>
-  </mat-card>
+@if (fase() === "ok") {
+  <section class="operacion-kpis" aria-label="Indicadores de permisos">
+    <button
+      type="button"
+      class="kpi-boton"
+      (click)="abrirInfoKpi('permisos_solicitados', 'Solicitados', totalSolicitados() ?? 0, 'conteo')"
+      aria-label="Ver explicación de permisos solicitados"
+    >
+      <app-kpi-tile icono="hourglass_top" tono="advertencia" etiqueta="Solicitados"
+        sublabel="Pendientes de decisión" [valor]="totalSolicitados()" />
+    </button>
+    <button
+      type="button"
+      class="kpi-boton"
+      (click)="abrirInfoKpi('permisos_aprobados', 'Aprobados', totalAprobados() ?? 0, 'conteo')"
+      aria-label="Ver explicación de permisos aprobados"
+    >
+      <app-kpi-tile icono="verified" tono="exito" etiqueta="Aprobados"
+        sublabel="Listos para instalar" [valor]="totalAprobados()" />
+    </button>
+    <button
+      type="button"
+      class="kpi-boton"
+      (click)="abrirInfoKpi('permisos_rechazados', 'Rechazados', totalRechazados() ?? 0, 'conteo')"
+      aria-label="Ver explicación de permisos rechazados"
+    >
+      <app-kpi-tile icono="block" tono="error" etiqueta="Rechazados"
+        sublabel="Permisos negados" [valor]="totalRechazados()" />
+    </button>
+  </section>
 }
 
 <div class="operacion-filtros">

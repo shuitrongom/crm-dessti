@@ -102,6 +102,12 @@ class GuardaCierreOrdenTrabajoInstalacionPropertyTest {
      */
     private static Montaje montar(EstadoOrdenTrabajoInstalacion estadoInicial,
                                   boolean hayPendientesSinResolver) {
+        return montar(estadoInicial, hayPendientesSinResolver, true);
+    }
+
+    private static Montaje montar(EstadoOrdenTrabajoInstalacion estadoInicial,
+                                  boolean hayPendientesSinResolver,
+                                  boolean tieneEvidencia) {
         TenantContext.set(UUID.randomUUID());
 
         OrdenTrabajoInstalacionRepository ordenRepository = mock(OrdenTrabajoInstalacionRepository.class);
@@ -133,6 +139,12 @@ class GuardaCierreOrdenTrabajoInstalacionPropertyTest {
         lenient().when(pendienteRepository
                         .findByOrdenTrabajoInstalacionIdAndResueltoFalseOrderByCreatedAtAsc(any(UUID.class)))
                 .thenReturn(sinResolver);
+
+        // Guarda de evidencia (Req 19.6): la presencia de evidencia se modela como
+        // dimension generada. Las properties de pendientes usan tieneEvidencia=true
+        // para aislar su dimension; la property de evidencia la varia.
+        lenient().when(evidenciaRepository.existsByOrdenTrabajoInstalacionId(any(UUID.class)))
+                .thenReturn(tieneEvidencia);
 
         ServicioOrdenesTrabajoInstalacion servicio = new ServicioOrdenesTrabajoInstalacion(
                 ordenRepository, pendienteRepository, evidenciaRepository,
@@ -216,6 +228,35 @@ class GuardaCierreOrdenTrabajoInstalacionPropertyTest {
                 .as("tras la transicion invalida, el estado se conserva en 'programada'")
                 .isEqualTo(EstadoOrdenTrabajoInstalacion.PROGRAMADA);
         verify(montaje.ordenRepository(), never()).save(any(OrdenTrabajoInstalacion.class));
+    }
+
+    // Feature: crm-anuncios-luminosos, Property 6: la transición a "completada" exige, además de no tener pendientes sin resolver, al menos una evidencia fotográfica adjunta (Req 19.6).
+    @Property(tries = 1000)
+    void cierreExigeEvidenciaFotografica(@ForAll boolean tieneEvidencia) {
+        // OTI en EN_CURSO y SIN pendientes sin resolver: la unica dimension que
+        // decide el resultado es la presencia de evidencia. Con evidencia, el cierre
+        // procede; sin evidencia, se rechaza (422) y el estado se conserva, sin
+        // llegar a persistir el cambio.
+        Montaje montaje = montar(EstadoOrdenTrabajoInstalacion.EN_CURSO, false, tieneEvidencia);
+        UUID ordenId = montaje.orden().getId();
+
+        if (tieneEvidencia) {
+            OrdenTrabajoInstalacionDto dto =
+                    montaje.servicio().cambiarEstado(ordenId, ESTADO_COMPLETADA);
+            assertThat(dto.estado())
+                    .as("con evidencia y sin pendientes, la OTI se completa")
+                    .isEqualTo(ESTADO_COMPLETADA);
+            verify(montaje.ordenRepository()).save(any(OrdenTrabajoInstalacion.class));
+        } else {
+            assertThatThrownBy(() -> montaje.servicio().cambiarEstado(ordenId, ESTADO_COMPLETADA))
+                    .as("sin evidencia, el cierre se rechaza (Req 19.6)")
+                    .isInstanceOf(ReglaNegocioException.class)
+                    .hasMessageContaining("evidencia");
+            assertThat(montaje.orden().getEstado())
+                    .as("tras el rechazo por falta de evidencia, el estado se conserva")
+                    .isEqualTo(EstadoOrdenTrabajoInstalacion.EN_CURSO);
+            verify(montaje.ordenRepository(), never()).save(any(OrdenTrabajoInstalacion.class));
+        }
     }
 
     // ----------------------------------------------------------------------

@@ -94,6 +94,12 @@ public class ServicioSuscripciones {
             throw new RecursoNoEncontradoException("No se encontro el Plan indicado.");
         }
 
+        // `suscripcion` tiene RLS FORCE con WITH CHECK (V2/V53); el super_admin
+        // opera sin app.current_tenant. Se fija el tenant destino ANTES del INSERT
+        // para que la policy de escritura lo admita (sin esto, el save violaria la
+        // RLS). Mismo patron que crearEmpresa/fijarMonedaFacturacion.
+        tenantSession.applyTenant(comando.tenantId());
+
         Suscripcion suscripcion = Suscripcion.crear(
                 comando.tenantId(), comando.planId(),
                 comando.vigenciaInicio(), comando.vigenciaFin(), actor);
@@ -461,7 +467,31 @@ public class ServicioSuscripciones {
         return SuscripcionDto.de(guardada);
     }
 
+    /**
+     * Carga una Suscripcion por su id, resolviendo antes su tenant para que la
+     * RLS no la oculte al super_admin de plataforma.
+     *
+     * <p>La tabla {@code suscripcion} tiene RLS {@code FORCE} deny-by-default
+     * (V2/V53). En el ambito de plataforma (super_admin) no hay
+     * {@code app.current_tenant} fijado, de modo que un {@code findById} directo
+     * no veria la fila y produciria un falso 404. Por eso se resuelve primero el
+     * {@code tenant_id} de la Suscripcion con {@code suscripcion_tenant(uuid)}
+     * ({@code SECURITY DEFINER}, V83) y se fija en la transaccion con
+     * {@code applyTenant} ANTES de leer la fila; asi la lectura (y cualquier
+     * escritura posterior sobre esa Suscripcion) ocurre con el tenant correcto.
+     * Es el mismo patron ya usado en {@code listarPorEmpresa},
+     * {@code fijarMonedaFacturacion} y {@code actualizarModulosEmpresa}.</p>
+     */
     private Suscripcion cargar(UUID suscripcionId) {
+        if (suscripcionId == null) {
+            throw new RecursoNoEncontradoException("No se encontro la Suscripcion solicitada.");
+        }
+        // Resuelve el tenant de la Suscripcion evadiendo la RLS (solo el UUID) y
+        // lo fija en la transaccion para que la fila sea visible al releerla.
+        UUID tenantId = suscripcionRepository.resolverTenantId(suscripcionId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "No se encontro la Suscripcion solicitada."));
+        tenantSession.applyTenant(tenantId);
         return suscripcionRepository.findById(suscripcionId)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "No se encontro la Suscripcion solicitada."));

@@ -562,6 +562,106 @@ class ServicioCotizacionesTest {
         assertThat(servicio.emisorIncompleto()).isTrue();
     }
 
+    // ------------------------------------------------------------------
+    // Guarda de vigencia (Req 6.11): no enviar/aprobar una Cotizacion vencida.
+    // RELOJ fijo = 2026-01-15; una vigencia anterior a esa fecha esta vencida.
+    // ------------------------------------------------------------------
+
+    /**
+     * Cotizacion en 'borrador' con una partida y la fecha de vigencia indicada
+     * (emision el 2025-12-01 para no violar valido_hasta >= emision).
+     */
+    private Cotizacion cotizacionConVigencia(LocalDate validoHasta) {
+        Cotizacion cotizacion = Cotizacion.crear(CLIENTE,
+                List.of(com.dessti.crm.comercial.cotizacion.domain.PartidaCotizacion.crear(
+                        null, "Base", 1, new BigDecimal("100.00"), "ventas")),
+                "ventas");
+        cotizacion.aplicarDatosDescriptivos(
+                LocalDate.of(2025, 12, 1), validoHasta, null, null, "MXN", "ventas");
+        return cotizacion;
+    }
+
+    @Test
+    @DisplayName("cambiarEstado a 'enviada' de una Cotizacion vencida devuelve 422 y conserva el estado (Req 6.11)")
+    void enviarCotizacionVencidaRechaza() {
+        Cotizacion cotizacion = cotizacionConVigencia(LocalDate.of(2026, 1, 10)); // vencida a 2026-01-15
+        when(repositorio.findById(cotizacion.getId())).thenReturn(Optional.of(cotizacion));
+
+        assertThatThrownBy(() -> servicio.cambiarEstado(cotizacion.getId(), "enviada"))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("vencida");
+        assertThat(cotizacion.getEstado()).isEqualTo(EstadoCotizacion.BORRADOR);
+        verify(repositorio, never()).save(any(Cotizacion.class));
+    }
+
+    @Test
+    @DisplayName("cambiarEstado a 'aprobada' de una Cotizacion enviada pero vencida devuelve 422 y conserva el estado (Req 6.11)")
+    void aprobarCotizacionVencidaRechaza() {
+        // Se envia estando vigente (para llegar a 'enviada'); luego, ya vencida, no se puede aprobar.
+        Cotizacion cotizacion = cotizacionConVigencia(LocalDate.of(2026, 1, 10));
+        cotizacion.cambiarEstado(EstadoCotizacion.ENVIADA, "ventas");
+        when(repositorio.findById(cotizacion.getId())).thenReturn(Optional.of(cotizacion));
+
+        assertThatThrownBy(() -> servicio.cambiarEstado(cotizacion.getId(), "aprobada"))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("vencida");
+        assertThat(cotizacion.getEstado()).isEqualTo(EstadoCotizacion.ENVIADA);
+        verify(repositorio, never()).save(any(Cotizacion.class));
+    }
+
+    @Test
+    @DisplayName("cambiarEstado a 'enviada' de una Cotizacion VIGENTE procede (Req 6.11)")
+    void enviarCotizacionVigenteProcede() {
+        Cotizacion cotizacion = cotizacionConVigencia(LocalDate.of(2026, 2, 28)); // vigente a 2026-01-15
+        when(repositorio.findById(cotizacion.getId())).thenReturn(Optional.of(cotizacion));
+        when(repositorio.save(any(Cotizacion.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        CotizacionDto dto = servicio.cambiarEstado(cotizacion.getId(), "enviada");
+
+        assertThat(dto.estado()).isEqualTo("enviada");
+    }
+
+    @Test
+    @DisplayName("cambiarEstado a 'enviada' sin fecha de vigencia procede (una Cotizacion sin valido_hasta no vence, Req 6.11)")
+    void enviarSinVigenciaProcede() {
+        Cotizacion cotizacion = cotizacionConVigencia(null);
+        when(repositorio.findById(cotizacion.getId())).thenReturn(Optional.of(cotizacion));
+        when(repositorio.save(any(Cotizacion.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        CotizacionDto dto = servicio.cambiarEstado(cotizacion.getId(), "enviada");
+
+        assertThat(dto.estado()).isEqualTo("enviada");
+    }
+
+    @Test
+    @DisplayName("cambiarEstado a 'rechazada' de una Cotizacion enviada pero vencida SI procede (la vigencia no restringe rechazar, Req 6.11)")
+    void rechazarCotizacionVencidaProcede() {
+        Cotizacion cotizacion = cotizacionConVigencia(LocalDate.of(2026, 1, 10));
+        cotizacion.cambiarEstado(EstadoCotizacion.ENVIADA, "ventas");
+        when(repositorio.findById(cotizacion.getId())).thenReturn(Optional.of(cotizacion));
+        when(repositorio.save(any(Cotizacion.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        CotizacionDto dto = servicio.cambiarEstado(cotizacion.getId(), "rechazada");
+
+        assertThat(dto.estado()).isEqualTo("rechazada");
+    }
+
+    @Test
+    @DisplayName("enviarPorCorreo de una Cotizacion vencida devuelve 422 sin contactar al proveedor de correo (Req 6.11)")
+    void enviarPorCorreoCotizacionVencidaRechaza() {
+        Cotizacion cotizacion = cotizacionConVigencia(LocalDate.of(2026, 1, 10));
+        cotizacion.asignarFolio("COT-2026-0002");
+        when(repositorio.findById(cotizacion.getId())).thenReturn(Optional.of(cotizacion));
+        when(datosCliente.buscarPorId(CLIENTE)).thenReturn(Optional.of(
+                new DatosCliente(CLIENTE, "Anuncios ACME", "AAA010101AAA", "ventas@acme.mx")));
+
+        assertThatThrownBy(() -> servicio.enviarPorCorreo(cotizacion.getId(), null))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("vencida");
+        assertThat(cotizacion.getEstado()).isEqualTo(EstadoCotizacion.BORRADOR);
+        verify(notificadorCorreo, never()).enviarCorreo(any());
+    }
+
     /** Construye una Cotizacion en 'borrador' con folio y datos descriptivos (V60). */
     private Cotizacion cotizacionConFolio() {
         Cotizacion cotizacion = Cotizacion.crear(CLIENTE,

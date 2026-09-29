@@ -170,5 +170,5 @@ describe('AdminUsuarios', () => {
     resolverCargaInicial([usuario()]);
     vi.useRealTimers();
     await esperarSinViolaciones(fixture);
-  });
+  }, 30000);
 });

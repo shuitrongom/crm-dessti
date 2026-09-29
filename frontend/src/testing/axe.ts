@@ -38,6 +38,10 @@ const REGLAS_DESACTIVADAS_JSDOM: RunOptions['rules'] = {
 const OPCIONES_POR_DEFECTO: RunOptions = {
   runOnly: { type: 'tag', values: [...ETIQUETAS_WCAG] },
   rules: REGLAS_DESACTIVADAS_JSDOM,
+  // No descender al contenido de <iframe> (p. ej. el visor de PDF): en jsdom no
+  // hay un frame navegable real y axe lanza "Respondable target must be a frame
+  // in the current window". El contenido embebido se valida en la capa e2e.
+  iframes: false,
 };
 
 /**

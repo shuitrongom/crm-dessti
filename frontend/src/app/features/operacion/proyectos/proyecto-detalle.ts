@@ -7,22 +7,25 @@
 // acciones se gobiernan por permiso proyecto:{leer,actualizar}.
 // =============================================================================
 
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
 
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../shared/components/state-container/state-container';
 import { ProgressBadge } from '../../../shared/components/progress-badge/progress-badge';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
 import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
+import {
+  IndicadorInfoDialog,
+  type DatosIndicadorInfo,
+} from '../../../shared/indicadores/indicador-info-dialog';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 import { FaseSolicitud } from '../../../shared/models/estado-solicitud';
@@ -33,6 +36,9 @@ import { KpiTile } from '../../../shared/components/kpi-tile/kpi-tile';
 import { DashboardSection } from '../../../shared/components/dashboard-section/dashboard-section';
 
 import { ProyectosService } from '../services/proyectos.service';
+import { SitioFormDialog, SitioFormDialogData } from './sitio-form-dialog';
+import { AvanceSitioDialog, AvanceSitioDialogData } from './avance-sitio-dialog';
+import { EvidenciasDialog, EvidenciasDialogData } from './evidencias-dialog';
 import {
   ETIQUETA_FASE_SITIO,
   FaseSitioGenerica,
@@ -49,13 +55,11 @@ import {
   selector: 'app-operacion-proyecto-detalle',
   imports: [
     RouterLink,
-    ReactiveFormsModule,
     MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
     MatButtonModule,
     MatIconModule,
     MatMenuModule,
+    MatTooltipModule,
     PageHeader,
     StateContainer,
     ProgressBadge,
@@ -67,30 +71,27 @@ import {
   templateUrl: './proyecto-detalle.html',
   styleUrl: './proyecto-detalle.scss',
 })
-export class OperacionProyectoDetalle {
+export class OperacionProyectoDetalle implements OnInit {
   /** Identificador del Proyecto tomado de la ruta (:id). */
   readonly id = input.required<string>();
 
-  private readonly fb = inject(FormBuilder);
   private readonly service = inject(ProyectosService);
   private readonly toast = inject(NotificacionesService);
   private readonly overlay = inject(OperacionOverlayService);
   private readonly auth = inject(AuthService);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly puedeAgregarSitio = this.auth.tienePermiso('proyecto', 'actualizar');
 
   protected readonly fase = signal<FaseSolicitud>('cargando');
   protected readonly mensajeError = signal<string | undefined>(undefined);
   protected readonly proyecto = signal<Proyecto | null>(null);
-  protected readonly guardando = signal(false);
-  protected readonly formularioAbierto = signal(false);
 
-  protected readonly form = this.fb.nonNullable.group({
-    nombre: ['', [Validators.required, Validators.maxLength(200)]],
-    direccion: ['', [Validators.maxLength(500)]],
-  });
-
-  constructor() {
+  ngOnInit(): void {
+    // La carga inicial va en ngOnInit (no en el constructor): los signal inputs
+    // como `id` solo tienen valor DESPUES de la construccion. Leer this.id() en el
+    // constructor lanza NG0950 ("Input id is required but no value is available
+    // yet") y deja la vista en blanco.
     this.cargar();
   }
 
@@ -190,35 +191,106 @@ export class OperacionProyectoDetalle {
     return porcentajeFaseSitio(sitio.fase);
   }
 
+  // ------------------------------------------------------------------
+  // Tablero Kanban de sucursales por fase (Req 3.2) — vista premium
+  // ------------------------------------------------------------------
+
+  /** Icono contextual por fase para las tarjetas del tablero. */
+  protected readonly iconoFase: Record<FaseSitioGenerica, string> = {
+    pendiente: 'inventory_2',
+    en_preparacion: 'precision_manufacturing',
+    en_instalacion: 'local_shipping',
+    entregado: 'task_alt',
+  };
+
+  /**
+   * Sucursal que acaba de cambiar de fase, para reproducir la animacion de
+   * "llegada" a su nueva columna. Se limpia sola tras la transicion.
+   */
+  protected readonly sitioAnimado = signal<string | null>(null);
+
+  /**
+   * Columnas del tablero Kanban: las 4 fases en orden, cada una con sus
+   * sucursales. Se recomputa automaticamente cuando cambia el Proyecto (al
+   * avanzar/corregir una fase, la tarjeta aparece en su nueva columna).
+   */
+  protected readonly columnasKanban = computed(() => {
+    const sitios = this.proyecto()?.sitiosMultisitio ?? [];
+    return ORDEN_FASE_SITIO.map((fase) => ({
+      fase,
+      etiqueta: ETIQUETA_FASE_SITIO[fase],
+      icono: this.iconoFase[fase],
+      sitios: sitios.filter((s) => s.fase === fase),
+    }));
+  });
+
   /** Siguiente fase disponible para una sucursal (null si ya esta entregada). */
   siguienteFase(sitio: SitioFase): FaseSitioGenerica | null {
     return this.puedeAgregarSitio ? siguienteFaseSitio(sitio.fase) : null;
   }
 
   /**
-   * Avanza la fase de una sucursal a la fase destino (Req 3.2), permitiendo adjuntar
-   * de forma opcional una referencia de evidencia (enlace a foto/acta/documento).
+   * Avanza la fase de una sucursal a la fase destino (Req 3.2) mediante un MODAL
+   * (AvanceSitioDialog) que confirma el avance y captura una evidencia opcional.
+   * Al cerrarse con el Proyecto actualizado, la tarjeta salta animada a su nueva
+   * columna del tablero.
    */
   avanzarSitio(sitio: SitioFase, destino: FaseSitioGenerica): void {
-    const evidenciaUrl = this.pedirEvidencia();
-    if (evidenciaUrl === false) {
-      return; // el usuario cancelo la captura de evidencia
-    }
-    this.overlay
-      .ejecutar(
-        this.service.actualizarAvanceSitio(this.id(), sitio.sitio.id, {
-          fase: destino,
-          evidenciaUrl: evidenciaUrl || null,
-        }),
-        { tipo: 'procesar', textoProceso: 'Actualizando sitio…', textoExito: 'Sitio actualizado' },
-      )
-      .subscribe({
-        next: (proyecto) => {
-          this.proyecto.set(proyecto);
-          this.toast.exito('Avance del sitio actualizado.');
-        },
-        error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
-      });
+    // Entregar (desde en_instalacion) exige evidencia aprobada (Req 3.2): se avisa
+    // en el modal; el backend aplica la guarda y responde 422 si falta.
+    const requiereEvidencia =
+      destino === 'entregado' && sitio.fase === 'en_instalacion';
+    // Pasar a instalación exige levantamiento completado + permiso vigente
+    // (Req 3-bis.2): se avisa en el modal; el backend valida y responde 422 si falta.
+    const requierePrecondicionesInstalacion = destino === 'en_instalacion';
+    const data: AvanceSitioDialogData = {
+      proyectoId: this.id(),
+      sitio,
+      destino,
+      icono: this.iconoFase[destino],
+      requiereEvidencia,
+      requierePrecondicionesInstalacion,
+      modo: 'avance',
+    };
+    const ref = this.dialog.open(AvanceSitioDialog, {
+      width: 'min(560px, 96vw)',
+      maxWidth: 'min(560px, 96vw)',
+      maxHeight: '92vh',
+      autoFocus: 'first-tabbable',
+      panelClass: 'ds-dialog-panel',
+      data,
+    });
+    ref.afterClosed().subscribe((proyecto?: Proyecto) => {
+      if (proyecto) {
+        this.proyecto.set(proyecto);
+        this.animarLlegada(sitio.sitio.id);
+        this.toast.exito('Avance del sitio actualizado.');
+      }
+    });
+  }
+
+  /**
+   * Abre la GALERIA de evidencias de una sucursal (Req 3.2): ver/subir archivos y,
+   * con permiso, aprobar/rechazar. El acceso a subir se gobierna por
+   * proyecto:actualizar (puedeAgregarSitio). No requiere recargar el proyecto salvo
+   * que cambie algo relevante para el tablero (no altera la fase).
+   */
+  abrirEvidencias(sitio: SitioFase): void {
+    const data: EvidenciasDialogData = {
+      proyectoId: this.id(),
+      sitioId: sitio.sitio.id,
+      sitioNombre: sitio.sitio.nombre,
+      fase: sitio.fase,
+      puedeSubir: this.puedeAgregarSitio,
+    };
+    this.dialog.open(EvidenciasDialog, {
+      width: 'min(720px, 96vw)',
+      maxWidth: 'min(720px, 96vw)',
+      maxHeight: '92vh',
+      autoFocus: 'first-tabbable',
+      panelClass: 'ds-dialog-panel',
+      data,
+    });
   }
 
   /**
@@ -229,61 +301,97 @@ export class OperacionProyectoDetalle {
     if (destino === sitio.fase) {
       return;
     }
-    this.overlay
-      .ejecutar(
-        this.service.corregirFaseSitio(this.id(), sitio.sitio.id, { fase: destino }),
-        { tipo: 'procesar', textoProceso: 'Corrigiendo fase…', textoExito: 'Fase corregida' },
-      )
-      .subscribe({
-        next: (proyecto) => {
-          this.proyecto.set(proyecto);
-          this.toast.exito('Fase de la sucursal corregida.');
-        },
-        error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
-      });
+    // La corrección exige un MOTIVO obligatorio (Req 3-bis.5): se captura en el
+    // modal (modo corrección) en lugar de llamar directo al backend, que de otro
+    // modo rechazaría con 422 por falta de motivo. El modal envía la corrección.
+    const data: AvanceSitioDialogData = {
+      proyectoId: this.id(),
+      sitio,
+      destino,
+      icono: this.iconoFase[destino],
+      modo: 'correccion',
+    };
+    const ref = this.dialog.open(AvanceSitioDialog, {
+      width: 'min(560px, 96vw)',
+      maxWidth: 'min(560px, 96vw)',
+      maxHeight: '92vh',
+      autoFocus: 'first-tabbable',
+      panelClass: 'ds-dialog-panel',
+      data,
+    });
+    ref.afterClosed().subscribe((proyecto?: Proyecto) => {
+      if (proyecto) {
+        this.proyecto.set(proyecto);
+        this.animarLlegada(sitio.sitio.id);
+        this.toast.exito('Fase de la sucursal corregida.');
+      }
+    });
   }
 
   /**
-   * Solicita una referencia de evidencia opcional para el avance. Devuelve la cadena
-   * (posiblemente vacia) o {@code false} si el usuario cancela. Usa un prompt simple;
-   * el enlace apunta a la evidencia ya almacenada (foto/acta/documento).
+   * Marca una sucursal como recien llegada a su nueva columna para disparar la
+   * animacion de entrada; la limpia sola pasado el tiempo de la transicion.
    */
-  private pedirEvidencia(): string | false {
-    const entrada = window.prompt(
-      'Enlace de evidencia (opcional): pega la URL del documento, foto o acta. Deja vacío si no aplica.',
-      '',
-    );
-    return entrada === null ? false : entrada.trim();
+  private animarLlegada(sitioId: string): void {
+    this.sitioAnimado.set(sitioId);
+    setTimeout(() => {
+      if (this.sitioAnimado() === sitioId) {
+        this.sitioAnimado.set(null);
+      }
+    }, 700);
   }
 
-  alternarFormulario(): void {
-    this.formularioAbierto.update((v) => !v);
-    if (this.formularioAbierto()) {
-      this.form.reset({ nombre: '', direccion: '' });
-    }
+  /** Abre el modal para agregar un Sitio al Proyecto (Req 21.2). */
+  nuevoSitio(): void {
+    this.abrirSitio();
   }
 
-  /** Agrega un Sitio al Proyecto (Req 21.2). */
-  agregarSitio(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
-    const v = this.form.getRawValue();
-    this.guardando.set(true);
-    this.service
-      .agregarSitio(this.id(), { nombre: v.nombre.trim(), direccion: v.direccion.trim() || null })
-      .subscribe({
-        next: () => {
-          this.guardando.set(false);
-          this.toast.exito('Sitio agregado.');
-          this.formularioAbierto.set(false);
-          this.cargar();
-        },
-        error: (e: HttpErrorResponse) => {
-          this.guardando.set(false);
-          this.toast.error(mensajeDeError(e));
-        },
-      });
+  /** Abre el modal para editar el nombre/direccion de un Sitio (Req 21.2). */
+  editarSitio(sitio: SitioFase): void {
+    this.abrirSitio(sitio);
+  }
+
+  /**
+   * Abre el modal de formulario de Sitio (alta si no se pasa `sitio`, edición si se
+   * pasa). En edición el backend devuelve el Proyecto detallado y se aplica directo;
+   * en alta se recarga el detalle.
+   */
+  private abrirSitio(sitio?: SitioFase): void {
+    const data: SitioFormDialogData = { proyectoId: this.id(), sitio };
+    const ref = this.dialog.open(SitioFormDialog, {
+      width: 'min(620px, 96vw)',
+      maxWidth: 'min(620px, 96vw)',
+      maxHeight: '92vh',
+      autoFocus: 'first-tabbable',
+      panelClass: 'ds-dialog-panel',
+      data,
+    });
+    ref.afterClosed().subscribe((resultado?: Proyecto | true) => {
+      if (!resultado) {
+        return;
+      }
+      if (resultado === true) {
+        this.toast.exito('Sitio agregado.');
+        this.cargar();
+      } else {
+        // Edición: el diálogo devolvió el Proyecto detallado ya actualizado.
+        this.proyecto.set(resultado);
+        this.toast.exito('Sitio actualizado.');
+      }
+    });
+  }
+
+  /**
+   * Abre el dialogo explicativo de un indicador de sucursales del proyecto (¿qué es? /
+   * ¿cómo se calcula? / ¿por qué importa?). La clave debe coincidir con una del catálogo.
+   */
+  abrirInfoKpi(clave: string, etiqueta: string, valor: number, unidad: string): void {
+    const datos: DatosIndicadorInfo = { clave, etiqueta, valor, unidad };
+    this.dialog.open(IndicadorInfoDialog, {
+      data: datos,
+      width: '32rem',
+      maxWidth: '92vw',
+      autoFocus: false,
+    });
   }
 }

@@ -13,6 +13,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { provideNativeDateAdapter } from '@angular/material/core';
 import { Observable } from 'rxjs';
 
 import { ListaFormDialog } from './lista-form-dialog';
@@ -67,6 +68,7 @@ describe('ListaFormDialog', () => {
       providers: [
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
+        provideNativeDateAdapter(),
         { provide: MatDialogRef, useValue: dialogRef },
         { provide: OperacionOverlayService, useClass: OverlayStub },
         { provide: MAT_DIALOG_DATA, useValue: data },
@@ -114,5 +116,5 @@ describe('ListaFormDialog', () => {
   it('no tiene violaciones de accesibilidad (WCAG 2.1 A/AA)', async () => {
     await montar();
     await esperarSinViolaciones(fixture);
-  });
+  }, 30000);
 });

@@ -161,7 +161,7 @@ class MaterialControllerTest {
         Pageable pageable = PageRequest.of(0, 20);
         Page<MaterialDto> pagina =
                 new PageImpl<>(List.of(materialDto(new BigDecimal("1"), true)), pageable, 1);
-        when(servicioInventario.listarMateriales(any(), anyBoolean(), any(Pageable.class)))
+        when(servicioInventario.listarMateriales(any(), any(), anyBoolean(), any(Pageable.class)))
                 .thenReturn(pagina);
 
         mockMvc.perform(get("/materiales").param("stockBajo", "true").with(user("almacen")))
@@ -169,6 +169,75 @@ class MaterialControllerTest {
                 .andExpect(jsonPath("$.content").isArray())
                 .andExpect(jsonPath("$.totalElements").value(1))
                 .andExpect(jsonPath("$.content[0].stockBajo").value(true));
+    }
+
+    @Test
+    void listar_inactivos_pasaEstadoAlServicio() throws Exception {
+        when(autorizador.tiene("material", "listar")).thenReturn(true);
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<MaterialDto> pagina =
+                new PageImpl<>(List.of(materialDto(new BigDecimal("1"), false)), pageable, 1);
+        // estado=inactivo => activo=false hacia el servicio.
+        when(servicioInventario.listarMateriales(any(), eq(Boolean.FALSE), anyBoolean(),
+                any(Pageable.class))).thenReturn(pagina);
+
+        mockMvc.perform(get("/materiales").param("estado", "inactivo").with(user("almacen")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1));
+    }
+
+    @Test
+    void editar_devuelve200() throws Exception {
+        when(autorizador.tiene("material", "actualizar")).thenReturn(true);
+        when(servicioInventario.editar(eq(ID), eq("Tubo LED XL"), eq("pieza"), any(BigDecimal.class)))
+                .thenReturn(materialDto(new BigDecimal("3"), false));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .put("/materiales/{id}", ID)
+                        .contentType("application/json")
+                        .content("{\"nombre\":\"Tubo LED XL\",\"unidadMedida\":\"pieza\",\"stockMinimo\":5}")
+                        .with(user("almacen")).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(ID.toString()));
+    }
+
+    @Test
+    void editar_devuelve404_cuandoNoAccesible() throws Exception {
+        when(autorizador.tiene("material", "actualizar")).thenReturn(true);
+        when(servicioInventario.editar(eq(ID), anyString(), anyString(), any(BigDecimal.class)))
+                .thenThrow(new RecursoNoEncontradoException("No se encontro el Material solicitado."));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .put("/materiales/{id}", ID)
+                        .contentType("application/json")
+                        .content("{\"nombre\":\"X\",\"unidadMedida\":\"pieza\",\"stockMinimo\":1}")
+                        .with(user("almacen")).with(csrf()))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void editar_devuelve403_cuandoFaltaPermiso() throws Exception {
+        when(autorizador.tiene(anyString(), anyString())).thenReturn(false);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .put("/materiales/{id}", ID)
+                        .contentType("application/json")
+                        .content("{\"nombre\":\"X\",\"unidadMedida\":\"pieza\",\"stockMinimo\":1}")
+                        .with(user("sin_permiso")).with(csrf()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void activar_devuelve200() throws Exception {
+        when(autorizador.tiene("material", "actualizar")).thenReturn(true);
+        when(servicioInventario.activar(eq(ID))).thenReturn(materialDto(new BigDecimal("3"), false));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .put("/materiales/{id}/activar", ID)
+                        .with(user("almacen")).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(ID.toString()))
+                .andExpect(jsonPath("$.activo").value(true));
     }
 
     @Test

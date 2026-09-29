@@ -128,4 +128,22 @@ public interface OportunidadRepository extends JpaRepository<Oportunidad, UUID> 
             @Param("clienteId") UUID clienteId,
             @Param("desde") Instant desde,
             @Param("hasta") Instant hasta);
+
+    /**
+     * Indica si el Cliente dado tiene al menos una Oportunidad <strong>abierta</strong>
+     * (etapa no final, distinta de {@code ganado}/{@code perdido}) en el tenant vigente
+     * (Req 5.10). Sustenta la guarda que impide dar de baja un Cliente con pipeline
+     * comercial vivo. El filtro global de Hibernate y la RLS acotan la consulta al
+     * {@code tenant_id} vigente (Req 23); es de solo lectura.
+     *
+     * @param clienteId Cliente a verificar.
+     * @return {@code true} si existe al menos una Oportunidad en etapa no final del Cliente.
+     */
+    @Query("""
+            SELECT (COUNT(o) > 0) FROM Oportunidad o
+            WHERE o.clienteId = :clienteId
+              AND o.etapa NOT IN (com.dessti.crm.comercial.oportunidad.domain.EtapaOportunidad.GANADO,
+                                  com.dessti.crm.comercial.oportunidad.domain.EtapaOportunidad.PERDIDO)
+            """)
+    boolean existeOportunidadAbiertaDeCliente(@Param("clienteId") UUID clienteId);
 }

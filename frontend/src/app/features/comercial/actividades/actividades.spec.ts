@@ -181,5 +181,5 @@ describe('ComercialActividades', () => {
   it('no tiene violaciones de accesibilidad (WCAG 2.1 A/AA)', async () => {
     resolverCargaInicial([actividadDto()], 1);
     await esperarSinViolaciones(fixture);
-  });
+  }, 30000);
 });

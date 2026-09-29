@@ -18,6 +18,7 @@ coverage/
 _*.txt
 _*.log
 _*.err
+_*.cmd
 local-dev/_*.ps1
 local-dev/_*.sql
 local-dev/_*.cmd

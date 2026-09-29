@@ -8,6 +8,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -143,6 +144,34 @@ public class InventarioAvanzadoController {
         AlmacenDto dto = servicio.actualizarAlmacen(
                 id, new ActualizarAlmacenCommand(request.nombre(), request.tipo()));
         return ResponseEntity.ok(dto);
+    }
+
+    /**
+     * Da de baja logica un Almacen (Req 60). 200 OK con el {@link AlmacenDto} desactivado;
+     * 404 si no es accesible. Se gobierna con el permiso de actualizacion (es una
+     * modificacion del estado del recurso, no un alta). Las existencias y el Kardex se
+     * conservan.
+     *
+     * @param id identificador del Almacen.
+     * @return 200 OK con el {@link AlmacenDto} desactivado.
+     */
+    @DeleteMapping("/almacenes/{id}")
+    @PreAuthorize("@autorizador.moduloHabilitado('inventario-avanzado') and @autorizador.tiene('almacen','actualizar')")
+    public ResponseEntity<AlmacenDto> desactivarAlmacen(@PathVariable("id") UUID id) {
+        return ResponseEntity.ok(servicio.desactivarAlmacen(id));
+    }
+
+    /**
+     * Reactiva un Almacen dado de baja (Req 60). 200 OK con el {@link AlmacenDto}
+     * reactivado; 404 si no es accesible. Se gobierna con el permiso de actualizacion.
+     *
+     * @param id identificador del Almacen.
+     * @return 200 OK con el {@link AlmacenDto} reactivado.
+     */
+    @PutMapping("/almacenes/{id}/activar")
+    @PreAuthorize("@autorizador.moduloHabilitado('inventario-avanzado') and @autorizador.tiene('almacen','actualizar')")
+    public ResponseEntity<AlmacenDto> activarAlmacen(@PathVariable("id") UUID id) {
+        return ResponseEntity.ok(servicio.activarAlmacen(id));
     }
 
     /**

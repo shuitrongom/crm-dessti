@@ -703,7 +703,7 @@ Muchos criterios de aceptación se rigen por transiciones de estado explícitas.
 
 ### Orden de Trabajo de Instalación (Req 19.5, 19.6)
 
-`programada → {en_curso | cancelada}`, `en_curso → {completada | cancelada}`. `completada` requiere Lista_Pendientes sin ítems abiertos. Finales: `completada`, `cancelada`.
+`programada → {en_curso | cancelada}`, `en_curso → {completada | cancelada}`. `completada` requiere **dos** guardas de negocio, verificadas en la capa de aplicación tras validar la transición: (1) al menos una evidencia fotográfica adjunta (`evidencia_instalacion`), y (2) Lista_Pendientes sin ítems abiertos. No se puede cerrar una instalación sin evidencia que la respalde. Finales: `completada`, `cancelada`.
 
 ### Ticket de Servicio (Req 20.4, 20.5)
 
@@ -805,7 +805,7 @@ Las siguientes propiedades se derivan del análisis de prework de los criterios 
 
 ### Property 6: Guarda de cierre de Orden de Trabajo de Instalación
 
-*Para cualquier* Orden_Trabajo_Instalacion, la transición a "completada" se permite si y solo si su Lista_Pendientes no contiene ningún elemento sin resolver.
+*Para cualquier* Orden_Trabajo_Instalacion en un estado desde el que "completada" es una transición válida, la transición a "completada" se permite si y solo si se cumplen **ambas** condiciones: (a) la OTI tiene al menos una evidencia fotográfica adjunta, y (b) su Lista_Pendientes no contiene ningún elemento sin resolver. Si falta la evidencia se rechaza con 422 antes de evaluar los pendientes; si hay evidencia pero quedan pendientes sin resolver se rechaza con 422 enumerando sus descripciones. En cualquier rechazo el estado se conserva.
 
 **Validates: Requirements 19.6**
 

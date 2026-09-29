@@ -162,6 +162,25 @@ export class ComercialCotizacionDetalle implements OnInit {
   protected readonly esBorrador = computed(() => this.cotizacion()?.estado === 'borrador');
 
   /**
+   * `true` cuando la Cotizacion tiene fecha de vigencia (`validoHasta`) y esa fecha
+   * ya pasó respecto a hoy (Req 6.11). El día de vigencia aún es válido (frontera
+   * inclusiva) y una Cotizacion sin `validoHasta` nunca está vencida. Es una señal
+   * PREVENTIVA de UI; el backend aplica la regla como fuente de verdad y responde
+   * 422 si se intenta enviar/aprobar una vencida.
+   */
+  protected readonly estaVencida = computed<boolean>(() => {
+    const validoHasta = this.cotizacion()?.validoHasta;
+    if (!validoHasta) {
+      return false;
+    }
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const limite = new Date(validoHasta);
+    limite.setHours(0, 0, 0, 0);
+    return hoy.getTime() > limite.getTime();
+  });
+
+  /**
    * `true` cuando la Empresa emisora tiene datos fiscales incompletos (Req 3):
    * activa un aviso no intrusivo que invita a completar RFC y direccion en
    * "Mi empresa". Se alimenta del flag `emisorIncompleto` del DTO, presente
@@ -304,6 +323,15 @@ export class ComercialCotizacionDetalle implements OnInit {
     if (!c || this.enviando()) {
       return;
     }
+    // Guarda preventiva de vigencia (Req 6.11): no se puede enviar una Cotizacion
+    // vencida. Se avisa y no se abre el diálogo ni se contacta al backend (que de
+    // todos modos respondería 422).
+    if (this.estaVencida()) {
+      this.toast.error(
+        'La cotización está vencida (revisa su fecha de vigencia). Actualiza el "válido hasta" antes de enviarla.',
+      );
+      return;
+    }
     const correo = await this.correoDialog.pedir({
       folio: c.folio,
       correoCliente: c.clienteEmail ?? null,
@@ -403,6 +431,16 @@ export class ComercialCotizacionDetalle implements OnInit {
 
   /** Cambia el estado de la Cotizacion con confirmacion (Req 6.6). */
   async cambiarEstado(estado: EstadoCotizacion): Promise<void> {
+    // Guarda preventiva de vigencia (Req 6.11): enviar o aprobar exige que la
+    // Cotizacion no esté vencida. Rechazar no queda restringido. Se avisa y no se
+    // llama al backend (fuente de verdad, que respondería 422).
+    if ((estado === 'enviada' || estado === 'aprobada') && this.estaVencida()) {
+      this.toast.error(
+        `La cotización está vencida (revisa su fecha de vigencia); no puede ${estado === 'enviada' ? 'enviarse' : 'aprobarse'}. ` +
+          'Actualiza el "válido hasta" para continuar.',
+      );
+      return;
+    }
     const ok = await this.confirm.confirmar({
       titulo: 'Cambiar estado',
       mensaje: `La cotizacion pasara a "${ETIQUETA_ESTADO_COTIZACION[estado]}". Deseas continuar?`,

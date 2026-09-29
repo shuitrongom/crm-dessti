@@ -159,13 +159,57 @@ public class Material extends TenantScopedEntity {
     }
 
     /**
+     * Actualiza los datos editables del Material revalidando las reglas obligatorias
+     * (nombre 1..200, unidad de medida y stock minimo &gt;= 0). No modifica las
+     * existencias (que solo cambian por movimientos) ni el estado {@code activo}
+     * (para eso estan {@link #desactivar(String)} y {@link #activar(String)}).
+     *
+     * @param nombre       nuevo nombre; obligatorio (1..200, se recorta).
+     * @param unidadMedida nueva unidad de medida; obligatoria.
+     * @param stockMinimo  nuevo stock minimo; obligatorio y &gt;= 0.
+     * @param actor        identificador de quien actualiza, para {@code updated_by}.
+     * @throws ReglaNegocioException si algun dato obligatorio falta o es invalido (422).
+     */
+    public void actualizar(String nombre, String unidadMedida, BigDecimal stockMinimo,
+                           String actor) {
+        this.nombre = normalizarNombre(nombre);
+        this.unidadMedida = normalizarUnidad(unidadMedida);
+        this.stockMinimo = normalizarStockMinimo(stockMinimo);
+        this.setUpdatedBy(actor);
+    }
+
+    /**
      * Da de baja logica el Material (Req 18, 3.1). Idempotente: desactivar un Material
-     * ya inactivo no tiene efecto adicional.
+     * ya inactivo no tiene efecto adicional (no revalida).
+     *
+     * <p><strong>Regla de negocio:</strong> un Material <strong>activo</strong> solo
+     * puede darse de baja si su saldo de existencias es 0. Dar de baja un Material con
+     * existencias &gt; 0 significaria ocultar inventario fisico que sigue en bodega,
+     * descuadrando el inventario y las alertas de stock; se rechaza con
+     * {@link ReglaNegocioException} (422). Para darlo de baja, primero se deben agotar
+     * o trasladar sus existencias mediante los movimientos correspondientes.</p>
      *
      * @param actor identificador de quien realiza la baja, para {@code updated_by}.
+     * @throws ReglaNegocioException si el Material esta activo y aun tiene existencias (422).
      */
     public void desactivar(String actor) {
+        if (this.activo && this.existencias.signum() > 0) {
+            throw new ReglaNegocioException(
+                    "No se puede dar de baja un Material con existencias. Ajusta sus existencias "
+                            + "a 0 (salida o ajuste) antes de darlo de baja.");
+        }
         this.activo = false;
+        this.setUpdatedBy(actor);
+    }
+
+    /**
+     * Reactiva un Material dado de baja: marca {@code activo=true}. Idempotente.
+     * Permite volver a operar con un Material retirado sin perder su historico.
+     *
+     * @param actor identificador de quien reactiva, para {@code updated_by}.
+     */
+    public void activar(String actor) {
+        this.activo = true;
         this.setUpdatedBy(actor);
     }
 

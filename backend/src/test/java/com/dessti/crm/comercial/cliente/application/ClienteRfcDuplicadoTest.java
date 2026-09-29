@@ -50,7 +50,8 @@ class ClienteRfcDuplicadoTest {
         contactoRepository = mock(ContactoRepository.class);
         usuarioExistente = mock(com.dessti.crm.comercial.cliente.application.UsuarioExistentePort.class);
         auditoria = mock(AuditoriaPort.class);
-        servicio = new ServicioClientes(clienteRepository, contactoRepository, usuarioExistente, auditoria);
+        servicio = new ServicioClientes(clienteRepository, contactoRepository, usuarioExistente,
+                mock(PipelineClientePort.class), auditoria);
         // El servicio deriva el tenant del contexto para auditar (Req 23.4).
         TenantContext.set(TENANT);
     }

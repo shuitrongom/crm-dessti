@@ -1,0 +1,79 @@
+<mat-dialog-content class="oti-form__content">
+  <form class="ds-form" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+    <header class="ds-form__header">
+      <h2 class="ds-form__header-title" mat-dialog-title>Programar orden de trabajo</h2>
+      <p class="ds-form__header-subtitle">
+        Genera una OTI a partir de una orden de fabricación terminada, asignando cuadrilla y fecha.
+      </p>
+    </header>
+
+    @if (error()) {
+      <p class="ds-form__note ds-form__note--warn" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </p>
+    }
+
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Datos de la instalación</h3>
+        <p class="ds-form__section-desc">
+          Referencia la orden de fabricación y el sitio, y asigna la cuadrilla y la fecha en campo.
+        </p>
+      </div>
+
+      <div class="ds-form__section-body">
+        <div class="ds-form__grid">
+          <div class="ds-form__field ds-form__field--full">
+            <mat-form-field appearance="outline">
+              <mat-label>Orden de fabricación terminada (identificador)</mat-label>
+              <input matInput type="text" formControlName="ordenFabricacionId" autocomplete="off" required />
+              @if (form.controls.ordenFabricacionId.hasError('required') && form.controls.ordenFabricacionId.touched) {
+                <mat-error>La orden de fabricación es obligatoria.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Sitio (identificador)</mat-label>
+              <input matInput type="text" formControlName="sitioId" autocomplete="off" required />
+              @if (form.controls.sitioId.hasError('required') && form.controls.sitioId.touched) {
+                <mat-error>El sitio es obligatorio.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Cuadrilla (identificador)</mat-label>
+              <input matInput type="text" formControlName="cuadrillaId" autocomplete="off" required />
+              @if (form.controls.cuadrillaId.hasError('required') && form.controls.cuadrillaId.touched) {
+                <mat-error>La cuadrilla es obligatoria.</mat-error>
+              }
+            </mat-form-field>
+            <p class="ds-form__help">Aún sin catálogo de cuadrillas: se captura por identificador.</p>
+          </div>
+
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Fecha programada</mat-label>
+              <input matInput [matDatepicker]="pickerFechaProgramada" formControlName="fechaProgramada" required />
+              <mat-datepicker-toggle matSuffix [for]="pickerFechaProgramada" />
+              <mat-datepicker #pickerFechaProgramada />
+              @if (form.controls.fechaProgramada.hasError('required') && form.controls.fechaProgramada.touched) {
+                <mat-error>La fecha programada es obligatoria.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+    </section>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancelar()" [disabled]="guardando()">Cancelar</button>
+  <button matButton="filled" type="button" (click)="guardar()" [disabled]="guardando() || form.invalid">
+    Programar OTI
+  </button>
+</mat-dialog-actions>

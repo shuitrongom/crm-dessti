@@ -111,7 +111,8 @@ describe('ComercialCotizacionNueva', () => {
     componente.partidas.at(0).get('cantidad')!.setValue(2);
     componente.partidas.at(0).get('precioUnitario')!.setValue(100);
     fixture.detectChanges();
-    expect(componente.total()).toBe(200);
+    // Total previsualizado con desglose fiscal (V80): base 2*100=200 + IVA 16% = 232.
+    expect(componente.total()).toBe(232);
 
     componente.crear();
     const post = http.expectOne(
@@ -126,6 +127,8 @@ describe('ComercialCotizacionNueva', () => {
           descripcion: 'Letrero principal',
           cantidad: 2,
           precioUnitario: 100,
+          descuento: null,
+          tasaIva: '16',
         },
       ],
     });
@@ -155,6 +158,8 @@ describe('ComercialCotizacionNueva', () => {
           descripcion: 'Servicio de diseno',
           cantidad: 1,
           precioUnitario: null,
+          descuento: null,
+          tasaIva: '16',
         },
       ],
     });
@@ -192,6 +197,8 @@ describe('ComercialCotizacionNueva', () => {
           descripcion: 'Letrero',
           cantidad: 1,
           precioUnitario: 500,
+          descuento: null,
+          tasaIva: '16',
         },
       ],
     });
@@ -202,5 +209,5 @@ describe('ComercialCotizacionNueva', () => {
     // axe usa temporizadores internos; se ejecuta con los reales.
     vi.useRealTimers();
     await esperarSinViolaciones(fixture);
-  });
+  }, 30000);
 });

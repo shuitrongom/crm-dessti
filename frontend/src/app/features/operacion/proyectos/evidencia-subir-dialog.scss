@@ -1,0 +1,122 @@
+.evi-subir__content {
+  padding-block: var(--ds-space-2);
+}
+
+.evi-subir__titulo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+}
+
+.evi-subir__icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--ds-color-primary),
+    color-mix(in srgb, var(--ds-color-primary) 55%, #fff));
+  color: #fff;
+
+  mat-icon { font-size: 1.2rem; inline-size: 1.2rem; block-size: 1.2rem; }
+}
+
+// Zona de arrastrar/soltar (dropzone) — el <input file> la cubre por completo.
+.evi-subir__drop {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ds-space-2);
+  padding: var(--ds-space-6) var(--ds-space-4);
+  border: 2px dashed var(--mat-sys-outline-variant, #c9c6d0);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--ds-color-primary) 4%, var(--mat-sys-surface, #fff));
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease;
+
+  &:hover,
+  &--activo {
+    border-color: var(--ds-color-primary);
+    background: color-mix(in srgb, var(--ds-color-primary) 10%, var(--mat-sys-surface, #fff));
+  }
+
+  &-icono {
+    font-size: 2.5rem;
+    inline-size: 2.5rem;
+    block-size: 2.5rem;
+    color: var(--ds-color-primary);
+  }
+
+  &-titulo {
+    font-weight: var(--ds-font-weight-medium);
+    color: var(--mat-sys-on-surface, #1d1b20);
+  }
+
+  &-ayuda {
+    font-size: var(--ds-font-size-sm);
+    color: var(--ds-color-text-muted);
+  }
+}
+
+.evi-subir__input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+// Vista previa del archivo seleccionado.
+.evi-subir__preview {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-3);
+  border: 1px solid var(--mat-sys-outline-variant, #e2e0e8);
+  border-radius: 14px;
+  background: var(--mat-sys-surface, #fff);
+}
+
+.evi-subir__img {
+  inline-size: 72px;
+  block-size: 72px;
+  object-fit: cover;
+  border-radius: 10px;
+  flex: none;
+}
+
+.evi-subir__doc {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 72px;
+  block-size: 72px;
+  border-radius: 10px;
+  flex: none;
+  background: color-mix(in srgb, var(--ds-color-primary) 10%, transparent);
+  color: var(--ds-color-primary);
+
+  mat-icon { font-size: 2.2rem; inline-size: 2.2rem; block-size: 2.2rem; }
+}
+
+.evi-subir__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.evi-subir__nombre {
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--mat-sys-on-surface, #1d1b20);
+  overflow-wrap: anywhere;
+}
+
+.evi-subir__tamano {
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-color-text-muted);
+}

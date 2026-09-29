@@ -245,6 +245,8 @@ class ServicioOrdenesTrabajoInstalacionTest {
     void cambiarEstado_lanza422_yEnumeraLosPendientesNoResueltos() {
         OrdenTrabajoInstalacion orden = otiEn(EstadoOrdenTrabajoInstalacion.EN_CURSO);
         when(ordenRepository.findById(orden.getId())).thenReturn(Optional.of(orden));
+        // La OTI tiene evidencia: el rechazo debe deberse a los pendientes (Req 19.6).
+        when(evidenciaRepository.existsByOrdenTrabajoInstalacionId(orden.getId())).thenReturn(true);
         when(pendienteRepository
                 .findByOrdenTrabajoInstalacionIdAndResueltoFalseOrderByCreatedAtAsc(orden.getId()))
                 .thenReturn(List.of(pendiente(orden, "fijar anclas", false),
@@ -260,9 +262,11 @@ class ServicioOrdenesTrabajoInstalacionTest {
     }
 
     @Test
-    void cambiarEstado_completa_cuandoNoHayPendientesSinResolver() {
+    void cambiarEstado_completa_cuandoHayEvidenciaYSinPendientesSinResolver() {
         OrdenTrabajoInstalacion orden = otiEn(EstadoOrdenTrabajoInstalacion.EN_CURSO);
         when(ordenRepository.findById(orden.getId())).thenReturn(Optional.of(orden));
+        // Con evidencia adjunta y sin pendientes, el cierre procede (Req 19.6).
+        when(evidenciaRepository.existsByOrdenTrabajoInstalacionId(orden.getId())).thenReturn(true);
         when(pendienteRepository
                 .findByOrdenTrabajoInstalacionIdAndResueltoFalseOrderByCreatedAtAsc(orden.getId()))
                 .thenReturn(List.of());
@@ -273,6 +277,24 @@ class ServicioOrdenesTrabajoInstalacionTest {
         verify(ordenRepository).save(any(OrdenTrabajoInstalacion.class));
         ArgumentCaptor<EventoAuditoria> captor = ArgumentCaptor.forClass(EventoAuditoria.class);
         verify(auditoria).registrar(captor.capture());
+    }
+
+    @Test
+    void cambiarEstado_lanza422_siNoHayEvidencia_sinRevisarPendientes() {
+        OrdenTrabajoInstalacion orden = otiEn(EstadoOrdenTrabajoInstalacion.EN_CURSO);
+        when(ordenRepository.findById(orden.getId())).thenReturn(Optional.of(orden));
+        // Sin evidencia adjunta: la guarda del Req 19.6 rechaza el cierre.
+        when(evidenciaRepository.existsByOrdenTrabajoInstalacionId(orden.getId())).thenReturn(false);
+
+        assertThatThrownBy(() -> servicio.cambiarEstado(orden.getId(), "completada"))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("evidencia");
+        // El estado se conserva y no se persiste el cambio.
+        assertThat(orden.getEstado()).isEqualTo(EstadoOrdenTrabajoInstalacion.EN_CURSO);
+        verify(ordenRepository, never()).save(any(OrdenTrabajoInstalacion.class));
+        // La guarda de evidencia actua ANTES: no se consultan los pendientes.
+        verify(pendienteRepository, never())
+                .findByOrdenTrabajoInstalacionIdAndResueltoFalseOrderByCreatedAtAsc(any(UUID.class));
     }
 
     @Test
@@ -295,5 +317,48 @@ class ServicioOrdenesTrabajoInstalacionTest {
 
         assertThatThrownBy(() -> servicio.cambiarEstado(desconocida, "completada"))
                 .isInstanceOf(RecursoNoEncontradoException.class);
+    }
+
+    // ------------------------------------------------------------------
+    // Guarda de programacion (Req 19.2, 19.3, 17.4) — precondiciones
+    // ------------------------------------------------------------------
+
+    private ProgramarOrdenTrabajoInstalacionCommand comandoProgramar(UUID ofId, UUID sitioId) {
+        return new ProgramarOrdenTrabajoInstalacionCommand(
+                ofId, sitioId, UUID.randomUUID(), LocalDate.of(2025, 2, 1));
+    }
+
+    @Test
+    void programar_conTodasLasPrecondiciones_creaLaOtiProgramada() {
+        UUID ofId = UUID.randomUUID();
+        UUID sitioId = UUID.randomUUID();
+        UUID clienteId = UUID.randomUUID();
+        when(ordenFabricacionTerminada.clienteDeOrden(ofId)).thenReturn(Optional.of(clienteId));
+        when(ordenFabricacionTerminada.estaTerminada(ofId)).thenReturn(true);
+        when(levantamientoCompletado.sitioTieneLevantamientoCompletado(sitioId)).thenReturn(true);
+        // Permiso aprobado Y VIGENTE.
+        when(permisoAprobado.sitioTienePermisoVigente(sitioId)).thenReturn(true);
+
+        OrdenTrabajoInstalacionDto dto = servicio.programar(comandoProgramar(ofId, sitioId));
+
+        assertThat(dto.estado()).isEqualTo("programada");
+        verify(ordenRepository).save(any(OrdenTrabajoInstalacion.class));
+    }
+
+    @Test
+    void programar_rechaza422_siElPermisoNoEstaVigente() {
+        UUID ofId = UUID.randomUUID();
+        UUID sitioId = UUID.randomUUID();
+        when(ordenFabricacionTerminada.clienteDeOrden(ofId)).thenReturn(Optional.of(UUID.randomUUID()));
+        when(ordenFabricacionTerminada.estaTerminada(ofId)).thenReturn(true);
+        when(levantamientoCompletado.sitioTieneLevantamientoCompletado(sitioId)).thenReturn(true);
+        // Un permiso aprobado pero VENCIDO (o inexistente) hace que la vigencia sea false.
+        when(permisoAprobado.sitioTienePermisoVigente(sitioId)).thenReturn(false);
+
+        assertThatThrownBy(() -> servicio.programar(comandoProgramar(ofId, sitioId)))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("aprobado y vigente");
+        // No se crea la OTI si la guarda de permiso falla.
+        verify(ordenRepository, never()).save(any(OrdenTrabajoInstalacion.class));
     }
 }

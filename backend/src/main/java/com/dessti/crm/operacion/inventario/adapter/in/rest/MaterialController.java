@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -112,11 +113,53 @@ public class MaterialController {
     @PreAuthorize("@autorizador.moduloHabilitado('operacion') and @autorizador.tiene('material','listar')")
     public PaginaResponse<MaterialDto> listar(
             @RequestParam(name = "nombre", required = false) String nombre,
+            @RequestParam(name = "estado", required = false) String estado,
             @RequestParam(name = "stockBajo", required = false, defaultValue = "false") boolean stockBajo,
             @RequestParam(name = "page", required = false) Integer page,
             @RequestParam(name = "size", required = false) Integer size) {
         Pageable pageable = PageRequestFactory.acotando(page, size);
-        return PaginaResponse.de(servicioInventario.listarMateriales(nombre, stockBajo, pageable));
+        // estado: "activo" (por defecto), "inactivo" o "todos". Un valor no reconocido
+        // cae al comportamiento por defecto (solo activos), coherente con Productos.
+        Boolean activo = switch (estado == null ? "" : estado.trim().toLowerCase()) {
+            case "inactivo" -> Boolean.FALSE;
+            case "todos" -> null;
+            default -> Boolean.TRUE;
+        };
+        return PaginaResponse.de(
+                servicioInventario.listarMateriales(nombre, activo, stockBajo, pageable));
+    }
+
+    /**
+     * Edita los datos de un Material (nombre, unidad de medida y stock minimo) (Req 18).
+     * Resuelve el Material aunque este inactivo. 404 si no es accesible; 422 si los datos
+     * son invalidos.
+     *
+     * @param id      identificador del Material.
+     * @param request nuevos nombre, unidad de medida y stock minimo.
+     * @return 200 OK con el {@link MaterialDto} actualizado.
+     */
+    @PutMapping("/{id}")
+    @PreAuthorize("@autorizador.moduloHabilitado('operacion') and @autorizador.tiene('material','actualizar')")
+    public ResponseEntity<MaterialDto> editar(
+            @PathVariable("id") UUID id,
+            @Valid @RequestBody ActualizarMaterialRequest request) {
+        MaterialDto dto = servicioInventario.editar(
+                id, request.nombre(), request.unidadMedida(), request.stockMinimo());
+        return ResponseEntity.ok(dto);
+    }
+
+    /**
+     * Reactiva un Material dado de baja (Req 18, 3.1). 200 OK con el {@link MaterialDto}
+     * reactivado; 404 si no existe o es de otro tenant. Se gobierna con el permiso de
+     * actualizacion (es una modificacion del recurso, no un alta).
+     *
+     * @param id identificador del Material.
+     * @return 200 OK con el {@link MaterialDto} reactivado.
+     */
+    @PutMapping("/{id}/activar")
+    @PreAuthorize("@autorizador.moduloHabilitado('operacion') and @autorizador.tiene('material','actualizar')")
+    public ResponseEntity<MaterialDto> activar(@PathVariable("id") UUID id) {
+        return ResponseEntity.ok(servicioInventario.activar(id));
     }
 
     /**

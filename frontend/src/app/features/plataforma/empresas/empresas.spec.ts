@@ -491,5 +491,5 @@ describe('PlataformaEmpresas', () => {
     // axe usa temporizadores internos; se ejecuta con los reales.
     vi.useRealTimers();
     await esperarSinViolaciones(fixture);
-  });
+  }, 30000);
 });

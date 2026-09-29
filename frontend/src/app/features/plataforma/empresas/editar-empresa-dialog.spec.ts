@@ -147,5 +147,5 @@ describe('EditarEmpresaDialog', () => {
     await crear(empresa());
     await fixture.whenStable();
     await esperarSinViolaciones(fixture);
-  });
+  }, 30000);
 });

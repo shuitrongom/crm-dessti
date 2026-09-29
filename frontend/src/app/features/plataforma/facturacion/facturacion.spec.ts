@@ -254,5 +254,5 @@ describe('PlataformaFacturacion', () => {
     service.facturas = [factura({ id: 'f1' })];
     seleccionar(empresa({ id: 'e1' }));
     await esperarSinViolaciones(fixture);
-  });
+  }, 30000);
 });

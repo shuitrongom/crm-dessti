@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -181,6 +182,57 @@ class CotizacionTest {
 
         cotizacion.cambiarEstado(EstadoCotizacion.ENVIADA, ACTOR);
         assertThatThrownBy(() -> cotizacion.agregarPartida(partida(1, "10.00"), ACTOR))
+                .isInstanceOf(ReglaNegocioException.class);
+    }
+
+    // ------------------------------------------------------------------
+    // Vigencia: estaVencida (Req 6.11)
+    // ------------------------------------------------------------------
+
+    private static final LocalDate HOY = LocalDate.of(2026, 3, 1);
+
+    /** Crea una Cotizacion en borrador con una partida y la fecha de vigencia dada. */
+    private static Cotizacion conVigencia(LocalDate validoHasta) {
+        Cotizacion cotizacion = Cotizacion.crear(CLIENTE, List.of(partida(1, "100.00")), ACTOR);
+        // fechaEmision anterior a validoHasta para no violar la regla valido_hasta >= emision.
+        cotizacion.aplicarDatosDescriptivos(HOY.minusMonths(2), validoHasta, null, null, "MXN", ACTOR);
+        return cotizacion;
+    }
+
+    @Test
+    @DisplayName("una Cotizacion SIN fecha de vigencia nunca esta vencida (Req 6.11)")
+    void sinVigenciaNoVence() {
+        Cotizacion cotizacion = Cotizacion.crear(CLIENTE, List.of(partida(1, "100.00")), ACTOR);
+        assertThat(cotizacion.getValidoHasta()).isNull();
+        assertThat(cotizacion.estaVencida(HOY)).isFalse();
+    }
+
+    @Test
+    @DisplayName("una Cotizacion con vigencia ANTERIOR a hoy esta vencida (Req 6.11)")
+    void vigenciaAnteriorVence() {
+        Cotizacion cotizacion = conVigencia(HOY.minusDays(1));
+        assertThat(cotizacion.estaVencida(HOY)).isTrue();
+    }
+
+    @Test
+    @DisplayName("el dia de vigencia AUN es valido (frontera inclusiva, Req 6.11)")
+    void diaDeVigenciaNoVence() {
+        Cotizacion cotizacion = conVigencia(HOY);
+        assertThat(cotizacion.estaVencida(HOY)).isFalse();
+    }
+
+    @Test
+    @DisplayName("una Cotizacion con vigencia FUTURA no esta vencida (Req 6.11)")
+    void vigenciaFuturaNoVence() {
+        Cotizacion cotizacion = conVigencia(HOY.plusDays(30));
+        assertThat(cotizacion.estaVencida(HOY)).isFalse();
+    }
+
+    @Test
+    @DisplayName("estaVencida rechaza una fecha de referencia nula (Req 6.11, 422)")
+    void rechazaHoyNulo() {
+        Cotizacion cotizacion = conVigencia(HOY);
+        assertThatThrownBy(() -> cotizacion.estaVencida(null))
                 .isInstanceOf(ReglaNegocioException.class);
     }
 }

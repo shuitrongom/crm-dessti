@@ -1,0 +1,77 @@
+<mat-dialog-content class="evi-gal__content">
+  <header class="ds-form__header">
+    <h2 class="ds-form__header-title" mat-dialog-title>
+      <span class="evi-gal__titulo">
+        <span class="evi-gal__icono" aria-hidden="true">
+          <mat-icon>photo_library</mat-icon>
+        </span>
+        Evidencias — {{ sitioNombre }}
+      </span>
+    </h2>
+    <p class="ds-form__header-subtitle">
+      Fotos y documentos que respaldan el avance. Se requiere al menos una evidencia aprobada para entregar la sucursal.
+    </p>
+  </header>
+
+  @if (puedeSubir) {
+    <div class="evi-gal__acciones-top">
+      <button matButton="filled" type="button" (click)="subir()">
+        <mat-icon aria-hidden="true">upload_file</mat-icon>
+        Subir evidencia
+      </button>
+    </div>
+  }
+
+  <app-state-container
+    [fase]="fase()"
+    mensajeVacio="Aún no hay evidencias para esta sucursal. Sube una foto o documento del avance."
+    (reintentar)="cargar()"
+  >
+    <ul class="evi-gal__lista">
+      @for (e of evidencias(); track e.id) {
+        <li class="evi-gal__item">
+          <span class="evi-gal__tipo" aria-hidden="true">
+            <mat-icon>{{ esImagen(e) ? 'image' : (esPdf(e) ? 'picture_as_pdf' : 'description') }}</mat-icon>
+          </span>
+          <div class="evi-gal__datos">
+            <span class="evi-gal__nombre">{{ e.nombreOriginal }}</span>
+            <span class="evi-gal__sub">
+              Subida {{ e.subidaEn | date: 'short' }}@if (e.subidaPor) { · {{ e.subidaPor }}}
+            </span>
+            @if (e.estado === 'rechazada' && e.motivoRechazo) {
+              <span class="evi-gal__motivo">Motivo: {{ e.motivoRechazo }}</span>
+            }
+          </div>
+          <app-chip-estado
+            class="evi-gal__chip"
+            [variante]="varianteEstado(e.estado)"
+            [etiqueta]="etiquetaEstado(e.estado)"
+          />
+          <div class="evi-gal__botones">
+            <button matIconButton type="button" (click)="ver(e)" matTooltip="Ver archivo" aria-label="Ver archivo de evidencia">
+              <mat-icon aria-hidden="true">visibility</mat-icon>
+            </button>
+            @if (puedeDecidir && e.estado === 'pendiente') {
+              <button matIconButton type="button" (click)="aprobar(e)" matTooltip="Aprobar" aria-label="Aprobar evidencia">
+                <mat-icon aria-hidden="true">check_circle</mat-icon>
+              </button>
+              <button
+                matIconButton
+                type="button"
+                class="ds-boton-destructivo"
+                (click)="rechazar(e)"
+                matTooltip="Rechazar"
+                aria-label="Rechazar evidencia"
+              >
+                <mat-icon aria-hidden="true">cancel</mat-icon>
+              </button>
+            }
+          </div>
+        </li>
+      }
+    </ul>
+  </app-state-container>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cerrar()">Cerrar</button>
+</mat-dialog-actions>

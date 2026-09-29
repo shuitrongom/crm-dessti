@@ -106,7 +106,6 @@ const VERTICAL_ITEMS: ReadonlyArray<{ ruta: string; permiso: string }> = [
   { ruta: '/empresa/operacion/levantamientos', permiso: 'levantamiento_sitio:listar' },
   { ruta: '/empresa/operacion/permisos', permiso: 'permiso_instalacion:listar' },
   { ruta: '/empresa/operacion/instalacion', permiso: 'orden_trabajo_instalacion:listar' },
-  { ruta: '/empresa/operacion/proyectos', permiso: 'proyecto:listar' },
   { ruta: '/empresa/mantenimiento/contratos', permiso: 'contrato_mantenimiento:listar' },
   { ruta: '/empresa/mantenimiento/tickets', permiso: 'ticket_servicio:listar' },
 ];
@@ -120,6 +119,9 @@ const NUCLEO_ITEMS: ReadonlyArray<{ ruta: string; permiso: string }> = [
   { ruta: '/empresa/comercial/clientes', permiso: 'cliente:listar' },
   { ruta: '/empresa/operacion/materiales', permiso: 'material:listar' },
   { ruta: '/empresa/operacion/inventario-avanzado', permiso: 'almacen:listar' },
+  // Proyectos es multi-sitio comun a todos los giros (solo modulo + permiso, sin
+  // esGiro): pertenece al Nucleo, no al Vertical_Anuncios (V78, Req 3.2).
+  { ruta: '/empresa/operacion/proyectos', permiso: 'proyecto:listar' },
   { ruta: '/empresa/compras/requisiciones', permiso: 'requisicion_compra:listar' },
   { ruta: '/empresa/facturacion/facturas', permiso: 'factura:listar' },
 ];

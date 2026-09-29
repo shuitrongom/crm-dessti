@@ -74,6 +74,53 @@ public interface MaterialRepository extends JpaRepository<Material, UUID> {
             Pageable pageable);
 
     /**
+     * Busca un Material por su identificador dentro del tenant vigente
+     * <strong>sin</strong> exigir que este activo. Sirve para editar y reactivar un
+     * Material dado de baja: a diferencia de {@link #findByIdAndActivoTrue(UUID)},
+     * tambien resuelve Materiales inactivos. Un Material de otro tenant sigue sin
+     * resolverse (aislamiento, Req 23.3).
+     *
+     * @param id identificador del Material.
+     * @return el Material (activo o inactivo) del tenant, o vacio.
+     */
+    Optional<Material> findById(UUID id);
+
+    /**
+     * Listado paginado de Materiales del tenant vigente con filtros opcionales por
+     * nombre (coincidencia parcial, insensible a mayusculas), por estado activo/
+     * inactivo o TODOS (cuando {@code activo} es {@code null}) y por condicion de
+     * stock bajo. Extiende {@link #buscarConFiltros(String, boolean, Pageable)} para
+     * poder mostrar, editar y reactivar los Materiales dados de baja (Req 18, 3.1).
+     *
+     * @param nombre        subcadena a buscar en el nombre; {@code null}/blanco no filtra.
+     * @param activo        {@code true}=activos, {@code false}=inactivos, {@code null}=todos.
+     * @param soloStockBajo si {@code true}, restringe a Materiales en stock bajo.
+     * @param pageable      parametros de paginacion ya acotados (20/100).
+     * @return la pagina de Materiales que cumplen los filtros.
+     */
+    @Query("""
+            SELECT m FROM Material m
+            WHERE (:nombre IS NULL
+                   OR LOWER(m.nombre) LIKE LOWER(CONCAT('%', CAST(:nombre AS string), '%')))
+              AND (:activo IS NULL OR m.activo = :activo)
+              AND (:soloStockBajo = false OR m.existencias < m.stockMinimo)
+            """)
+    Page<Material> buscarPorNombreEstadoYStock(
+            @Param("nombre") String nombre,
+            @Param("activo") Boolean activo,
+            @Param("soloStockBajo") boolean soloStockBajo,
+            Pageable pageable);
+
+    /**
+     * Agregacion de <strong>solo lectura</strong> del numero total de Materiales
+     * INACTIVOS (dados de baja) del tenant vigente. Acotada al {@code tenant_id}
+     * vigente por el filtro de Hibernate y la RLS (Req 23).
+     *
+     * @return el conteo de Materiales inactivos del tenant.
+     */
+    long countByActivoFalse();
+
+    /**
      * Agregacion de <strong>solo lectura</strong> del numero de Materiales ACTIVOS del
      * tenant vigente en condicion de stock bajo, es decir {@code existencias <
      * stock_minimo} (Req 22.1, 18.5). El filtro global de Hibernate y la RLS acotan la

@@ -29,6 +29,22 @@ public interface PermisoAprobadoPort {
     boolean sitioTienePermisoAprobado(UUID sitioId);
 
     /**
+     * Indica si el Sitio dado tiene al menos un Permiso_Instalacion aprobado
+     * <strong>y vigente</strong> (no vencido) en el tenant vigente (Req 17.4, 19.3).
+     * Es la guarda <strong>reforzada</strong> que habilita PROGRAMAR una instalacion:
+     * un permiso aprobado pero vencido no autoriza legalmente instalar, por lo que la
+     * programacion de una Orden_Trabajo_Instalacion exige vigencia, no solo aprobacion.
+     *
+     * <p>Se separa de {@link #sitioTienePermisoAprobado(UUID)} —que refleja el hito
+     * historico de la aprobacion para el avance del Sitio— porque son dos preguntas
+     * de negocio distintas: "¿se aprobo alguna vez?" vs "¿puedo instalar hoy?".</p>
+     *
+     * @param sitioId identificador del Sitio a verificar.
+     * @return {@code true} si el Sitio tiene un permiso aprobado y no vencido.
+     */
+    boolean sitioTienePermisoVigente(UUID sitioId);
+
+    /**
      * Indica si el Permiso_Instalacion identificado esta en estado {@code aprobado}
      * en el tenant vigente (Req 17.4). Variante por identificador de permiso, util
      * cuando la guarda se expresa sobre un permiso concreto.

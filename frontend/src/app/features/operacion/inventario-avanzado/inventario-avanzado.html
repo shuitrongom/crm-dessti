@@ -17,24 +17,34 @@
         >
           <!-- Fila de KPIs del tablero operativo (Req 3.1) -->
           <div class="inventario-avanzado__indicadores">
-            <app-stat-card
-              etiqueta="Almacenes"
-              [valor]="totalAlmacenesResumen()"
-              icono="warehouse"
-              tono="info"
-              ayuda="Almacenes registrados en el catalogo."
-            />
-            <app-stat-card
-              etiqueta="Materiales con stock bajo"
-              [valor]="totalStockBajo()"
-              icono="warning"
-              [tono]="totalStockBajo() > 0 ? 'advertencia' : 'exito'"
-              [ayuda]="
-                totalStockBajo() > 0
-                  ? 'Materiales por debajo de su stock minimo.'
-                  : 'Sin materiales por debajo de su stock minimo.'
-              "
-            />
+            <button
+              type="button"
+              class="kpi-boton"
+              (click)="abrirInfoKpi('almacenes_con_existencias', 'Almacenes', totalAlmacenesResumen(), 'conteo')"
+              aria-label="Ver explicación de Almacenes"
+            >
+              <app-kpi-tile
+                etiqueta="Almacenes"
+                sublabel="Registrados en el catálogo"
+                [valor]="totalAlmacenesResumen()"
+                icono="warehouse"
+                tono="info"
+              />
+            </button>
+            <button
+              type="button"
+              class="kpi-boton"
+              (click)="abrirInfoKpi('materiales_bajo_stock_minimo', 'Materiales con stock bajo', totalStockBajo(), 'conteo')"
+              aria-label="Ver explicación de Materiales con stock bajo"
+            >
+              <app-kpi-tile
+                etiqueta="Materiales con stock bajo"
+                sublabel="Por debajo de su mínimo"
+                [valor]="totalStockBajo()"
+                icono="warning"
+                [tono]="totalStockBajo() > 0 ? 'advertencia' : 'exito'"
+              />
+            </button>
             <!-- "Por reabastecer" solo cuando la configuracion de reorden este disponible (Req 3.2: sin cero enganoso) -->
             @if (configReordenDisponible()) {
               <app-stat-card
@@ -642,36 +652,6 @@
           </div>
         }
 
-        @if (formularioAbierto()) {
-          <mat-card appearance="outlined" class="operacion-form">
-            <mat-card-content>
-              <form class="ds-dialog-form" [formGroup]="formAlmacen" (ngSubmit)="guardarAlmacen()" novalidate>
-                <mat-form-field appearance="outline">
-                  <mat-label>Nombre</mat-label>
-                  <input matInput type="text" formControlName="nombre" required />
-                  @if (formAlmacen.controls.nombre.hasError('required') && formAlmacen.controls.nombre.touched) {
-                    <mat-error>El nombre es obligatorio.</mat-error>
-                  }
-                </mat-form-field>
-                <mat-form-field appearance="outline">
-                  <mat-label>Tipo</mat-label>
-                  <mat-select formControlName="tipo" required>
-                    @for (tipo of tipos; track tipo) {
-                      <mat-option [value]="tipo">{{ etiquetaTipoAlmacen(tipo) }}</mat-option>
-                    }
-                  </mat-select>
-                </mat-form-field>
-                <div class="operacion-form__acciones">
-                  <button matButton type="button" (click)="cancelarAlmacen()" [disabled]="guardando()">
-                    Cancelar
-                  </button>
-                  <button matButton="filled" type="submit" [disabled]="guardando()">Guardar</button>
-                </div>
-              </form>
-            </mat-card-content>
-          </mat-card>
-        }
-
         <app-state-container
           [fase]="faseAlmacenes()"
           [mensajeError]="errorAlmacenes()"
@@ -704,9 +684,28 @@
             </ng-template>
             <ng-template appCelda="acciones" let-fila>
               @if (puedeActualizarAlmacen) {
-                <button matIconButton type="button" (click)="editarAlmacen(fila)" aria-label="Editar almacen">
-                  <mat-icon aria-hidden="true">edit</mat-icon>
-                </button>
+                <div class="operacion-acciones-fila">
+                  @if (fila.activo) {
+                    <button matIconButton type="button" (click)="editarAlmacen(fila)" matTooltip="Editar" aria-label="Editar almacén">
+                      <mat-icon aria-hidden="true">edit</mat-icon>
+                    </button>
+                    <button
+                      matIconButton
+                      type="button"
+                      class="ds-boton-destructivo"
+                      (click)="desactivarAlmacen(fila)"
+                      matTooltip="Dar de baja"
+                      aria-label="Dar de baja almacén"
+                    >
+                      <mat-icon aria-hidden="true">delete</mat-icon>
+                    </button>
+                  } @else {
+                    <button matButton type="button" (click)="activarAlmacen(fila)" matTooltip="Reactivar" aria-label="Reactivar almacén">
+                      <mat-icon aria-hidden="true">restore</mat-icon>
+                      Reactivar
+                    </button>
+                  }
+                </div>
               } @else {
                 <span class="operacion-sin-acciones">—</span>
               }

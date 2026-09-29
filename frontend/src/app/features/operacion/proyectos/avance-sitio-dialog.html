@@ -1,0 +1,113 @@
+<mat-dialog-content class="avance-sitio__content">
+  <form class="ds-form" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+    <header class="ds-form__header">
+      <h2 class="ds-form__header-title" mat-dialog-title>
+        <span class="avance-sitio__titulo">
+          <span class="avance-sitio__icono" aria-hidden="true">
+            <mat-icon>{{ icono }}</mat-icon>
+          </span>
+          @if (esCorreccion) {
+            Corregir fase a {{ etiquetaFase[destino] }}
+          } @else {
+            Avanzar a {{ etiquetaFase[destino] }}
+          }
+        </span>
+      </h2>
+      <p class="ds-form__header-subtitle">{{ subtitulo() }}</p>
+    </header>
+
+    @if (error()) {
+      <p class="ds-form__note ds-form__note--warn" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </p>
+    }
+
+    @if (!esCorreccion && requiereEvidencia) {
+      <p class="ds-form__note ds-form__note--info">
+        <mat-icon aria-hidden="true">verified</mat-icon>
+        <span>
+          Para entregar esta sucursal se requiere al menos una <strong>evidencia aprobada</strong> de
+          la fase de instalación. Sube la evidencia y espera su aprobación antes de entregar.
+        </span>
+      </p>
+    }
+
+    @if (!esCorreccion && requierePrecondicionesInstalacion) {
+      <p class="ds-form__note ds-form__note--info">
+        <mat-icon aria-hidden="true">fact_check</mat-icon>
+        <span>
+          Para pasar esta sucursal a instalación se requiere el <strong>levantamiento completado</strong>
+          y un <strong>permiso de instalación aprobado y vigente</strong>. Si falta alguno, la operación
+          se rechazará; usa la corrección de fase solo para ajustes administrativos.
+        </span>
+      </p>
+    }
+
+    @if (esCorreccion) {
+      <p class="ds-form__note ds-form__note--info">
+        <mat-icon aria-hidden="true">admin_panel_settings</mat-icon>
+        <span>
+          La corrección de fase es una acción administrativa que puede retroceder o saltar fases sin
+          las validaciones habituales. Queda registrada en la auditoría con el <strong>motivo</strong>
+          que indiques.
+        </span>
+      </p>
+    }
+
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">
+          @if (esCorreccion) {
+            Motivo de la corrección
+          } @else {
+            Nota del avance (opcional)
+          }
+        </h3>
+        <p class="ds-form__section-desc">
+          @if (esCorreccion) {
+            Explica por qué se ajusta la fase administrativamente. El motivo es obligatorio y queda
+            registrado en la auditoría.
+          } @else {
+            Deja una nota de contexto sobre este cambio de fase. La evidencia documental se gestiona
+            desde el botón “Evidencias” de la tarjeta.
+          }
+        </p>
+      </div>
+
+      <div class="ds-form__section-body">
+        <div class="ds-form__grid">
+          <div class="ds-form__field ds-form__field--full">
+            <mat-form-field appearance="outline">
+              <mat-label>
+                @if (esCorreccion) {
+                  Motivo
+                } @else {
+                  Nota (opcional)
+                }
+              </mat-label>
+              <textarea matInput rows="2" formControlName="nota" maxlength="500"></textarea>
+              @if (form.controls.nota.hasError('required')) {
+                <mat-error>El motivo de la corrección es obligatorio.</mat-error>
+              }
+              @if (form.controls.nota.hasError('maxlength')) {
+                <mat-error>El texto admite máximo 500 caracteres.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+    </section>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancelar()" [disabled]="guardando()">Cancelar</button>
+  <button matButton="filled" type="button" (click)="guardar()" [disabled]="guardando()">
+    <mat-icon aria-hidden="true">{{ icono }}</mat-icon>
+    @if (esCorreccion) {
+      Confirmar corrección
+    } @else {
+      Confirmar avance
+    }
+  </button>
+</mat-dialog-actions>

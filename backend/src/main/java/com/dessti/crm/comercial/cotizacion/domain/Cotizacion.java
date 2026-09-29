@@ -542,6 +542,30 @@ public class Cotizacion extends TenantScopedEntity {
         return validoHasta;
     }
 
+    /**
+     * Indica si la Cotizacion esta VENCIDA respecto a la fecha dada (Req 6.11). Una
+     * Cotizacion SIN fecha de vigencia ({@code validoHasta == null}) NUNCA vence.
+     * Con fecha, se considera vencida a partir del dia SIGUIENTE al de vigencia: el
+     * propio dia de {@code validoHasta} sigue siendo valido (frontera inclusiva),
+     * coherente con {@code PermisoInstalacion.estaVigente} y {@code Lote.estaCaducado}.
+     *
+     * <p>Es una funcion de dominio PURA sobre {@link LocalDate}; la capa de
+     * aplicacion calcula {@code hoy} con el {@link java.time.Clock} inyectado (UTC),
+     * para ser determinista en pruebas. Sustenta la guarda de negocio que impide
+     * enviar o aprobar una Cotizacion vencida.</p>
+     *
+     * @param hoy fecha de referencia (normalmente hoy en UTC); obligatoria.
+     * @return {@code true} si la Cotizacion tiene vigencia y esta ya vencida antes de {@code hoy}.
+     * @throws ReglaNegocioException si {@code hoy} es nulo (422).
+     */
+    public boolean estaVencida(LocalDate hoy) {
+        if (hoy == null) {
+            throw new ReglaNegocioException(
+                    "La fecha de referencia para evaluar la vigencia es obligatoria.");
+        }
+        return validoHasta != null && hoy.isAfter(validoHasta);
+    }
+
     public String getCondiciones() {
         return condiciones;
     }

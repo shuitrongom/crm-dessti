@@ -90,4 +90,23 @@ public interface CotizacionRepository extends JpaRepository<Cotizacion, UUID> {
             @Param("clienteId") UUID clienteId,
             @Param("desde") Instant desde,
             @Param("hasta") Instant hasta);
+
+    /**
+     * Indica si el Cliente dado tiene al menos una Cotizacion <strong>abierta</strong>
+     * (estado {@code borrador} o {@code enviada}) en el tenant vigente (Req 5.10).
+     * Sustenta la guarda que impide dar de baja un Cliente con actividad comercial
+     * pendiente de resolucion. Los estados finales {@code aprobada}/{@code rechazada}
+     * no cuentan. El filtro global de Hibernate y la RLS acotan la consulta al
+     * {@code tenant_id} vigente (Req 23); es de solo lectura.
+     *
+     * @param clienteId Cliente a verificar.
+     * @return {@code true} si existe al menos una Cotizacion en borrador o enviada del Cliente.
+     */
+    @Query("""
+            SELECT (COUNT(c) > 0) FROM Cotizacion c
+            WHERE c.clienteId = :clienteId
+              AND c.estado IN (com.dessti.crm.comercial.cotizacion.domain.EstadoCotizacion.BORRADOR,
+                               com.dessti.crm.comercial.cotizacion.domain.EstadoCotizacion.ENVIADA)
+            """)
+    boolean existeCotizacionAbiertaDeCliente(@Param("clienteId") UUID clienteId);
 }

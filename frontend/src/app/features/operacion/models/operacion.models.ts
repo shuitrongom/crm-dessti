@@ -349,6 +349,50 @@ export interface AvanceSitioRequest {
   evidenciaUrl?: string | null;
 }
 
+// -----------------------------------------------------------------------------
+// Evidencias documentales del avance de sitio con flujo de aprobacion (Req 3.2)
+// -----------------------------------------------------------------------------
+
+/** Estado de aprobacion de una evidencia (EstadoEvidencia.valorBd). */
+export type EstadoEvidencia = 'pendiente' | 'aprobada' | 'rechazada';
+
+/**
+ * Evidencia documental (archivo real) que respalda el avance de un Sitio en una
+ * fase, con su estado de aprobacion (EvidenciaAvanceDto del backend). El binario
+ * NO viaja aqui: se descarga por el endpoint dedicado usando el `id`.
+ */
+export interface EvidenciaAvance {
+  id: string;
+  avanceSitioId: string;
+  fase: FaseSitioGenerica;
+  nombreOriginal: string;
+  tipoMime: string;
+  tamanoBytes: number;
+  estado: EstadoEvidencia;
+  motivoRechazo: string | null;
+  subidaPor: string | null;
+  subidaEn: string;
+  decididaPor: string | null;
+  decididaEn: string | null;
+}
+
+/** Etiquetas legibles es-MX del estado de una evidencia. */
+export const ETIQUETA_ESTADO_EVIDENCIA: Record<EstadoEvidencia, string> = {
+  pendiente: 'Pendiente',
+  aprobada: 'Aprobada',
+  rechazada: 'Rechazada',
+};
+
+/** Indica si una evidencia corresponde a una imagen (para elegir visor). */
+export function evidenciaEsImagen(e: EvidenciaAvance): boolean {
+  return e.tipoMime.startsWith('image/');
+}
+
+/** Indica si una evidencia es un PDF. */
+export function evidenciaEsPdf(e: EvidenciaAvance): boolean {
+  return e.tipoMime === 'application/pdf';
+}
+
 /** Etiquetas legibles de las fases multi-sitio. */
 export const ETIQUETA_FASE_SITIO: Record<FaseSitioGenerica, string> = {
   pendiente: 'Pendiente',
@@ -432,12 +476,15 @@ export interface Material {
   updatedAt: string;
 }
 
-/** Cuerpo de alta de Material (CrearMaterialRequest). */
+/** Cuerpo de alta/edicion de Material (Crear/ActualizarMaterialRequest). */
 export interface MaterialRequest {
   nombre: string;
   unidadMedida: string;
   stockMinimo: number;
 }
+
+/** Filtro de estado para el listado de Materiales (espeja ?estado del backend). */
+export type EstadoMaterial = 'activo' | 'inactivo' | 'todos';
 
 /** Movimiento de inventario base (MovimientoInventarioDto). */
 export interface MovimientoInventario {

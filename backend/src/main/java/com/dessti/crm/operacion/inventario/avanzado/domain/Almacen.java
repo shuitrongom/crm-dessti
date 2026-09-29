@@ -103,6 +103,18 @@ public class Almacen extends TenantScopedEntity {
         this.setUpdatedBy(actor);
     }
 
+    /**
+     * Reactiva un Almacen dado de baja (Req 60): marca {@code activo=true}. Idempotente.
+     * Permite volver a operar con un Almacen retirado sin perder su historico ni sus
+     * existencias.
+     *
+     * @param actor identificador de quien reactiva, para {@code updated_by}.
+     */
+    public void activar(String actor) {
+        this.activo = true;
+        this.setUpdatedBy(actor);
+    }
+
     // ------------------------------------------------------------------
     // Reglas internas
     // ------------------------------------------------------------------

@@ -1,24 +1,26 @@
 // =============================================================================
-// Vista de Levantamientos de Sitio (Req 16) — listado + alta + completar
+// Vista de Levantamientos de Sitio (Req 16) — listado premium
 // -----------------------------------------------------------------------------
-// Listado paginado (DataTable) con filtro por estado, alta con datos obligatorios
-// y vinculos opcionales, y accion de completar (con confirmacion). Acciones
-// gobernadas por permiso levantamiento_sitio:{...}.
+// Listado paginado (DataTable) con filtro por estado. El alta se hace en un MODAL
+// animado (LevantamientoFormDialog) y la gestion de fotos en otro MODAL
+// (LevantamientoFotosDialog). La accion de completar pide confirmacion. Los KPIs
+// (en proceso / completados, con conteos reales del backend) abren el modal
+// explicativo del indicador. Acciones gobernadas por permiso
+// levantamiento_sitio:{...}.
 // =============================================================================
 
 import { Component, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { FormArray, FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDialog } from '@angular/material/dialog';
 
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../shared/components/state-container/state-container';
+import { KpiTile } from '../../../shared/components/kpi-tile/kpi-tile';
 import { ChipEstado, VarianteChipEstado } from '../../../shared/components/chip-estado/chip-estado';
 import {
   CeldaTablaDirective,
@@ -27,6 +29,10 @@ import {
 } from '../../../shared/components/data-table/data-table';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import {
+  IndicadorInfoDialog,
+  type DatosIndicadorInfo,
+} from '../../../shared/indicadores/indicador-info-dialog';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 import { FaseSolicitud } from '../../../shared/models/estado-solicitud';
@@ -35,23 +41,25 @@ import { LevantamientosService } from '../services/instalacion.service';
 import {
   ETIQUETA_ESTADO_LEVANTAMIENTO,
   EstadoLevantamiento,
-  LevantamientoFoto,
   LevantamientoSitio,
 } from '../models/operacion.models';
+import { LevantamientoFormDialog } from './levantamiento-form-dialog';
+import {
+  LevantamientoFotosDialog,
+  LevantamientoFotosDialogData,
+} from './levantamiento-fotos-dialog';
 
 @Component({
   selector: 'app-operacion-levantamientos',
   imports: [
-    ReactiveFormsModule,
     DatePipe,
-    MatCardModule,
     MatFormFieldModule,
-    MatInputModule,
     MatSelectModule,
     MatButtonModule,
     MatIconModule,
     PageHeader,
     StateContainer,
+    KpiTile,
     DataTable,
     CeldaTablaDirective,
     ChipEstado,
@@ -60,11 +68,11 @@ import {
   styleUrl: './levantamientos.scss',
 })
 export class OperacionLevantamientos {
-  private readonly fb = inject(FormBuilder);
   private readonly service = inject(LevantamientosService);
   private readonly confirm = inject(ConfirmDialogService);
   private readonly toast = inject(NotificacionesService);
   private readonly auth = inject(AuthService);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly puedeCrear = this.auth.tienePermiso('levantamiento_sitio', 'crear');
   protected readonly puedeCompletar = this.auth.tienePermiso('levantamiento_sitio', 'cambiar_estado');
@@ -79,22 +87,9 @@ export class OperacionLevantamientos {
   protected readonly size = signal(20);
   protected readonly estado = signal<EstadoLevantamiento | ''>('');
 
-  protected readonly guardando = signal(false);
-  protected readonly formularioAbierto = signal(false);
-
-  // --- Flujo de fotos (Req 12) ---------------------------------------------
-  /** Levantamiento seleccionado para gestionar sus fotos; null si el panel esta cerrado. */
-  protected readonly fotosLevantamiento = signal<LevantamientoSitio | null>(null);
-  /** Fase de carga de la galeria del levantamiento seleccionado. */
-  protected readonly fotosFase = signal<FaseSolicitud>('cargando');
-  /** Fotos vinculadas al levantamiento seleccionado. */
-  protected readonly fotos = signal<LevantamientoFoto[]>([]);
-  /** Indica que hay una operacion de adjuntar en curso. */
-  protected readonly adjuntando = signal(false);
-  /** Formulario con una o mas referencias de foto a adjuntar. */
-  protected readonly fotosForm = this.fb.group({
-    referencias: this.fb.array<FormControl<string>>([this.nuevaReferencia()]),
-  });
+  /** Conteos reales del backend para los indicadores (independientes del filtro). */
+  protected readonly totalEnProceso = signal<number | null>(null);
+  protected readonly totalCompletados = signal<number | null>(null);
 
   protected readonly columnas: ColumnaTabla[] = [
     { clave: 'tipoSuperficie', encabezado: 'Superficie' },
@@ -103,17 +98,9 @@ export class OperacionLevantamientos {
     { clave: 'acciones', encabezado: 'Acciones', alineacion: 'fin' },
   ];
 
-  protected readonly form = this.fb.nonNullable.group({
-    mediciones: ['', [Validators.required]],
-    tipoSuperficie: ['', [Validators.required, Validators.maxLength(200)]],
-    condicionesElectricas: ['', [Validators.required]],
-    sitioId: [''],
-    cotizacionId: [''],
-    ordenFabricacionId: [''],
-  });
-
   constructor() {
     this.cargar();
+    this.cargarConteos();
   }
 
   /** Etiqueta legible del estado del levantamiento; devuelve el valor crudo si no mapea. */
@@ -145,6 +132,21 @@ export class OperacionLevantamientos {
     });
   }
 
+  /**
+   * Carga los conteos de los indicadores con consultas de tamano 1 (solo
+   * totalElements), independientes del filtro de la tabla.
+   */
+  cargarConteos(): void {
+    this.service.listar('en_proceso', 0, 1).subscribe({
+      next: (p) => this.totalEnProceso.set(p.totalElements),
+      error: () => this.totalEnProceso.set(null),
+    });
+    this.service.listar('completado', 0, 1).subscribe({
+      next: (p) => this.totalCompletados.set(p.totalElements),
+      error: () => this.totalCompletados.set(null),
+    });
+  }
+
   cambiarFiltro(valor: EstadoLevantamiento | ''): void {
     this.estado.set(valor);
     this.page.set(0);
@@ -157,49 +159,52 @@ export class OperacionLevantamientos {
     this.cargar();
   }
 
-  alternarFormulario(): void {
-    this.formularioAbierto.update((v) => !v);
-    if (this.formularioAbierto()) {
-      this.form.reset({
-        mediciones: '',
-        tipoSuperficie: '',
-        condicionesElectricas: '',
-        sitioId: '',
-        cotizacionId: '',
-        ordenFabricacionId: '',
-      });
-    }
+  /** Abre el modal de alta de Levantamiento y recarga si se creó. */
+  nuevo(): void {
+    const ref = this.dialog.open(LevantamientoFormDialog, {
+      width: 'min(720px, 96vw)',
+      maxWidth: 'min(720px, 96vw)',
+      maxHeight: '92vh',
+      autoFocus: 'first-tabbable',
+      panelClass: 'ds-dialog-panel',
+    });
+    ref.afterClosed().subscribe((creado?: LevantamientoSitio) => {
+      if (creado) {
+        this.toast.exito('Levantamiento creado.');
+        this.cargar();
+        this.cargarConteos();
+      }
+    });
   }
 
-  /** Crea un Levantamiento con datos obligatorios y vinculos opcionales (Req 16.1). */
-  crear(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
-    const v = this.form.getRawValue();
-    this.guardando.set(true);
-    this.service
-      .crear({
-        mediciones: v.mediciones.trim(),
-        tipoSuperficie: v.tipoSuperficie.trim(),
-        condicionesElectricas: v.condicionesElectricas.trim(),
-        sitioId: v.sitioId.trim() || null,
-        cotizacionId: v.cotizacionId.trim() || null,
-        ordenFabricacionId: v.ordenFabricacionId.trim() || null,
-      })
-      .subscribe({
-        next: () => {
-          this.guardando.set(false);
-          this.toast.exito('Levantamiento creado.');
-          this.formularioAbierto.set(false);
-          this.cargar();
-        },
-        error: (e: HttpErrorResponse) => {
-          this.guardando.set(false);
-          this.toast.error(mensajeDeError(e));
-        },
-      });
+  /** Abre el modal de gestión de fotos del Levantamiento. */
+  abrirFotos(levantamiento: LevantamientoSitio): void {
+    const data: LevantamientoFotosDialogData = {
+      levantamiento,
+      puedeAgregar: this.puedeCrear,
+    };
+    this.dialog.open(LevantamientoFotosDialog, {
+      width: 'min(680px, 96vw)',
+      maxWidth: 'min(680px, 96vw)',
+      maxHeight: '92vh',
+      autoFocus: 'first-tabbable',
+      panelClass: 'ds-dialog-panel',
+      data,
+    });
+  }
+
+  /**
+   * Abre el dialogo explicativo de un indicador de levantamientos. La clave debe
+   * coincidir con una del catálogo de indicadores.
+   */
+  abrirInfoKpi(clave: string, etiqueta: string, valor: number, unidad: string): void {
+    const datos: DatosIndicadorInfo = { clave, etiqueta, valor, unidad };
+    this.dialog.open(IndicadorInfoDialog, {
+      data: datos,
+      width: '32rem',
+      maxWidth: '92vw',
+      autoFocus: false,
+    });
   }
 
   /** Marca un Levantamiento como completado con confirmacion (Req 16.4). */
@@ -216,108 +221,9 @@ export class OperacionLevantamientos {
       next: () => {
         this.toast.exito('Levantamiento completado.');
         this.cargar();
+        this.cargarConteos();
       },
       error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
-    });
-  }
-
-  // --- Flujo de fotos (Req 12) ---------------------------------------------
-
-  /** Crea un control de referencia de foto (obligatorio, sin espacios). */
-  private nuevaReferencia(): FormControl<string> {
-    return this.fb.nonNullable.control('', [Validators.required, Validators.maxLength(500)]);
-  }
-
-  /** Acceso tipado al arreglo de controles de referencia. */
-  protected get referencias(): FormArray<FormControl<string>> {
-    return this.fotosForm.controls.referencias;
-  }
-
-  /** Abre el panel de fotos de un Levantamiento y carga su galeria. */
-  abrirFotos(levantamiento: LevantamientoSitio): void {
-    this.fotosLevantamiento.set(levantamiento);
-    this.reiniciarFormularioFotos();
-    this.cargarFotos(levantamiento.id);
-  }
-
-  /** Cierra el panel de fotos y limpia su estado. */
-  cerrarFotos(): void {
-    this.fotosLevantamiento.set(null);
-    this.fotos.set([]);
-    this.reiniciarFormularioFotos();
-  }
-
-  /** Agrega un nuevo campo de referencia para adjuntar varias fotos a la vez. */
-  agregarCampoReferencia(): void {
-    this.referencias.push(this.nuevaReferencia());
-  }
-
-  /** Elimina un campo de referencia; conserva al menos uno. */
-  quitarCampoReferencia(indice: number): void {
-    if (this.referencias.length > 1) {
-      this.referencias.removeAt(indice);
-    }
-  }
-
-  /** Carga (o recarga) la galeria de fotos del levantamiento seleccionado (Req 12.1). */
-  private cargarFotos(id: string): void {
-    this.fotosFase.set('cargando');
-    this.service.fotosDe(id).subscribe({
-      next: (fotos) => {
-        this.fotos.set(fotos);
-        this.fotosFase.set(fotos.length === 0 ? 'vacio' : 'ok');
-      },
-      error: (e: HttpErrorResponse) => {
-        this.toast.error(mensajeDeError(e));
-        this.fotosFase.set('error');
-      },
-    });
-  }
-
-  /** Reintenta la carga de la galeria del levantamiento seleccionado. */
-  recargarFotos(): void {
-    const seleccionado = this.fotosLevantamiento();
-    if (seleccionado) {
-      this.cargarFotos(seleccionado.id);
-    }
-  }
-
-  private reiniciarFormularioFotos(): void {
-    this.fotosForm.setControl('referencias', this.fb.array([this.nuevaReferencia()]));
-  }
-
-  /**
-   * Adjunta las referencias capturadas al Levantamiento seleccionado (Req 12.1).
-   * Sin referencias validas no se llama al backend y se muestra validacion es-MX
-   * (Req 12.2); ante un fallo se muestra un mensaje es-MX conservando el estado
-   * previo de la vista (Req 12.3).
-   */
-  agregarFotos(): void {
-    const seleccionado = this.fotosLevantamiento();
-    if (!seleccionado) {
-      return;
-    }
-    const referencias = this.referencias.controls
-      .map((c) => c.value.trim())
-      .filter((r) => r.length > 0);
-    if (referencias.length === 0) {
-      this.referencias.markAllAsTouched();
-      this.toast.error('Agrega al menos una referencia de foto.');
-      return;
-    }
-    this.adjuntando.set(true);
-    this.service.agregarFotos(seleccionado.id, referencias).subscribe({
-      next: (fotos) => {
-        this.adjuntando.set(false);
-        this.fotos.set(fotos);
-        this.fotosFase.set(fotos.length === 0 ? 'vacio' : 'ok');
-        this.reiniciarFormularioFotos();
-        this.toast.exito('Fotos adjuntadas.');
-      },
-      error: (e: HttpErrorResponse) => {
-        this.adjuntando.set(false);
-        this.toast.error(mensajeDeError(e));
-      },
     });
   }
 }

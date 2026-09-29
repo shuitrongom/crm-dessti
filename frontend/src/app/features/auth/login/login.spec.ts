@@ -51,7 +51,7 @@ describe('Login', () => {
   it('expone las etiquetas de los campos', () => {
     const etiquetas = Array.from(el().querySelectorAll('mat-label')).map((l) => l.textContent?.trim());
     expect(etiquetas).toContain('Identificador');
-    expect(etiquetas).toContain('Contrasena');
+    expect(etiquetas).toContain('Contraseña');
   });
 
   it('el boton de contrasena tiene etiqueta accesible y aria-pressed', async () => {

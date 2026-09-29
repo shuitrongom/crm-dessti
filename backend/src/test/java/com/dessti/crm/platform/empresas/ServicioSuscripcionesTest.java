@@ -131,6 +131,7 @@ class ServicioSuscripcionesTest {
     void suspendeSuscripcion() {
         UUID id = UUID.randomUUID();
         Suscripcion susc = Suscripcion.crear(TENANT, PLAN, LocalDate.of(2025, 1, 1), null, "super");
+        when(suscripcionRepository.resolverTenantId(id)).thenReturn(Optional.of(TENANT));
         when(suscripcionRepository.findById(id)).thenReturn(Optional.of(susc));
         when(suscripcionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -148,6 +149,7 @@ class ServicioSuscripcionesTest {
         UUID id = UUID.randomUUID();
         Suscripcion susc = Suscripcion.crear(TENANT, PLAN, LocalDate.of(2025, 1, 1), null, "super");
         susc.cancelar("super");
+        when(suscripcionRepository.resolverTenantId(id)).thenReturn(Optional.of(TENANT));
         when(suscripcionRepository.findById(id)).thenReturn(Optional.of(susc));
 
         assertThatThrownBy(() -> servicio.activar(id))
@@ -159,6 +161,7 @@ class ServicioSuscripcionesTest {
     void actualizarVigenciaInvalida() {
         UUID id = UUID.randomUUID();
         Suscripcion susc = Suscripcion.crear(TENANT, PLAN, LocalDate.of(2025, 1, 1), null, "super");
+        when(suscripcionRepository.resolverTenantId(id)).thenReturn(Optional.of(TENANT));
         when(suscripcionRepository.findById(id)).thenReturn(Optional.of(susc));
 
         assertThatThrownBy(() -> servicio.actualizarVigencia(
@@ -212,5 +215,51 @@ class ServicioSuscripcionesTest {
         InOrder orden = inOrder(tenantSession, suscripcionRepository);
         orden.verify(tenantSession).applyTenant(TENANT);
         orden.verify(suscripcionRepository).findByTenantIdOrderByIdAsc(TENANT);
+    }
+
+    @Test
+    @DisplayName("crearSuscripcion fija app.current_tenant ANTES de guardar (RLS WITH CHECK)")
+    void crearSuscripcionFijaTenantAntesDeGuardar() {
+        when(empresaRepository.existsById(TENANT)).thenReturn(true);
+        when(planRepository.existsById(PLAN)).thenReturn(true);
+        when(suscripcionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        servicio.crearSuscripcion(new CrearSuscripcionCommand(TENANT, PLAN, LocalDate.of(2025, 1, 1), null));
+
+        // El INSERT esta sujeto al WITH CHECK de la RLS; sin fijar el tenant destino
+        // ANTES del save, la policy rechazaria la fila. Se verifica el orden.
+        InOrder orden = inOrder(tenantSession, suscripcionRepository);
+        orden.verify(tenantSession).applyTenant(TENANT);
+        orden.verify(suscripcionRepository).save(any());
+    }
+
+    @Test
+    @DisplayName("cargar resuelve el tenant y lo fija ANTES del findById (evita falso 404 por RLS)")
+    void cargarFijaTenantAntesDeFindById() {
+        UUID id = UUID.randomUUID();
+        Suscripcion susc = Suscripcion.crear(TENANT, PLAN, LocalDate.of(2025, 1, 1), null, "super");
+        when(suscripcionRepository.resolverTenantId(id)).thenReturn(Optional.of(TENANT));
+        when(suscripcionRepository.findById(id)).thenReturn(Optional.of(susc));
+        when(suscripcionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        // Una accion cualquiera que pase por cargar() (p. ej. suspender).
+        servicio.suspender(id);
+
+        // Debe resolver el tenant (sin RLS), fijarlo y SOLO despues leer la fila.
+        InOrder orden = inOrder(suscripcionRepository, tenantSession);
+        orden.verify(suscripcionRepository).resolverTenantId(id);
+        orden.verify(tenantSession).applyTenant(TENANT);
+        orden.verify(suscripcionRepository).findById(id);
+    }
+
+    @Test
+    @DisplayName("cargar da 404 si no se puede resolver el tenant (suscripcion inexistente)")
+    void cargarSuscripcionInexistenteDa404() {
+        UUID id = UUID.randomUUID();
+        when(suscripcionRepository.resolverTenantId(id)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> servicio.consultar(id))
+                .isInstanceOf(RecursoNoEncontradoException.class);
+        verify(suscripcionRepository, never()).findById(any());
     }
 }

@@ -59,6 +59,9 @@ class ServicioProyectosClienteTest {
     private PerfilFasesGiroPort perfilFasesGiro;
     private AvanceSitioPort avanceProduccion;
     private AvanceSitioPort avanceSitioAnuncios;
+    private PrecondicionesFaseSitioPort precondicionesGenerico;
+    private PrecondicionesFaseSitioPort precondicionesAnuncios;
+    private com.dessti.crm.operacion.proyecto.application.evidencia.EvidenciaAvanceConsultaPort evidenciaConsulta;
     private AuditoriaPort auditoria;
     private ServicioProyectos servicio;
 
@@ -71,6 +74,10 @@ class ServicioProyectosClienteTest {
         perfilFasesGiro = mock(PerfilFasesGiroPort.class);
         avanceProduccion = mock(AvanceSitioPort.class);
         avanceSitioAnuncios = mock(AvanceSitioPort.class);
+        precondicionesGenerico = mock(PrecondicionesFaseSitioPort.class);
+        precondicionesAnuncios = mock(PrecondicionesFaseSitioPort.class);
+        evidenciaConsulta = mock(
+                com.dessti.crm.operacion.proyecto.application.evidencia.EvidenciaAvanceConsultaPort.class);
         auditoria = mock(AuditoriaPort.class);
         // Colaboradores no ejercitados por crear(): stubs neutrales/lenient.
         lenient().when(perfilFasesGiro.perfilDelTenant()).thenReturn(PerfilFasesGiro.GENERICO);
@@ -78,7 +85,8 @@ class ServicioProyectosClienteTest {
                 .thenAnswer(inv -> inv.getArgument(0));
         servicio = new ServicioProyectos(
                 proyectoRepository, sitioRepository, avanceSitioRepository, clienteExistente,
-                perfilFasesGiro, avanceProduccion, avanceSitioAnuncios, auditoria);
+                perfilFasesGiro, avanceProduccion, avanceSitioAnuncios,
+                precondicionesGenerico, precondicionesAnuncios, evidenciaConsulta, auditoria);
         TenantContext.set(TENANT);
     }
 

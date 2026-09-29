@@ -80,51 +80,12 @@
             <p class="lev-detalle__vacio">Este levantamiento no tiene fotos registradas.</p>
           }
 
-          @if (puedeAgregarFotos) {
-            <form class="lev-detalle__form" [formGroup]="fotosForm" (ngSubmit)="agregarFotos()">
-              <fieldset class="lev-detalle__fieldset">
-                <legend class="lev-detalle__legend">Adjuntar fotos</legend>
-                <div formArrayName="referencias" class="lev-detalle__refs">
-                  @for (ref of referencias.controls; track $index) {
-                    <div class="lev-detalle__ref">
-                      <mat-form-field appearance="outline" class="lev-detalle__campo">
-                        <mat-label>Referencia de foto {{ $index + 1 }}</mat-label>
-                        <input
-                          matInput
-                          [formControlName]="$index"
-                          placeholder="URL o clave del objeto"
-                        />
-                        @if (ref.hasError('required') && ref.touched) {
-                          <mat-error>La referencia es obligatoria.</mat-error>
-                        }
-                        @if (ref.hasError('maxlength')) {
-                          <mat-error>Maximo 500 caracteres.</mat-error>
-                        }
-                      </mat-form-field>
-                      <button
-                        matIconButton
-                        type="button"
-                        aria-label="Quitar referencia de foto"
-                        [disabled]="referencias.length <= 1"
-                        (click)="quitarCampoReferencia($index)"
-                      >
-                        <mat-icon aria-hidden="true">remove_circle_outline</mat-icon>
-                      </button>
-                    </div>
-                  }
-                </div>
-                <div class="lev-detalle__form-acciones">
-                  <button matButton type="button" (click)="agregarCampoReferencia()">
-                    <mat-icon aria-hidden="true">add</mat-icon>
-                    Agregar otra
-                  </button>
-                  <button matButton="tonal" type="submit" [disabled]="adjuntando()">
-                    Adjuntar fotos
-                  </button>
-                </div>
-              </fieldset>
-            </form>
-          }
+          <div class="lev-detalle__form-acciones">
+            <button matButton="tonal" type="button" (click)="abrirFotos()">
+              <mat-icon aria-hidden="true">photo_library</mat-icon>
+              {{ puedeAgregarFotos ? 'Gestionar fotos' : 'Ver fotos' }}
+            </button>
+          </div>
         </mat-card-content>
       </mat-card>
     </div>

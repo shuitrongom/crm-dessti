@@ -117,6 +117,21 @@ Estas decisiones ya fueron confirmadas y son vinculantes para el diseño; sustit
 5. WHERE el giro del tenant es `anuncios-luminosos`, THE Sistema SHALL conservar la derivación actual con la secuencia Levantamiento → Permiso → Producción → Instalación.
 6. THE Sistema SHALL mantener la derivación del estado consolidado como una función pura y determinista del avance de los Sitios.
 
+### Requerimiento 3-bis: Precondiciones del avance manual de fase del Sitio (tablero) — [Genérico con gating por giro]
+
+**Historia de usuario:** Como gestor de proyectos, quiero que el tablero de avance de un Sitio (Pendiente → En preparación → En instalación → Entregado) no permita adelantar una fase sin cumplir sus precondiciones de negocio, para que "En instalación" o "Entregado" reflejen trabajo realmente habilitado y no un clic sin respaldo.
+
+**Contexto:** la fase operativa del Sitio se materializa en `avance_sitio` (`FaseSitioGenerica`, máquina lineal) y se cambia manualmente desde el tablero vía `PUT /proyectos/{id}/sitios/{sitioId}/avance` (avance de uso común, permiso `proyecto:actualizar`) o `.../correccion-fase` (corrección administrativa, permiso `proyecto:cambiar_estado`). Las precondiciones de levantamiento y permiso son específicas del giro `anuncios-luminosos`; se aplican solo cuando el `PerfilFasesGiro` del tenant incluye esas fases.
+
+#### Criterios de aceptación
+
+1. WHEN un usuario avanza la fase de un Sitio (avance de uso común, no corrección) a `en_preparacion` Y el giro del tenant habilita la fase de Levantamiento, THE Sistema SHALL exigir que el Sitio tenga un Levantamiento_Sitio en estado `completado`; si no lo tiene, THE Sistema SHALL rechazar el avance con 422, conservar la fase actual e informar el requisito no cumplido.
+2. WHEN un usuario avanza la fase de un Sitio a `en_instalacion` Y el giro del tenant habilita las fases de Levantamiento/Permiso/Instalación, THE Sistema SHALL exigir que el Sitio tenga un Levantamiento_Sitio `completado` y un Permiso_Instalacion `aprobado` y **vigente** (no vencido a la fecha); si falta alguno, THE Sistema SHALL rechazar el avance con 422, conservar la fase actual e informar el requisito no cumplido.
+3. WHEN un usuario avanza la fase de un Sitio a `entregado` desde `en_instalacion`, THE Sistema SHALL exigir al menos una evidencia aprobada de la fase de instalación; si no la hay, THE Sistema SHALL rechazar el avance con 422 y conservar la fase actual.
+4. WHERE el giro del tenant NO habilita las fases de levantamiento, permiso ni instalación (perfil genérico), THE Sistema SHALL permitir el avance lineal de fase sin exigir esas precondiciones, aplicando únicamente la máquina de estados lineal.
+5. WHEN un usuario realiza una corrección administrativa de fase (permiso `proyecto:cambiar_estado`), THE Sistema SHALL exigir un motivo no vacío (nota) para registrar la razón del ajuste; si el motivo está vacío, THE Sistema SHALL rechazar la corrección con 422. La corrección puede retroceder o saltar fases y no aplica las precondiciones de los criterios 1-3 (es la vía para deshacer o ajustar administrativamente), pero siempre queda auditada con su motivo.
+6. THE Sistema SHALL aplicar las precondiciones de los criterios 1-3 únicamente en el avance de uso común (no en la corrección administrativa), conservar la fase en todo rechazo y auditar el resultado (avance o corrección) con el actor y la fase destino.
+
 ### Requerimiento 4: Verificación de existencia del Cliente en Proyectos — [Genérico]
 
 **Historia de usuario:** Como gestor de proyectos, quiero que crear un Proyecto con un Cliente inexistente devuelva un error claro de no encontrado, para no recibir un error de integridad opaco.

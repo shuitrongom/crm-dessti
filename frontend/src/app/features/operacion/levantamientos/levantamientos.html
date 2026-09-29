@@ -1,7 +1,7 @@
 <app-page-header titulo="Levantamientos de sitio" subtitulo="Registra los levantamientos de sitio con sus mediciones y las condiciones físicas del lugar.">
   <div acciones>
     @if (puedeCrear) {
-      <button matButton="filled" type="button" (click)="alternarFormulario()">
+      <button matButton="filled" type="button" (click)="nuevo()">
         <mat-icon aria-hidden="true">add</mat-icon>
         Nuevo levantamiento
       </button>
@@ -9,55 +9,27 @@
   </div>
 </app-page-header>
 
-@if (formularioAbierto()) {
-  <mat-card appearance="outlined" class="operacion-form">
-    <mat-card-header>
-      <mat-card-title>Nuevo levantamiento</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      <form class="ds-dialog-form" [formGroup]="form" (ngSubmit)="crear()" novalidate>
-        <mat-form-field appearance="outline">
-          <mat-label>Mediciones</mat-label>
-          <textarea matInput rows="2" formControlName="mediciones" required></textarea>
-          @if (form.controls.mediciones.hasError('required') && form.controls.mediciones.touched) {
-            <mat-error>Las mediciones son obligatorias.</mat-error>
-          }
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Tipo de superficie o estructura</mat-label>
-          <input matInput type="text" formControlName="tipoSuperficie" required />
-          @if (form.controls.tipoSuperficie.hasError('required') && form.controls.tipoSuperficie.touched) {
-            <mat-error>El tipo de superficie es obligatorio.</mat-error>
-          }
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Condiciones electricas</mat-label>
-          <textarea matInput rows="2" formControlName="condicionesElectricas" required></textarea>
-          @if (form.controls.condicionesElectricas.hasError('required') && form.controls.condicionesElectricas.touched) {
-            <mat-error>Las condiciones electricas son obligatorias.</mat-error>
-          }
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Sitio (opcional)</mat-label>
-          <input matInput type="text" formControlName="sitioId" />
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Cotizacion (opcional)</mat-label>
-          <input matInput type="text" formControlName="cotizacionId" />
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Orden de fabricacion (opcional)</mat-label>
-          <input matInput type="text" formControlName="ordenFabricacionId" />
-        </mat-form-field>
-        <div class="operacion-form__acciones">
-          <button matButton type="button" (click)="alternarFormulario()" [disabled]="guardando()">
-            Cancelar
-          </button>
-          <button matButton="filled" type="submit" [disabled]="guardando()">Crear</button>
-        </div>
-      </form>
-    </mat-card-content>
-  </mat-card>
+@if (fase() === "ok") {
+  <section class="operacion-kpis" aria-label="Indicadores de levantamientos">
+    <button
+      type="button"
+      class="kpi-boton"
+      (click)="abrirInfoKpi('levantamientos_en_proceso', 'En proceso', totalEnProceso() ?? 0, 'conteo')"
+      aria-label="Ver explicación de levantamientos en proceso"
+    >
+      <app-kpi-tile icono="straighten" tono="advertencia" etiqueta="En proceso"
+        sublabel="Mediciones por cerrar" [valor]="totalEnProceso()" />
+    </button>
+    <button
+      type="button"
+      class="kpi-boton"
+      (click)="abrirInfoKpi('levantamientos_completados', 'Completados', totalCompletados() ?? 0, 'conteo')"
+      aria-label="Ver explicación de levantamientos completados"
+    >
+      <app-kpi-tile icono="task_alt" tono="exito" etiqueta="Completados"
+        sublabel="Levantamientos cerrados" [valor]="totalCompletados()" />
+    </button>
+  </section>
 }
 
 <mat-form-field appearance="outline" class="operacion-filtro">
@@ -115,75 +87,3 @@
     </ng-template>
   </app-data-table>
 </app-state-container>
-
-@if (fotosLevantamiento(); as seleccionado) {
-  <mat-card appearance="outlined" class="operacion-fotos">
-    <mat-card-header>
-      <mat-card-title>Fotos del levantamiento</mat-card-title>
-      <mat-card-subtitle>{{ seleccionado.tipoSuperficie }}</mat-card-subtitle>
-    </mat-card-header>
-    <mat-card-content>
-      @if (puedeCrear) {
-        <form class="operacion-fotos__form" [formGroup]="fotosForm" (ngSubmit)="agregarFotos()" novalidate>
-          <fieldset class="operacion-fotos__campos" formArrayName="referencias">
-            <legend>Referencias (URL o clave del archivo)</legend>
-            @for (control of referencias.controls; track $index) {
-              <div class="operacion-fotos__campo">
-                <mat-form-field appearance="outline">
-                  <mat-label>Referencia {{ $index + 1 }}</mat-label>
-                  <input
-                    matInput
-                    type="text"
-                    [formControlName]="$index"
-                    placeholder="https://…"
-                  />
-                  @if (control.hasError('required') && control.touched) {
-                    <mat-error>La referencia es obligatoria.</mat-error>
-                  }
-                </mat-form-field>
-                @if (referencias.length > 1) {
-                  <button
-                    matIconButton
-                    type="button"
-                    (click)="quitarCampoReferencia($index)"
-                    [attr.aria-label]="'Quitar referencia ' + ($index + 1)"
-                  >
-                    <mat-icon aria-hidden="true">delete</mat-icon>
-                  </button>
-                }
-              </div>
-            }
-          </fieldset>
-          <div class="operacion-fotos__acciones">
-            <button matButton type="button" (click)="agregarCampoReferencia()">
-              <mat-icon aria-hidden="true">add</mat-icon>
-              Agregar otra referencia
-            </button>
-            <span class="operacion-fotos__separador"></span>
-            <button matButton type="button" (click)="cerrarFotos()" [disabled]="adjuntando()">
-              Cerrar
-            </button>
-            <button matButton="filled" type="submit" [disabled]="adjuntando()">Agregar foto</button>
-          </div>
-        </form>
-      }
-
-      <app-state-container
-        [fase]="fotosFase()"
-        mensajeVacio="Este levantamiento no tiene fotos adjuntas."
-        (reintentar)="recargarFotos()"
-      >
-        <ul class="operacion-fotos__galeria">
-          @for (foto of fotos(); track foto.id) {
-            <li class="operacion-fotos__item">
-              <a [href]="foto.referencia" target="_blank" rel="noopener noreferrer">
-                {{ foto.referencia }}
-              </a>
-              <span class="operacion-fotos__fecha">{{ foto.createdAt | date: 'short' }}</span>
-            </li>
-          }
-        </ul>
-      </app-state-container>
-    </mat-card-content>
-  </mat-card>
-}

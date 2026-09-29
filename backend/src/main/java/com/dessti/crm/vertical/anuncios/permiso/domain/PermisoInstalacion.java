@@ -163,13 +163,39 @@ public class PermisoInstalacion extends TenantScopedEntity {
     }
 
     /**
-     * Indica si el Permiso_Instalacion esta {@code aprobado} (Req 17.4). Es la
-     * condicion de la guarda de programacion de instalacion.
+     * Indica si el Permiso_Instalacion esta {@code aprobado} (Req 17.4). Refleja el
+     * <strong>hito historico</strong> de haber obtenido la autorizacion, con
+     * independencia de si sigue vigente. Se usa para reflejar el avance del Sitio
+     * (la fase "permiso aprobado" cumplida no se borra porque el permiso venza).
      *
      * @return {@code true} si el estado es {@link EstadoPermisoInstalacion#APROBADO}.
      */
     public boolean estaAprobado() {
         return this.estado == EstadoPermisoInstalacion.APROBADO;
+    }
+
+    /**
+     * Indica si el Permiso_Instalacion esta <strong>vigente</strong> para autorizar
+     * una instalacion: aprobado <em>y</em> no vencido a la fecha actual (Req 17.4).
+     * Un permiso aprobado cuya {@code fecha_vencimiento} ya paso NO autoriza
+     * legalmente una nueva instalacion, por lo que la guarda de programacion de una
+     * Orden_Trabajo_Instalacion exige vigencia, no solo aprobacion. La fecha se
+     * evalua en UTC con el {@link Clock} inyectado, coherente con el resto del
+     * dominio de permisos.
+     *
+     * @param clock reloj (UTC) para determinar la fecha actual; obligatorio.
+     * @return {@code true} si el permiso esta aprobado y su vencimiento es hoy o posterior.
+     * @throws ReglaNegocioException si el reloj es nulo (422).
+     */
+    public boolean estaVigente(Clock clock) {
+        if (clock == null) {
+            throw new ReglaNegocioException("El reloj para evaluar la vigencia es obligatorio.");
+        }
+        if (!estaAprobado()) {
+            return false;
+        }
+        LocalDate hoy = LocalDate.ofInstant(clock.instant(), ZoneOffset.UTC);
+        return !this.fechaVencimiento.isBefore(hoy);
     }
 
     /**

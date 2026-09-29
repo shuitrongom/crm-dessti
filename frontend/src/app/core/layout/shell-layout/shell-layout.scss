@@ -85,16 +85,24 @@
 
   // Nombre visible de la empresa (branding propio del tenant): se ajusta al
   // ancho del drawer sin desbordar, respetando el color de texto del tema.
+  // Admite hasta DOS lineas (line-clamp) antes de recortar con puntos suspensivos,
+  // para no cortar prematuramente nombres largos ("Carpinteria Chetumal ...").
   &__marca-empresa {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
     font-family: var(--ds-font-family-heading);
-    font-size: var(--ds-font-size-lg);
+    font-size: var(--ds-font-size-md);
     font-weight: var(--ds-font-weight-bold);
+    line-height: 1.2;
     letter-spacing: -0.01em;
     color: var(--ds-color-text);
-    min-width: 0;
   }
 
   // Logotipo de la empresa: se limita en alto para conservar el ritmo del

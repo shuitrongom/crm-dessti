@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -207,6 +208,30 @@ class ServicioOportunidadesTest {
                 .isInstanceOf(ReglaNegocioException.class);
 
         verify(creacionCotizacion, never()).crearDesdeOportunidad(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("convertirEnCotizacion rechaza una segunda conversion (422) y no crea otra Cotizacion (Req 14.7)")
+    void convertirYaConvertidaRechaza() {
+        Oportunidad o = enEtapa(EtapaOportunidad.GANADO);
+        UUID cotizacion = UUID.randomUUID();
+        when(repositorio.findById(o.getId())).thenReturn(Optional.of(o));
+        when(repositorio.save(any(Oportunidad.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(creacionCotizacion.crearDesdeOportunidad(eq(o.getId()), eq(CLIENTE), any()))
+                .thenReturn(cotizacion);
+
+        // Primera conversion: exitosa, vincula la Cotizacion.
+        servicio.convertirEnCotizacion(o.getId());
+        assertThat(o.getCotizacionId()).isEqualTo(cotizacion);
+
+        // Segunda conversion: se rechaza con 422 sin volver a crear una Cotizacion.
+        assertThatThrownBy(() -> servicio.convertirEnCotizacion(o.getId()))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("ya fue convertida");
+        // El puerto se invoco EXACTAMENTE una vez (solo en la primera conversion).
+        verify(creacionCotizacion, times(1)).crearDesdeOportunidad(any(), any(), any());
+        // El vinculo original se conserva.
+        assertThat(o.getCotizacionId()).isEqualTo(cotizacion);
     }
 
     @Test

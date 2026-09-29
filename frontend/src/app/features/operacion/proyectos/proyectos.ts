@@ -1,20 +1,20 @@
 // =============================================================================
-// Vista de Proyectos (Req 21) — listado paginado + alta
+// Vista de Proyectos (Req 21) — listado paginado premium
 // -----------------------------------------------------------------------------
-// Listado paginado (DataTable) con filtro por cliente y alta de proyecto; enlaza
-// al detalle con el avance consolidado por sitio. Acciones gobernadas por permiso
-// proyecto:{...}.
+// Listado paginado (DataTable) con filtro por cliente; el alta/edicion de un
+// proyecto se hace en un MODAL animado (ProyectoFormDialog). Enlaza al detalle con
+// el avance consolidado por sitio. Acciones gobernadas por permiso proyecto:{...}.
 // =============================================================================
 
 import { Component, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
 
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../shared/components/state-container/state-container';
@@ -31,17 +31,17 @@ import { FaseSolicitud } from '../../../shared/models/estado-solicitud';
 import { ProyectosService } from '../services/proyectos.service';
 import { NombresOperacionService } from '../services/nombres-operacion.service';
 import { Proyecto } from '../models/operacion.models';
+import { ProyectoFormDialog, ProyectoFormDialogData } from './proyecto-form-dialog';
 
 @Component({
   selector: 'app-operacion-proyectos',
   imports: [
     RouterLink,
-    ReactiveFormsModule,
-    MatCardModule,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
     MatIconModule,
+    MatTooltipModule,
     PageHeader,
     StateContainer,
     DataTable,
@@ -51,13 +51,14 @@ import { Proyecto } from '../models/operacion.models';
   styleUrl: './proyectos.scss',
 })
 export class OperacionProyectos {
-  private readonly fb = inject(FormBuilder);
   private readonly service = inject(ProyectosService);
   protected readonly nombres = inject(NombresOperacionService);
   private readonly toast = inject(NotificacionesService);
   private readonly auth = inject(AuthService);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly puedeCrear = this.auth.tienePermiso('proyecto', 'crear');
+  protected readonly puedeActualizar = this.auth.tienePermiso('proyecto', 'actualizar');
 
   protected readonly fase = signal<FaseSolicitud>('cargando');
   protected readonly mensajeError = signal<string | undefined>(undefined);
@@ -67,19 +68,11 @@ export class OperacionProyectos {
   protected readonly size = signal(20);
   protected readonly clienteId = signal('');
 
-  protected readonly guardando = signal(false);
-  protected readonly formularioAbierto = signal(false);
-
   protected readonly columnas: ColumnaTabla[] = [
     { clave: 'nombre', encabezado: 'Proyecto' },
     { clave: 'clienteId', encabezado: 'Cliente' },
     { clave: 'acciones', encabezado: 'Acciones', alineacion: 'fin' },
   ];
-
-  protected readonly form = this.fb.nonNullable.group({
-    clienteId: ['', [Validators.required]],
-    nombre: ['', [Validators.required, Validators.maxLength(200)]],
-  });
 
   constructor() {
     // Carga los catalogos de nombres (Cliente) para resolver la columna Cliente
@@ -122,32 +115,35 @@ export class OperacionProyectos {
     this.cargar();
   }
 
-  alternarFormulario(): void {
-    this.formularioAbierto.update((v) => !v);
-    if (this.formularioAbierto()) {
-      this.form.reset({ clienteId: '', nombre: '' });
-    }
+  /** Abre el modal de alta de Proyecto y recarga si se creó. */
+  nuevo(): void {
+    this.abrirFormulario();
   }
 
-  /** Crea un Proyecto asociado a un Cliente (Req 21.1). */
-  crear(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
-    const v = this.form.getRawValue();
-    this.guardando.set(true);
-    this.service.crear({ clienteId: v.clienteId.trim(), nombre: v.nombre.trim() }).subscribe({
-      next: () => {
-        this.guardando.set(false);
-        this.toast.exito('Proyecto creado.');
-        this.formularioAbierto.set(false);
+  /** Abre el modal de edición con los datos del Proyecto y recarga si cambió. */
+  editar(proyecto: Proyecto): void {
+    this.abrirFormulario(proyecto);
+  }
+
+  /**
+   * Abre el modal de formulario de Proyecto (alta si no se pasa `proyecto`,
+   * edición si se pasa) y recarga el listado cuando el diálogo confirma.
+   */
+  private abrirFormulario(proyecto?: Proyecto): void {
+    const data: ProyectoFormDialogData = { proyecto };
+    const ref = this.dialog.open(ProyectoFormDialog, {
+      width: 'min(680px, 96vw)',
+      maxWidth: 'min(680px, 96vw)',
+      maxHeight: '92vh',
+      autoFocus: 'first-tabbable',
+      panelClass: 'ds-dialog-panel',
+      data,
+    });
+    ref.afterClosed().subscribe((guardado?: Proyecto) => {
+      if (guardado) {
+        this.toast.exito(proyecto ? 'Proyecto actualizado.' : 'Proyecto creado.');
         this.cargar();
-      },
-      error: (e: HttpErrorResponse) => {
-        this.guardando.set(false);
-        this.toast.error(mensajeDeError(e));
-      },
+      }
     });
   }
 }

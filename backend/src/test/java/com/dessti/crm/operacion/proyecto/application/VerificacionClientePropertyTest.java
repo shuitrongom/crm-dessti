@@ -109,6 +109,8 @@ class VerificacionClientePropertyTest {
         PerfilFasesGiroPort perfilFasesGiro = mock(PerfilFasesGiroPort.class);
         AvanceSitioPort avanceProduccion = mock(AvanceSitioPort.class);
         AvanceSitioPort avanceSitioAnuncios = mock(AvanceSitioPort.class);
+        com.dessti.crm.operacion.proyecto.application.evidencia.EvidenciaAvanceConsultaPort evidenciaConsulta =
+                mock(com.dessti.crm.operacion.proyecto.application.evidencia.EvidenciaAvanceConsultaPort.class);
         AuditoriaPort auditoria = mock(AuditoriaPort.class);
 
         // Colaboradores no ejercitados en crear(): stubs neutrales/lenient.
@@ -121,9 +123,12 @@ class VerificacionClientePropertyTest {
         boolean existe = existeCliente;
         lenient().when(clienteExistente.existeEnTenant(any(UUID.class))).thenReturn(existe);
 
+        PrecondicionesFaseSitioPort precondicionesGenerico = mock(PrecondicionesFaseSitioPort.class);
+        PrecondicionesFaseSitioPort precondicionesAnuncios = mock(PrecondicionesFaseSitioPort.class);
         ServicioProyectos servicio = new ServicioProyectos(
                 proyectoRepository, sitioRepository, avanceSitioRepository, clienteExistente,
-                perfilFasesGiro, avanceProduccion, avanceSitioAnuncios, auditoria);
+                perfilFasesGiro, avanceProduccion, avanceSitioAnuncios,
+                precondicionesGenerico, precondicionesAnuncios, evidenciaConsulta, auditoria);
 
         CrearProyectoCommand comando = new CrearProyectoCommand(clienteId, "Proyecto de prueba");
 

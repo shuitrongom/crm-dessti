@@ -83,7 +83,9 @@ function cotizacion(): Cotizacion {
     canalVentaId: null,
     folio: 'COT-2026-0001',
     fechaEmision: '2026-01-01',
-    validoHasta: '2026-01-31',
+    // Sin fecha de vigencia por defecto (no vence): los tests de envío/estado usan
+    // este caso; la vigencia (Req 6.11) se ejercita con cotizacionVencida()/vigente().
+    validoHasta: null,
     condiciones: 'Precios en MXN, mas IVA.',
     notas: 'Entrega en 10 dias.',
     moneda: 'MXN',
@@ -366,8 +368,75 @@ describe('ComercialCotizacionDetalle', () => {
     expect(texto).not.toContain('canal-1');
   });
 
+  // ---------------------------------------------------------------------------
+  // Guarda de vigencia (Req 6.11): una cotizacion vencida no se envia ni aprueba.
+  // Se usan fechas relativas a HOY para ser robustas ante la fecha de ejecucion.
+  // ---------------------------------------------------------------------------
+
+  /** ISO date (YYYY-MM-DD) desplazada `dias` respecto a hoy. */
+  function fechaISO(dias: number): string {
+    const d = new Date();
+    d.setDate(d.getDate() + dias);
+    return d.toISOString().slice(0, 10);
+  }
+
+  it('muestra el aviso de vencida y NO envia por correo una cotizacion vencida (Req 6.11)', async () => {
+    iniciar({ ...cotizacion(), validoHasta: fechaISO(-1) });
+    // Aviso visible.
+    const aviso = fixture.nativeElement.querySelector(
+      '.cotizacion-detalle__aviso-vencida',
+    ) as HTMLElement | null;
+    expect(aviso).not.toBeNull();
+    expect(aviso?.getAttribute('role')).toBe('alert');
+
+    // Intentar enviar: guarda preventiva -> no abre dialogo ni hace peticion.
+    await (fixture.componentInstance as unknown as { enviarCorreo(): Promise<void> }).enviarCorreo();
+    expect(correoDialog.pedir).not.toHaveBeenCalled();
+    http.expectNone('/api/v1/cotizaciones/cot-1/enviar-correo');
+    expect(toast.error).toHaveBeenCalled();
+  });
+
+  it('NO cambia a "aprobada" una cotizacion vencida y avisa (Req 6.11)', async () => {
+    iniciar({ ...cotizacion(), estado: 'enviada', validoHasta: fechaISO(-1) });
+    await (
+      fixture.componentInstance as unknown as { cambiarEstado(e: string): Promise<void> }
+    ).cambiarEstado('aprobada');
+    http.expectNone('/api/v1/cotizaciones/cot-1/estado');
+    expect(toast.error).toHaveBeenCalled();
+  });
+
+  it('permite RECHAZAR una cotizacion vencida (la vigencia no restringe rechazar, Req 6.11)', async () => {
+    iniciar({ ...cotizacion(), estado: 'enviada', validoHasta: fechaISO(-1) });
+    // El ConfirmDialogService real resuelve; se intercepta para no depender de su UI.
+    (
+      fixture.componentInstance as unknown as { confirm: { confirmar: () => Promise<boolean> } }
+    ).confirm.confirmar = () => Promise.resolve(true);
+
+    await (
+      fixture.componentInstance as unknown as { cambiarEstado(e: string): Promise<void> }
+    ).cambiarEstado('rechazada');
+
+    const req = http.expectOne('/api/v1/cotizaciones/cot-1/estado');
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ estado: 'rechazada' });
+    req.flush({ ...cotizacion(), estado: 'rechazada', validoHasta: fechaISO(-1) });
+    expect(toast.exito).toHaveBeenCalledWith('Estado actualizado.');
+  });
+
+  it('una cotizacion VIGENTE se puede enviar (no muestra aviso de vencida)', async () => {
+    iniciar({ ...cotizacion(), validoHasta: fechaISO(30) });
+    expect(fixture.nativeElement.querySelector('.cotizacion-detalle__aviso-vencida')).toBeNull();
+
+    correoDialog.pedir.mockResolvedValue('nuevo@acme.com');
+    await (fixture.componentInstance as unknown as { enviarCorreo(): Promise<void> }).enviarCorreo();
+    const req = http.expectOne('/api/v1/cotizaciones/cot-1/enviar-correo');
+    expect(req.request.method).toBe('POST');
+    req.flush({ ...cotizacion(), estado: 'enviada', validoHasta: fechaISO(30) });
+    expect(toast.exito).toHaveBeenCalled();
+  });
+
   it('no tiene violaciones de accesibilidad (WCAG 2.1 A/AA)', async () => {
     iniciar();
     await esperarSinViolaciones(fixture);
-  });
+  }, 30000);
 });

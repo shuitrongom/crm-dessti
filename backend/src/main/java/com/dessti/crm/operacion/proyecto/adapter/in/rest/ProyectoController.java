@@ -121,6 +121,43 @@ public class ProyectoController {
     }
 
     /**
+     * Edita el nombre de un Proyecto existente (Req 21.1, 21.6). No altera el Cliente
+     * asociado. Devuelve el Proyecto detallado tras el cambio. 404 si no es accesible;
+     * 422 si el nombre es invalido.
+     *
+     * @param id      identificador del Proyecto.
+     * @param request nuevo nombre.
+     * @return 200 OK con el {@link ProyectoDto} detallado.
+     */
+    @PutMapping("/{id}")
+    @PreAuthorize("@autorizador.moduloHabilitado('operacion') and @autorizador.tiene('proyecto','actualizar')")
+    public ResponseEntity<ProyectoDto> editar(
+            @PathVariable("id") UUID id,
+            @Valid @RequestBody ActualizarProyectoRequest request) {
+        return ResponseEntity.ok(servicioProyectos.editarProyecto(id, request.nombre()));
+    }
+
+    /**
+     * Edita los datos descriptivos (nombre y direccion) de un Sitio de un Proyecto
+     * (Req 21.2, 21.6). Devuelve el Proyecto detallado tras el cambio. 404 si el
+     * Proyecto o el Sitio no son accesibles; 422 si los datos son invalidos.
+     *
+     * @param id      identificador del Proyecto.
+     * @param sitioId identificador del Sitio.
+     * @param request nuevos nombre y direccion del Sitio.
+     * @return 200 OK con el {@link ProyectoDto} detallado.
+     */
+    @PutMapping("/{id}/sitios/{sitioId}")
+    @PreAuthorize("@autorizador.moduloHabilitado('operacion') and @autorizador.tiene('proyecto','actualizar')")
+    public ResponseEntity<ProyectoDto> editarSitio(
+            @PathVariable("id") UUID id,
+            @PathVariable("sitioId") UUID sitioId,
+            @Valid @RequestBody ActualizarSitioRequest request) {
+        return ResponseEntity.ok(
+                servicioProyectos.editarSitio(id, sitioId, request.nombre(), request.direccion()));
+    }
+
+    /**
      * Actualiza la fase operativa generica de un Sitio de un Proyecto multi-sitio
      * (Req 3.2), avanzando el despliegue sitio por sitio para giros que no son
      * anuncios. Devuelve el Proyecto detallado (variante multi-sitio) tras el cambio.

@@ -44,8 +44,9 @@ import com.dessti.crm.platform.tenant.TenantContext;
  *       vinculados a la OTI; audita.</li>
  *   <li><strong>cambiarEstado (Req 19.5, 19.6, 19.8):</strong> aplica la maquina de
  *       estados pura (409 si la transicion es invalida); ademas, antes de pasar a
- *       {@code completada} verifica la guarda del Req 19.6 (no debe quedar ningun
- *       pendiente sin resolver). Audita el estado anterior y el nuevo.</li>
+ *       {@code completada} verifica las dos guardas de cierre del Req 19.6, en este
+ *       orden: (1) la OTI tiene al menos una evidencia fotografica adjunta, y (2) no
+ *       queda ningun pendiente sin resolver. Audita el estado anterior y el nuevo.</li>
  *   <li><strong>consultar (Req 23.3):</strong> 404 + auditoria del intento si no es
  *       accesible.</li>
  *   <li><strong>listar (Req 19.7):</strong> listado paginado (20/100) con filtros
@@ -66,16 +67,24 @@ import com.dessti.crm.platform.tenant.TenantContext;
  *       via {@link LevantamientoCompletadoPort}); si no,
  *       {@link ReglaNegocioException} (422) con el mensaje "el Sitio requiere un
  *       Levantamiento_Sitio completado".</li>
- *   <li>El Sitio de la OTI tiene un Permiso_Instalacion {@code aprobado} (Req 19.3,
- *       via {@link PermisoAprobadoPort}); si no, {@link ReglaNegocioException} (422)
- *       con el mensaje "el Sitio requiere un Permiso_Instalacion aprobado".</li>
+ *   <li>El Sitio de la OTI tiene un Permiso_Instalacion {@code aprobado} y
+ *       <strong>vigente</strong> (no vencido) (Req 19.3, 17.4, via
+ *       {@link PermisoAprobadoPort#sitioTienePermisoVigente}); si no,
+ *       {@link ReglaNegocioException} (422) con el mensaje "el Sitio requiere un
+ *       Permiso_Instalacion aprobado y vigente (no vencido)". Un permiso aprobado
+ *       pero vencido NO autoriza instalar.</li>
  * </ol>
  * En todos los casos de rechazo NO se crea ninguna OTI (Req 19.2, 19.3).
  *
  * <h2>Guarda de cierre (Req 19.6)</h2>
- * <p>El cierre (transicion a {@code completada}) se rechaza con
- * {@link ReglaNegocioException} (422) si la Lista_Pendientes de la OTI tiene al
- * menos un elemento sin resolver. El mensaje <strong>enumera las descripciones</strong>
+ * <p>El cierre (transicion a {@code completada}) exige, tras validar la transicion,
+ * dos condiciones de negocio en orden. Primero, la OTI debe tener al menos una
+ * evidencia fotografica adjunta ({@code evidencia_instalacion}); si no hay ninguna se
+ * rechaza con {@link ReglaNegocioException} (422) con el mensaje "no se puede
+ * completar: se requiere al menos una evidencia fotografica de la instalacion", sin
+ * llegar a revisar los pendientes. Segundo, la Lista_Pendientes de la OTI no debe
+ * tener ningun elemento sin resolver; si lo tiene se rechaza con
+ * {@link ReglaNegocioException} (422). El mensaje de pendientes <strong>enumera las descripciones</strong>
  * de los pendientes sin resolver (p. ej. "no se puede completar: pendientes por
  * resolver: [«fijar anclas», «conectar acometida»]"), para indicar exactamente que
  * falta (Req 8.5, diseno §C2). Esta guarda vive en el servicio (no en el dominio puro) porque requiere
@@ -175,9 +184,13 @@ public class ServicioOrdenesTrabajoInstalacion {
             throw new ReglaNegocioException("el Sitio requiere un Levantamiento_Sitio completado");
         }
 
-        // Precondicion 3 (Req 19.3): el Sitio tiene un Permiso_Instalacion aprobado.
-        if (!permisoAprobado.sitioTienePermisoAprobado(sitioId)) {
-            throw new ReglaNegocioException("el Sitio requiere un Permiso_Instalacion aprobado");
+        // Precondicion 3 (Req 19.3, 17.4): el Sitio tiene un Permiso_Instalacion
+        // aprobado Y VIGENTE. Un permiso aprobado pero vencido no autoriza instalar,
+        // por lo que la programacion exige vigencia (no solo aprobacion): es la regla
+        // real de negocio, no un chequeo de estado a secas.
+        if (!permisoAprobado.sitioTienePermisoVigente(sitioId)) {
+            throw new ReglaNegocioException(
+                    "el Sitio requiere un Permiso_Instalacion aprobado y vigente (no vencido)");
         }
 
         OrdenTrabajoInstalacion orden = OrdenTrabajoInstalacion.programar(
@@ -251,7 +264,8 @@ public class ServicioOrdenesTrabajoInstalacion {
      * @return el DTO de la OTI con su nuevo estado.
      * @throws RecursoNoEncontradoException si no es accesible (404).
      * @throws ReglaNegocioException si el estado es nulo/desconocido (422), o si se
-     *         intenta completar con pendientes sin resolver (422, Req 19.6).
+     *         intenta completar sin evidencia fotografica adjunta o con pendientes
+     *         sin resolver (422, Req 19.6).
      * @throws com.dessti.crm.platform.error.TransicionInvalidaException si la
      *         transicion no esta permitida (409, Req 19.5).
      */
@@ -283,6 +297,18 @@ public class ServicioOrdenesTrabajoInstalacion {
         // su descripcion en el 422 para indicar exactamente que falta. El estado
         // actual se conserva sin modificarlo.
         if (destino == EstadoOrdenTrabajoInstalacion.COMPLETADA) {
+            // Guarda de cierre por evidencia (Req 19.6): regla de negocio real de la
+            // operacion — una instalacion no puede darse por completada sin al menos
+            // una evidencia fotografica que la respalde. Se verifica ANTES que la
+            // guarda de pendientes: si no hay ninguna evidencia adjunta no tiene
+            // sentido siquiera revisar los pendientes; el estado se conserva. Vive en
+            // el servicio (no en el dominio puro) porque depende de la tabla hija
+            // evidencia_instalacion, igual que la guarda de pendientes.
+            if (!evidenciaRepository.existsByOrdenTrabajoInstalacionId(orden.getId())) {
+                throw new ReglaNegocioException(
+                        "no se puede completar: se requiere al menos una evidencia fotografica de la instalacion");
+            }
+
             List<PendienteInstalacion> sinResolver = pendienteRepository
                     .findByOrdenTrabajoInstalacionIdAndResueltoFalseOrderByCreatedAtAsc(orden.getId());
             if (!sinResolver.isEmpty()) {

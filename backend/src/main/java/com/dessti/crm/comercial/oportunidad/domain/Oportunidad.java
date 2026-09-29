@@ -256,20 +256,42 @@ public class Oportunidad extends TenantScopedEntity {
      * Enlaza la Cotizacion generada al convertir esta Oportunidad y deja
      * constancia del actor (Req 14.5). La <em>guarda</em> de que la etapa sea
      * {@link EtapaOportunidad#GANADO} y la creacion efectiva de la Cotizacion se
-     * gobiernan en la capa de aplicacion (tarea 17.2). Es idempotente para la
-     * misma Cotizacion.
+     * gobiernan en la capa de aplicacion. Es <strong>idempotente</strong> para la
+     * misma Cotizacion (permite reintentos seguros), pero rechaza vincular una
+     * Cotizacion distinta si ya estaba convertida (Req 14.7): una Oportunidad se
+     * convierte a lo sumo una vez.
      *
      * @param cotizacionId identificador de la Cotizacion creada; obligatorio.
      * @param actor        identificador de quien realiza la conversion, para
      *                     {@code updated_by}.
-     * @throws ReglaNegocioException si {@code cotizacionId} es nulo (422).
+     * @throws ReglaNegocioException si {@code cotizacionId} es nulo, o si la
+     *         Oportunidad ya esta convertida en una Cotizacion distinta (422, Req 14.7).
      */
     public void marcarConvertida(UUID cotizacionId, String actor) {
         if (cotizacionId == null) {
             throw new ReglaNegocioException("El identificador de la Cotizacion es obligatorio.");
         }
+        // Conversion unica (Req 14.7): una Oportunidad ya convertida no puede
+        // reconvertirse a OTRA Cotizacion. Es idempotente para la MISMA Cotizacion
+        // (permite reintentos seguros), pero rechaza vincular una cotizacion distinta.
+        if (this.cotizacionId != null && !this.cotizacionId.equals(cotizacionId)) {
+            throw new ReglaNegocioException(
+                    "La Oportunidad ya fue convertida en la Cotizacion " + this.cotizacionId
+                            + "; no puede vincularse a otra.");
+        }
         this.cotizacionId = cotizacionId;
         this.setUpdatedBy(actor);
+    }
+
+    /**
+     * Indica si esta Oportunidad ya fue convertida en una Cotizacion, es decir, si
+     * tiene una Cotizacion vinculada (Req 14.7). Sustenta la guarda que impide una
+     * segunda conversion de la misma Oportunidad.
+     *
+     * @return {@code true} si ya tiene una Cotizacion vinculada.
+     */
+    public boolean estaConvertida() {
+        return this.cotizacionId != null;
     }
 
     /**

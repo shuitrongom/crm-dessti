@@ -172,7 +172,21 @@ describe('OperacionOrdenesFabricacion', () => {
       totalElements: ordenes.length,
       totalPages: ordenes.length === 0 ? 0 : 1,
     });
+    resolverConteos();
     fixture.detectChanges();
+  }
+
+  /**
+   * Drena los 3 GET de conteos por estado que la vista dispara al arrancar
+   * (KPIs pendientes/en_produccion/terminada, cada uno con size=1). Son
+   * independientes del listado; se responden con un total arbitrario.
+   */
+  function resolverConteos(): void {
+    for (const req of http.match(
+      (r) => r.url === '/api/v1/ordenes-fabricacion' && r.params.get('size') === '1',
+    )) {
+      req.flush({ content: [], page: 0, size: 1, totalElements: 3, totalPages: 1 });
+    }
   }
 
   it('muestra el estado de carga (spinner) antes de resolver los datos', () => {
@@ -200,6 +214,7 @@ describe('OperacionOrdenesFabricacion', () => {
     http
       .expectOne((r) => r.url === '/api/v1/ordenes-fabricacion' && r.params.get('size') === '20')
       .flush({ detail: 'Error interno' }, { status: 500, statusText: 'Server Error' });
+    resolverConteos();
     fixture.detectChanges();
     const host = fixture.nativeElement as HTMLElement;
     // El StateContainer ofrece el boton de reintentar en el estado de error.

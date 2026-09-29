@@ -1,0 +1,29 @@
+.of-form__content {
+  padding-block: var(--ds-space-2);
+}
+
+.of-form__modo {
+  margin-bottom: var(--ds-space-3);
+}
+
+.of-form__partidas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-2);
+  margin-bottom: var(--ds-space-2);
+}
+
+.of-form__partida {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ds-space-2);
+
+  &-material {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  &-cantidad {
+    flex: 0 0 8rem;
+  }
+}

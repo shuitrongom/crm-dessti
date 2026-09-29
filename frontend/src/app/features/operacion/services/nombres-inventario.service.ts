@@ -49,7 +49,7 @@ export class NombresInventarioService {
   cargar(): Observable<{ almacenes: Almacen[]; materiales: Material[] }> {
     return forkJoin({
       almacenes: this.inventario.listarAlmacenes(null, true, 0, TAMANO_CATALOGO),
-      materiales: this.materiales.listar(null, false, 0, TAMANO_CATALOGO),
+      materiales: this.materiales.listar(null, 'activo', false, 0, TAMANO_CATALOGO),
     }).pipe(
       map((res) => {
         const almacenes = res.almacenes.content;

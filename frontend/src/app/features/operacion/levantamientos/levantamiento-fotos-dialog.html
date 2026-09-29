@@ -1,0 +1,69 @@
+<mat-dialog-content class="levantamiento-fotos__content">
+  <header class="ds-form__header">
+    <h2 class="ds-form__header-title" mat-dialog-title>Fotos del levantamiento</h2>
+    <p class="ds-form__header-subtitle">{{ levantamiento.tipoSuperficie }}</p>
+  </header>
+
+  @if (error()) {
+    <p class="ds-form__note ds-form__note--warn" role="alert">
+      <mat-icon aria-hidden="true">error_outline</mat-icon>
+      <span>{{ error() }}</span>
+    </p>
+  }
+
+  @if (puedeAgregar) {
+    <form class="levantamiento-fotos__form" [formGroup]="fotosForm" (ngSubmit)="agregarFotos()" novalidate>
+      <fieldset class="levantamiento-fotos__campos" formArrayName="referencias">
+        <legend>Referencias (URL o clave del archivo)</legend>
+        @for (control of referencias.controls; track $index) {
+          <div class="levantamiento-fotos__campo">
+            <mat-form-field appearance="outline">
+              <mat-label>Referencia {{ $index + 1 }}</mat-label>
+              <input matInput type="text" [formControlName]="$index" placeholder="https://…" />
+              @if (control.hasError('required') && control.touched) {
+                <mat-error>La referencia es obligatoria.</mat-error>
+              }
+            </mat-form-field>
+            @if (referencias.length > 1) {
+              <button
+                matIconButton
+                type="button"
+                (click)="quitarCampoReferencia($index)"
+                [attr.aria-label]="'Quitar referencia ' + ($index + 1)"
+              >
+                <mat-icon aria-hidden="true">delete</mat-icon>
+              </button>
+            }
+          </div>
+        }
+      </fieldset>
+      <div class="levantamiento-fotos__form-acciones">
+        <button matButton type="button" (click)="agregarCampoReferencia()">
+          <mat-icon aria-hidden="true">add</mat-icon>
+          Agregar otra referencia
+        </button>
+        <button matButton="filled" type="submit" [disabled]="adjuntando()">Agregar foto</button>
+      </div>
+    </form>
+  }
+
+  <app-state-container
+    [fase]="fotosFase()"
+    mensajeVacio="Este levantamiento no tiene fotos adjuntas."
+    (reintentar)="cargarFotos()"
+  >
+    <ul class="levantamiento-fotos__galeria">
+      @for (foto of fotos(); track foto.id) {
+        <li class="levantamiento-fotos__item">
+          <a [href]="foto.referencia" target="_blank" rel="noopener noreferrer">
+            {{ foto.referencia }}
+          </a>
+          <span class="levantamiento-fotos__fecha">{{ foto.createdAt | date: 'short' }}</span>
+        </li>
+      }
+    </ul>
+  </app-state-container>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cerrar()" [disabled]="adjuntando()">Cerrar</button>
+</mat-dialog-actions>

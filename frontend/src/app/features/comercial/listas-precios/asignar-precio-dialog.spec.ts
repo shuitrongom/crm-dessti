@@ -13,6 +13,9 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { LOCALE_ID } from '@angular/core';
+import { registerLocaleData } from '@angular/common';
+import localeEsMx from '@angular/common/locales/es-MX';
 import { Observable } from 'rxjs';
 
 import { AsignarPrecioDialog, AsignarPrecioDialogData } from './asignar-precio-dialog';
@@ -20,6 +23,9 @@ import { OperacionOverlayService } from '../../../shared/components/operacion-ov
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
 import { ListaPrecios, Producto } from '../models/comercial.models';
 import { esperarSinViolaciones } from '../../../../testing/axe';
+
+// El CurrencyPipe de la plantilla formatea en es-MX; se registra el locale.
+registerLocaleData(localeEsMx);
 
 class DialogRefStub {
   cerradoCon: unknown = 'no-cerrado';
@@ -89,6 +95,7 @@ describe('AsignarPrecioDialog', () => {
         { provide: OperacionOverlayService, useClass: OverlayStub },
         { provide: NotificacionesService, useValue: new ToastSpy() },
         { provide: MAT_DIALOG_DATA, useValue: data },
+        { provide: LOCALE_ID, useValue: 'es-MX' },
       ],
     }).compileComponents();
     fixture = TestBed.createComponent(AsignarPrecioDialog);

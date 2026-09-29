@@ -2,6 +2,7 @@ package com.dessti.crm.operacion.inventario.avanzado.application;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -92,6 +93,7 @@ public class ServicioInventarioAvanzado {
     private final MaterialRepository materialRepository;
     private final NotificadorInventarioAvanzadoPort notificador;
     private final AuditoriaPort auditoria;
+    private final Clock clock;
 
     public ServicioInventarioAvanzado(AlmacenRepository almacenRepository,
                                       ConfigInventarioMaterialRepository configRepository,
@@ -101,7 +103,8 @@ public class ServicioInventarioAvanzado {
                                       LoteRepository loteRepository,
                                       MaterialRepository materialRepository,
                                       NotificadorInventarioAvanzadoPort notificador,
-                                      AuditoriaPort auditoria) {
+                                      AuditoriaPort auditoria,
+                                      Clock clock) {
         this.almacenRepository = almacenRepository;
         this.configRepository = configRepository;
         this.existenciaRepository = existenciaRepository;
@@ -111,6 +114,7 @@ public class ServicioInventarioAvanzado {
         this.materialRepository = materialRepository;
         this.notificador = notificador;
         this.auditoria = auditoria;
+        this.clock = clock;
     }
 
     // ------------------------------------------------------------------
@@ -156,6 +160,43 @@ public class ServicioInventarioAvanzado {
                 "edicion de Almacen '" + guardado.getNombre() + "' [tipo=" + guardado.getTipo() + "]",
                 nombreAnterior + "/" + tipoAnterior,
                 guardado.getNombre() + "/" + guardado.getTipo());
+        return AlmacenDto.de(guardado);
+    }
+
+    /**
+     * Da de baja logica un Almacen (Req 60) y audita. Resuelve el Almacen aunque ya
+     * este inactivo (idempotente). Las existencias y el Kardex se conservan.
+     *
+     * @param almacenId identificador del Almacen.
+     * @return el DTO del Almacen desactivado.
+     * @throws RecursoNoEncontradoException si no es accesible (404).
+     */
+    @Transactional
+    public AlmacenDto desactivarAlmacen(UUID almacenId) {
+        String actor = actorActual();
+        Almacen almacen = cargarAlmacen(almacenId, actor);
+        almacen.desactivar(actor);
+        Almacen guardado = almacenRepository.save(almacen);
+        auditar(actor, "actualizar", RECURSO_ALMACEN, guardado.getId(),
+                "baja logica del Almacen '" + guardado.getNombre() + "'", "activo", "inactivo");
+        return AlmacenDto.de(guardado);
+    }
+
+    /**
+     * Reactiva un Almacen dado de baja (Req 60) y audita. Idempotente.
+     *
+     * @param almacenId identificador del Almacen.
+     * @return el DTO del Almacen reactivado.
+     * @throws RecursoNoEncontradoException si no es accesible (404).
+     */
+    @Transactional
+    public AlmacenDto activarAlmacen(UUID almacenId) {
+        String actor = actorActual();
+        Almacen almacen = cargarAlmacen(almacenId, actor);
+        almacen.activar(actor);
+        Almacen guardado = almacenRepository.save(almacen);
+        auditar(actor, "actualizar", RECURSO_ALMACEN, guardado.getId(),
+                "reactivacion del Almacen '" + guardado.getNombre() + "'", "inactivo", "activo");
         return AlmacenDto.de(guardado);
     }
 
@@ -461,7 +502,9 @@ public class ServicioInventarioAvanzado {
         Material material = cargarMaterial(comando.materialId(), actor);
         ConfigInventarioMaterial config = cargarOConfigPredeterminada(comando.materialId(), actor);
         ExistenciaAlmacen existencia = cargarExistenciaParaSalida(comando.almacenId(), comando.materialId());
-        UUID loteId = resolverLote(config, comando.materialId(), comando.loteCodigo(), actor);
+        Lote lote = resolverLoteEntidad(config, comando.materialId(), comando.loteCodigo(), actor);
+        validarLoteNoCaducado(lote);
+        UUID loteId = lote == null ? null : lote.getId();
 
         List<CapaCosto> capas = capaCostoRepository
                 .findByAlmacenIdAndMaterialIdOrderBySecuenciaAsc(comando.almacenId(), comando.materialId());
@@ -630,17 +673,53 @@ public class ServicioInventarioAvanzado {
      */
     private UUID resolverLote(ConfigInventarioMaterial config, UUID materialId,
                               String loteCodigo, String actor) {
+        Lote lote = resolverLoteEntidad(config, materialId, loteCodigo, actor);
+        return lote == null ? null : lote.getId();
+    }
+
+    /**
+     * Resuelve (upsert) la ENTIDAD Lote a asociar a un movimiento cuando el Material tiene
+     * el control de lote habilitado y se informa un codigo (Req 60.4). Devuelve {@code null}
+     * si el control de lote esta deshabilitado o no se informa codigo. Si el Lote no existe,
+     * lo crea (sin caducidad); si existe, lo reutiliza tal cual (conservando su caducidad).
+     *
+     * <p>Se expone la entidad —no solo el id— para que la SALIDA pueda evaluar reglas de
+     * negocio propias del Lote (por ejemplo, la caducidad) sin volver a consultarlo.</p>
+     */
+    private Lote resolverLoteEntidad(ConfigInventarioMaterial config, UUID materialId,
+                                     String loteCodigo, String actor) {
         if (config == null || !config.isControlLote()
                 || loteCodigo == null || loteCodigo.isBlank()) {
             return null;
         }
         String codigo = normalizar(loteCodigo);
-        Lote lote = loteRepository.findByMaterialIdAndCodigo(materialId, codigo)
+        return loteRepository.findByMaterialIdAndCodigo(materialId, codigo)
                 .orElseGet(() -> {
                     Lote nuevo = Lote.crear(materialId, codigo, null, actor);
                     return loteRepository.save(nuevo);
                 });
-        return lote.getId();
+    }
+
+    /**
+     * Rechaza (422) consumir en una SALIDA un Lote que ya esta CADUCADO respecto a hoy (UTC),
+     * regla de negocio de trazabilidad de inventario (Req 60): un material con lote vencido no
+     * puede despacharse. Un {@code lote == null} (material sin control de lote o sin codigo) o
+     * un Lote sin fecha de caducidad no restringe. La fecha de referencia usa el {@link Clock}
+     * inyectado para ser determinista en pruebas.
+     *
+     * @param lote Lote resuelto para la salida; puede ser {@code null}.
+     * @throws ReglaNegocioException si el Lote esta caducado (422).
+     */
+    private void validarLoteNoCaducado(Lote lote) {
+        if (lote == null) {
+            return;
+        }
+        LocalDate hoy = LocalDate.now(clock);
+        if (lote.estaCaducado(hoy)) {
+            throw new ReglaNegocioException(
+                    "No se puede registrar la salida: el Lote '" + lote.getCodigo()
+                            + "' esta caducado (caduco el " + lote.getFechaCaducidad() + ").");
+        }
     }
 
     /**

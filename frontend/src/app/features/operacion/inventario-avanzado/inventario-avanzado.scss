@@ -15,6 +15,13 @@
   color: var(--ds-color-text-muted);
 }
 
+.operacion-acciones-fila {
+  display: flex;
+  gap: var(--ds-space-1);
+  align-items: center;
+  justify-content: flex-end;
+}
+
 .inventario-avanzado {
   &__tab {
     padding-top: var(--ds-space-4);

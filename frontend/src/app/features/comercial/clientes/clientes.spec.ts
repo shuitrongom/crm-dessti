@@ -223,6 +223,22 @@ describe('ComercialClientes', () => {
     expect(toast.exitos).toContain('Cliente dado de baja.');
   });
 
+  it('eliminar() con pipeline abierto (422) muestra el mensaje del backend y no recarga (Req 5.10)', async () => {
+    crear();
+    const dto = clienteDto() as unknown as ClienteVista;
+    const mensaje =
+      'No se puede dar de baja el Cliente porque tiene Oportunidades abiertas (en una etapa no final). ' +
+      'Cierra o reasigna esa actividad antes de darlo de baja.';
+    await comp().eliminar(dto);
+    http
+      .expectOne((r) => r.url === `/api/v1/clientes/${dto.id}` && r.method === 'DELETE')
+      .flush({ detail: mensaje, status: 422 }, { status: 422, statusText: 'Unprocessable Entity' });
+    // Muestra el mensaje de negocio del backend y NO recarga el listado ni notifica exito.
+    expect(toast.errores).toContain(mensaje);
+    expect(toast.exitos).not.toContain('Cliente dado de baja.');
+    http.expectNone((r) => r.url.startsWith('/api/v1/clientes') && r.method === 'GET');
+  });
+
   it('la accion de ver es un boton que navega (no un enlace directo en la fila)', () => {
     crear();
     const host = fixture.nativeElement as HTMLElement;

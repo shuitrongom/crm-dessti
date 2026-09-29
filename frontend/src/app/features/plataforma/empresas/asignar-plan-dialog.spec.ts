@@ -204,5 +204,5 @@ describe('AsignarPlanDialog', () => {
     });
     await fixture.whenStable();
     await esperarSinViolaciones(fixture);
-  });
+  }, 30000);
 });

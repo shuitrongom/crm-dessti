@@ -125,18 +125,26 @@ describe('OperacionInstalacion', () => {
     fixture.detectChanges();
   }
 
-  /** Responde el GET del listado de OTIs. */
+  /**
+   * Responde los GET de arranque: el listado principal y los tres conteos de KPIs
+   * (estado=programada|en_curso|completada, size=1). Todos van a la misma URL
+   * base; el primero lleva el contenido y los conteos se resuelven con una pagina
+   * de tamano 1 para no dejar peticiones pendientes.
+   */
   function resolverListado(otis: Record<string, unknown>[]): void {
-    const req = http.expectOne(
+    const reqs = http.match(
       (r) => r.url === '/api/v1/ordenes-trabajo-instalacion' && r.method === 'GET',
     );
-    req.flush({
+    reqs[0].flush({
       content: otis,
       page: 0,
       size: 20,
       totalElements: otis.length,
       totalPages: otis.length === 0 ? 0 : 1,
     });
+    for (const r of reqs.slice(1)) {
+      r.flush({ content: [], page: 0, size: 1, totalElements: 0, totalPages: 0 });
+    }
     fixture.detectChanges();
   }
 
@@ -161,9 +169,15 @@ describe('OperacionInstalacion', () => {
   it('muestra el estado de error cuando el listado falla', () => {
     montar();
     resolverCatalogos();
-    http
-      .expectOne((r) => r.url === '/api/v1/ordenes-trabajo-instalacion' && r.method === 'GET')
-      .flush({ detail: 'Error interno' }, { status: 500, statusText: 'Server Error' });
+    // El primer GET es el listado principal (falla); los conteos se resuelven
+    // para no dejar peticiones pendientes.
+    const reqs = http.match(
+      (r) => r.url === '/api/v1/ordenes-trabajo-instalacion' && r.method === 'GET',
+    );
+    reqs[0].flush({ detail: 'Error interno' }, { status: 500, statusText: 'Server Error' });
+    for (const r of reqs.slice(1)) {
+      r.flush({ content: [], page: 0, size: 1, totalElements: 0, totalPages: 0 });
+    }
     fixture.detectChanges();
     expect((fixture.componentInstance as unknown as { fase(): string }).fase()).toBe('error');
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Reintentar');
@@ -188,4 +202,86 @@ describe('OperacionInstalacion', () => {
     await fixture.whenStable();
     await esperarSinViolaciones(fixture);
   }, 30000);
+
+  it('impide completar una OTI sin evidencia: consulta el detalle y no envia el cambio de estado (Req 19.6)', async () => {
+    montar();
+    resolverCatalogos();
+    resolverListado([otiDto({ estado: 'en_curso' })]);
+
+    const componente = fixture.componentInstance as unknown as {
+      cambiarEstado(oti: { id: string; estado: string }, estado: string): Promise<void>;
+    };
+    const promesa = componente.cambiarEstado({ id: OTI_ID, estado: 'en_curso' }, 'completada');
+
+    // La guarda preventiva consulta el detalle de la OTI (pendientes + evidencias).
+    const detalle = http.expectOne(
+      (r) => r.url === `/api/v1/ordenes-trabajo-instalacion/${OTI_ID}` && r.method === 'GET',
+    );
+    // Detalle SIN evidencias y sin pendientes: la guarda de evidencia debe frenar.
+    detalle.flush({ ...otiDto({ estado: 'en_curso' }), pendientes: [], evidencias: [] });
+
+    await promesa;
+
+    // No debe intentarse el cambio de estado (PUT) porque falta la evidencia.
+    http.expectNone(
+      (r) => r.url === `/api/v1/ordenes-trabajo-instalacion/${OTI_ID}/estado` && r.method === 'PUT',
+    );
+  });
+
+  it('permite completar una OTI con evidencia y sin pendientes: envia el cambio de estado (Req 19.6)', async () => {
+    montar();
+    resolverCatalogos();
+    resolverListado([otiDto({ estado: 'en_curso' })]);
+
+    const componente = fixture.componentInstance as unknown as {
+      cambiarEstado(oti: { id: string; estado: string }, estado: string): Promise<void>;
+    };
+    // Auto-confirma el modal de confirmacion (el ConfirmDialogService real abre un
+    // dialogo; aqui interceptamos el metodo para no depender de su UI).
+    (
+      componente as unknown as { confirm: { confirmar: () => Promise<boolean> } }
+    ).confirm.confirmar = () => Promise.resolve(true);
+
+    const promesa = componente.cambiarEstado({ id: OTI_ID, estado: 'en_curso' }, 'completada');
+
+    const detalle = http.expectOne(
+      (r) => r.url === `/api/v1/ordenes-trabajo-instalacion/${OTI_ID}` && r.method === 'GET',
+    );
+    // Con una evidencia adjunta y sin pendientes, el cierre puede proceder.
+    detalle.flush({
+      ...otiDto({ estado: 'en_curso' }),
+      pendientes: [],
+      evidencias: [
+        {
+          id: 'dddddddd-dddd-dddd-dddd-dddddddddddd',
+          ordenTrabajoInstalacionId: OTI_ID,
+          url: 'https://evidencias/foto.jpg',
+          version: 0,
+          createdAt: '2026-03-01T00:00:00Z',
+          updatedAt: '2026-03-01T00:00:00Z',
+        },
+      ],
+    });
+
+    // cambiarEstado encadena varias microtareas (await del detalle y del modal de
+    // confirmacion) antes de emitir el PUT. En zoneless, whenStable() no rastrea
+    // esas promesas nativas; se cede al event loop (macrotask) para garantizar que
+    // TODAS las microtareas pendientes ya corrieron antes de reclamar la peticion.
+    await new Promise((resolve) => setTimeout(resolve));
+
+    // Tras validar y confirmar, se envia el PUT de cambio de estado.
+    const put = http.expectOne(
+      (r) => r.url === `/api/v1/ordenes-trabajo-instalacion/${OTI_ID}/estado` && r.method === 'PUT',
+    );
+    put.flush(otiDto({ estado: 'completada' }));
+
+    await promesa;
+    // Tras completar, la vista recarga listado y conteos.
+    const recarga = http.match(
+      (r) => r.url === '/api/v1/ordenes-trabajo-instalacion' && r.method === 'GET',
+    );
+    for (const r of recarga) {
+      r.flush({ content: [], page: 0, size: 1, totalElements: 0, totalPages: 0 });
+    }
+  });
 });

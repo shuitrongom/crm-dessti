@@ -20,6 +20,7 @@ import com.dessti.crm.vertical.anuncios.instalacion.adapter.out.persistence.Evid
 import com.dessti.crm.vertical.anuncios.instalacion.adapter.out.persistence.OrdenTrabajoInstalacionRepository;
 import com.dessti.crm.vertical.anuncios.instalacion.adapter.out.persistence.PendienteInstalacionRepository;
 import com.dessti.crm.vertical.anuncios.instalacion.domain.EstadoOrdenTrabajoInstalacion;
+import com.dessti.crm.vertical.anuncios.instalacion.domain.EvidenciaInstalacion;
 import com.dessti.crm.vertical.anuncios.instalacion.domain.OrdenTrabajoInstalacion;
 import com.dessti.crm.vertical.anuncios.instalacion.domain.PendienteInstalacion;
 import com.dessti.crm.vertical.anuncios.levantamiento.application.LevantamientoCompletadoPort;
@@ -86,6 +87,9 @@ class GuardaCierreOtiPropertyTest {
 
         Escenario esc = nuevoEscenario();
         OrdenTrabajoInstalacion oti = esc.crearOtiEnCurso();
+        // La OTI tiene evidencia adjunta para aislar la dimension bajo prueba (los
+        // pendientes): la guarda de evidencia del Req 19.6 no debe interferir aqui.
+        esc.adjuntarEvidencia(oti);
         // Se cargan los pendientes generados (resueltos/no) sobre la OTI en_curso.
         List<String> noResueltasEnOrden = esc.cargarPendientes(oti, pendientes);
         boolean hayNoResueltos = !noResueltasEnOrden.isEmpty();
@@ -140,6 +144,9 @@ class GuardaCierreOtiPropertyTest {
 
         Escenario esc = nuevoEscenario();
         OrdenTrabajoInstalacion oti = esc.crearOtiEnCurso();
+        // Con evidencia adjunta: el rechazo debe deberse a los pendientes, no a la
+        // guarda de evidencia (Req 19.6).
+        esc.adjuntarEvidencia(oti);
         esc.cargarPendientes(oti, conNoResuelto);
 
         assertThatThrownBy(
@@ -206,6 +213,11 @@ class GuardaCierreOtiPropertyTest {
             return sinResolver;
         }
 
+        /** Adjunta una evidencia fotografica a la OTI (satisface la guarda del Req 19.6). */
+        void adjuntarEvidencia(OrdenTrabajoInstalacion oti) {
+            repos.guardarEvidencia(EvidenciaInstalacion.paraOrden(oti, "https://evidencias/foto.jpg", "tester"));
+        }
+
         EstadoOrdenTrabajoInstalacion estadoActual(UUID otiId) {
             return repos.ordenPorId(otiId).getEstado();
         }
@@ -224,11 +236,12 @@ class GuardaCierreOtiPropertyTest {
         private final Map<UUID, PendienteInstalacion> pendientesPorId = new HashMap<>();
         private final Map<UUID, Long> secuenciaAlta = new HashMap<>();
         private long secuencia;
+        // Evidencias por OTI (estado real): sustenta existsByOrdenTrabajoInstalacionId.
+        private final Map<UUID, EvidenciaInstalacion> evidenciasPorId = new HashMap<>();
 
         private final OrdenTrabajoInstalacionRepository ordenesDoble = crearOrdenesDoble();
         private final PendienteInstalacionRepository pendientesDoble = crearPendientesDoble();
-        private final EvidenciaInstalacionRepository evidenciasDoble =
-                mock(EvidenciaInstalacionRepository.class);
+        private final EvidenciaInstalacionRepository evidenciasDoble = crearEvidenciasDoble();
 
         OrdenTrabajoInstalacionRepository ordenes() {
             return ordenesDoble;
@@ -251,6 +264,10 @@ class GuardaCierreOtiPropertyTest {
                 secuenciaAlta.put(pendiente.getId(), secuencia++);
             }
             pendientesPorId.put(pendiente.getId(), pendiente);
+        }
+
+        void guardarEvidencia(EvidenciaInstalacion evidencia) {
+            evidenciasPorId.put(evidencia.getId(), evidencia);
         }
 
         OrdenTrabajoInstalacion ordenPorId(UUID id) {
@@ -287,6 +304,17 @@ class GuardaCierreOtiPropertyTest {
                         }
                         resultado.sort(Comparator.comparingLong(p -> secuenciaAlta.get(p.getId())));
                         return resultado;
+                    });
+            return doble;
+        }
+
+        private EvidenciaInstalacionRepository crearEvidenciasDoble() {
+            EvidenciaInstalacionRepository doble = mock(EvidenciaInstalacionRepository.class);
+            when(doble.existsByOrdenTrabajoInstalacionId(any(UUID.class)))
+                    .thenAnswer(inv -> {
+                        UUID otiId = inv.getArgument(0);
+                        return evidenciasPorId.values().stream()
+                                .anyMatch(e -> otiId.equals(e.getOrdenTrabajoInstalacionId()));
                     });
             return doble;
         }

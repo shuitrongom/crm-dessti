@@ -28,6 +28,7 @@ import com.dessti.crm.operacion.proyecto.domain.FaseSitioGenerica;
 import com.dessti.crm.operacion.proyecto.domain.PerfilFasesGiro;
 import com.dessti.crm.operacion.proyecto.domain.Proyecto;
 import com.dessti.crm.operacion.proyecto.domain.Sitio;
+import com.dessti.crm.operacion.proyecto.application.evidencia.EvidenciaAvanceConsultaPort;
 import com.dessti.crm.platform.audit.AuditoriaPort;
 import com.dessti.crm.platform.audit.EventoAuditoria;
 import com.dessti.crm.platform.error.RecursoNoEncontradoException;
@@ -108,6 +109,9 @@ public class ServicioProyectos {
     private final PerfilFasesGiroPort perfilFasesGiro;
     private final AvanceSitioPort avanceProduccion;
     private final AvanceSitioPort avanceSitioAnuncios;
+    private final PrecondicionesFaseSitioPort precondicionesGenerico;
+    private final PrecondicionesFaseSitioPort precondicionesAnuncios;
+    private final EvidenciaAvanceConsultaPort evidenciaConsulta;
     private final AuditoriaPort auditoria;
 
     /**
@@ -132,6 +136,11 @@ public class ServicioProyectos {
                              PerfilFasesGiroPort perfilFasesGiro,
                              @Qualifier("avanceProduccionAdapter") AvanceSitioPort avanceProduccion,
                              @Qualifier("avanceSitioAnunciosAdapter") AvanceSitioPort avanceSitioAnuncios,
+                             @Qualifier("precondicionesFaseSitioGenericoAdapter")
+                             PrecondicionesFaseSitioPort precondicionesGenerico,
+                             @Qualifier("precondicionesFaseSitioAnunciosAdapter")
+                             PrecondicionesFaseSitioPort precondicionesAnuncios,
+                             EvidenciaAvanceConsultaPort evidenciaConsulta,
                              AuditoriaPort auditoria) {
         this.proyectoRepository = proyectoRepository;
         this.sitioRepository = sitioRepository;
@@ -140,6 +149,9 @@ public class ServicioProyectos {
         this.perfilFasesGiro = perfilFasesGiro;
         this.avanceProduccion = avanceProduccion;
         this.avanceSitioAnuncios = avanceSitioAnuncios;
+        this.precondicionesGenerico = precondicionesGenerico;
+        this.precondicionesAnuncios = precondicionesAnuncios;
+        this.evidenciaConsulta = evidenciaConsulta;
         this.auditoria = auditoria;
     }
 
@@ -213,6 +225,58 @@ public class ServicioProyectos {
                 "agregado Sitio '" + guardado.getNombre() + "' al Proyecto ["
                         + proyecto.getId() + "]");
         return SitioDto.de(guardado);
+    }
+
+    /**
+     * Edita el nombre de un Proyecto existente del tenant (Req 21.1, 21.6) y audita.
+     * No altera el Cliente asociado (inmutable). Devuelve el Proyecto detallado tras el
+     * cambio, consistente con {@link #consultar(UUID)}.
+     *
+     * @param proyectoId identificador del Proyecto.
+     * @param nombre     nuevo nombre; obligatorio (1..200).
+     * @return el DTO detallado del Proyecto tras el cambio.
+     * @throws RecursoNoEncontradoException si el Proyecto no es accesible (404).
+     * @throws ReglaNegocioException si el nombre es invalido (422).
+     */
+    @Transactional
+    public ProyectoDto editarProyecto(UUID proyectoId, String nombre) {
+        String actor = actorActual();
+        Proyecto proyecto = cargarProyecto(proyectoId, actor);
+        String antes = proyecto.getNombre();
+        proyecto.renombrar(nombre, actor);
+        Proyecto guardado = proyectoRepository.save(proyecto);
+        auditar(actor, "actualizar", RECURSO_PROYECTO, guardado.getId(),
+                "renombrado Proyecto de '" + antes + "' a '" + guardado.getNombre() + "'");
+        return consultar(guardado.getId());
+    }
+
+    /**
+     * Edita los datos descriptivos de un Sitio (nombre y direccion) de un Proyecto del
+     * tenant (Req 21.2, 21.6) y audita. Verifica que el Sitio pertenezca al Proyecto.
+     * Devuelve el Proyecto detallado tras el cambio.
+     *
+     * @param proyectoId Proyecto al que pertenece el Sitio (para verificar acceso).
+     * @param sitioId    identificador del Sitio.
+     * @param nombre     nuevo nombre del Sitio; obligatorio (1..200).
+     * @param direccion  nueva direccion; opcional.
+     * @return el DTO detallado del Proyecto tras el cambio.
+     * @throws RecursoNoEncontradoException si el Proyecto o el Sitio no son accesibles (404).
+     * @throws ReglaNegocioException si los datos del Sitio son invalidos (422).
+     */
+    @Transactional
+    public ProyectoDto editarSitio(UUID proyectoId, UUID sitioId, String nombre, String direccion) {
+        String actor = actorActual();
+        Proyecto proyecto = cargarProyecto(proyectoId, actor);
+        Sitio sitio = sitioRepository.findById(sitioId)
+                .filter(s -> s.getProyectoId().equals(proyecto.getId()))
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "No se encontro el Sitio solicitado en el Proyecto."));
+        sitio.editar(nombre, direccion, actor);
+        Sitio guardado = sitioRepository.save(sitio);
+        auditar(actor, "editar_sitio", RECURSO_SITIO, guardado.getId(),
+                "editado Sitio '" + guardado.getNombre() + "' del Proyecto ["
+                        + proyecto.getId() + "]");
+        return consultar(proyecto.getId());
     }
 
     /**
@@ -290,9 +354,16 @@ public class ServicioProyectos {
 
     /**
      * Avanza la fase operativa generica de un Sitio de un Proyecto multi-sitio siguiendo
-     * la maquina lineal (Req 3.2). Operacion de uso comun ({@code proyecto:actualizar}).
+     * la maquina lineal (Req 3.2) y aplicando las precondiciones de negocio de la fase
+     * destino (Req 3-bis). Operacion de uso comun ({@code proyecto:actualizar}).
      * Idempotente en la creacion del avance: si el Sitio aun no tiene fila en
      * {@code avance_sitio}, se crea en {@code PENDIENTE} y luego se transita.
+     *
+     * <p>Segun el {@link PerfilFasesGiro} del tenant, exige: para {@code en_preparacion}
+     * un Levantamiento_Sitio completado; para {@code en_instalacion} ademas un
+     * Permiso_Instalacion aprobado y vigente; para {@code entregado} (desde
+     * {@code en_instalacion}) una evidencia aprobada de instalacion. En giros genericos
+     * (sin esas fases) solo rige la maquina lineal (Req 3-bis.4).</p>
      *
      * @param proyectoId   Proyecto al que pertenece el Sitio (para verificar acceso).
      * @param sitioId      Sitio cuya fase se avanza.
@@ -301,6 +372,8 @@ public class ServicioProyectos {
      * @param evidenciaUrl referencia opcional a la evidencia que respalda la fase.
      * @return el DTO detallado multi-sitio del Proyecto tras el cambio.
      * @throws RecursoNoEncontradoException si el Proyecto o el Sitio no son accesibles (404).
+     * @throws ReglaNegocioException si no se cumple una precondicion de la fase destino
+     *         (422, Req 3-bis.1/2/3); el estado se conserva.
      * @throws com.dessti.crm.platform.error.TransicionInvalidaException si la transicion
      *         de fase no respeta la secuencia lineal (409).
      */
@@ -314,15 +387,19 @@ public class ServicioProyectos {
     /**
      * Corrige (incluido RETROCESO) la fase de un Sitio de un Proyecto multi-sitio
      * (Req 3.2). Operacion administrativa gobernada por {@code proyecto:cambiar_estado};
-     * no aplica la restriccion de la maquina lineal, para deshacer avances marcados por
-     * error. Se audita como correccion.
+     * no aplica la restriccion de la maquina lineal ni las precondiciones de negocio del
+     * avance (Req 3-bis.5), para deshacer avances marcados por error. Exige un
+     * <strong>motivo</strong> (nota) no vacio que explique el ajuste, y se audita como
+     * correccion.
      *
      * @param proyectoId   Proyecto al que pertenece el Sitio.
      * @param sitioId      Sitio cuya fase se corrige.
      * @param destino      fase destino (puede ser anterior a la actual).
-     * @param nota         nota opcional (motivo de la correccion).
+     * @param nota         motivo de la correccion; obligatorio (no vacio, Req 3-bis.5).
      * @param evidenciaUrl referencia opcional a la evidencia.
      * @return el DTO detallado multi-sitio del Proyecto tras la correccion.
+     * @throws RecursoNoEncontradoException si el Proyecto o el Sitio no son accesibles (404).
+     * @throws ReglaNegocioException si falta el motivo de la correccion (422, Req 3-bis.5).
      */
     @Transactional
     public ProyectoDto corregirAvanceSitio(UUID proyectoId, UUID sitioId,
@@ -352,9 +429,23 @@ public class ServicioProyectos {
 
         AvanceSitio avance = avanceSitioRepository.findBySitioId(sitio.getId())
                 .orElseGet(() -> AvanceSitio.inicial(sitio.getId(), actor));
+
         if (esCorreccion) {
+            // Correccion administrativa (Req 3-bis.5): exige un motivo (nota) no vacio
+            // para dejar auditada la razon del ajuste. No aplica las precondiciones de
+            // avance (permite retroceder/saltar fases para deshacer errores), pero
+            // siempre queda registrada con su motivo.
+            if (nota == null || nota.isBlank()) {
+                throw new ReglaNegocioException(
+                        "La correccion de fase requiere un motivo que explique el ajuste.");
+            }
             avance.corregirFase(destino, nota, evidenciaUrl, actor);
         } else {
+            // Avance de uso comun (Req 3-bis.1/2/3): aplica las precondiciones de
+            // negocio de la fase destino, respetando el perfil de giro (las de
+            // levantamiento/permiso solo cuando el giro las habilita). El estado se
+            // conserva ante cualquier rechazo (la excepcion aborta antes de mutar).
+            validarPrecondicionesAvance(sitio.getId(), avance, destino);
             avance.avanzarFase(destino, nota, evidenciaUrl, actor);
         }
         avanceSitioRepository.save(avance);
@@ -384,6 +475,91 @@ public class ServicioProyectos {
                         || perfil.aplica(com.dessti.crm.operacion.proyecto.domain.FaseProyecto.PERMISO)
                         || perfil.aplica(com.dessti.crm.operacion.proyecto.domain.FaseProyecto.INSTALACION);
         return requiereFasesAnuncios ? avanceSitioAnuncios : avanceProduccion;
+    }
+
+    /**
+     * Selecciona el adaptador de {@link PrecondicionesFaseSitioPort} segun el perfil
+     * de fases del giro (patron D5-b, &sect;A3-bis): el de anuncios (que consulta
+     * levantamiento y permiso vigente reales) cuando el perfil incluye fases de
+     * anuncios; el generico (que no bloquea) en cualquier otro caso.
+     *
+     * @param perfil perfil de fases del giro; nunca {@code null}.
+     * @return el adaptador de precondiciones correspondiente al perfil.
+     */
+    private PrecondicionesFaseSitioPort precondicionesDe(PerfilFasesGiro perfil) {
+        boolean requiereFasesAnuncios =
+                perfil.aplica(com.dessti.crm.operacion.proyecto.domain.FaseProyecto.LEVANTAMIENTO)
+                        || perfil.aplica(com.dessti.crm.operacion.proyecto.domain.FaseProyecto.PERMISO)
+                        || perfil.aplica(com.dessti.crm.operacion.proyecto.domain.FaseProyecto.INSTALACION);
+        return requiereFasesAnuncios ? precondicionesAnuncios : precondicionesGenerico;
+    }
+
+    /**
+     * Aplica las precondiciones de negocio del <strong>avance de uso comun</strong> de
+     * la fase de un Sitio (Req 3-bis.1/2/3), respetando el perfil de giro del tenant.
+     * Solo se invoca desde {@code avanzarAvanceSitio} (no desde la correccion):
+     * <ul>
+     *   <li>destino {@code en_preparacion} + el perfil habilita Levantamiento &rarr;
+     *       exige Levantamiento_Sitio completado (Req 3-bis.1).</li>
+     *   <li>destino {@code en_instalacion} + el perfil habilita Permiso/Instalacion
+     *       &rarr; exige Levantamiento completado y Permiso_Instalacion aprobado y
+     *       <strong>vigente</strong> (Req 3-bis.2).</li>
+     *   <li>destino {@code entregado} desde {@code en_instalacion} &rarr; exige al menos
+     *       una evidencia aprobada de la fase de instalacion (Req 3-bis.3).</li>
+     * </ul>
+     * Con perfil generico las precondiciones de levantamiento/permiso no aplican (el
+     * adaptador generico devuelve {@code true}); el avance solo respeta la maquina
+     * lineal. Ante un requisito no cumplido lanza {@link ReglaNegocioException} (422)
+     * antes de mutar la fase, de modo que el estado se conserva (Req 3-bis.6).
+     *
+     * @param sitioId identificador del Sitio (para consultar precondiciones por Sitio).
+     * @param avance  avance actual del Sitio (para conocer la fase de origen).
+     * @param destino fase destino pretendida.
+     * @throws ReglaNegocioException si falta alguna precondicion de la fase destino (422).
+     */
+    private void validarPrecondicionesAvance(UUID sitioId, AvanceSitio avance,
+                                             FaseSitioGenerica destino) {
+        PerfilFasesGiro perfil = perfilFasesGiro.perfilDelTenant();
+        boolean giroConLevantamiento =
+                perfil.aplica(com.dessti.crm.operacion.proyecto.domain.FaseProyecto.LEVANTAMIENTO);
+        boolean giroConPermisoInstalacion =
+                perfil.aplica(com.dessti.crm.operacion.proyecto.domain.FaseProyecto.PERMISO)
+                        || perfil.aplica(com.dessti.crm.operacion.proyecto.domain.FaseProyecto.INSTALACION);
+        PrecondicionesFaseSitioPort precondiciones = precondicionesDe(perfil);
+
+        if (destino == FaseSitioGenerica.EN_PREPARACION && giroConLevantamiento
+                && !precondiciones.sitioTieneLevantamientoCompletado(sitioId)) {
+            throw new ReglaNegocioException(
+                    "Para preparar la sucursal se requiere un Levantamiento_Sitio completado. "
+                            + "Completa el levantamiento del sitio antes de avanzar, o usa la "
+                            + "correccion de fase si necesitas ajustar administrativamente.");
+        }
+
+        if (destino == FaseSitioGenerica.EN_INSTALACION && giroConPermisoInstalacion) {
+            if (!precondiciones.sitioTieneLevantamientoCompletado(sitioId)) {
+                throw new ReglaNegocioException(
+                        "Para pasar la sucursal a instalacion se requiere un Levantamiento_Sitio "
+                                + "completado. Completa el levantamiento del sitio antes de avanzar, "
+                                + "o usa la correccion de fase si necesitas ajustar administrativamente.");
+            }
+            if (!precondiciones.sitioTienePermisoVigente(sitioId)) {
+                throw new ReglaNegocioException(
+                        "Para pasar la sucursal a instalacion se requiere un Permiso_Instalacion "
+                                + "aprobado y vigente (no vencido). Tramita o renueva el permiso antes "
+                                + "de avanzar, o usa la correccion de fase si necesitas ajustar "
+                                + "administrativamente.");
+            }
+        }
+
+        if (destino == FaseSitioGenerica.ENTREGADO
+                && avance.getFase() == FaseSitioGenerica.EN_INSTALACION
+                && !evidenciaConsulta.tieneEvidenciaAprobada(
+                        avance.getId(), FaseSitioGenerica.EN_INSTALACION)) {
+            throw new ReglaNegocioException(
+                    "Para entregar la sucursal se requiere al menos una evidencia aprobada de la "
+                            + "fase de instalacion. Sube la evidencia y espera su aprobacion, o usa la "
+                            + "correccion de fase si necesitas ajustar administrativamente.");
+        }
     }
 
     /**

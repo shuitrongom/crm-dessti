@@ -79,16 +79,24 @@ describe('OperacionLevantamientos', () => {
     }
   });
 
-  /** Responde el GET del listado de levantamientos. */
+  /**
+   * Responde los GET de arranque: el listado principal y los dos conteos de KPIs
+   * (estado=en_proceso|completado, size=1). Todos van a la misma URL base; el
+   * primero (listado principal) lleva el contenido y los conteos se resuelven con
+   * una pagina de tamano 1 para no dejar peticiones pendientes.
+   */
   function resolverListado(levantamientos: Record<string, unknown>[]): void {
-    const req = http.expectOne((r) => r.url === '/api/v1/levantamientos' && r.method === 'GET');
-    req.flush({
+    const reqs = http.match((r) => r.url === '/api/v1/levantamientos' && r.method === 'GET');
+    reqs[0].flush({
       content: levantamientos,
       page: 0,
       size: 20,
       totalElements: levantamientos.length,
       totalPages: levantamientos.length === 0 ? 0 : 1,
     });
+    for (const r of reqs.slice(1)) {
+      r.flush({ content: [], page: 0, size: 1, totalElements: 0, totalPages: 0 });
+    }
     fixture.detectChanges();
   }
 
@@ -110,9 +118,13 @@ describe('OperacionLevantamientos', () => {
 
   it('muestra el estado de error cuando el listado falla', () => {
     montar();
-    http
-      .expectOne((r) => r.url === '/api/v1/levantamientos' && r.method === 'GET')
-      .flush({ detail: 'Error interno' }, { status: 500, statusText: 'Server Error' });
+    // El primer GET es el listado principal (falla); los conteos se resuelven
+    // para no dejar peticiones pendientes.
+    const reqs = http.match((r) => r.url === '/api/v1/levantamientos' && r.method === 'GET');
+    reqs[0].flush({ detail: 'Error interno' }, { status: 500, statusText: 'Server Error' });
+    for (const r of reqs.slice(1)) {
+      r.flush({ content: [], page: 0, size: 1, totalElements: 0, totalPages: 0 });
+    }
     fixture.detectChanges();
     expect((fixture.componentInstance as unknown as { fase(): string }).fase()).toBe('error');
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Reintentar');

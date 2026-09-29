@@ -1,0 +1,101 @@
+<mat-dialog-content class="levantamiento-form__content">
+  <form class="ds-form" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+    <header class="ds-form__header">
+      <h2 class="ds-form__header-title" mat-dialog-title>Nuevo levantamiento</h2>
+      <p class="ds-form__header-subtitle">
+        Registra las mediciones y las condiciones físicas del sitio. Puedes vincularlo a un sitio,
+        una cotización o una orden de fabricación.
+      </p>
+    </header>
+
+    @if (error()) {
+      <p class="ds-form__note ds-form__note--warn" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </p>
+    }
+
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Datos del levantamiento</h3>
+        <p class="ds-form__section-desc">
+          Mediciones, tipo de superficie y condiciones eléctricas del lugar donde se instalará.
+        </p>
+      </div>
+
+      <div class="ds-form__section-body">
+        <div class="ds-form__grid">
+          <div class="ds-form__field ds-form__field--full">
+            <mat-form-field appearance="outline">
+              <mat-label>Mediciones</mat-label>
+              <textarea matInput rows="2" formControlName="mediciones" required></textarea>
+              @if (form.controls.mediciones.hasError('required') && form.controls.mediciones.touched) {
+                <mat-error>Las mediciones son obligatorias.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field ds-form__field--full">
+            <mat-form-field appearance="outline">
+              <mat-label>Tipo de superficie o estructura</mat-label>
+              <input matInput type="text" formControlName="tipoSuperficie" autocomplete="off" maxlength="200" required />
+              @if (form.controls.tipoSuperficie.hasError('required') && form.controls.tipoSuperficie.touched) {
+                <mat-error>El tipo de superficie es obligatorio.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field ds-form__field--full">
+            <mat-form-field appearance="outline">
+              <mat-label>Condiciones eléctricas</mat-label>
+              <textarea matInput rows="2" formControlName="condicionesElectricas" required></textarea>
+              @if (form.controls.condicionesElectricas.hasError('required') && form.controls.condicionesElectricas.touched) {
+                <mat-error>Las condiciones eléctricas son obligatorias.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Vínculos (opcional)</h3>
+        <p class="ds-form__section-desc">
+          Relaciona el levantamiento con un sitio, una cotización o una orden de fabricación existente.
+        </p>
+      </div>
+
+      <div class="ds-form__section-body">
+        <div class="ds-form__grid">
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Sitio (opcional)</mat-label>
+              <input matInput type="text" formControlName="sitioId" autocomplete="off" />
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Cotización (opcional)</mat-label>
+              <input matInput type="text" formControlName="cotizacionId" autocomplete="off" />
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Orden de fabricación (opcional)</mat-label>
+              <input matInput type="text" formControlName="ordenFabricacionId" autocomplete="off" />
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+    </section>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancelar()" [disabled]="guardando()">Cancelar</button>
+  <button matButton="filled" type="button" (click)="guardar()" [disabled]="guardando() || form.invalid">
+    Crear levantamiento
+  </button>
+</mat-dialog-actions>

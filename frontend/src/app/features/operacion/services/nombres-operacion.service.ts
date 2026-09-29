@@ -105,7 +105,7 @@ export class NombresOperacionService {
       cotizaciones: this.cotizacionesService.listar({}, 0, TAMANO_CATALOGO),
       ordenesFabricacion: this.produccionService.listar(null, 0, TAMANO_CATALOGO),
       proyectos: this.proyectosService.listar(null, 0, TAMANO_CATALOGO),
-      materiales: this.materialesService.listar(null, false, 0, TAMANO_CATALOGO),
+      materiales: this.materialesService.listar(null, 'activo', false, 0, TAMANO_CATALOGO),
     }).pipe(
       map((res) => {
         const clientes = res.clientes.content;

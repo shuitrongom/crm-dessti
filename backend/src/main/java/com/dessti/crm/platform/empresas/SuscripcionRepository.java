@@ -6,6 +6,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 /**
  * Repositorio de {@link Suscripcion} (Req 25).
@@ -109,4 +111,24 @@ public interface SuscripcionRepository extends JpaRepository<Suscripcion, UUID> 
      *         ninguna. Nunca negativo.
      */
     long countByPaqueteSuscripcionId(UUID paqueteSuscripcionId);
+
+    /**
+     * Resuelve el {@code tenant_id} de una Suscripcion por su {@code id}
+     * <strong>evadiendo la RLS</strong> de la tabla, mediante la funcion
+     * {@code suscripcion_tenant(uuid)} ({@code SECURITY DEFINER}, V83).
+     *
+     * <p><strong>Por que es necesaria:</strong> la tabla {@code suscripcion} tiene
+     * RLS {@code FORCE} deny-by-default (V2/V53). El super_admin gestiona las
+     * Suscripciones desde el ambito de plataforma (sin {@code app.current_tenant}),
+     * por lo que un {@code findById} directo no ve la fila y produce un falso 404.
+     * Esta consulta obtiene solo el tenant (un UUID, sin exponer el resto de la
+     * fila) para que el servicio pueda fijar {@code app.current_tenant} con
+     * {@code applyTenant(tenantId)} ANTES de leer la Suscripcion ya con RLS
+     * activa.</p>
+     *
+     * @param suscripcionId identificador de la Suscripcion.
+     * @return el {@code tenant_id} de la Suscripcion, o vacio si no existe.
+     */
+    @Query(value = "SELECT suscripcion_tenant(:suscripcionId)", nativeQuery = true)
+    Optional<UUID> resolverTenantId(@Param("suscripcionId") UUID suscripcionId);
 }

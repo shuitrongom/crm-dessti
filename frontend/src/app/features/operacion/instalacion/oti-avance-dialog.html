@@ -1,0 +1,52 @@
+<mat-dialog-content class="oti-avance__content">
+  <form class="ds-form" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+    <header class="ds-form__header">
+      <h2 class="ds-form__header-title" mat-dialog-title>Registrar avance — {{ nombreCliente }}</h2>
+      <p class="ds-form__header-subtitle">
+        Agrega pendientes nuevos y evidencias de campo. Puedes capturar uno por línea o separados por comas.
+      </p>
+    </header>
+
+    @if (error()) {
+      <p class="ds-form__note ds-form__note--warn" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </p>
+    }
+
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Avance de la OTI</h3>
+        <p class="ds-form__section-desc">
+          Al menos un pendiente o una evidencia. Los pendientes se resuelven después desde el detalle.
+        </p>
+      </div>
+
+      <div class="ds-form__section-body">
+        <div class="ds-form__grid">
+          <div class="ds-form__field ds-form__field--full">
+            <mat-form-field appearance="outline">
+              <mat-label>Nuevos pendientes</mat-label>
+              <textarea matInput rows="2" formControlName="nuevosPendientes"></textarea>
+              <mat-hint>Uno por línea o separados por comas.</mat-hint>
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field ds-form__field--full">
+            <mat-form-field appearance="outline">
+              <mat-label>Evidencias (referencias)</mat-label>
+              <textarea matInput rows="2" formControlName="evidencias"></textarea>
+              <mat-hint>URLs o claves; una por línea o separadas por comas.</mat-hint>
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+    </section>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancelar()" [disabled]="guardando()">Cancelar</button>
+  <button matButton="filled" type="button" (click)="guardar()" [disabled]="guardando()">
+    Registrar avance
+  </button>
+</mat-dialog-actions>

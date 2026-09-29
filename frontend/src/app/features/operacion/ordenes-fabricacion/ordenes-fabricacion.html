@@ -1,38 +1,45 @@
 <app-page-header titulo="Órdenes de fabricación" subtitulo="Gestiona la producción con las órdenes de fabricación y da seguimiento a su estado.">
   <div acciones>
     @if (puedeCrear) {
-      <button matButton="filled" type="button" (click)="alternarFormulario()">
+      <button matButton="filled" type="button" (click)="nuevo()">
         <mat-icon aria-hidden="true">add</mat-icon>
-        Generar orden
+        Nueva orden
       </button>
     }
   </div>
 </app-page-header>
 
-@if (formularioAbierto()) {
-  <mat-card appearance="outlined" class="operacion-form">
-    <mat-card-header>
-      <mat-card-title>Generar orden de fabricacion</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      <form class="ds-dialog-form" [formGroup]="form" (ngSubmit)="generar()" novalidate>
-        <mat-form-field appearance="outline">
-          <mat-label>Cotizacion aprobada (identificador)</mat-label>
-          <input matInput type="text" formControlName="cotizacionId" required />
-          <mat-hint>La cotizacion debe estar aprobada y con prueba de diseno aprobada.</mat-hint>
-          @if (form.controls.cotizacionId.hasError('required') && form.controls.cotizacionId.touched) {
-            <mat-error>La cotizacion es obligatoria.</mat-error>
-          }
-        </mat-form-field>
-        <div class="operacion-form__acciones">
-          <button matButton type="button" (click)="alternarFormulario()" [disabled]="guardando()">
-            Cancelar
-          </button>
-          <button matButton="filled" type="submit" [disabled]="guardando()">Generar</button>
-        </div>
-      </form>
-    </mat-card-content>
-  </mat-card>
+<!-- Tira de indicadores por estado (conteos reales del backend). -->
+@if (fase() === "ok" || fase() === "vacio") {
+  <section class="operacion-kpis" aria-label="Indicadores de órdenes de fabricación">
+    <button
+      type="button"
+      class="kpi-boton"
+      (click)="abrirInfoKpi('ordenes_fabricacion_pendientes', 'Pendientes', totalPendientes() ?? 0, 'conteo')"
+      aria-label="Ver explicación de Pendientes"
+    >
+      <app-kpi-tile icono="schedule" tono="advertencia" etiqueta="Pendientes"
+        sublabel="Por iniciar" [valor]="totalPendientes()" />
+    </button>
+    <button
+      type="button"
+      class="kpi-boton"
+      (click)="abrirInfoKpi('ordenes_fabricacion_en_produccion', 'En producción', totalEnProduccion() ?? 0, 'conteo')"
+      aria-label="Ver explicación de En producción"
+    >
+      <app-kpi-tile icono="precision_manufacturing" tono="info" etiqueta="En producción"
+        sublabel="En proceso ahora" [valor]="totalEnProduccion()" />
+    </button>
+    <button
+      type="button"
+      class="kpi-boton"
+      (click)="abrirInfoKpi('ordenes_fabricacion_terminadas', 'Terminadas', totalTerminadas() ?? 0, 'conteo')"
+      aria-label="Ver explicación de Terminadas"
+    >
+      <app-kpi-tile icono="task_alt" tono="exito" etiqueta="Terminadas"
+        sublabel="Fabricación completada" [valor]="totalTerminadas()" />
+    </button>
+  </section>
 }
 
 <div class="operacion-filtros" [formGroup]="formFiltro">

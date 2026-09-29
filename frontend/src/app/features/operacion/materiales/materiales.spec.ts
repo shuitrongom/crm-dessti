@@ -1,28 +1,29 @@
 // =============================================================================
-// Pruebas de la vista Materiales / inventario base (tarea 5.2)
+// Pruebas de la vista Materiales / inventario base (premium)
 // -----------------------------------------------------------------------------
 // Verifican, de forma determinista y sin zona ni red real:
-//   - Estado de carga -> ok: al resolver GET /materiales con contenido, la tabla
-//     muestra los materiales por NOMBRE (Req 12.1).
+//   - Estado de carga -> ok: la tabla muestra los materiales por NOMBRE (Req 12.1).
 //   - Estado vacio: content vacio -> fase 'vacio' con mensajeVacio (Req 12.4).
 //   - Estado error: GET /materiales con error -> fase 'error' con mensaje (Req 12.5).
 //   - Sin UUIDs en el DOM: el id del Material nunca se renderiza (Req 13.2).
+//   - El alta/edicion y el movimiento se hacen por MODAL (MatDialog): "Nuevo
+//     material" abre MaterialFormDialog; al cerrarse con resultado se recarga.
 //   - Ausencia de violaciones WCAG 2.1 A/AA (axe-core, jsdom) (Req 15.2).
-//   - Crear material hace POST /materiales; registrar movimiento hace
-//     POST /materiales/{id}/movimientos con el cuerpo esperado.
 // =============================================================================
 
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { MatDialog } from '@angular/material/dialog';
 import { registerLocaleData } from '@angular/common';
 import localeEsMx from '@angular/common/locales/es-MX';
+import { of } from 'rxjs';
 
 import { OperacionMateriales } from './materiales';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
 import { AuthService } from '../../../core/auth/auth.service';
-import { Material, MovimientoInventario, TipoMovimiento } from '../models/operacion.models';
+import { Material } from '../models/operacion.models';
 import { esperarSinViolaciones } from '../../../../testing/axe';
 
 registerLocaleData(localeEsMx);
@@ -31,6 +32,7 @@ registerLocaleData(localeEsMx);
 class AuthServiceStub {
   permisos = new Set<string>([
     'material:crear',
+    'material:actualizar',
     'material:listar',
     'material:eliminar',
     'movimiento_inventario:crear',
@@ -53,6 +55,16 @@ class ToastSpy {
   info(): void {}
 }
 
+/** Stub de MatDialog: registra la última apertura y devuelve un resultado fijo. */
+class MatDialogStub {
+  abierto = 0;
+  resultado: unknown = undefined;
+  open() {
+    this.abierto += 1;
+    return { afterClosed: () => of(this.resultado) };
+  }
+}
+
 const MATERIAL_UUID = 'b0000000-0000-0000-0000-000000000001';
 const MATERIAL2_UUID = 'b0000000-0000-0000-0000-000000000002';
 
@@ -73,12 +85,7 @@ function materialFalso(overrides: Partial<Material> = {}): Material {
 }
 
 interface VistaTest {
-  form: { setValue(v: Record<string, unknown>): void };
-  formMovimiento: { setValue(v: Record<string, unknown>): void };
-  alternarFormulario(): void;
-  crear(): void;
-  abrirMovimiento(m: Material): void;
-  registrarMovimiento(): void;
+  nuevo(): void;
   fase(): string;
 }
 
@@ -87,6 +94,7 @@ describe('OperacionMateriales', () => {
   let http: HttpTestingController;
   let toast: ToastSpy;
   let auth: AuthServiceStub;
+  let dialog: MatDialogStub;
 
   const URL_MATERIALES = '/api/v1/materiales';
 
@@ -102,6 +110,7 @@ describe('OperacionMateriales', () => {
         provideHttpClientTesting(),
         { provide: NotificacionesService, useValue: toast },
         { provide: AuthService, useValue: auth },
+        { provide: MatDialog, useValue: dialog },
       ],
     }).compileComponents();
     http = TestBed.inject(HttpTestingController);
@@ -109,12 +118,16 @@ describe('OperacionMateriales', () => {
   }
 
   /**
-   * Resuelve la peticion de arranque: el listado inicial de Materiales
-   * (GET /api/v1/materiales). El componente solo dispara esta peticion al init.
+   * Resuelve las peticiones de arranque: el listado principal (GET /materiales) y
+   * los dos conteos de KPIs (GET /materiales?estado=activo|inactivo, size=1). Los
+   * conteos se resuelven de forma laxa (match por URL) sin exigir orden.
    */
   function resolverArranque(materiales: Material[] = [materialFalso()]): void {
     fixture.detectChanges();
-    http.expectOne((r) => r.method === 'GET' && r.url === URL_MATERIALES).flush(pagina(materiales));
+    // Los tres GET van a la misma URL base; se resuelven todos con una página.
+    for (const req of http.match((r) => r.method === 'GET' && r.url === URL_MATERIALES)) {
+      req.flush(pagina(materiales));
+    }
     fixture.detectChanges();
   }
 
@@ -129,6 +142,7 @@ describe('OperacionMateriales', () => {
   beforeEach(() => {
     toast = new ToastSpy();
     auth = new AuthServiceStub();
+    dialog = new MatDialogStub();
   });
 
   afterEach(() => {
@@ -163,12 +177,16 @@ describe('OperacionMateriales', () => {
   it('estado error: GET /materiales con error -> fase "error" con mensaje', async () => {
     await crear();
     fixture.detectChanges();
-    http
-      .expectOne((r) => r.method === 'GET' && r.url === URL_MATERIALES)
-      .flush(
-        { detail: 'No fue posible cargar los materiales.' },
-        { status: 500, statusText: 'Internal Server Error' },
-      );
+    // El primer GET es el listado principal; los conteos también fallan pero no
+    // afectan la fase de la tabla. Se resuelven todos para no dejar pendientes.
+    const reqs = http.match((r) => r.method === 'GET' && r.url === URL_MATERIALES);
+    reqs[0].flush(
+      { detail: 'No fue posible cargar los materiales.' },
+      { status: 500, statusText: 'Internal Server Error' },
+    );
+    for (const r of reqs.slice(1)) {
+      r.flush(pagina([]));
+    }
     fixture.detectChanges();
 
     expect(vista().fase()).toBe('error');
@@ -185,46 +203,19 @@ describe('OperacionMateriales', () => {
     expect(t).not.toContain(MATERIAL_UUID);
   });
 
-  it('crear material hace POST /materiales con el cuerpo esperado', async () => {
+  it('"Nuevo material" abre el modal y recarga al confirmar', async () => {
+    dialog.resultado = materialFalso({ id: MATERIAL2_UUID, nombre: 'Lona banner' });
     await crear();
     resolverArranque([materialFalso()]);
 
-    vista().alternarFormulario();
-    fixture.detectChanges();
-    vista().form.setValue({ nombre: '  Lona banner  ', unidadMedida: '  m2  ', stockMinimo: 15 });
-    vista().crear();
+    vista().nuevo();
 
-    const post = http.expectOne((r) => r.method === 'POST' && r.url === URL_MATERIALES);
-    expect(post.request.body).toEqual({ nombre: 'Lona banner', unidadMedida: 'm2', stockMinimo: 15 });
-    post.flush(materialFalso({ id: MATERIAL2_UUID, nombre: 'Lona banner', unidadMedida: 'm2' }));
-
-    // Tras el exito recarga el listado.
-    http.expectOne((r) => r.method === 'GET' && r.url === URL_MATERIALES).flush(pagina([materialFalso()]));
+    expect(dialog.abierto).toBe(1);
+    // Al cerrarse con un Material, recarga listado + conteos (GET /materiales).
+    for (const req of http.match((r) => r.method === 'GET' && r.url === URL_MATERIALES)) {
+      req.flush(pagina([materialFalso()]));
+    }
     expect(toast.exitos).toContain('Material creado.');
-  });
-
-  it('registrar movimiento hace POST /materiales/{id}/movimientos con el cuerpo esperado', async () => {
-    await crear();
-    resolverArranque([materialFalso()]);
-
-    vista().abrirMovimiento(materialFalso());
-    fixture.detectChanges();
-    vista().formMovimiento.setValue({
-      tipo: 'entrada' as TipoMovimiento,
-      cantidad: 12,
-      motivo: '  Compra inicial  ',
-    });
-    vista().registrarMovimiento();
-
-    const post = http.expectOne(
-      (r) => r.method === 'POST' && r.url === `${URL_MATERIALES}/${MATERIAL_UUID}/movimientos`,
-    );
-    expect(post.request.body).toEqual({ tipo: 'entrada', cantidad: 12, motivo: 'Compra inicial' });
-    post.flush({} as MovimientoInventario);
-
-    // Tras el exito recarga el listado.
-    http.expectOne((r) => r.method === 'GET' && r.url === URL_MATERIALES).flush(pagina([materialFalso()]));
-    expect(toast.exitos).toContain('Movimiento registrado.');
   });
 
   it('no tiene violaciones de accesibilidad (WCAG 2.1 A/AA)', async () => {

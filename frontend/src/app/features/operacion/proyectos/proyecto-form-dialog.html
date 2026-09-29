@@ -1,0 +1,65 @@
+<mat-dialog-content class="proyecto-form__content">
+  <form class="ds-form" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+    <header class="ds-form__header">
+      <h2 class="ds-form__header-title" mat-dialog-title>{{ titulo() }}</h2>
+      <p class="ds-form__header-subtitle">{{ subtitulo() }}</p>
+    </header>
+
+    @if (error()) {
+      <p class="ds-form__note ds-form__note--warn" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </p>
+    }
+
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Datos del proyecto</h3>
+        <p class="ds-form__section-desc">
+          @if (esEdicion) {
+            Nombre del proyecto.
+          } @else {
+            Cliente al que pertenece y nombre del proyecto.
+          }
+        </p>
+      </div>
+
+      <div class="ds-form__section-body">
+        <div class="ds-form__grid">
+          @if (!esEdicion) {
+            <div class="ds-form__field ds-form__field--full">
+              <app-entity-select
+                formControlName="clienteId"
+                etiqueta="Cliente"
+                ayuda="Busca por nombre o RFC y elige el cliente de la lista."
+                placeholder="Busca por nombre o RFC…"
+                [obligatorio]="true"
+                [buscador]="buscarCliente"
+                [etiquetaDe]="etiquetaCliente"
+                [detalleDe]="detalleCliente"
+              />
+            </div>
+          }
+
+          <div class="ds-form__field ds-form__field--full">
+            <mat-form-field appearance="outline">
+              <mat-label>Nombre del proyecto</mat-label>
+              <input matInput type="text" formControlName="nombre" autocomplete="off" maxlength="200" required />
+              @if (form.controls.nombre.hasError('required') && form.controls.nombre.touched) {
+                <mat-error>El nombre es obligatorio.</mat-error>
+              } @else if (form.controls.nombre.hasError('maxlength')) {
+                <mat-error>El nombre admite máximo 200 caracteres.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+    </section>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancelar()" [disabled]="guardando()">Cancelar</button>
+  <button matButton="filled" type="button" (click)="guardar()" [disabled]="guardando() || form.invalid">
+    {{ esEdicion ? 'Guardar cambios' : 'Crear proyecto' }}
+  </button>
+</mat-dialog-actions>

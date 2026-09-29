@@ -52,6 +52,22 @@ public interface PermisoInstalacionRepository extends JpaRepository<PermisoInsta
     boolean existsBySitioIdAndEstado(UUID sitioId, EstadoPermisoInstalacion estado);
 
     /**
+     * Indica si el Sitio dado tiene al menos un Permiso_Instalacion en el estado
+     * indicado cuya {@code fecha_vencimiento} sea igual o posterior a {@code hoy}
+     * dentro del tenant vigente. Con {@link EstadoPermisoInstalacion#APROBADO}
+     * implementa la guarda <strong>reforzada</strong> de programacion de instalacion
+     * (Req 17.4, 19.3): un permiso aprobado pero VENCIDO no autoriza la instalacion,
+     * por lo que la OTI exige un permiso aprobado <em>y vigente</em>.
+     *
+     * @param sitioId Sitio a verificar.
+     * @param estado  estado a comprobar (normalmente {@link EstadoPermisoInstalacion#APROBADO}).
+     * @param hoy     fecha actual (UTC) contra la que se evalua la vigencia.
+     * @return {@code true} si el Sitio tiene un permiso en ese estado y no vencido.
+     */
+    boolean existsBySitioIdAndEstadoAndFechaVencimientoGreaterThanEqual(
+            UUID sitioId, EstadoPermisoInstalacion estado, LocalDate hoy);
+
+    /**
      * Indica si un Permiso_Instalacion concreto esta en el estado indicado dentro
      * del tenant vigente. Alternativa a {@link #existsBySitioIdAndEstado} cuando la
      * guarda se expresa por identificador de permiso (Req 17.4).

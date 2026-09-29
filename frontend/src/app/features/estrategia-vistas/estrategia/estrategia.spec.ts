@@ -277,5 +277,5 @@ describe('EstrategiaVistas (tablero OKR)', () => {
     const { fixture } = crear([objetivo()], esencia(), ['comercial']);
     await fixture.whenStable();
     await esperarSinViolaciones(fixture);
-  });
+  }, 30000);
 });

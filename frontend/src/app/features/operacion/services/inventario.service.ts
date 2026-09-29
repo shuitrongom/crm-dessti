@@ -27,6 +27,7 @@ import {
   ConfigInventarioMaterial,
   ConfigurarInventarioMaterialRequest,
   CrearLoteRequest,
+  EstadoMaterial,
   ExistenciaAlmacen,
   Lote,
   Material,
@@ -44,14 +45,22 @@ export class MaterialesService {
   private readonly http = inject(HttpClient);
   private readonly api = inject(ApiConfigService);
 
-  /** Lista Materiales de forma paginada, filtrando por nombre y stock bajo (Req 18.6). */
+  /**
+   * Lista Materiales de forma paginada, filtrando por nombre, por estado
+   * (activo|inactivo|todos) y por condicion de stock bajo (Req 18.6).
+   */
   listar(
     nombre: string | null,
+    estado: EstadoMaterial,
     stockBajo: boolean,
     page: number,
     size: number,
   ): Observable<PaginaResponse<Material>> {
-    let params = new HttpParams().set('page', page).set('size', size).set('stockBajo', stockBajo);
+    let params = new HttpParams()
+      .set('page', page)
+      .set('size', size)
+      .set('stockBajo', stockBajo)
+      .set('estado', estado);
     if (nombre && nombre.trim().length > 0) {
       params = params.set('nombre', nombre.trim());
     }
@@ -66,6 +75,16 @@ export class MaterialesService {
   /** Da de alta un Material con existencias iniciales 0 (Req 18.1). */
   crear(request: MaterialRequest): Observable<Material> {
     return this.http.post<Material>(this.api.url('/materiales'), request);
+  }
+
+  /** Edita los datos de un Material (nombre, unidad y stock minimo) (Req 18). */
+  editar(id: string, request: MaterialRequest): Observable<Material> {
+    return this.http.put<Material>(this.api.url(`/materiales/${id}`), request);
+  }
+
+  /** Reactiva un Material dado de baja (Req 18, 3.1). */
+  activar(id: string): Observable<Material> {
+    return this.http.put<Material>(this.api.url(`/materiales/${id}/activar`), {});
   }
 
   /** Registra un movimiento de inventario sobre un Material (Req 18.2). */
@@ -119,6 +138,19 @@ export class InventarioAvanzadoService {
   /** Edita (renombra/reclasifica) un Almacen (Req 60). */
   actualizarAlmacen(id: string, request: AlmacenRequest): Observable<Almacen> {
     return this.http.put<Almacen>(this.api.url(`/inventario-avanzado/almacenes/${id}`), request);
+  }
+
+  /** Da de baja logica un Almacen (Req 60). */
+  desactivarAlmacen(id: string): Observable<Almacen> {
+    return this.http.delete<Almacen>(this.api.url(`/inventario-avanzado/almacenes/${id}`));
+  }
+
+  /** Reactiva un Almacen dado de baja (Req 60). */
+  activarAlmacen(id: string): Observable<Almacen> {
+    return this.http.put<Almacen>(
+      this.api.url(`/inventario-avanzado/almacenes/${id}/activar`),
+      {},
+    );
   }
 
   /** Lista los saldos de existencias por Almacen/Material (Req 60), solo lectura. */

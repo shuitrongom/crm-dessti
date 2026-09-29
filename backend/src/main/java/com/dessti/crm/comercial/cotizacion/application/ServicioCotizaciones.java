@@ -245,8 +245,9 @@ public class ServicioCotizaciones {
      * @param nuevoEstado  etiqueta del estado destino; obligatoria (Req 6.6).
      * @return el DTO de la Cotizacion con su nuevo estado.
      * @throws RecursoNoEncontradoException si no es accesible (404).
-     * @throws ReglaNegocioException si el estado es nulo/desconocido, o si se
-     *         intenta enviar sin partidas (422).
+     * @throws ReglaNegocioException si el estado es nulo/desconocido, si se intenta
+     *         enviar sin partidas, o si se intenta enviar/aprobar una Cotizacion
+     *         vencida (422, Req 6.11).
      * @throws com.dessti.crm.platform.error.TransicionInvalidaException si la
      *         transicion no esta permitida (409, Req 6.7).
      */
@@ -256,6 +257,17 @@ public class ServicioCotizaciones {
         EstadoCotizacion destino = interpretarEstado(nuevoEstado);
         Cotizacion cotizacion = cargar(cotizacionId, actor);
         EstadoCotizacion anterior = cotizacion.getEstado();
+        // Guarda de vigencia (Req 6.11): no se puede ENVIAR ni APROBAR una Cotizacion
+        // vencida (valido_hasta < hoy). Rechazar una vencida si es valido, por lo que
+        // la guarda no aplica a 'rechazada'. Se usa el Clock inyectado (UTC) para
+        // obtener hoy de forma determinista. El estado se conserva ante el rechazo.
+        if ((destino == EstadoCotizacion.ENVIADA || destino == EstadoCotizacion.APROBADA)
+                && cotizacion.estaVencida(LocalDate.now(clock))) {
+            throw new ReglaNegocioException(
+                    "La Cotizacion esta vencida (valido_hasta " + cotizacion.getValidoHasta()
+                            + "); no puede " + (destino == EstadoCotizacion.ENVIADA ? "enviarse" : "aprobarse")
+                            + ". Actualiza su fecha de vigencia para continuar.");
+        }
         cotizacion.cambiarEstado(destino, actor);
         Cotizacion guardada = cotizacionRepository.save(cotizacion);
         auditar(actor, "cambiar_estado", guardada.getId(),
@@ -418,7 +430,8 @@ public class ServicioCotizaciones {
      * @param emailDestino correo explicito; {@code null}/blanco usa el del Cliente.
      * @return el DTO de la Cotizacion con {@code enviadaEn} (y estado) actualizado.
      * @throws RecursoNoEncontradoException si la Cotizacion no es accesible (404).
-     * @throws ReglaNegocioException si no hay correo disponible o el envio falla (422).
+     * @throws ReglaNegocioException si no hay correo disponible, si la Cotizacion
+     *         esta vencida (422, Req 6.11) o si el envio falla (422).
      */
     @Transactional
     public CotizacionDto enviarPorCorreo(UUID cotizacionId, String emailDestino) {
@@ -430,6 +443,16 @@ public class ServicioCotizaciones {
                 cliente == null ? null : cliente.email());
         if (destinatario == null) {
             throw new ReglaNegocioException("El cliente no tiene correo; indique uno.");
+        }
+
+        // Guarda de vigencia (Req 6.11): enviar por correo promueve la Cotizacion a
+        // 'enviada'; una Cotizacion vencida no puede enviarse. Se rechaza temprano
+        // (antes de generar el PDF y contactar al proveedor de correo), conservando
+        // el estado. Una Cotizacion sin valido_hasta no vence.
+        if (cotizacion.estaVencida(LocalDate.now(clock))) {
+            throw new ReglaNegocioException(
+                    "La Cotizacion esta vencida (valido_hasta " + cotizacion.getValidoHasta()
+                            + "); no puede enviarse. Actualiza su fecha de vigencia para continuar.");
         }
 
         // El emisor es la Empresa del tenant (Req 1); se marca si sus datos

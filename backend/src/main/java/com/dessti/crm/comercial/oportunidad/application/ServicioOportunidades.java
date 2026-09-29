@@ -258,8 +258,9 @@ public class ServicioOportunidades {
      * @param oportunidadId identificador de la Oportunidad.
      * @return el identificador de la Cotizacion creada.
      * @throws RecursoNoEncontradoException si la Oportunidad no es accesible (404).
-     * @throws ReglaNegocioException si la etapa no es {@code ganado} (Req 14.6) o
-     *         si la conversion aun no esta disponible (tarea 17.2 pendiente).
+     * @throws ReglaNegocioException si la etapa no es {@code ganado} (Req 14.6), si la
+     *         Oportunidad ya fue convertida previamente (422, Req 14.7; no se crea una
+     *         segunda Cotizacion), o si la conversion aun no esta disponible.
      */
     @Transactional
     public UUID convertirEnCotizacion(UUID oportunidadId) {
@@ -271,6 +272,17 @@ public class ServicioOportunidades {
                             + "' no es 'ganado'", null, null);
             throw new ReglaNegocioException(
                     "Se requiere una Oportunidad en etapa 'ganado' para convertirla en Cotizacion.");
+        }
+        // Conversion unica (Req 14.7): si la Oportunidad ya fue convertida, se rechaza
+        // ANTES de invocar el puerto, para NO crear una segunda Cotizacion (cascaron
+        // huerfano). El vinculo existente se conserva.
+        if (oportunidad.estaConvertida()) {
+            auditar(actor, "convertir_rechazada", oportunidad.getId(),
+                    "conversion rechazada: la Oportunidad ya esta convertida [cotizacion="
+                            + oportunidad.getCotizacionId() + "]", null, null);
+            throw new ReglaNegocioException(
+                    "La Oportunidad ya fue convertida en la Cotizacion " + oportunidad.getCotizacionId()
+                            + "; no puede convertirse de nuevo.");
         }
         CreacionCotizacionPort puerto = creacionCotizacion.orElseThrow(() -> new ReglaNegocioException(
                 "La conversion a Cotizacion aun no esta disponible."));

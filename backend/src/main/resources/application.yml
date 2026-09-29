@@ -15,6 +15,17 @@ spring:
   application:
     name: crm-anuncios-luminosos
 
+  # ==========================================================================
+  # Carga de archivos (multipart). Necesario para la subida de EVIDENCIAS de
+  # avance de sitio (archivos reales, no data-URI). El limite por archivo debe
+  # ser >= crm.evidencias.storage.max-tamano-mb (10 MB) con holgura para el
+  # sobrecosto multipart; el limite de peticion da margen adicional.
+  # ==========================================================================
+  servlet:
+    multipart:
+      max-file-size: ${MULTIPART_MAX_FILE_SIZE:12MB}
+      max-request-size: ${MULTIPART_MAX_REQUEST_SIZE:15MB}
+
 # ============================================================================
 # Secretos del Sistema (Req 11): se resuelven EXCLUSIVAMENTE desde variables de
 # entorno / almacen externo. NO se definen valores por defecto sensibles.
@@ -120,6 +131,21 @@ crm:
   # ==========================================================================
   contratacion:
     umbral-aviso-dias: ${CONTRATACION_UMBRAL_AVISO_DIAS:14}
+
+  # ==========================================================================
+  # Almacenamiento de EVIDENCIAS de avance de sitio (Req 3.2, deber-ser
+  # enterprise). A diferencia del logo/foto (data-URI base64 en BD), la evidencia
+  # operativa (fotos/actas de respaldo del avance en campo) se guarda como ARCHIVO
+  # REAL en un almacen de objetos; el binario NUNCA vive en la base de datos. Hoy
+  # el adaptador es de sistema de archivos; el puerto permite migrar a S3/MinIO.
+  #   crm.evidencias.storage.directorio-base <- EVIDENCIAS_DIR (por defecto datos/evidencias)
+  #   crm.evidencias.storage.max-tamano-mb   <- EVIDENCIAS_MAX_MB (por defecto 10)
+  # Los tipos MIME permitidos por defecto son imagenes (JPG/PNG/WebP) y PDF.
+  # ==========================================================================
+  evidencias:
+    storage:
+      directorio-base: ${EVIDENCIAS_DIR:datos/evidencias}
+      max-tamano-mb: ${EVIDENCIAS_MAX_MB:10}
 
   # ==========================================================================
   # Monetizacion de plataforma (Fase A de precios de modulos). La plataforma

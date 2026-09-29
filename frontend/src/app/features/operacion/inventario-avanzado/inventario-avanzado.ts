@@ -31,16 +31,24 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
 
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../shared/components/state-container/state-container';
 import { StatCard } from '../../../shared/components/stat-card/stat-card';
+import { KpiTile } from '../../../shared/components/kpi-tile/kpi-tile';
 import { EntitySelect } from '../../../shared/components/entity-select/entity-select';
 import {
   CeldaTablaDirective,
   ColumnaTabla,
   DataTable,
 } from '../../../shared/components/data-table/data-table';
+import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog';
+import {
+  IndicadorInfoDialog,
+  type DatosIndicadorInfo,
+} from '../../../shared/indicadores/indicador-info-dialog';
 import { PaginaResponse } from '../../../core/models/pagina-response';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -48,6 +56,7 @@ import { mensajeDeError } from '../../../core/services/error-mensajes';
 import { FaseSolicitud } from '../../../shared/models/estado-solicitud';
 
 import { InventarioAvanzadoService } from '../services/inventario.service';
+import { AlmacenFormDialog, AlmacenFormDialogData } from './almacen-form-dialog';
 import { NombresInventarioService } from '../services/nombres-inventario.service';
 import {
   Almacen,
@@ -89,9 +98,11 @@ const ETIQUETA_TIPO_KARDEX: Record<string, string> = {
     MatIconModule,
     MatSlideToggleModule,
     MatDatepickerModule,
+    MatTooltipModule,
     PageHeader,
     StateContainer,
     StatCard,
+    KpiTile,
     EntitySelect,
     DataTable,
     CeldaTablaDirective,
@@ -105,6 +116,8 @@ export class OperacionInventarioAvanzado {
   private readonly nombres = inject(NombresInventarioService);
   private readonly toast = inject(NotificacionesService);
   private readonly auth = inject(AuthService);
+  private readonly dialog = inject(MatDialog);
+  private readonly confirm = inject(ConfirmDialogService);
 
   // --- Permisos (deny-by-default) ---
   protected readonly puedeCrearAlmacen = this.auth.tienePermiso('almacen', 'crear');
@@ -166,8 +179,6 @@ export class OperacionInventarioAvanzado {
   protected readonly pageAlmacenes = signal(0);
   protected readonly sizeAlmacenes = signal(20);
   protected readonly guardando = signal(false);
-  protected readonly editandoId = signal<string | null>(null);
-  protected readonly formularioAbierto = signal(false);
 
   protected readonly columnasAlmacenes: ColumnaTabla[] = [
     { clave: 'nombre', encabezado: 'Almacen' },
@@ -175,11 +186,6 @@ export class OperacionInventarioAvanzado {
     { clave: 'activo', encabezado: 'Estado' },
     { clave: 'acciones', encabezado: 'Acciones', alineacion: 'fin' },
   ];
-
-  protected readonly formAlmacen = this.fb.nonNullable.group({
-    nombre: ['', [Validators.required, Validators.maxLength(200)]],
-    tipo: ['sucursal', [Validators.required]],
-  });
 
   // ---------------------------------------------------------------------------
   // Existencias
@@ -451,47 +457,82 @@ export class OperacionInventarioAvanzado {
     this.cargarAlmacenes();
   }
 
+  /** Abre el modal de alta de Almacen y recarga si se creó. */
   nuevoAlmacen(): void {
-    this.editandoId.set(null);
-    this.formAlmacen.reset({ nombre: '', tipo: 'sucursal' });
-    this.formularioAbierto.set(true);
+    this.abrirAlmacen();
   }
 
+  /** Abre el modal de edición con los datos del Almacen y recarga si cambió. */
   editarAlmacen(almacen: Almacen): void {
-    this.editandoId.set(almacen.id);
-    this.formAlmacen.reset({ nombre: almacen.nombre, tipo: almacen.tipo });
-    this.formularioAbierto.set(true);
+    this.abrirAlmacen(almacen);
   }
 
-  cancelarAlmacen(): void {
-    this.formularioAbierto.set(false);
-    this.editandoId.set(null);
+  /**
+   * Abre el modal de formulario de Almacen (alta si no se pasa `almacen`, edición
+   * si se pasa) y recarga el listado (y el catálogo de nombres) al confirmar.
+   */
+  private abrirAlmacen(almacen?: Almacen): void {
+    const data: AlmacenFormDialogData = { almacen };
+    const ref = this.dialog.open(AlmacenFormDialog, {
+      width: 'min(680px, 96vw)',
+      maxWidth: 'min(680px, 96vw)',
+      maxHeight: '92vh',
+      autoFocus: 'first-tabbable',
+      panelClass: 'ds-dialog-panel',
+      data,
+    });
+    ref.afterClosed().subscribe((guardado?: Almacen) => {
+      if (guardado) {
+        this.toast.exito(almacen ? 'Almacén actualizado.' : 'Almacén creado.');
+        this.cargarAlmacenes();
+        // Refresca el catálogo de nombres para que los selectores incluyan el cambio.
+        this.nombres.cargar().subscribe({ next: () => {}, error: () => {} });
+      }
+    });
   }
 
-  guardarAlmacen(): void {
-    if (this.formAlmacen.invalid) {
-      this.formAlmacen.markAllAsTouched();
+  /** Da de baja lógica un Almacen con confirmación (Req 60). */
+  async desactivarAlmacen(almacen: Almacen): Promise<void> {
+    const ok = await this.confirm.confirmar({
+      titulo: 'Dar de baja almacén',
+      mensaje: `El almacén "${almacen.nombre}" quedará inactivo. Sus existencias y kardex se conservan. ¿Deseas continuar?`,
+      textoConfirmar: 'Dar de baja',
+      destructiva: true,
+    });
+    if (!ok) {
       return;
     }
-    const v = this.formAlmacen.getRawValue();
-    const request = { nombre: v.nombre.trim(), tipo: v.tipo };
-    this.guardando.set(true);
-    const id = this.editandoId();
-    const peticion = id
-      ? this.service.actualizarAlmacen(id, request)
-      : this.service.crearAlmacen(request);
-    peticion.subscribe({
+    this.service.desactivarAlmacen(almacen.id).subscribe({
       next: () => {
-        this.guardando.set(false);
-        this.toast.exito(id ? 'Almacen actualizado.' : 'Almacen creado.');
-        this.formularioAbierto.set(false);
-        this.editandoId.set(null);
+        this.toast.exito('Almacén dado de baja.');
         this.cargarAlmacenes();
       },
-      error: (e: HttpErrorResponse) => {
-        this.guardando.set(false);
-        this.toast.error(mensajeDeError(e));
+      error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
+    });
+  }
+
+  /** Reactiva un Almacen dado de baja (Req 60). */
+  activarAlmacen(almacen: Almacen): void {
+    this.service.activarAlmacen(almacen.id).subscribe({
+      next: () => {
+        this.toast.exito('Almacén reactivado.');
+        this.cargarAlmacenes();
       },
+      error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
+    });
+  }
+
+  /**
+   * Abre el dialogo explicativo de un indicador de inventario (¿qué es? / ¿cómo se
+   * calcula? / ¿por qué importa?). La clave debe coincidir con una del catálogo.
+   */
+  abrirInfoKpi(clave: string, etiqueta: string, valor: number, unidad: string): void {
+    const datos: DatosIndicadorInfo = { clave, etiqueta, valor, unidad };
+    this.dialog.open(IndicadorInfoDialog, {
+      data: datos,
+      width: '32rem',
+      maxWidth: '92vw',
+      autoFocus: false,
     });
   }
 

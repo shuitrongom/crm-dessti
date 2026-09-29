@@ -102,6 +102,22 @@ public class Sitio extends TenantScopedEntity {
     }
 
     /**
+     * Edita los datos descriptivos del Sitio (nombre y direccion) revalidando las
+     * reglas (Req 21.2, 21.6). No altera el Proyecto asociado (inmutable).
+     *
+     * @param nombre    nuevo nombre; obligatorio (1..200).
+     * @param direccion nueva direccion; opcional ({@code null}/blanco la limpia).
+     * @param actor     identificador de quien modifica, para {@code updated_by}.
+     * @throws ReglaNegocioException si el nombre es invalido o la direccion excede el
+     *         maximo (422).
+     */
+    public void editar(String nombre, String direccion, String actor) {
+        this.nombre = normalizarNombre(nombre);
+        this.direccion = normalizarDireccion(direccion);
+        this.setUpdatedBy(actor);
+    }
+
+    /**
      * Valida y normaliza el nombre del Sitio (Req 21.2): obligatorio y entre 1 y
      * 200 caracteres tras recortar espacios, coherente con el CHECK
      * {@code ck_sitio_nombre_longitud} de V25.

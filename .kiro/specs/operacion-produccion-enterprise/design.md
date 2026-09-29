@@ -188,6 +188,32 @@ La selección del adaptador correcto la resuelve `ServicioProyectos` según el `
 
 - Gating de los endpoints de Proyecto: `moduloHabilitado('operacion') and @autorizador.tiene('proyecto','<op>')` (sin `giroCorresponde`, Req 3.1).
 
+### §A3-bis — Precondiciones del avance manual de fase del Sitio (Req 3-bis)
+
+La fase operativa del Sitio (`avance_sitio`, `FaseSitioGenerica`) se cambia manualmente desde el tablero. Hasta ahora `ServicioProyectos.cambiarAvanceSitio` solo validaba la máquina lineal y la evidencia para `entregado`; se añaden las precondiciones de negocio de cada fase, **respetando el perfil de giro** para no acoplar el Núcleo a los verticales.
+
+**Nuevo puerto de solo lectura `PrecondicionesFaseSitioPort`** (Núcleo `operacion.proyecto.application`):
+
+```
+interface PrecondicionesFaseSitioPort {
+    boolean sitioTieneLevantamientoCompletado(UUID sitioId);
+    boolean sitioTienePermisoVigente(UUID sitioId);
+}
+```
+
+**Dos adaptadores (patrón D5-b, igual que `AvanceSitioPort`)**, seleccionados por `PerfilFasesGiro` en el servicio:
+- `PrecondicionesFaseSitioAnunciosAdapter` (vertical anuncios): delega en `LevantamientoCompletadoPort.sitioTieneLevantamientoCompletado` y `PermisoAprobadoPort.sitioTienePermisoVigente` (permiso aprobado **y vigente**, no solo aprobado). Registrado como `@Component("precondicionesFaseSitioAnunciosAdapter")`.
+- `PrecondicionesFaseSitioGenericoAdapter` (Núcleo): devuelve `true` en ambos (los giros genéricos no tienen esas fases, así que el gating no aplica). Registrado como `@Component("precondicionesFaseSitioGenericoAdapter")`.
+
+**Gating en `ServicioProyectos.avanzarAvanceSitio`** (avance de uso común; la corrección no lo aplica), tras crear/cargar el avance y antes de transitar, cuando el `PerfilFasesGiro` del tenant incluye las fases:
+- destino `en_preparacion` y perfil incluye Levantamiento → exige `sitioTieneLevantamientoCompletado` (422 si no).
+- destino `en_instalacion` y perfil incluye Permiso/Instalación → exige `sitioTieneLevantamientoCompletado` **y** `sitioTienePermisoVigente` (422 si falta alguno).
+- destino `entregado` desde `en_instalacion` → se conserva la guarda existente de evidencia aprobada de instalación (422 si no).
+
+**Motivo obligatorio en la corrección administrativa** (`corregirAvanceSitio`): exige nota no vacía (422 si falta), para dejar auditada la razón del ajuste. El avance de uso común mantiene la nota opcional. La corrección sigue pudiendo retroceder/saltar fases sin las precondiciones 1-3 (es la vía administrativa), pero siempre con motivo y auditada.
+
+Este diseño reutiliza `sitioId` (el `Sitio` de V25 es el mismo id que consultan los puertos de anuncios) y no introduce dependencia del Núcleo hacia los verticales: el adaptador de anuncios vive en el vertical y compone los puertos de anuncios, exactamente como `AvanceSitioAnunciosAdapter`.
+
 ### §A4 — Verificación de existencia del Cliente (Req 4)
 
 **Nuevo puerto de solo lectura `ClienteExistentePort`** (definido en la capa `application` de quien lo consume — `produccion` y `proyecto` — como interfaz estable):
@@ -276,6 +302,8 @@ cambiarEstado(ordenId, nuevoEstado):
 **Resolución de pendientes.** Se conserva la ruta de avance (`POST /ordenes-trabajo-instalacion/{id}/avance`, permiso `orden_trabajo_instalacion:cambiar_estado`) que ya marca pendientes como `resuelto` y audita (Req 8.4). 404 si la OTI/pendiente/evidencia no son accesibles (Req 8.6).
 
 **Guarda de cierre informativa (Req 8.5).** Hoy el cierre con pendientes lanza 422 con "existen pendientes por resolver". Se enriquece el mensaje para **informar qué pendientes faltan**: `ServicioOrdenesTrabajoInstalacion.cambiarEstado`, antes de completar, consulta `pendienteRepository.findByOrdenTrabajoInstalacionIdAndResueltoFalse(otiId)` y, si hay elementos, lanza 422 con un mensaje que enumera sus descripciones (p. ej. "no se puede completar: pendientes por resolver: [«fijar anclas», «conectar acometida»]"). Se conserva el orden: la validez de la transición (409) se comprueba antes que la guarda de pendientes (Req 8.5). Permisos y gating de anuncios sin cambios (Req 8.7).
+
+**Guarda de cierre por evidencia (Req 19.6).** Regla de negocio del cierre: una OTI no puede completarse sin al menos una evidencia fotográfica que respalde la instalación. `ServicioOrdenesTrabajoInstalacion.cambiarEstado`, tras validar la transición (409) y **antes** de la guarda de pendientes, consulta `evidenciaRepository.existsByOrdenTrabajoInstalacionId(otiId)`; si no hay ninguna evidencia lanza 422 con "no se puede completar: se requiere al menos una evidencia fotográfica de la instalación". El orden de las guardas al completar es: (1) transición válida (409); (2) evidencia presente (422); (3) pendientes resueltos (422 enumerando). En cualquier rechazo el estado se conserva y no se persiste.
 
 ---
 
@@ -433,6 +461,12 @@ _Una propiedad es una característica o comportamiento que debe cumplirse en tod
 
 **Validates: Requirements 3.2, 3.5**
 
+### Property 2-bis: Gating de precondiciones del avance manual de fase del Sitio
+
+*Para todo* Sitio con perfil de anuncios y todo estado de sus precondiciones (levantamiento completado sí/no, permiso vigente sí/no, evidencia aprobada sí/no), el **avance de uso común** (no corrección) a una fase destino se acepta **si y solo si** se cumplen las precondiciones de esa fase: `en_preparacion` exige levantamiento completado; `en_instalacion` exige levantamiento completado **y** permiso vigente; `entregado` (desde `en_instalacion`) exige evidencia aprobada de instalación. Si falta alguna, la transición se rechaza con 422 y la fase se conserva. Con perfil **genérico** (sin esas fases) el avance lineal no aplica ninguna de esas precondiciones. La **corrección administrativa** nunca aplica estas precondiciones, pero exige un motivo no vacío (422 si falta) y siempre conserva la fase ante rechazo.
+
+**Validates: Requirements 3-bis.1, 3-bis.2, 3-bis.3, 3-bis.4, 3-bis.5, 3-bis.6**
+
 ### Property 3: Consumo de materiales atómico y no-negativo
 
 *Para toda* Orden de Fabricación con un conjunto de partidas y todo estado de existencias, al ejecutar la transición `pendiente → en_produccion`: si algún consumo dejaría las existencias de algún Material por debajo de cero, entonces **ningún** `Movimiento_Inventario` se persiste y la Orden de Fabricación **permanece en `pendiente`** (rechazo 422, todo-o-nada); si todos los consumos caben, entonces se registra exactamente un `Movimiento_Inventario` `salida` por partida, las existencias resultantes de cada Material son **mayores o iguales a cero**, y la Orden pasa a `en_produccion`. Una Orden sin partidas transita sin generar movimientos.
@@ -447,7 +481,7 @@ _Una propiedad es una característica o comportamiento que debe cumplirse en tod
 
 ### Property 5: La guarda de cierre de OTI informa los pendientes no resueltos
 
-*Para toda* Orden_Trabajo_Instalacion en estado `en_curso` con un conjunto de pendientes, completar la orden es aceptado **si y solo si** no existe ningún pendiente sin resolver; si existe al menos uno, la transición se rechaza con 422, el estado se conserva y el mensaje de error enumera exactamente las descripciones de los pendientes no resueltos.
+*Para toda* Orden_Trabajo_Instalacion en estado `en_curso` con al menos una evidencia fotográfica adjunta y un conjunto de pendientes, completar la orden es aceptado **si y solo si** no existe ningún pendiente sin resolver; si existe al menos uno, la transición se rechaza con 422, el estado se conserva y el mensaje de error enumera exactamente las descripciones de los pendientes no resueltos. Complementariamente, si la OTI no tiene ninguna evidencia adjunta, el cierre se rechaza con 422 ("se requiere al menos una evidencia fotográfica") antes de evaluar los pendientes, conservando el estado (Req 19.6).
 
 **Validates: Requirements 8.5**
 
@@ -465,7 +499,7 @@ _Una propiedad es una característica o comportamiento que debe cumplirse en tod
 - **Partidas:** cantidad ≤ 0 → 422 sin persistir la partida; Material inaccesible → 404 + auditoría; editar partidas con la OF fuera de `pendiente` → 422 ("las partidas solo se editan con la Orden_Fabricacion en pendiente").
 - **Consumo de materiales:** existencias insuficientes → 422 ("existencias insuficientes") desde `Material.aplicarMovimiento`; al correr dentro de la transacción de `cambiarEstado`, el rollback deja intactos existencias, movimientos y el estado de la OF (atomicidad). Transición inválida (p. ej. desde estado final) → 409 **antes** de consumir (se comprueba `puedeTransicionarA` previo al consumo).
 - **Exposición de fotos/pendientes/evidencias:** recurso padre inaccesible → 404 + auditoría; listas vacías se devuelven como `[]` (no 404).
-- **Guarda de cierre de OTI:** primero 409 si la transición no es válida en la máquina; luego 422 con la enumeración de pendientes no resueltos (Req 8.5).
+- **Guarda de cierre de OTI:** primero 409 si la transición no es válida en la máquina; luego 422 si no hay evidencia fotográfica adjunta (Req 19.6); luego 422 con la enumeración de pendientes no resueltos (Req 8.5).
 - **Notificación de vencimientos:** el barrido por tenant captura fallos por tenant, los registra y continúa con el resto (un tenant que falle no aborta el job). Si no hay destinatario resoluble para un permiso, la `Notificacion` se registra como omitida con su motivo (sin romper el barrido). El endpoint manual devuelve el conteo emitido; 403 si falta módulo/giro/permiso.
 - **Gating:** ausencia de módulo `operacion` o del permiso atómico → 403 con la auditoría de denegación vigente; para Levantamiento/Permiso/OTI, giro distinto de anuncios → 403 con auditoría `denegar_giro`.
 - **Auditoría JSONB:** se conserva el saneamiento `aJson(...)` de `ServicioInventario`/servicios de auditoría; no se introduce ninguna escritura de auditoría que evada ese punto único.

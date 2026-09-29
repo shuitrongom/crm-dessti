@@ -252,6 +252,86 @@ const CATALOGO: Record<string, FichaIndicador> = {
     porque: 'Muchas cancelaciones pueden señalar problemas de planeación.',
   },
 
+  // ---- Proyectos (multi-sitio) ----
+  proyecto_sucursales_total: {
+    icono: 'store', tono: 'primario', corta: 'Sitios del proyecto',
+    que: 'Número total de sitios (sucursales/ubicaciones) que componen el proyecto.',
+    como: 'Se cuentan todos los sitios registrados en el proyecto.',
+    porque: 'Dimensiona el alcance del despliegue: cuántas ubicaciones hay que atender.',
+  },
+  proyecto_sucursales_pendientes: {
+    icono: 'schedule', tono: 'advertencia', corta: 'Aún sin iniciar',
+    que: 'Sitios del proyecto que todavía no comienzan trabajos (fase pendiente).',
+    como: 'Se cuentan los sitios en fase "pendiente".',
+    porque: 'Es el trabajo por arrancar: ayuda a planear el siguiente paso del despliegue.',
+  },
+  proyecto_sucursales_en_curso: {
+    icono: 'engineering', tono: 'info', corta: 'En preparación o instalación',
+    que: 'Sitios del proyecto con trabajos en marcha (preparación o instalación).',
+    como: 'Se cuentan los sitios en fase "en preparación" o "en instalación".',
+    porque: 'Refleja la carga de trabajo activa del proyecto en este momento.',
+  },
+  proyecto_sucursales_entregadas: {
+    icono: 'check_circle', tono: 'exito', corta: 'Sitios entregados',
+    que: 'Sitios del proyecto ya entregados y aceptados.',
+    como: 'Se cuentan los sitios en fase "entregado".',
+    porque: 'Mide el avance real del proyecto: cuánto se ha completado.',
+  },
+
+  // ---- Levantamientos de sitio (vertical anuncios) ----
+  levantamientos_en_proceso: {
+    icono: 'straighten', tono: 'advertencia', corta: 'Levantamientos abiertos',
+    que: 'Levantamientos de sitio que siguen en proceso (sin completar).',
+    como: 'Se cuentan los levantamientos en estado "en proceso".',
+    porque: 'Es el trabajo de medición por cerrar antes de fabricar e instalar.',
+  },
+  levantamientos_completados: {
+    icono: 'task_alt', tono: 'exito', corta: 'Levantamientos cerrados',
+    que: 'Levantamientos de sitio ya completados.',
+    como: 'Se cuentan los levantamientos en estado "completado".',
+    porque: 'Miden el avance de la fase de medición del proyecto.',
+  },
+
+  // ---- Permisos de instalacion (vertical anuncios) ----
+  permisos_solicitados: {
+    icono: 'hourglass_top', tono: 'advertencia', corta: 'Pendientes de decisión',
+    que: 'Permisos de instalación solicitados y aún sin aprobar o rechazar.',
+    como: 'Se cuentan los permisos en estado "solicitado".',
+    porque: 'Un permiso pendiente puede frenar la instalación en el sitio.',
+  },
+  permisos_aprobados: {
+    icono: 'verified', tono: 'exito', corta: 'Listos para instalar',
+    que: 'Permisos de instalación aprobados.',
+    como: 'Se cuentan los permisos en estado "aprobado".',
+    porque: 'Son los sitios habilitados legalmente para instalar.',
+  },
+  permisos_rechazados: {
+    icono: 'block', tono: 'error', corta: 'Permisos negados',
+    que: 'Permisos de instalación que fueron rechazados.',
+    como: 'Se cuentan los permisos en estado "rechazado".',
+    porque: 'Requieren atención: sin permiso no se puede instalar en ese sitio.',
+  },
+
+  // ---- OTIs / instalación (vertical anuncios) ----
+  otis_programadas: {
+    icono: 'event', tono: 'info', corta: 'Instalaciones agendadas',
+    que: 'Órdenes de trabajo de instalación programadas y aún no iniciadas.',
+    como: 'Se cuentan las OTIs en estado "programada".',
+    porque: 'Es tu agenda de instalaciones por comenzar.',
+  },
+  otis_en_curso: {
+    icono: 'engineering', tono: 'advertencia', corta: 'Instalando ahora',
+    que: 'Órdenes de trabajo de instalación en curso.',
+    como: 'Se cuentan las OTIs en estado "en curso".',
+    porque: 'Refleja la carga de trabajo activa de las cuadrillas.',
+  },
+  otis_completadas: {
+    icono: 'check_circle', tono: 'exito', corta: 'Instalaciones terminadas',
+    que: 'Órdenes de trabajo de instalación completadas.',
+    como: 'Se cuentan las OTIs en estado "completada".',
+    porque: 'Mide el trabajo de instalación efectivamente realizado.',
+  },
+
   // ---- Instalacion (vertical anuncios) ----
   instalaciones_completadas_en_fecha: {
     icono: 'event_available', tono: 'exito', corta: 'Entregadas a tiempo',
@@ -324,10 +404,22 @@ const CATALOGO: Record<string, FichaIndicador> = {
     porque: 'Avisa qué comprar antes de quedarte sin material para producir.',
   },
   materiales_activos: {
-    icono: 'inventory_2', tono: 'info', corta: 'Materiales en catálogo',
+    icono: 'inventory_2', tono: 'exito', corta: 'Disponibles para operar',
     que: 'Materiales activos registrados en tu inventario.',
     como: 'Se cuentan los materiales marcados como activos.',
-    porque: 'Da una idea del tamaño de tu catálogo de insumos.',
+    porque: 'Son los insumos con los que puedes producir y operar hoy.',
+  },
+  materiales_total: {
+    icono: 'inventory_2', tono: 'primario', corta: 'Total en el catálogo',
+    que: 'Número total de materiales registrados, activos e inactivos.',
+    como: 'Se suman los materiales activos y los dados de baja del tenant.',
+    porque: 'Refleja la amplitud de tu catálogo de insumos.',
+  },
+  materiales_inactivos: {
+    icono: 'inventory', tono: 'neutro', corta: 'Dados de baja',
+    que: 'Materiales dados de baja (inactivos), que ya no se usan para operar.',
+    como: 'Se cuentan los materiales marcados como inactivos.',
+    porque: 'Conservan su historial y puedes reactivarlos cuando vuelvas a usarlos.',
   },
 
   // ---- Inventario avanzado ----

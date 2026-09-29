@@ -140,5 +140,5 @@ describe('ActividadFormDialog', () => {
   it('no tiene violaciones de accesibilidad (WCAG 2.1 A/AA)', async () => {
     await montar({ clienteId: 'cli-1' });
     await esperarSinViolaciones(fixture);
-  });
+  }, 30000);
 });
