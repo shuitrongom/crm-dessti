@@ -168,6 +168,20 @@ class SeleccionListaPreciosTest {
 
             assertThat(precio).isEmpty();
         }
+
+        @Test
+        @DisplayName("Producto inactivo: la consulta de vigentes no lo incluye, por lo que no se sugiere precio (Req 59.12)")
+        void productoInactivoNoSugierePrecio() {
+            // La regla vive en la query buscarPreciosVigentes (filtra pr.activo = true):
+            // para un Producto dado de baja NO devuelve candidatas, y el servicio no sugiere.
+            when(precioProductoRepository.buscarPreciosVigentes(eq(PRODUCTO), any(LocalDate.class)))
+                    .thenReturn(List.of());
+
+            Optional<BigDecimal> precio = servicio.sugerirPrecioUnitario(
+                    new ConsultaSugerenciaPrecio(PRODUCTO, null, FECHA));
+
+            assertThat(precio).isEmpty();
+        }
     }
 
     @Nested

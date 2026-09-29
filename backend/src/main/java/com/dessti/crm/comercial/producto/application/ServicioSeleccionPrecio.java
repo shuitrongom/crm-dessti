@@ -21,10 +21,12 @@ import com.dessti.crm.platform.error.ReglaNegocioException;
  *
  * <h2>Regla de seleccion (Req 59.9), documentada con precision</h2>
  * <p>Dado un Producto, un (opcional) segmento de Cliente y una fecha, se
- * consideran unicamente los precios cuya {@code ListaPrecios} esta activa y
- * vigente a esa fecha (dentro de {@code [vigenciaInicio, vigenciaFin]}, con fin
- * abierto si {@code vigenciaFin} es {@code null}). Entre ellos se elige el precio
- * ganador con este orden de preferencia:</p>
+ * consideran unicamente los precios de un Producto <strong>activo</strong> (un
+ * Producto dado de baja logica nunca sugiere precio, Req 59.6, 59.12) cuya
+ * {@code ListaPrecios} esta activa y vigente a esa fecha (dentro de
+ * {@code [vigenciaInicio, vigenciaFin]}, con fin abierto si {@code vigenciaFin}
+ * es {@code null}). Entre ellos se elige el precio ganador con este orden de
+ * preferencia:</p>
  * <ol>
  *   <li><strong>Segmento especifico sobre general:</strong> si existe al menos
  *       una lista vigente cuyo segmento coincide (sin distinguir mayusculas) con

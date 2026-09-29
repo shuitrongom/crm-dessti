@@ -158,6 +158,76 @@ public class ListaPrecios extends TenantScopedEntity {
     }
 
     /**
+     * Indica si el rango de vigencia de esta lista se traslapa con el de otra
+     * para el <strong>mismo alcance</strong> (mismo segmento; ambas generales
+     * tambien comparten alcance), a efectos de la regla de no coexistencia de
+     * listas activas solapadas (Req 59.11).
+     *
+     * <p>El estado {@code activo} NO se evalua aqui: el predicado es puro sobre
+     * alcance + rangos. El servicio filtra las candidatas activas antes de
+     * aplicarlo. Una lista nunca se solapa consigo misma (mismo {@code id}).</p>
+     *
+     * <p>Las fronteras son <strong>inclusivas</strong> en ambos extremos y
+     * {@code vigenciaFin == null} representa vigencia abierta (infinito),
+     * consistente con {@link #estaVigente(LocalDate)}. Por tanto la adyacencia
+     * ({@code finA == inicioB}) cuenta como solapamiento: ese dia ambas listas
+     * estarian vigentes y no podria decidirse un unico precio.</p>
+     *
+     * @param otra otra lista a comparar; {@code null} nunca se solapa.
+     * @return {@code true} si comparten alcance y sus rangos se traslapan.
+     */
+    public boolean seSolapaCon(ListaPrecios otra) {
+        if (otra == null || (this.id != null && this.id.equals(otra.id))) {
+            return false;
+        }
+        if (!mismoAlcance(this.segmento, otra.segmento)) {
+            return false;
+        }
+        return rangosSeSolapan(
+                this.vigenciaInicio, this.vigenciaFin, otra.vigenciaInicio, otra.vigenciaFin);
+    }
+
+    /**
+     * Indica si dos alcances (segmentos) coinciden a efectos de solapamiento:
+     * dos listas generales ({@code null}) comparten alcance; en otro caso deben
+     * coincidir sin distinguir mayusculas (Req 59.9, 59.11).
+     *
+     * @param segmentoA segmento de una lista; {@code null} = general.
+     * @param segmentoB segmento de la otra lista; {@code null} = general.
+     * @return {@code true} si ambos representan el mismo alcance.
+     */
+    public static boolean mismoAlcance(String segmentoA, String segmentoB) {
+        if (segmentoA == null || segmentoB == null) {
+            return segmentoA == null && segmentoB == null;
+        }
+        return segmentoA.equalsIgnoreCase(segmentoB);
+    }
+
+    /**
+     * Predicado puro de solapamiento de dos rangos de vigencia con fronteras
+     * <strong>inclusivas</strong> y fin abierto ({@code null} = infinito).
+     *
+     * <p>Dos rangos {@code [iniA, finA]} y {@code [iniB, finB]} se solapan si y
+     * solo si {@code iniA <= finB} y {@code iniB <= finA}, tratando un fin
+     * {@code null} como no acotado por ese lado. El inicio es obligatorio en
+     * ambos.</p>
+     *
+     * @param inicioA inicio de vigencia del primer rango; obligatorio.
+     * @param finA    fin de vigencia del primer rango; {@code null} = abierto.
+     * @param inicioB inicio de vigencia del segundo rango; obligatorio.
+     * @param finB    fin de vigencia del segundo rango; {@code null} = abierto.
+     * @return {@code true} si los rangos se traslapan.
+     */
+    public static boolean rangosSeSolapan(LocalDate inicioA, LocalDate finA,
+                                          LocalDate inicioB, LocalDate finB) {
+        // iniA <= finB (finB null => no acota por arriba a A)
+        boolean inicioANoRebasaFinB = finB == null || !inicioA.isAfter(finB);
+        // iniB <= finA (finA null => no acota por arriba a B)
+        boolean inicioBNoRebasaFinA = finA == null || !inicioB.isAfter(finA);
+        return inicioANoRebasaFinB && inicioBNoRebasaFinA;
+    }
+
+    /**
      * Indica si esta lista es especifica de un segmento de Cliente (no general).
      *
      * @return {@code true} si tiene un segmento asociado.

@@ -953,6 +953,12 @@ Las siguientes propiedades se derivan del análisis de prework de los criterios 
 
 **Validates: Requirements 59.3, 59.10**
 
+### Property 30-bis: No coexistencia de Listas de Precios activas con vigencias solapadas por alcance
+
+*Para cualquier* par de Listas_Precios activas del mismo alcance (mismo segmento de Cliente, o ambas generales), sus periodos de vigencia no se traslapan: dos rangos `[inicio_a, fin_a]` y `[inicio_b, fin_b]` (con fronteras inclusivas y `fin` nulo = vigencia abierta/infinita) se consideran solapados **si y solo si** comparten al menos una fecha, esto es `inicio_a ≤ fin_b` y `inicio_b ≤ fin_a` (tratando un `fin` nulo como no acotado). La creación de una Lista_Precios, o la modificación de la vigencia o el segmento de una existente, se rechaza con 422 cuando produciría un solapamiento con otra Lista_Precios activa del mismo alcance (excluyéndose la propia). El predicado de solapamiento de rangos y de coincidencia de alcance son funciones puras del dominio (`ListaPrecios.rangosSeSolapan` / `ListaPrecios.mismoAlcance` / `seSolapaCon`), consistentes con la frontera inclusiva de `estaVigente`; la guarda se aplica en la capa de aplicación (`ServicioListasPrecios`) antes de persistir, consultando por un puerto de solo lectura las candidatas activas del mismo alcance dentro del tenant vigente. La adyacencia (`fin_a = inicio_b` el mismo día) cuenta como solapamiento porque ese día ambas listas estarían vigentes.
+
+**Validates: Requirements 59.11**
+
 ### Property 31: No negatividad y perpetuidad de existencias por Almacén
 
 *Para cualquier* secuencia de Movimiento_Inventario sobre un Material en un Almacén, las existencias resultantes equivalen a la suma con signo de los movimientos aplicados y nunca son negativas; el saldo se actualiza tras cada movimiento (inventario perpetuo) y una salida que dejaría las existencias por debajo de 0 se rechaza sin cambios.

@@ -35,7 +35,10 @@ public interface PrecioProductoRepository extends JpaRepository<PrecioProducto, 
      * la fecha indicada, junto con la prioridad y el segmento de su Lista_Precios,
      * para que la capa de aplicacion aplique la regla de seleccion (Req 59.9).
      *
-     * <p>Solo participan los precios cuya Lista_Precios esta activa y vigente a la
+     * <p>Solo participan los precios que cumplen <strong>todas</strong> estas
+     * condiciones: (a) el Producto esta <strong>activo</strong> (un Producto dado
+     * de baja logica no debe sugerir precio, Req 59.6, 59.12); (b) su
+     * Lista_Precios esta activa; y (c) la Lista_Precios esta vigente a la
      * {@code fecha} (dentro de {@code [vigencia_inicio, vigencia_fin]}, con fin
      * abierto cuando {@code vigencia_fin} es {@code null}). El resultado se ordena
      * por prioridad descendente y, a igualdad, por listas <em>con segmento</em>
@@ -50,7 +53,9 @@ public interface PrecioProductoRepository extends JpaRepository<PrecioProducto, 
                        pp.precio, l.prioridad, l.segmento)
             FROM PrecioProducto pp
             JOIN ListaPrecios l ON l.id = pp.listaPreciosId
+            JOIN Producto pr ON pr.id = pp.productoId
             WHERE pp.productoId = :productoId
+              AND pr.activo = true
               AND l.activo = true
               AND l.vigenciaInicio <= :fecha
               AND (l.vigenciaFin IS NULL OR l.vigenciaFin >= :fecha)

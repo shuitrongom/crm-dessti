@@ -113,6 +113,28 @@ describe('ListaFormDialog', () => {
     expect((dialogRef.cerradoCon as ListaPrecios).id).toBe('lp-9');
   });
 
+  it('alta con vigencia solapada (422): muestra el mensaje del backend y NO cierra el dialogo (Req 59.11)', async () => {
+    await montar();
+    comp().form.patchValue({
+      nombre: 'Lista solapada',
+      prioridad: 1,
+      segmento: '',
+      vigenciaInicio: '2026-03-01',
+    });
+    comp().guardar();
+    const req = http.expectOne((r) => r.url === '/api/v1/listas-precios' && r.method === 'POST');
+    const mensaje =
+      'Ya existe una lista de precios activa con vigencia solapada para el mismo alcance ' +
+      '(lista general). Ajusta las fechas de vigencia o el segmento, o da de baja la lista en conflicto.';
+    req.flush({ detail: mensaje }, { status: 422, statusText: 'Unprocessable Entity' });
+
+    // El backend es la fuente de verdad: se muestra su mensaje y el dialogo permanece abierto.
+    const host = fixture.nativeElement as HTMLElement;
+    fixture.detectChanges();
+    expect(host.querySelector('[role="alert"]')?.textContent ?? '').toContain('vigencia solapada');
+    expect(dialogRef.cerradoCon).toBe('no-cerrado');
+  });
+
   it('no tiene violaciones de accesibilidad (WCAG 2.1 A/AA)', async () => {
     await montar();
     await esperarSinViolaciones(fixture);

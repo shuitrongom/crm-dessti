@@ -1,5 +1,6 @@
 package com.dessti.crm.comercial.producto.adapter.out.persistence;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -45,4 +46,37 @@ public interface ListaPreciosRepository extends JpaRepository<ListaPrecios, UUID
               AND LOWER(l.nombre) LIKE CONCAT('%', :criterio, '%')
             """)
     Page<ListaPrecios> buscarActivasPorNombre(@Param("criterio") String criterio, Pageable pageable);
+
+    /**
+     * Candidatas a solapamiento: Listas_Precios <strong>activas</strong> del
+     * tenant vigente que comparten <em>alcance</em> con el segmento indicado y
+     * que no son la propia lista, para aplicarles el predicado de dominio
+     * {@link ListaPrecios#seSolapaCon(ListaPrecios)} en la regla de no
+     * coexistencia de vigencias solapadas (Req 59.11).
+     *
+     * <p>El "mismo alcance" se resuelve aqui: si {@code segmento} es
+     * {@code null} (lista general) se traen las otras generales; si tiene valor,
+     * las del mismo segmento sin distinguir mayusculas. La decision final de
+     * solapamiento de rangos la toma el dominio (fuente unica de la regla), por
+     * lo que esta query es deliberadamente selectiva pero no evalua fechas.</p>
+     *
+     * <p>El conjunto es pequeno (catalogo por segmento) y queda acotado al
+     * tenant por el filtro global de Hibernate y la RLS (Req 23).</p>
+     *
+     * @param segmento    segmento de alcance; {@code null} = lista general.
+     * @param excluirId   id de la lista a excluir (la propia al editar); puede
+     *                    ser {@code null} en el alta (no excluye ninguna).
+     * @return las listas activas del mismo alcance, candidatas a solaparse.
+     */
+    @Query("""
+            SELECT l FROM ListaPrecios l
+            WHERE l.activo = true
+              AND (:excluirId IS NULL OR l.id <> :excluirId)
+              AND (
+                    (:segmento IS NULL AND l.segmento IS NULL)
+                 OR (:segmento IS NOT NULL AND LOWER(l.segmento) = LOWER(:segmento))
+              )
+            """)
+    List<ListaPrecios> buscarActivasDelMismoAlcance(@Param("segmento") String segmento,
+                                                    @Param("excluirId") UUID excluirId);
 }

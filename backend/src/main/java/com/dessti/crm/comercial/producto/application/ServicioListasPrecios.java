@@ -1,5 +1,6 @@
 package com.dessti.crm.comercial.producto.application;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -84,6 +85,10 @@ public class ServicioListasPrecios {
         ListaPrecios lista = ListaPrecios.crear(
                 comando.nombre(), comando.prioridad(), comando.segmento(),
                 comando.vigenciaInicio(), comando.vigenciaFin(), actor);
+        // No pueden coexistir dos listas activas del mismo alcance con vigencias
+        // solapadas: se decidiria de forma ambigua el precio de un dia (Req 59.11).
+        // En el alta no hay lista propia que excluir (aun no existe en BD).
+        verificarNoSolapamiento(lista, null, actor);
         ListaPrecios guardada = listaPreciosRepository.save(lista);
         auditarLista(actor, "crear", guardada.getId(),
                 "creada lista de precios '" + guardada.getNombre() + "'");
@@ -108,6 +113,9 @@ public class ServicioListasPrecios {
         ListaPrecios lista = cargarListaActiva(listaId, actor);
         lista.actualizar(comando.nombre(), comando.prioridad(), comando.segmento(),
                 comando.vigenciaInicio(), comando.vigenciaFin(), actor);
+        // Cambiar vigencia o segmento puede provocar solapamiento con otra lista
+        // activa del mismo alcance; se revalida excluyendo la propia (Req 59.11).
+        verificarNoSolapamiento(lista, lista.getId(), actor);
         ListaPrecios guardada = listaPreciosRepository.save(lista);
         auditarLista(actor, "actualizar", guardada.getId(),
                 "actualizada lista de precios '" + guardada.getNombre() + "'");
@@ -223,6 +231,43 @@ public class ServicioListasPrecios {
     // ------------------------------------------------------------------
     // Reglas internas
     // ------------------------------------------------------------------
+
+    /**
+     * Verifica que la {@code lista} (nueva o editada) no comparta alcance y
+     * vigencia con ninguna otra Lista_Precios activa del tenant (Req 59.11). Trae
+     * las candidatas activas del mismo alcance (excluyendo la propia) y aplica el
+     * predicado de dominio {@link ListaPrecios#seSolapaCon(ListaPrecios)}. Si hay
+     * solapamiento, audita el rechazo y lanza {@link ReglaNegocioException} (422)
+     * antes de persistir.
+     *
+     * @param lista     lista a validar (ya construida/actualizada, aun sin guardar).
+     * @param excluirId id de la propia lista a excluir de las candidatas (en la
+     *                  edicion); {@code null} en el alta (no hay lista previa).
+     * @param actor     identificador de quien realiza la operacion, para auditoria.
+     * @throws ReglaNegocioException si se solapa con otra lista activa (422).
+     */
+    private void verificarNoSolapamiento(ListaPrecios lista, UUID excluirId, String actor) {
+        List<ListaPrecios> candidatas =
+                listaPreciosRepository.buscarActivasDelMismoAlcance(lista.getSegmento(), excluirId);
+        ListaPrecios solapada = candidatas.stream()
+                .filter(lista::seSolapaCon)
+                .findFirst()
+                .orElse(null);
+        if (solapada != null) {
+            auditarLista(actor, "crear_rechazada", lista.getId(),
+                    "solapamiento de vigencia con la lista de precios activa '"
+                            + solapada.getNombre() + "' [id=" + solapada.getId() + "]");
+            throw new ReglaNegocioException(
+                    "Ya existe una lista de precios activa con vigencia solapada para el mismo alcance ("
+                            + descripcionAlcance(lista.getSegmento()) + "). Ajusta las fechas de vigencia "
+                            + "o el segmento, o da de baja la lista en conflicto.");
+        }
+    }
+
+    /** Describe el alcance para el mensaje de negocio: segmento o "lista general". */
+    private static String descripcionAlcance(String segmento) {
+        return segmento == null ? "lista general" : "segmento '" + segmento + "'";
+    }
 
     private ListaPrecios cargarListaActiva(UUID listaId, String actor) {
         if (listaId == null) {

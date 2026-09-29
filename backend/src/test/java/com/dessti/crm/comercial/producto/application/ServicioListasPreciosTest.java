@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -139,5 +140,81 @@ class ServicioListasPreciosTest {
                 .isInstanceOf(RecursoNoEncontradoException.class);
 
         verify(precioProductoRepository, never()).saveAndFlush(any());
+    }
+
+    // ------------------------------------------------------------------
+    // Req 59.11 — No coexistencia de listas activas con vigencias solapadas
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("definirLista que se solapa con otra activa del mismo alcance se rechaza con 422 y no persiste (Req 59.11)")
+    void definirListaSolapadaRechaza() {
+        ListaPrecios existente = ListaPrecios.crear(
+                "Vigente 2024", 1, null, LocalDate.of(2024, 1, 1), LocalDate.of(2024, 12, 31), "ventas");
+        // Candidata activa del mismo alcance (lista general) cuyo rango se traslapa.
+        when(listaPreciosRepository.buscarActivasDelMismoAlcance(null, null))
+                .thenReturn(List.of(existente));
+
+        assertThatThrownBy(() -> servicio.definirLista(new DefinirListaPreciosCommand(
+                "Nueva solapada", 2, null, LocalDate.of(2024, 6, 1), LocalDate.of(2025, 6, 30))))
+                .isInstanceOf(ReglaNegocioException.class);
+
+        verify(listaPreciosRepository, never()).save(any());
+        // Se audita el rechazo por solapamiento.
+        ArgumentCaptor<EventoAuditoria> ev = ArgumentCaptor.forClass(EventoAuditoria.class);
+        verify(auditoria).registrar(ev.capture());
+        assertThat(ev.getValue().accion()).isEqualTo("crear_rechazada");
+    }
+
+    @Test
+    @DisplayName("definirLista sin solapamiento (rango disjunto) persiste normalmente (Req 59.11)")
+    void definirListaSinSolapamientoPersiste() {
+        ListaPrecios existente = ListaPrecios.crear(
+                "Vigente 2024", 1, null, LocalDate.of(2024, 1, 1), LocalDate.of(2024, 6, 29), "ventas");
+        when(listaPreciosRepository.buscarActivasDelMismoAlcance(null, null))
+                .thenReturn(List.of(existente));
+        when(listaPreciosRepository.save(any(ListaPrecios.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // Empieza el dia siguiente al fin de la existente: rangos disjuntos.
+        ListaPreciosDto dto = servicio.definirLista(new DefinirListaPreciosCommand(
+                "Siguiente periodo", 2, null, LocalDate.of(2024, 6, 30), LocalDate.of(2024, 12, 31)));
+
+        assertThat(dto.nombre()).isEqualTo("Siguiente periodo");
+        verify(listaPreciosRepository).save(any(ListaPrecios.class));
+    }
+
+    @Test
+    @DisplayName("definirLista de distinto segmento no colisiona con la activa del otro segmento (Req 59.11)")
+    void definirListaOtroSegmentoNoColisiona() {
+        // No hay candidatas del segmento 'menudeo' (la query filtra por alcance).
+        when(listaPreciosRepository.buscarActivasDelMismoAlcance("menudeo", null))
+                .thenReturn(List.of());
+        when(listaPreciosRepository.save(any(ListaPrecios.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ListaPreciosDto dto = servicio.definirLista(new DefinirListaPreciosCommand(
+                "Menudeo 2024", 1, "menudeo", LocalDate.of(2024, 1, 1), LocalDate.of(2024, 12, 31)));
+
+        assertThat(dto.segmento()).isEqualTo("menudeo");
+        verify(listaPreciosRepository).save(any(ListaPrecios.class));
+    }
+
+    @Test
+    @DisplayName("actualizarLista que provoca solapamiento con otra activa se rechaza con 422 (Req 59.11)")
+    void actualizarListaSolapadaRechaza() {
+        ListaPrecios propia = ListaPrecios.crear(
+                "Segundo semestre", 1, null, LocalDate.of(2024, 7, 1), LocalDate.of(2024, 12, 31), "ventas");
+        ListaPrecios otra = ListaPrecios.crear(
+                "Primer semestre", 1, null, LocalDate.of(2024, 1, 1), LocalDate.of(2024, 6, 30), "ventas");
+        when(listaPreciosRepository.findByIdAndActivoTrue(propia.getId())).thenReturn(Optional.of(propia));
+        // Al editar, se excluye la propia y se devuelve la otra activa del mismo alcance.
+        when(listaPreciosRepository.buscarActivasDelMismoAlcance(null, propia.getId()))
+                .thenReturn(List.of(otra));
+
+        // Se intenta mover el inicio a marzo, invadiendo el rango de 'otra'.
+        assertThatThrownBy(() -> servicio.actualizarLista(propia.getId(), new DefinirListaPreciosCommand(
+                "Segundo semestre", 1, null, LocalDate.of(2024, 3, 1), LocalDate.of(2024, 12, 31))))
+                .isInstanceOf(ReglaNegocioException.class);
+
+        verify(listaPreciosRepository, never()).save(any());
     }
 }

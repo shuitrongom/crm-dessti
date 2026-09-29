@@ -968,6 +968,8 @@ Como contexto técnico de referencia, la solución contempla un backend en Sprin
 8. WHEN un Producto o una Lista_Precios se crea, modifica o elimina, THE Servicio_Auditoria SHALL registrar un Registro_Auditoria con el actor, la acción, el recurso afectado y la marca temporal.
 9. WHERE existen varias Lista_Precios vigentes aplicables a un Cliente, THE Sistema SHALL aplicar la de mayor prioridad o la específica del segmento del Cliente antes que la general.
 10. IF un Usuario intenta definir un precio de Producto fuera del rango de 0.01 a 999,999,999.99, THEN THE Sistema SHALL rechazar el precio e informar el valor inválido.
+11. WHERE ya existe una Lista_Precios activa cuyo periodo de vigencia se traslapa con el de una Lista_Precios que se intenta crear o cuya vigencia o segmento se intenta modificar, y ambas comparten el mismo alcance (mismo segmento de Cliente, o ambas generales), THE Sistema SHALL rechazar la operación con 422, no persistir el cambio e informar el conflicto de vigencia; el traslape se evalúa con fronteras inclusivas en ambos extremos (una vigencia sin fecha de fin se considera abierta) y una lista nunca entra en conflicto consigo misma, de modo que en ningún momento coexistan dos Listas_Precios activas aplicables al mismo alcance en una misma fecha.
+12. WHERE un Producto está inactivo (dado de baja lógica, ver 59.6), THE Sistema SHALL excluirlo de la sugerencia de precio unitario: aun cuando tenga un precio asignado en una Lista_Precios activa y vigente, no se sugiere su precio (equivale a no tener precio aplicable), de modo que solo se sugieran precios de Productos vigentes del catálogo.
 
 ### Requisito 60: Inventario avanzado (Kardex, máximos, lotes, costeo y almacenes)
 
