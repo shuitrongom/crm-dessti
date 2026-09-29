@@ -10,6 +10,14 @@
     grid-template-columns: 1.1fr 1fr;
   }
 
+  // Las columnas del grid deben poder encogerse por debajo del ancho intrinseco
+  // de su contenido. Sin esto, el ancho minimo de contenido de los campos de
+  // Material (mat-form-field) impide que la columna baje de ~328px y provoca
+  // desborde horizontal en viewports estrechos (320px). Ver Req 52.4.
+  > * {
+    min-inline-size: 0;
+  }
+
   // ---------------------------------------------------------------------------
   // Panel de marca (izquierda). Solo visible desde tablet hacia arriba.
   // ---------------------------------------------------------------------------
