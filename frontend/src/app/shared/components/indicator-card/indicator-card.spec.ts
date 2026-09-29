@@ -8,9 +8,16 @@
 
 import { Component, signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
+import { registerLocaleData } from '@angular/common';
+import localeEsMx from '@angular/common/locales/es-MX';
 
 import { IndicatorCard, type Indicador } from './indicator-card';
 import { esperarSinViolaciones } from '../../../../testing/axe';
+
+// El componente formatea sus valores con el pipe `number` y locale explicito
+// 'es-MX'. Angular solo incluye en-US por defecto, asi que sin este registro el
+// render lanza NG0701 en el TestBed (mismo patron que planes/plan-dialog specs).
+registerLocaleData(localeEsMx);
 
 @Component({
   imports: [IndicatorCard],

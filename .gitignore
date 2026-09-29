@@ -34,6 +34,13 @@ parametros.ps1
 *.pfx
 *.jks
 
+# ==== Documentos de trabajo (observaciones de testers, notas locales) ====
+# No versionar documentos ofimaticos sueltos usados como insumo temporal.
+*.docx
+*.doc
+*.xlsx
+*.pptx
+
 # ==== IDE / OS ====
 .idea/
 *.iml
