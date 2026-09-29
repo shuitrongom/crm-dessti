@@ -7,7 +7,7 @@
 // del backend). No modifica datos de origen (Req 66.1).
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -49,6 +49,7 @@ import { ETIQUETA_CANAL, ICONO_CANAL, OPCIONES_CANAL } from '../social-etiquetas
     StateContainer,
   ],
   templateUrl: './analitica-social.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './analitica-social.scss',
 })
 export class AnaliticaSocial {
@@ -60,10 +61,7 @@ export class AnaliticaSocial {
   protected readonly puedeExportar = this.auth.tienePermiso('analitica_social', 'leer');
 
   // Filtro por canal derivado del origen unico (los cinco canales) mas "todos".
-  protected readonly canales = [
-    { valor: '', etiqueta: 'Todos los canales' },
-    ...OPCIONES_CANAL,
-  ];
+  protected readonly canales = [{ valor: '', etiqueta: 'Todos los canales' }, ...OPCIONES_CANAL];
 
   protected readonly estado = signal<EstadoSolicitud<ResumenAnaliticaSocial>>(cargando());
   protected readonly exportando = signal(false);
@@ -124,8 +122,7 @@ export class AnaliticaSocial {
   consultar(): void {
     this.estado.set(cargando());
     this.service.metricas(this.filtroActual()).subscribe({
-      next: (resumen) =>
-        this.estado.set(conDatos(resumen, (resumen.canales?.length ?? 0) === 0)),
+      next: (resumen) => this.estado.set(conDatos(resumen, (resumen.canales?.length ?? 0) === 0)),
       error: (e: HttpErrorResponse) => this.estado.set(conError(mensajeDeError(e))),
     });
   }

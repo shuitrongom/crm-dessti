@@ -9,7 +9,7 @@
 // finanzas, RH y mantenimiento; no modifica el sistema de diseno compartido.
 // =============================================================================
 
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, ChangeDetectionStrategy } from '@angular/core';
 
 /** Tono semantico aplicado a la insignia. */
 export type TonoEstado = 'neutro' | 'info' | 'exito' | 'advertencia' | 'error';
@@ -17,6 +17,7 @@ export type TonoEstado = 'neutro' | 'info' | 'exito' | 'advertencia' | 'error';
 @Component({
   selector: 'app-estado-chip',
   template: `<span class="estado-chip" [class]="'estado-chip--' + tono()">{{ etiqueta() }}</span>`,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './estado-chip.scss',
 })
 export class EstadoChip {

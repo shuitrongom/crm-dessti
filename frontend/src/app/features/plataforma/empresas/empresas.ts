@@ -18,7 +18,7 @@
 // texto se reinicia a la pagina 0.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
@@ -93,6 +93,7 @@ interface ConteosEmpresas {
     CeldaTablaDirective,
   ],
   templateUrl: './empresas.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './empresas.scss',
 })
 export class PlataformaEmpresas {
@@ -264,9 +265,7 @@ export class PlataformaEmpresas {
    * (Req 1.3, 1.4, 1.5). NUNCA expone un UUID (Req 1.6).
    */
   protected nombrePlan(empresa: Empresa): string {
-    return (
-      empresa.planVigente?.nombreInstrumento ?? empresa.planVigente?.nombrePlan ?? 'Sin plan'
-    );
+    return empresa.planVigente?.nombreInstrumento ?? empresa.planVigente?.nombrePlan ?? 'Sin plan';
   }
 
   /**
@@ -624,4 +623,3 @@ export class PlataformaEmpresas {
     });
   }
 }
-

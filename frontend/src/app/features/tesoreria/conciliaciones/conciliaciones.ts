@@ -9,7 +9,7 @@
 // de la conciliacion vive en la vista de Cuentas bancarias.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -52,6 +52,7 @@ import { ConciliacionBancaria, CuentaBancaria } from '../models/tesoreria.models
     EstadoChip,
   ],
   templateUrl: './conciliaciones.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../tesoreria.scss',
 })
 export class TesoreriaConciliaciones {

@@ -7,7 +7,7 @@
 // explicativo del indicador. Acciones gobernadas por canal_venta:{...}.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -53,6 +53,7 @@ import { CanalVentaFormDialog, CanalVentaFormDialogData } from './canal-venta-fo
     CeldaTablaDirective,
   ],
   templateUrl: './canales-venta.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './canales-venta.scss',
 })
 export class ComercialCanalesVenta {

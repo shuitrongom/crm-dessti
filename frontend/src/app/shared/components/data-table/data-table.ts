@@ -23,6 +23,7 @@ import {
   TemplateRef,
   input,
   output,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { MatTableModule } from '@angular/material/table';
@@ -73,6 +74,7 @@ export class CeldaTablaDirective {
   styleUrl: './data-table.scss',
   // Traduce el paginador al espanol de forma acotada: aplica a toda tabla que
   // use este componente sin repetir el provider en cada vista (Req 52, 57).
+  changeDetection: ChangeDetectionStrategy.Eager,
   providers: [{ provide: MatPaginatorIntl, useClass: PaginatorIntlEs }],
 })
 export class DataTable<T> implements AfterContentInit {

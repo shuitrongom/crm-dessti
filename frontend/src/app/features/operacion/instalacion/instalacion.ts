@@ -17,7 +17,7 @@
 // endpoint. Cuando el backend publique el catalogo, migrara a app-entity-select.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Observable, firstValueFrom, of } from 'rxjs';
@@ -81,6 +81,7 @@ import { OtiAvanceDialog, OtiAvanceDialogData } from './oti-avance-dialog';
     CeldaTablaDirective,
   ],
   templateUrl: './instalacion.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './instalacion.scss',
 })
 export class OperacionInstalacion {

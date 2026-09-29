@@ -9,7 +9,7 @@
 // hay icono + texto accesible (Req 57).
 // =============================================================================
 
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, computed, inject, input, ChangeDetectionStrategy } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
@@ -34,6 +34,7 @@ export interface Indicador {
   selector: 'app-indicator-card',
   imports: [DecimalPipe, MatIconModule],
   templateUrl: './indicator-card.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './indicator-card.scss',
 })
 export class IndicatorCard {

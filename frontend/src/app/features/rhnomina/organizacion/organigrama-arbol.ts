@@ -7,7 +7,7 @@
 // diseno compartido.
 // =============================================================================
 
-import { Component, input } from '@angular/core';
+import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 
 import { OrganigramaNodo } from '../models/rhnomina.models';
 
@@ -25,6 +25,7 @@ import { OrganigramaNodo } from '../models/rhnomina.models';
       }
     </ul>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../rhnomina.scss',
 })
 export class OrganigramaArbol {

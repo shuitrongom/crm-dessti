@@ -7,7 +7,7 @@
 // Cliente y responde 404 si la prueba no es propia; 409 si ya esta decidida.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 
@@ -48,6 +48,7 @@ import { PruebaDiseno } from '../models/portal.models';
     CeldaTablaDirective,
     EstadoChip,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './portal-pruebas-diseno.html',
 })
 export class PortalPruebasDiseno {

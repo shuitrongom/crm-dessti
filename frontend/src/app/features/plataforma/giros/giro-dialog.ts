@@ -8,7 +8,7 @@
 // muestra el mensaje del backend (409 clave duplicada, 422 invalido).
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -41,6 +41,7 @@ export interface DatosGiroDialog {
     MatIconModule,
   ],
   templateUrl: './giro-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './giro-dialog.scss',
 })
 export class GiroDialog {
@@ -64,8 +65,14 @@ export class GiroDialog {
   protected readonly creado = signal<Giro | null>(null);
 
   protected readonly formulario = this.fb.nonNullable.group({
-    clave: [this.datos?.giro?.clave ?? '', [Validators.required, Validators.maxLength(60), Validators.pattern(PATRON_CLAVE)]],
-    nombreVisible: [this.datos?.giro?.nombreVisible ?? '', [Validators.required, Validators.maxLength(150)]],
+    clave: [
+      this.datos?.giro?.clave ?? '',
+      [Validators.required, Validators.maxLength(60), Validators.pattern(PATRON_CLAVE)],
+    ],
+    nombreVisible: [
+      this.datos?.giro?.nombreVisible ?? '',
+      [Validators.required, Validators.maxLength(150)],
+    ],
     descripcion: [this.datos?.giro?.descripcion ?? '', [Validators.maxLength(500)]],
   });
 

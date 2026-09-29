@@ -12,7 +12,7 @@
 // `totalElements` de cada respuesta (mismo patron que la vista de Empresas).
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -72,6 +72,7 @@ interface ConteosGiros {
     CeldaTablaDirective,
   ],
   templateUrl: './giros.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './giros.scss',
 })
 export class PlataformaGiros {

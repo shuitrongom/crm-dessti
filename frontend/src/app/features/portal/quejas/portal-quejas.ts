@@ -6,7 +6,7 @@
 // Cliente (nunca se envía clienteId) y registra la queja en estado 'registrada'.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -54,6 +54,7 @@ import { QuejaPortal } from '../models/portal.models';
     CeldaTablaDirective,
     EstadoChip,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './portal-quejas.html',
 })
 export class PortalQuejas {
@@ -115,18 +116,20 @@ export class PortalQuejas {
       return;
     }
     this.enviando.set(true);
-    this.service.registrarQueja({ descripcion: this.formulario.getRawValue().descripcion.trim() }).subscribe({
-      next: () => {
-        this.enviando.set(false);
-        this.toast.exito('Queja registrada. Le daremos seguimiento.');
-        this.mostrarForm.set(false);
-        this.page.set(0);
-        this.cargar();
-      },
-      error: (e: HttpErrorResponse) => {
-        this.enviando.set(false);
-        this.toast.error(mensajeDeError(e));
-      },
-    });
+    this.service
+      .registrarQueja({ descripcion: this.formulario.getRawValue().descripcion.trim() })
+      .subscribe({
+        next: () => {
+          this.enviando.set(false);
+          this.toast.exito('Queja registrada. Le daremos seguimiento.');
+          this.mostrarForm.set(false);
+          this.page.set(0);
+          this.cargar();
+        },
+        error: (e: HttpErrorResponse) => {
+          this.enviando.set(false);
+          this.toast.error(mensajeDeError(e));
+        },
+      });
   }
 }

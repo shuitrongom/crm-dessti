@@ -13,7 +13,15 @@
 // no inventa un endpoint inexistente.
 // =============================================================================
 
-import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  computed,
+  inject,
+  input,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
@@ -65,6 +73,7 @@ const TAMANO_RESUMEN = 20;
     TimelineActividades,
   ],
   templateUrl: './cliente-detalle.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './cliente-detalle.scss',
 })
 export class ComercialClienteDetalle implements OnInit {
@@ -138,9 +147,7 @@ export class ComercialClienteDetalle implements OnInit {
   );
 
   /** Numero de oportunidades abiertas. */
-  protected readonly numOportunidadesAbiertas = computed(
-    () => this.oportunidadesAbiertas().length,
-  );
+  protected readonly numOportunidadesAbiertas = computed(() => this.oportunidadesAbiertas().length);
 
   /** Valor en pipeline: suma del valor estimado de las oportunidades abiertas. */
   protected readonly valorPipeline = computed(() =>

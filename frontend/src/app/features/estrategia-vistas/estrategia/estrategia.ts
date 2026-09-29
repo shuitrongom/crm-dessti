@@ -15,7 +15,7 @@
 // permiso atomico (deny-by-default).
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { DatePipe, DecimalPipe } from '@angular/common';
@@ -83,6 +83,7 @@ const TAMANO_INDICADORES = 100;
     StatCard,
   ],
   templateUrl: './estrategia.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../estrategia.scss',
 })
 export class EstrategiaVistas {
@@ -143,9 +144,7 @@ export class EstrategiaVistas {
   );
 
   /** Numero de oportunidades abiertas del pipeline. */
-  protected readonly numOportunidadesAbiertas = computed(
-    () => this.oportunidadesAbiertas().length,
-  );
+  protected readonly numOportunidadesAbiertas = computed(() => this.oportunidadesAbiertas().length);
 
   /** Valor en pipeline: suma del valor estimado de las oportunidades abiertas. */
   protected readonly valorPipeline = computed(() =>
@@ -204,9 +203,7 @@ export class EstrategiaVistas {
       this.oportunidadesComercial.set(cargando());
       this.oportunidadesService.listar({}, 0, TAMANO_INDICADORES).subscribe({
         next: (pagina) =>
-          this.oportunidadesComercial.set(
-            conDatos(pagina.content, pagina.content.length === 0),
-          ),
+          this.oportunidadesComercial.set(conDatos(pagina.content, pagina.content.length === 0)),
         error: (e: HttpErrorResponse) =>
           this.oportunidadesComercial.set(conError(mensajeDeError(e))),
       });
@@ -215,9 +212,7 @@ export class EstrategiaVistas {
       this.cotizacionesComercial.set(cargando());
       this.cotizacionesService.listar({}, 0, TAMANO_INDICADORES).subscribe({
         next: (pagina) =>
-          this.cotizacionesComercial.set(
-            conDatos(pagina.content, pagina.content.length === 0),
-          ),
+          this.cotizacionesComercial.set(conDatos(pagina.content, pagina.content.length === 0)),
         error: (e: HttpErrorResponse) =>
           this.cotizacionesComercial.set(conError(mensajeDeError(e))),
       });

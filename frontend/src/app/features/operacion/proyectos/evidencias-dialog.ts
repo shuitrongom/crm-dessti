@@ -9,10 +9,15 @@
 // permiso-detalle (ConfirmDialogService), estado con ChipEstado.
 // =============================================================================
 
-import { Component, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnDestroy, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import {
+  MAT_DIALOG_DATA,
+  MatDialog,
+  MatDialogModule,
+  MatDialogRef,
+} from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -57,6 +62,7 @@ export interface EvidenciasDialogData {
     ChipEstado,
   ],
   templateUrl: './evidencias-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './evidencias-dialog.scss',
 })
 export class EvidenciasDialog implements OnDestroy {

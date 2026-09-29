@@ -8,7 +8,7 @@
 // solo por color: siempre hay icono + valor + etiqueta (Req 57).
 // =============================================================================
 
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, ChangeDetectionStrategy } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 
 /** Tono semantico de la tarjeta KPI. */
@@ -18,6 +18,7 @@ export type TonoStatCard = 'neutro' | 'exito' | 'advertencia' | 'error' | 'info'
   selector: 'app-stat-card',
   imports: [MatIconModule],
   templateUrl: './stat-card.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './stat-card.scss',
 })
 export class StatCard {
@@ -36,7 +37,5 @@ export class StatCard {
   protected readonly claseTono = computed(() => `stat-card--${this.tono()}`);
 
   /** Etiqueta accesible que combina etiqueta + valor para lectores de pantalla. */
-  protected readonly etiquetaAccesible = computed(
-    () => `${this.etiqueta()}: ${this.valor()}`,
-  );
+  protected readonly etiquetaAccesible = computed(() => `${this.etiqueta()}: ${this.valor()}`);
 }

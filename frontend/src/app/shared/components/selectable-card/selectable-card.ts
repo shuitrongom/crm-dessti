@@ -12,7 +12,15 @@
 // prefers-reduced-motion (neutralizada globalmente en styles.scss).
 // =============================================================================
 
-import { Component, EventEmitter, HostBinding, HostListener, Input, Output } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  HostBinding,
+  HostListener,
+  Input,
+  Output,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 
 @Component({
   selector: 'app-selectable-card',
@@ -27,6 +35,7 @@ import { Component, EventEmitter, HostBinding, HostListener, Input, Output } fro
       <ng-content />
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './selectable-card.scss',
 })
 export class SelectableCard {

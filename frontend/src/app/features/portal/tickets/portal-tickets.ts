@@ -5,7 +5,7 @@
 // fechas de apertura/resolucion. Solo lectura.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 
@@ -32,14 +32,8 @@ import { TicketServicio } from '../models/portal.models';
 
 @Component({
   selector: 'app-portal-tickets',
-  imports: [
-    DatePipe,
-    PageHeader,
-    StateContainer,
-    DataTable,
-    CeldaTablaDirective,
-    EstadoChip,
-  ],
+  imports: [DatePipe, PageHeader, StateContainer, DataTable, CeldaTablaDirective, EstadoChip],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './portal-tickets.html',
 })
 export class PortalTickets {

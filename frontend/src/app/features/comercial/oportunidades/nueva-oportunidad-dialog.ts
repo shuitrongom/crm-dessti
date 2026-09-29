@@ -9,7 +9,7 @@
 // la Oportunidad creada, para que el pipeline recargue.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -40,6 +40,7 @@ import { Cliente, Oportunidad } from '../models/comercial.models';
     EntitySelect,
   ],
   templateUrl: './nueva-oportunidad-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './nueva-oportunidad-dialog.scss',
 })
 export class NuevaOportunidadDialog {

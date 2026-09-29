@@ -8,7 +8,7 @@
 // YYYY-MM-DD). Al guardar hace POST via OtisService y cierra devolviendo la OTI.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -38,6 +38,7 @@ import { OrdenTrabajoInstalacion } from '../models/operacion.models';
   ],
   providers: [provideFechaIsoDatepicker()],
   templateUrl: './oti-form-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './oti-form-dialog.scss',
 })
 export class OtiFormDialog {

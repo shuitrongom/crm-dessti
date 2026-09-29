@@ -6,7 +6,7 @@
 // atomico (deny-by-default). El backend valida los datos.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -56,6 +56,7 @@ import { ContratoMantenimiento } from '../models/mantenimiento.models';
     EstadoChip,
   ],
   templateUrl: './contratos.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../mantenimiento.scss',
 })
 export class MantenimientoContratos {
@@ -125,7 +126,12 @@ export class MantenimientoContratos {
       next: () => {
         this.guardando.set(false);
         this.toast.exito('Contrato de mantenimiento creado.');
-        this.formAlta.reset({ clienteId: '', tipo: 'preventivo', slaRespuestaHoras: 4, slaResolucionHoras: 24 });
+        this.formAlta.reset({
+          clienteId: '',
+          tipo: 'preventivo',
+          slaRespuestaHoras: 4,
+          slaResolucionHoras: 24,
+        });
         this.mostrarAlta.set(false);
         this.page.set(0);
         this.cargar();

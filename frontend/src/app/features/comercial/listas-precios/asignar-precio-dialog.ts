@@ -8,7 +8,7 @@
 // el markup roto del campo de precio del panel inline anterior.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -46,6 +46,7 @@ export interface AsignarPrecioDialogData {
     EntitySelect,
   ],
   templateUrl: './asignar-precio-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './asignar-precio-dialog.scss',
 })
 export class AsignarPrecioDialog {
@@ -70,7 +71,10 @@ export class AsignarPrecioDialog {
 
   protected readonly form = this.fb.nonNullable.group({
     productoId: ['', [Validators.required]],
-    precio: [null as number | null, [Validators.required, Validators.min(0.01), Validators.max(999999999.99)]],
+    precio: [
+      null as number | null,
+      [Validators.required, Validators.min(0.01), Validators.max(999999999.99)],
+    ],
   });
 
   /** Busca Productos por nombre para el selector (nunca UUID a mano). */
@@ -81,7 +85,8 @@ export class AsignarPrecioDialog {
   protected readonly etiquetaProducto = (producto: Producto): string => producto.nombre;
 
   /** Detalle secundario (unidad) de un Producto en el selector. */
-  protected readonly detalleProducto = (producto: Producto): string | null => producto.unidad || null;
+  protected readonly detalleProducto = (producto: Producto): string | null =>
+    producto.unidad || null;
 
   constructor() {
     this.cargarPrecios();

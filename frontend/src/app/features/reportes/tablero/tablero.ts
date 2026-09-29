@@ -7,7 +7,7 @@
 // exportacion se ofrece si el Usuario tiene el permiso.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -19,7 +19,10 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../shared/components/state-container/state-container';
 import { IndicatorCard } from '../../../shared/components/indicator-card/indicator-card';
-import { MetricChart, type MetricPoint } from '../../../shared/components/metric-chart/metric-chart';
+import {
+  MetricChart,
+  type MetricPoint,
+} from '../../../shared/components/metric-chart/metric-chart';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
@@ -49,6 +52,7 @@ import { humanizarArea } from '../areas-etiquetas';
     MetricChart,
   ],
   templateUrl: './tablero.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './tablero.scss',
 })
 export class Tablero {

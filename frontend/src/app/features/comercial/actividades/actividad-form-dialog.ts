@@ -10,7 +10,7 @@
 // ActividadesService y cierra devolviendo la Actividad resultante.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -57,6 +57,7 @@ export interface ActividadFormDialogData {
     MatIconModule,
   ],
   templateUrl: './actividad-form-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './actividad-form-dialog.scss',
 })
 export class ActividadFormDialog {

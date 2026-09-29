@@ -7,7 +7,7 @@
 // por nivel y dona de composicion. Acciones gobernadas por permiso atomico.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -74,6 +74,7 @@ const TRANSICIONES_RIESGO: Record<string, string[]> = {
     DashboardSection,
   ],
   templateUrl: './riesgos.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../calidad.scss',
 })
 export class CalidadRiesgos {
@@ -195,7 +196,9 @@ export class CalidadRiesgos {
     if (riesgos.length === 0) {
       return 0;
     }
-    const tratados = riesgos.filter((r) => r.estado === 'mitigado' || r.estado === 'aceptado').length;
+    const tratados = riesgos.filter(
+      (r) => r.estado === 'mitigado' || r.estado === 'aceptado',
+    ).length;
     return Math.max(0, Math.min(100, Math.round((tratados / riesgos.length) * 100)));
   });
 
@@ -214,7 +217,12 @@ export class CalidadRiesgos {
   cargar(): void {
     this.estado.set(cargando());
     this.service
-      .listarRiesgos(this.filtroEstado() || null, this.filtroNivel() || null, this.page(), this.size())
+      .listarRiesgos(
+        this.filtroEstado() || null,
+        this.filtroNivel() || null,
+        this.page(),
+        this.size(),
+      )
       .subscribe({
         next: (pagina) => {
           this.total.set(pagina.totalElements);
@@ -267,7 +275,12 @@ export class CalidadRiesgos {
         next: () => {
           this.guardando.set(false);
           this.toast.exito('Riesgo identificado.');
-          this.formAlta.reset({ descripcion: '', probabilidad: 'media', impacto: 'medio', acciones: '' });
+          this.formAlta.reset({
+            descripcion: '',
+            probabilidad: 'media',
+            impacto: 'medio',
+            acciones: '',
+          });
           this.mostrarAlta.set(false);
           this.page.set(0);
           this.cargar();

@@ -15,7 +15,15 @@
 // solo design tokens y WCAG AA.
 // =============================================================================
 
-import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  computed,
+  inject,
+  input,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
 import { RouterLink } from '@angular/router';
@@ -63,6 +71,7 @@ interface AccionEstado {
     ChipEstado,
   ],
   templateUrl: './oti-detalle.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './oti-detalle.scss',
 })
 export class OperacionOtiDetalle implements OnInit {

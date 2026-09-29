@@ -11,7 +11,7 @@
 // AuthService), en lugar del volcado crudo del catalogo de permisos.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
@@ -78,27 +78,22 @@ const ICONO_POR_ROL: { patron: RegExp; icono: string }[] = [
 /** Iconos por modulo (grupo). */
 const ICONO_POR_MODULO: Record<string, string> = {
   'Activos fijos': 'savings',
-  'Comercial': 'storefront',
-  'Compras': 'shopping_cart',
-  'Contabilidad': 'account_balance',
-  'Operacion': 'engineering',
-  'Operación': 'engineering',
+  Comercial: 'storefront',
+  Compras: 'shopping_cart',
+  Contabilidad: 'account_balance',
+  Operacion: 'engineering',
+  Operación: 'engineering',
   'Redes sociales': 'campaign',
   'Rh nomina': 'groups',
-  'Tesoreria': 'account_balance_wallet',
-  'Tesorería': 'account_balance_wallet',
+  Tesoreria: 'account_balance_wallet',
+  Tesorería: 'account_balance_wallet',
 };
 
 @Component({
   selector: 'app-admin-roles',
-  imports: [
-    MatChipsModule,
-    MatIconModule,
-    MatExpansionModule,
-    PageHeader,
-    StateContainer,
-  ],
+  imports: [MatChipsModule, MatIconModule, MatExpansionModule, PageHeader, StateContainer],
   templateUrl: './roles.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './roles.scss',
 })
 export class AdminRoles {

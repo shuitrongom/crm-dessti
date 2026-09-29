@@ -11,7 +11,7 @@
 // Solo maquetacion: no conoce datos ni logica de negocio.
 // =============================================================================
 
-import { Component, input } from '@angular/core';
+import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 
 /** Disposicion del tablero. */
 export type LayoutDashboard = 'split' | 'apilado';
@@ -28,6 +28,7 @@ export type LayoutDashboard = 'split' | 'apilado';
       </div>
     </section>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './dashboard-section.scss',
 })
 export class DashboardSection {

@@ -7,7 +7,7 @@
 // El permiso reporte_financiero:leer gobierna el acceso (deny-by-default).
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CurrencyPipe, DatePipe } from '@angular/common';
@@ -55,6 +55,7 @@ import { IngresosPeriodo, IvaPeriodo, PolizaContable } from '../models/contabili
     CeldaTablaDirective,
   ],
   templateUrl: './reportes.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../contabilidad.scss',
 })
 export class ContabilidadReportes {
@@ -120,13 +121,15 @@ export class ContabilidadReportes {
   cargarLibro(): void {
     this.libro.set(cargando());
     const { desde, hasta } = this.formPeriodo.getRawValue();
-    this.service.libroPolizas(desde || null, hasta || null, null, this.page(), this.size()).subscribe({
-      next: (pagina) => {
-        this.total.set(pagina.totalElements);
-        this.libro.set(conDatos(pagina.content, pagina.content.length === 0));
-      },
-      error: (e: HttpErrorResponse) => this.libro.set(conError(mensajeDeError(e))),
-    });
+    this.service
+      .libroPolizas(desde || null, hasta || null, null, this.page(), this.size())
+      .subscribe({
+        next: (pagina) => {
+          this.total.set(pagina.totalElements);
+          this.libro.set(conDatos(pagina.content, pagina.content.length === 0));
+        },
+        error: (e: HttpErrorResponse) => this.libro.set(conError(mensajeDeError(e))),
+      });
   }
 
   cambiarPagina(evento: CambioPagina): void {

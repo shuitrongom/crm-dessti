@@ -9,7 +9,7 @@
 // permiso_instalacion:{...}.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
@@ -20,10 +20,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../shared/components/state-container/state-container';
 import { KpiTile } from '../../../shared/components/kpi-tile/kpi-tile';
-import {
-  ChipEstado,
-  VarianteChipEstado,
-} from '../../../shared/components/chip-estado/chip-estado';
+import { ChipEstado, VarianteChipEstado } from '../../../shared/components/chip-estado/chip-estado';
 import {
   CeldaTablaDirective,
   ColumnaTabla,
@@ -64,6 +61,7 @@ import { PermisoFormDialog } from './permiso-form-dialog';
     ChipEstado,
   ],
   templateUrl: './permisos.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './permisos.scss',
 })
 export class OperacionPermisos {

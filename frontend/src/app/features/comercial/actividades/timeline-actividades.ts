@@ -20,7 +20,16 @@
 // ActividadesService.
 // =============================================================================
 
-import { Component, OnInit, computed, effect, inject, input, signal } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatCardModule } from '@angular/material/card';
@@ -62,6 +71,7 @@ const TAMANO_TIMELINE = 100;
     StateContainer,
   ],
   templateUrl: './timeline-actividades.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './timeline-actividades.scss',
 })
 export class TimelineActividades implements OnInit {
@@ -173,7 +183,9 @@ export class TimelineActividades implements OnInit {
     });
     ref.afterClosed().subscribe((guardada?: Actividad) => {
       if (guardada) {
-        this.notificaciones.exito(actividad ? 'Actividad actualizada.' : 'Actividad registrada en el historial.');
+        this.notificaciones.exito(
+          actividad ? 'Actividad actualizada.' : 'Actividad registrada en el historial.',
+        );
         this.cargar();
       }
     });

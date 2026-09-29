@@ -9,7 +9,7 @@
 // levantamiento_sitio:cambiar_estado; al cerrarse recarga la galeria.
 // =============================================================================
 
-import { Component, OnInit, inject, signal, input } from '@angular/core';
+import { Component, OnInit, inject, signal, input, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
 import { RouterLink } from '@angular/router';
@@ -50,6 +50,7 @@ import {
     ChipEstado,
   ],
   templateUrl: './levantamiento-detalle.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './levantamiento-detalle.scss',
 })
 export class OperacionLevantamientoDetalle implements OnInit {

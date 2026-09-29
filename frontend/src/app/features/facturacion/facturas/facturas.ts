@@ -9,7 +9,7 @@
 // de estados (borrador -> timbrada -> cancelada).
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CurrencyPipe, DatePipe } from '@angular/common';
@@ -73,6 +73,7 @@ import { Factura, MOTIVOS_CANCELACION_SAT } from '../models/facturacion.models';
     DashboardSection,
   ],
   templateUrl: './facturas.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../facturacion.scss',
 })
 export class FacturacionFacturas {
@@ -135,7 +136,18 @@ export class FacturacionFacturas {
    * Indice 0 = enero. Se usan en la grafica de columnas del dashboard.
    */
   private static readonly MESES = [
-    'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic',
+    'Ene',
+    'Feb',
+    'Mar',
+    'Abr',
+    'May',
+    'Jun',
+    'Jul',
+    'Ago',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dic',
   ];
 
   /**
@@ -206,7 +218,11 @@ export class FacturacionFacturas {
       .slice(-6)
       .map(([clave, centavos]) => {
         const mes = Number(clave.slice(5, 7)) - 1;
-        return { etiqueta: FacturacionFacturas.MESES[mes] ?? clave, valor: aPesos(centavos), unidad: 'MXN' };
+        return {
+          etiqueta: FacturacionFacturas.MESES[mes] ?? clave,
+          valor: aPesos(centavos),
+          unidad: 'MXN',
+        };
       });
   });
 
@@ -227,13 +243,15 @@ export class FacturacionFacturas {
 
   cargar(): void {
     this.estado.set(cargando());
-    this.service.listarFacturas(null, this.filtroEstado() || null, this.page(), this.size()).subscribe({
-      next: (pagina) => {
-        this.total.set(pagina.totalElements);
-        this.estado.set(conDatos(pagina.content, pagina.content.length === 0));
-      },
-      error: (e: HttpErrorResponse) => this.estado.set(conError(mensajeDeError(e))),
-    });
+    this.service
+      .listarFacturas(null, this.filtroEstado() || null, this.page(), this.size())
+      .subscribe({
+        next: (pagina) => {
+          this.total.set(pagina.totalElements);
+          this.estado.set(conDatos(pagina.content, pagina.content.length === 0));
+        },
+        error: (e: HttpErrorResponse) => this.estado.set(conError(mensajeDeError(e))),
+      });
   }
 
   cambiarPagina(evento: CambioPagina): void {

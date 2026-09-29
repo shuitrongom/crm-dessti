@@ -9,7 +9,7 @@
 // /social/cuentas-canal (no crea endpoints nuevos).
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -66,6 +66,7 @@ const AYUDA_IDENTIFICADOR: Record<CanalSocial, string> = {
     CeldaTablaDirective,
   ],
   templateUrl: './conexiones.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './conexiones.scss',
 })
 export class Conexiones {
@@ -112,9 +113,7 @@ export class Conexiones {
   private readonly canalSeleccionado = signal<CanalSocial | ''>('');
 
   constructor() {
-    this.formAlta.controls.canal.valueChanges.subscribe((v) =>
-      this.canalSeleccionado.set(v ?? ''),
-    );
+    this.formAlta.controls.canal.valueChanges.subscribe((v) => this.canalSeleccionado.set(v ?? ''));
     this.cargar();
   }
 
@@ -171,9 +170,7 @@ export class Conexiones {
         error: (e: HttpErrorResponse) => {
           this.guardando.set(false);
           if (e.status === 409) {
-            this.mensajeConflicto.set(
-              'Ya existe una cuenta de ese canal con ese identificador.',
-            );
+            this.mensajeConflicto.set('Ya existe una cuenta de ese canal con ese identificador.');
             return;
           }
           if (e.status === 422) {

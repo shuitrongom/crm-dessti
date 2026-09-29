@@ -7,7 +7,7 @@
 // es el unico portador de significado: siempre acompana texto (Req 57).
 // =============================================================================
 
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, ChangeDetectionStrategy } from '@angular/core';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 
 /** Estado derivado de un objetivo (coincide con el DTO del backend). */
@@ -17,6 +17,7 @@ export type EstadoDerivado = 'en_riesgo' | 'en_curso' | 'cumplido' | string;
   selector: 'app-progress-badge',
   imports: [MatProgressBarModule],
   templateUrl: './progress-badge.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './progress-badge.scss',
 })
 export class ProgressBadge {

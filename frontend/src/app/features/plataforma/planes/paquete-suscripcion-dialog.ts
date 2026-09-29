@@ -21,7 +21,7 @@
 //     del Paquete (misma regla que el backend, ~30 dias/mes).
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -75,22 +75,22 @@ const DURACION_PRUEBA_MAXIMA_MESES = 6;
  * por su etiqueta. Nucleo y especificos comparten esta escala de orden.
  */
 const ORDEN_BLOQUES: readonly string[] = [
-  'estrategia',           // 1. Planeacion estrategica y objetivos
-  'comercial',            // 2. Comercial y CRM (incluye catalogo de productos y listas de precios)
-  'redes-sociales',       // 4. Redes sociales y mensajeria omnicanal
-  'operacion',            // 5. Operacion y produccion (incluye proyectos multi-sitio)
-  'inventario-avanzado',  // 6. Inventario avanzado
-  'mantenimiento',        // 7. Mantenimiento y post-venta
-  'compras',              // 9. Compras y proveedores
-  'facturacion',          // 10. Facturacion electronica (CFDI 4.0)
-  'contabilidad',         // 11. Contabilidad y finanzas
-  'portal-cliente',       // 12. Portal de autoservicio del cliente
-  'reportes-bi',          // 14. Reportes, tablero e inteligencia de negocio
-  'calidad',              // 16. Cumplimiento y calidad (ISO 9001:2026)
-  'presupuestos',         // 17. Presupuestos
-  'tesoreria',            // 18. Tesoreria
-  'activos-fijos',        // 19. Activos fijos
-  'rh-nomina',            // 20. RH y nomina
+  'estrategia', // 1. Planeacion estrategica y objetivos
+  'comercial', // 2. Comercial y CRM (incluye catalogo de productos y listas de precios)
+  'redes-sociales', // 4. Redes sociales y mensajeria omnicanal
+  'operacion', // 5. Operacion y produccion (incluye proyectos multi-sitio)
+  'inventario-avanzado', // 6. Inventario avanzado
+  'mantenimiento', // 7. Mantenimiento y post-venta
+  'compras', // 9. Compras y proveedores
+  'facturacion', // 10. Facturacion electronica (CFDI 4.0)
+  'contabilidad', // 11. Contabilidad y finanzas
+  'portal-cliente', // 12. Portal de autoservicio del cliente
+  'reportes-bi', // 14. Reportes, tablero e inteligencia de negocio
+  'calidad', // 16. Cumplimiento y calidad (ISO 9001:2026)
+  'presupuestos', // 17. Presupuestos
+  'tesoreria', // 18. Tesoreria
+  'activos-fijos', // 19. Activos fijos
+  'rh-nomina', // 20. RH y nomina
 ];
 
 /**
@@ -127,6 +127,7 @@ function ordenarPorBloques(modulos: readonly ModuloCatalogo[]): ModuloCatalogo[]
     SelectableCard,
   ],
   templateUrl: './paquete-suscripcion-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './paquete-suscripcion-dialog.scss',
 })
 export class PaqueteSuscripcionDialog {
@@ -193,15 +194,13 @@ export class PaqueteSuscripcionDialog {
     admitePrueba: [this.datos.paquete?.admitePrueba ?? false],
     // Meses de prueba: obligatoria (>= 1) SOLO cuando admite prueba; se habilita
     // imperativamente en sincronizarCampoPrueba (llamado desde cambiarAdmitePrueba).
-    duracionPruebaMeses: [this.datos.paquete?.duracionPruebaMeses ?? null as number | null],
+    duracionPruebaMeses: [this.datos.paquete?.duracionPruebaMeses ?? (null as number | null)],
     giroId: [this.datos.paquete?.giroId ?? '', [Validators.required]],
     monedaCodigo: [this.datos.paquete?.monedaCodigo ?? '', [Validators.required]],
   });
 
   /** Codigo de la moneda seleccionada (para formatear importes); por defecto MXN. */
-  protected readonly moneda = computed(
-    () => this.monedaSeleccionada() || MONEDA_POR_DEFECTO,
-  );
+  protected readonly moneda = computed(() => this.monedaSeleccionada() || MONEDA_POR_DEFECTO);
 
   /** Reacciona al cambio de moneda del select: sincroniza el signal reactivo. */
   protected cambiarMoneda(codigo: string): void {
@@ -269,7 +268,11 @@ export class PaqueteSuscripcionDialog {
     if (giroClave !== null) {
       const especificos = ordenarPorBloques(catalogo.filter((m) => m.giro === giroClave));
       if (especificos.length > 0) {
-        grupos.push({ giro: giroClave, titulo: this.etiquetaGiro(giroClave), modulos: especificos });
+        grupos.push({
+          giro: giroClave,
+          titulo: this.etiquetaGiro(giroClave),
+          modulos: especificos,
+        });
       }
     }
     return grupos;
@@ -598,9 +601,7 @@ export class PaqueteSuscripcionDialog {
     const preciosModulos: Record<string, number> = {};
     const precios = this.precios();
     for (const clave of this.seleccion()) {
-      preciosModulos[clave] = admite
-        ? 0
-        : Math.round(this.aNumero(precios.get(clave)) * 100) / 100;
+      preciosModulos[clave] = admite ? 0 : Math.round(this.aNumero(precios.get(clave)) * 100) / 100;
     }
 
     const request: GuardarPaqueteSuscripcionRequest = {

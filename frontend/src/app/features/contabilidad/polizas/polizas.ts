@@ -8,7 +8,7 @@
 // balance definitivo y los totales los calcula el servidor.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CurrencyPipe, DatePipe } from '@angular/common';
@@ -63,6 +63,7 @@ import { sumaCentavos } from '../../finanzas-comun/dinero';
     EstadoChip,
   ],
   templateUrl: './polizas.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../contabilidad.scss',
 })
 export class ContabilidadPolizas {
@@ -207,7 +208,10 @@ export class ContabilidadPolizas {
           this.guardando.set(false);
           this.toast.exito('Poliza registrada.');
           this.formAlta.reset({ fecha: '', tipo: 'diario', concepto: '' });
-          this.formAlta.setControl('renglones', this.fb.array([this.crearRenglon(), this.crearRenglon()]));
+          this.formAlta.setControl(
+            'renglones',
+            this.fb.array([this.crearRenglon(), this.crearRenglon()]),
+          );
           this.recalcular();
           this.mostrarAlta.set(false);
           this.page.set(0);

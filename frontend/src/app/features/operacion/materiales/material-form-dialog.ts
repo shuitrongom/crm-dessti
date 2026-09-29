@@ -8,7 +8,7 @@
 // MaterialesService y cierra devolviendo el Material resultante.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -42,6 +42,7 @@ export interface MaterialFormDialogData {
     MatIconModule,
   ],
   templateUrl: './material-form-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './material-form-dialog.scss',
 })
 export class MaterialFormDialog {

@@ -29,6 +29,7 @@ import {
   createComponent,
   inject,
   signal,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { Observable } from 'rxjs';
@@ -74,10 +75,7 @@ const ICONO_POR_TIPO: Record<TipoOperacion, string> = {
   selector: 'app-operacion-overlay',
   standalone: true,
   template: `
-    <div
-      class="ds-opov__backdrop"
-      [class.ds-opov__backdrop--visible]="visible()"
-    >
+    <div class="ds-opov__backdrop" [class.ds-opov__backdrop--visible]="visible()">
       <div
         class="ds-opov__panel"
         role="alertdialog"
@@ -97,18 +95,9 @@ const ICONO_POR_TIPO: Record<TipoOperacion, string> = {
             <mat-icon class="ds-opov__glifo" aria-hidden="true">{{ icono() }}</mat-icon>
           } @else {
             <span class="ds-opov__destello" aria-hidden="true"></span>
-            <svg
-              class="ds-opov__check"
-              viewBox="0 0 52 52"
-              aria-hidden="true"
-              focusable="false"
-            >
+            <svg class="ds-opov__check" viewBox="0 0 52 52" aria-hidden="true" focusable="false">
               <circle class="ds-opov__check-circulo" cx="26" cy="26" r="24" fill="none" />
-              <path
-                class="ds-opov__check-trazo"
-                fill="none"
-                d="M14 27 l8 8 l16 -18"
-              />
+              <path class="ds-opov__check-trazo" fill="none" d="M14 27 l8 8 l16 -18" />
             </svg>
           }
         </div>
@@ -117,6 +106,7 @@ const ICONO_POR_TIPO: Record<TipoOperacion, string> = {
     </div>
   `,
   styleUrl: './operacion-overlay.scss',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [MatIconModule],
 })
 export class OperacionOverlay {

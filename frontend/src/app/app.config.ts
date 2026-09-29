@@ -7,7 +7,7 @@
 import { registerLocaleData } from '@angular/common';
 import localeEsMx from '@angular/common/locales/es-MX';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { MAT_ICON_DEFAULT_OPTIONS } from '@angular/material/icon';
 
@@ -30,7 +30,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withComponentInputBinding()),
     // Cliente HTTP hacia `/api/v1` con el interceptor de autenticacion (Req 1, 12, 68):
     // adjunta el Token_Acceso y renueva ante 401 (refresh-and-retry).
-    provideHttpClient(withInterceptors([apiInterceptor])),
+    provideHttpClient(withXhr(), withInterceptors([apiInterceptor])),
     // Animaciones de Angular Material cargadas de forma diferida; respetan la
     // preferencia de reduccion de movimiento definida en los estilos (Req 55).
     provideAnimationsAsync(),

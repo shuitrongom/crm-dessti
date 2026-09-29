@@ -7,7 +7,7 @@
 // cuenta_contable:listar. Reutiliza el catálogo de cuentas ya existente.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -32,7 +32,12 @@ import { NotificacionesService } from '../../../shared/services/notificaciones.s
 import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError, erroresDeCampo } from '../../../core/services/error-mensajes';
-import { EstadoSolicitud, cargando, conDatos, conError } from '../../../shared/models/estado-solicitud';
+import {
+  EstadoSolicitud,
+  cargando,
+  conDatos,
+  conError,
+} from '../../../shared/models/estado-solicitud';
 
 import { ContabilidadService } from '../services/contabilidad.service';
 import { ContabilidadElectronicaService } from '../services/contabilidad-electronica.service';
@@ -56,6 +61,7 @@ import { CodigoAgrupadorSat } from '../models/contabilidad-electronica.models';
     CeldaTablaDirective,
   ],
   templateUrl: './catalogo-cuentas.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../contabilidad.scss',
 })
 export class ContabilidadCatalogoCuentas {
@@ -116,7 +122,9 @@ export class ContabilidadCatalogoCuentas {
     this.controlAgrupador.valueChanges
       .pipe(
         debounceTime(250),
-        switchMap((q) => (q && q.length >= 1 ? this.ceService.buscarCodigosAgrupadores(q) : of([]))),
+        switchMap((q) =>
+          q && q.length >= 1 ? this.ceService.buscarCodigosAgrupadores(q) : of([]),
+        ),
       )
       .subscribe((lista) => this.opciones.set(lista));
   }
@@ -214,7 +222,9 @@ export class ContabilidadCatalogoCuentas {
           }
           if (e.status === 422) {
             const campos = erroresDeCampo(e);
-            this.toast.error(campos.length ? campos.map((c) => c.mensaje).join(' ') : mensajeDeError(e));
+            this.toast.error(
+              campos.length ? campos.map((c) => c.mensaje).join(' ') : mensajeDeError(e),
+            );
             return;
           }
           this.toast.error(mensajeDeError(e));

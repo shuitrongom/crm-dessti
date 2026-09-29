@@ -12,7 +12,7 @@
 // Al crear, cierra devolviendo la cuenta creada (la vista refresca la tabla).
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -38,6 +38,7 @@ import { OperacionOverlayService } from '../../../../shared/components/operacion
     SelectableCard,
   ],
   templateUrl: './crear-usuario-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './usuario-dialog.scss',
 })
 export class CrearUsuarioDialog {

@@ -8,7 +8,7 @@
 // transiciones y registra el cumplimiento del SLA al resolver.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DatePipe } from '@angular/common';
@@ -62,6 +62,7 @@ import { AccionTicket, avanceDeTicket } from '../ticket-estados';
     EstadoChip,
   ],
   templateUrl: './tickets.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../mantenimiento.scss',
 })
 export class MantenimientoTickets {
@@ -76,7 +77,10 @@ export class MantenimientoTickets {
   protected readonly avanceDe = avanceDeTicket;
 
   protected readonly puedeCrear = this.auth.tienePermiso('ticket_servicio', 'crear');
-  protected readonly puedeCambiarEstado = this.auth.tienePermiso('ticket_servicio', 'cambiar_estado');
+  protected readonly puedeCambiarEstado = this.auth.tienePermiso(
+    'ticket_servicio',
+    'cambiar_estado',
+  );
 
   protected readonly columnas: ColumnaTabla[] = [
     { clave: 'id', encabezado: 'Folio' },
@@ -170,7 +174,9 @@ export class MantenimientoTickets {
     if (t.slaResolucionCumplido === null && t.slaRespuestaCumplido === null) {
       return 'neutro';
     }
-    return t.slaResolucionCumplido !== false && t.slaRespuestaCumplido !== false ? 'exito' : 'error';
+    return t.slaResolucionCumplido !== false && t.slaRespuestaCumplido !== false
+      ? 'exito'
+      : 'error';
   }
 
   generar(): void {
@@ -218,14 +224,16 @@ export class MantenimientoTickets {
       return;
     }
     const v = this.formAsignar.getRawValue();
-    this.service.asignarTicket(ticket.id, { asignadoTipo: v.asignadoTipo, asignadoId: v.asignadoId }).subscribe({
-      next: () => {
-        this.toast.exito('Ticket asignado.');
-        this.asignando.set(null);
-        this.cargar();
-      },
-      error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
-    });
+    this.service
+      .asignarTicket(ticket.id, { asignadoTipo: v.asignadoTipo, asignadoId: v.asignadoId })
+      .subscribe({
+        next: () => {
+          this.toast.exito('Ticket asignado.');
+          this.asignando.set(null);
+          this.cargar();
+        },
+        error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
+      });
   }
 
   async avanzar(ticket: TicketServicio, accion: AccionTicket): Promise<void> {

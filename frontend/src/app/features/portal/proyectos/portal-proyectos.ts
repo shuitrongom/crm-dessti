@@ -7,7 +7,7 @@
 // derivado que se muestra con ProgressBadge (barra + insignia accesible).
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { MatCardModule } from '@angular/material/card';
@@ -31,8 +31,16 @@ import { Proyecto, SitioAvance } from '../models/portal.models';
 
 @Component({
   selector: 'app-portal-proyectos',
-  imports: [MatCardModule, MatButtonModule, MatIconModule, PageHeader, StateContainer, ProgressBadge],
+  imports: [
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule,
+    PageHeader,
+    StateContainer,
+    ProgressBadge,
+  ],
   templateUrl: './portal-proyectos.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './portal-proyectos.scss',
 })
 export class PortalProyectos {

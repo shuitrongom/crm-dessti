@@ -15,7 +15,15 @@
 // es-MX, solo design tokens y WCAG AA.
 // =============================================================================
 
-import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  computed,
+  inject,
+  input,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
 import { RouterLink } from '@angular/router';
@@ -62,6 +70,7 @@ interface AccionEstado {
     ChipEstado,
   ],
   templateUrl: './orden-fabricacion-detalle.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './orden-fabricacion-detalle.scss',
 })
 export class OperacionOrdenFabricacionDetalle implements OnInit {

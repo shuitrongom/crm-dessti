@@ -13,7 +13,7 @@
 // atomico correspondiente (deny-by-default).
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
@@ -64,6 +64,7 @@ import { EditarUsuarioDialog, EditarUsuarioDialogData } from './editar-usuario-d
     CeldaTablaDirective,
   ],
   templateUrl: './usuarios.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './usuarios.scss',
 })
 export class AdminUsuarios {
@@ -195,7 +196,8 @@ export class AdminUsuarios {
 
   /** Desactiva una cuenta con confirmacion (accion sensible, Req 4.2, 54). */
   async desactivar(usuario: Usuario): Promise<void> {
-    const etiqueta = this.nombreDe(usuario) !== '—' ? this.nombreDe(usuario) : usuario.identificadorAcceso;
+    const etiqueta =
+      this.nombreDe(usuario) !== '—' ? this.nombreDe(usuario) : usuario.identificadorAcceso;
     const ok = await this.confirm.confirmar({
       titulo: 'Desactivar usuario',
       mensaje: `La cuenta "${etiqueta}" no podra iniciar sesion. Deseas continuar?`,

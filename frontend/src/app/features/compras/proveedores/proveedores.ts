@@ -8,7 +8,7 @@
 // backend reimpone la autorización, la unicidad del RFC (409) y el formato.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DatePipe } from '@angular/common';
@@ -61,6 +61,7 @@ import { Proveedor } from '../models/compras.models';
     EstadoChip,
   ],
   templateUrl: './proveedores.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../compras.scss',
 })
 export class ComprasProveedores {
@@ -160,7 +161,10 @@ export class ComprasProveedores {
   /** Normaliza el RFC mientras se escribe: mayúsculas, solo [A-ZÑ&0-9], máx 13. */
   normalizarRfc(evento: Event): void {
     const input = evento.target as HTMLInputElement;
-    const limpio = input.value.toUpperCase().replace(/[^A-ZÑ&0-9]/g, '').slice(0, 13);
+    const limpio = input.value
+      .toUpperCase()
+      .replace(/[^A-ZÑ&0-9]/g, '')
+      .slice(0, 13);
     if (limpio !== input.value) {
       input.value = limpio;
     }
@@ -230,7 +234,9 @@ export class ComprasProveedores {
           }
           if (e.status === 422) {
             const campos = erroresDeCampo(e);
-            this.toast.error(campos.length ? campos.map((c) => c.mensaje).join(' ') : mensajeDeError(e));
+            this.toast.error(
+              campos.length ? campos.map((c) => c.mensaje).join(' ') : mensajeDeError(e),
+            );
             return;
           }
           this.toast.error(mensajeDeError(e));

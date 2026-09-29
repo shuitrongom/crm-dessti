@@ -8,7 +8,7 @@
 // gobernadas por permiso atomico.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -77,6 +77,7 @@ const AVANCE_ACCION: Record<string, string | null> = {
     DashboardSection,
   ],
   templateUrl: './acciones-correctivas.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../calidad.scss',
 })
 export class CalidadAccionesCorrectivas {
@@ -91,7 +92,10 @@ export class CalidadAccionesCorrectivas {
   protected readonly humanizar = humanizarEstado;
 
   protected readonly puedeCrear = this.auth.tienePermiso('accion_correctiva', 'crear');
-  protected readonly puedeCambiarEstado = this.auth.tienePermiso('accion_correctiva', 'cambiar_estado');
+  protected readonly puedeCambiarEstado = this.auth.tienePermiso(
+    'accion_correctiva',
+    'cambiar_estado',
+  );
 
   protected readonly columnas: ColumnaTabla[] = [
     { clave: 'causa', encabezado: 'Causa raíz' },

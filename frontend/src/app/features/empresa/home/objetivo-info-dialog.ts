@@ -7,7 +7,7 @@
 // que abrir la vista completa de estrategia. Solo-lectura.
 // =============================================================================
 
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -28,6 +28,7 @@ export interface DatosObjetivoInfo {
   selector: 'app-objetivo-info-dialog',
   imports: [DecimalPipe, MatDialogModule, MatButtonModule, MatIconModule],
   templateUrl: './objetivo-info-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './objetivo-info-dialog.scss',
 })
 export class ObjetivoInfoDialog {

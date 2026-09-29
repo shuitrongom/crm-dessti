@@ -9,7 +9,7 @@
 // backend reimpone la autorizacion y las transiciones validas.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DatePipe } from '@angular/common';
@@ -79,6 +79,7 @@ const TRANSICIONES: Record<string, { estado: string; etiqueta: string; destructi
     EstadoChip,
   ],
   templateUrl: './requisiciones.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../compras.scss',
 })
 export class ComprasRequisiciones {
@@ -167,13 +168,15 @@ export class ComprasRequisiciones {
 
   cargar(): void {
     this.estado.set(cargando());
-    this.service.listarRequisiciones(this.filtroEstado() || null, this.page(), this.size()).subscribe({
-      next: (pagina) => {
-        this.total.set(pagina.totalElements);
-        this.estado.set(conDatos(pagina.content, pagina.content.length === 0));
-      },
-      error: (e: HttpErrorResponse) => this.estado.set(conError(mensajeDeError(e))),
-    });
+    this.service
+      .listarRequisiciones(this.filtroEstado() || null, this.page(), this.size())
+      .subscribe({
+        next: (pagina) => {
+          this.total.set(pagina.totalElements);
+          this.estado.set(conDatos(pagina.content, pagina.content.length === 0));
+        },
+        error: (e: HttpErrorResponse) => this.estado.set(conError(mensajeDeError(e))),
+      });
   }
 
   cambiarPagina(evento: CambioPagina): void {
@@ -206,19 +209,19 @@ export class ComprasRequisiciones {
         textoExito: 'Requisición creada',
       })
       .subscribe({
-      next: () => {
-        this.guardando.set(false);
-        this.toast.exito('Requisicion creada en borrador.');
-        this.formAlta.setControl('partidas', this.fb.array([this.crearPartida()]));
-        this.mostrarAlta.set(false);
-        this.page.set(0);
-        this.cargar();
-      },
-      error: (e: HttpErrorResponse) => {
-        this.guardando.set(false);
-        this.toast.error(mensajeDeError(e));
-      },
-    });
+        next: () => {
+          this.guardando.set(false);
+          this.toast.exito('Requisicion creada en borrador.');
+          this.formAlta.setControl('partidas', this.fb.array([this.crearPartida()]));
+          this.mostrarAlta.set(false);
+          this.page.set(0);
+          this.cargar();
+        },
+        error: (e: HttpErrorResponse) => {
+          this.guardando.set(false);
+          this.toast.error(mensajeDeError(e));
+        },
+      });
   }
 
   async cambiarEstado(

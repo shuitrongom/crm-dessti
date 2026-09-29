@@ -7,7 +7,7 @@
 // inteligencia_negocio:leer.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -60,6 +60,7 @@ import {
     CeldaTablaDirective,
   ],
   templateUrl: './tableros-personalizados.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './tableros-personalizados.scss',
 })
 export class TablerosPersonalizados {
@@ -189,18 +190,18 @@ export class TablerosPersonalizados {
         textoExito: id ? 'Tablero guardado' : 'Tablero creado',
       })
       .subscribe({
-      next: () => {
-        this.guardando.set(false);
-        this.toast.exito(id ? 'Tablero actualizado.' : 'Tablero creado.');
-        this.mostrarForm.set(false);
-        this.editandoId.set(null);
-        this.cargar();
-      },
-      error: (e: HttpErrorResponse) => {
-        this.guardando.set(false);
-        this.toast.error(mensajeDeError(e));
-      },
-    });
+        next: () => {
+          this.guardando.set(false);
+          this.toast.exito(id ? 'Tablero actualizado.' : 'Tablero creado.');
+          this.mostrarForm.set(false);
+          this.editandoId.set(null);
+          this.cargar();
+        },
+        error: (e: HttpErrorResponse) => {
+          this.guardando.set(false);
+          this.toast.error(mensajeDeError(e));
+        },
+      });
   }
 
   async eliminar(t: TableroPersonalizado): Promise<void> {

@@ -6,7 +6,7 @@
 // scorecard por estado. Acciones gobernadas por permiso atomico.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DatePipe } from '@angular/common';
@@ -74,6 +74,7 @@ const TRANSICIONES_NC: Record<string, string[]> = {
     DashboardSection,
   ],
   templateUrl: './no-conformidades.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../calidad.scss',
 })
 export class CalidadNoConformidades {
@@ -88,7 +89,10 @@ export class CalidadNoConformidades {
   protected readonly origenes = ORIGENES_NO_CONFORMIDAD;
 
   protected readonly puedeCrear = this.auth.tienePermiso('no_conformidad', 'crear');
-  protected readonly puedeCambiarEstado = this.auth.tienePermiso('no_conformidad', 'cambiar_estado');
+  protected readonly puedeCambiarEstado = this.auth.tienePermiso(
+    'no_conformidad',
+    'cambiar_estado',
+  );
 
   protected readonly columnas: ColumnaTabla[] = [
     { clave: 'descripcion', encabezado: 'No conformidad' },
@@ -158,9 +162,10 @@ export class CalidadNoConformidades {
     for (const nc of items) {
       cuenta.set(nc.origen, (cuenta.get(nc.origen) ?? 0) + 1);
     }
-    return ORIGENES_NO_CONFORMIDAD
-      .map((o) => ({ etiqueta: o.etiqueta, valor: cuenta.get(o.valor) ?? 0 }))
-      .filter((p) => p.valor > 0);
+    return ORIGENES_NO_CONFORMIDAD.map((o) => ({
+      etiqueta: o.etiqueta,
+      valor: cuenta.get(o.valor) ?? 0,
+    })).filter((p) => p.valor > 0);
   });
 
   /** Gauge: porcentaje de no conformidades cerradas sobre el total (0-100). */

@@ -9,7 +9,7 @@
 // icono + valor + etiqueta (Req 57). Usa tokens del Sistema de Diseno.
 // =============================================================================
 
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, ChangeDetectionStrategy } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MetricChart, type MetricPoint } from '../metric-chart/metric-chart';
@@ -24,6 +24,7 @@ export type TendenciaKpi = 'subida' | 'bajada' | 'neutra';
   selector: 'app-kpi-tile',
   imports: [DecimalPipe, MatIconModule, MetricChart],
   templateUrl: './kpi-tile.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './kpi-tile.scss',
 })
 export class KpiTile {

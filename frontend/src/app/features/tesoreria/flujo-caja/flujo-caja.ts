@@ -6,7 +6,7 @@
 // grafica de columnas del flujo mensual (entradas vs salidas). Solo lectura.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CurrencyPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
@@ -18,7 +18,10 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../shared/components/state-container/state-container';
-import { MetricChart, type MetricPoint } from '../../../shared/components/metric-chart/metric-chart';
+import {
+  MetricChart,
+  type MetricPoint,
+} from '../../../shared/components/metric-chart/metric-chart';
 import { KpiTile } from '../../../shared/components/kpi-tile/kpi-tile';
 import { DashboardSection } from '../../../shared/components/dashboard-section/dashboard-section';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
@@ -49,6 +52,7 @@ import { FlujoCaja } from '../models/tesoreria.models';
     DashboardSection,
   ],
   templateUrl: './flujo-caja.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../tesoreria.scss',
 })
 export class TesoreriaFlujoCaja {

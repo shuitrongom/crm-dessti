@@ -8,7 +8,7 @@
 // acceso. es-MX, WCAG 2.1 AA.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -38,6 +38,7 @@ import { PeriodoContable } from '../models/cierre-periodo.models';
     PageHeader,
   ],
   templateUrl: './cierre-periodo.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../contabilidad.scss',
 })
 export class ContabilidadCierrePeriodo {
@@ -47,8 +48,19 @@ export class ContabilidadCierrePeriodo {
 
   /** Nombres de los meses (es-MX), indexados por su número 1..12. */
   protected readonly nombresMes = [
-    '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+    '',
+    'Enero',
+    'Febrero',
+    'Marzo',
+    'Abril',
+    'Mayo',
+    'Junio',
+    'Julio',
+    'Agosto',
+    'Septiembre',
+    'Octubre',
+    'Noviembre',
+    'Diciembre',
   ];
 
   private readonly hoy = new Date();

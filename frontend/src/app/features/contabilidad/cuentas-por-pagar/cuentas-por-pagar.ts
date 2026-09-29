@@ -7,7 +7,7 @@
 // servidor; la UI solo los formatea (currency es-MX).
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CurrencyPipe, DatePipe } from '@angular/common';
@@ -61,6 +61,7 @@ import { CuentaPorPagar } from '../models/contabilidad.models';
     EstadoChip,
   ],
   templateUrl: './cuentas-por-pagar.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../contabilidad.scss',
 })
 export class ContabilidadCuentasPorPagar {

@@ -7,7 +7,7 @@
 // Al menos una lista debe traer un elemento. Al guardar cierra devolviendo `true`.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -39,6 +39,7 @@ export interface OtiAvanceDialogData {
     MatIconModule,
   ],
   templateUrl: './oti-avance-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './oti-avance-dialog.scss',
 })
 export class OtiAvanceDialog {

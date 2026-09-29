@@ -6,7 +6,7 @@
 // estado. Acciones gobernadas por permiso atomico (queja_cliente:*).
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DatePipe } from '@angular/common';
@@ -67,6 +67,7 @@ import { ORIGENES_QUEJA, Queja } from '../models/calidad.models';
     DashboardSection,
   ],
   templateUrl: './quejas.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../calidad.scss',
 })
 export class CalidadQuejas {
@@ -149,9 +150,10 @@ export class CalidadQuejas {
     for (const q of items) {
       cuenta.set(q.origen, (cuenta.get(q.origen) ?? 0) + 1);
     }
-    return ORIGENES_QUEJA
-      .map((o) => ({ etiqueta: o.etiqueta, valor: cuenta.get(o.valor) ?? 0 }))
-      .filter((p) => p.valor > 0);
+    return ORIGENES_QUEJA.map((o) => ({
+      etiqueta: o.etiqueta,
+      valor: cuenta.get(o.valor) ?? 0,
+    })).filter((p) => p.valor > 0);
   });
 
   /** Gauge: porcentaje de quejas atendidas sobre el total (0-100). */

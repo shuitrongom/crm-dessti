@@ -24,6 +24,7 @@ import {
   input,
   signal,
   DestroyRef,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import {
@@ -73,6 +74,7 @@ export type BuscadorEntidad<T extends EntidadSeleccionable> = (
   ],
   templateUrl: './entity-select.html',
   styleUrl: './entity-select.scss',
+  changeDetection: ChangeDetectionStrategy.Eager,
   providers: [
     { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => EntitySelect), multi: true },
     { provide: NG_VALIDATORS, useExisting: forwardRef(() => EntitySelect), multi: true },

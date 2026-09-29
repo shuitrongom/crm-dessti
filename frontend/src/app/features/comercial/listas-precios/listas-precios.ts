@@ -7,7 +7,7 @@
 // modal explicativo del indicador. Acciones gobernadas por lista_precios:{...}.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -54,6 +54,7 @@ import { AsignarPrecioDialog, AsignarPrecioDialogData } from './asignar-precio-d
     CeldaTablaDirective,
   ],
   templateUrl: './listas-precios.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './listas-precios.scss',
 })
 export class ComercialListasPrecios {

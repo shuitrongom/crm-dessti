@@ -9,18 +9,12 @@
 // detalle. La accion se gobierna por el permiso cotizacion:crear.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import {
-  FormArray,
-  FormBuilder,
-  FormGroup,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -75,6 +69,7 @@ const MAX_PARTIDAS = 500;
     EntitySelect,
   ],
   templateUrl: './cotizacion-nueva.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './cotizacion-nueva.scss',
 })
 export class ComercialCotizacionNueva {
@@ -104,7 +99,9 @@ export class ComercialCotizacionNueva {
   });
 
   /** Signal del valor del formulario para recalcular totales de forma reactiva. */
-  private readonly valor = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
+  private readonly valor = toSignal(this.form.valueChanges, {
+    initialValue: this.form.getRawValue(),
+  });
 
   /** Desglose fiscal previsualizado (subtotal, descuento, IVA, retenciones, total) (V80). */
   protected readonly desglose = computed<DesgloseFiscal>(() => {

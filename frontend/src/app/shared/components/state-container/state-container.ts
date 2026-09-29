@@ -7,7 +7,7 @@
 // del modelo EstadoSolicitud.
 // =============================================================================
 
-import { Component, input, output } from '@angular/core';
+import { Component, input, output, ChangeDetectionStrategy } from '@angular/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -18,6 +18,7 @@ import { FaseSolicitud } from '../../models/estado-solicitud';
   selector: 'app-state-container',
   imports: [MatProgressSpinnerModule, MatButtonModule, MatIconModule],
   templateUrl: './state-container.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './state-container.scss',
 })
 export class StateContainer {

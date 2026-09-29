@@ -7,7 +7,7 @@
 // (422 = campo faltante / regla de negocio) sin filtrar detalle tecnico.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   AbstractControl,
@@ -53,6 +53,7 @@ function periodoCoherente(grupo: AbstractControl): ValidationErrors | null {
     MatIconModule,
   ],
   templateUrl: './objetivo-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './estrategia-dialogs.scss',
 })
 export class ObjetivoDialog {

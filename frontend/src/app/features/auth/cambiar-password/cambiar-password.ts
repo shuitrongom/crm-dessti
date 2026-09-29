@@ -9,9 +9,15 @@
 // ambito del Usuario. Accesible y solo con tokens del Sistema de Diseno.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -58,6 +64,7 @@ function coinciden(grupo: AbstractControl): ValidationErrors | null {
     MatProgressSpinnerModule,
   ],
   templateUrl: './cambiar-password.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './cambiar-password.scss',
 })
 export class CambiarPassword {
@@ -79,7 +86,10 @@ export class CambiarPassword {
 
   protected readonly formulario = this.fb.nonNullable.group(
     {
-      passwordNueva: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(255)]],
+      passwordNueva: [
+        '',
+        [Validators.required, Validators.minLength(8), Validators.maxLength(255)],
+      ],
       confirmarPassword: ['', [Validators.required]],
     },
     { validators: coinciden },
@@ -90,11 +100,11 @@ export class CambiarPassword {
   );
 
   constructor() {
-    const estado = this.router.getCurrentNavigation()?.extras.state
-      ?? (typeof history !== 'undefined' ? history.state : undefined);
-    this.passwordActual = (estado && typeof estado['passwordActual'] === 'string')
-      ? estado['passwordActual']
-      : '';
+    const estado =
+      this.router.getCurrentNavigation()?.extras.state ??
+      (typeof history !== 'undefined' ? history.state : undefined);
+    this.passwordActual =
+      estado && typeof estado['passwordActual'] === 'string' ? estado['passwordActual'] : '';
     // Sin la contrasena actual no se puede completar el cambio (acceso directo
     // a la ruta sin pasar por el login): se regresa al login.
     if (!this.passwordActual) {
@@ -113,24 +123,30 @@ export class CambiarPassword {
     this.overlay
       .ejecutar(
         this.perfil.cambiarPassword({ passwordActual: this.passwordActual, passwordNueva }),
-        { tipo: 'guardar', textoProceso: 'Actualizando contraseña…', textoExito: 'Contraseña actualizada' },
+        {
+          tipo: 'guardar',
+          textoProceso: 'Actualizando contraseña…',
+          textoExito: 'Contraseña actualizada',
+        },
       )
       .subscribe({
-      next: () => {
-        this.enviando.set(false);
-        this.toast.exito('Tu contrasena se actualizo. Bienvenido.');
-        this.modulosEmpresa.refrescar();
-        this.redirigir();
-      },
-      error: (e: HttpErrorResponse) => {
-        this.enviando.set(false);
-        if (e.status === 422) {
-          this.error.set('La contrasena temporal no coincide. Vuelve a iniciar sesion e intentalo de nuevo.');
-        } else {
-          this.error.set(mensajeDeError(e));
-        }
-      },
-    });
+        next: () => {
+          this.enviando.set(false);
+          this.toast.exito('Tu contrasena se actualizo. Bienvenido.');
+          this.modulosEmpresa.refrescar();
+          this.redirigir();
+        },
+        error: (e: HttpErrorResponse) => {
+          this.enviando.set(false);
+          if (e.status === 422) {
+            this.error.set(
+              'La contrasena temporal no coincide. Vuelve a iniciar sesion e intentalo de nuevo.',
+            );
+          } else {
+            this.error.set(mensajeDeError(e));
+          }
+        },
+      });
   }
 
   private redirigir(): void {

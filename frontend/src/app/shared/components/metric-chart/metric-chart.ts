@@ -11,7 +11,7 @@
 // formato es-MX. Es puramente de presentacion: recibe datos ya calculados.
 // =============================================================================
 
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, ChangeDetectionStrategy } from '@angular/core';
 import { NgApexchartsModule, type ApexOptions } from 'ng-apexcharts';
 
 /** Punto de datos para las graficas: etiqueta, valor actual y comparativo. */
@@ -29,6 +29,7 @@ export type MetricChartTipo = 'dona' | 'barras' | 'columnas' | 'area' | 'gauge' 
   selector: 'app-metric-chart',
   imports: [NgApexchartsModule],
   templateUrl: './metric-chart.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './metric-chart.scss',
 })
 export class MetricChart {
@@ -95,9 +96,7 @@ export class MetricChart {
 
   private opcionesBarras(puntos: MetricPoint[]): ApexOptions {
     const tieneComparativo = puntos.some((p) => p.comparativo != null);
-    const series = [
-      { name: 'Periodo actual', data: puntos.map((p) => this.redondear(p.valor)) },
-    ];
+    const series = [{ name: 'Periodo actual', data: puntos.map((p) => this.redondear(p.valor)) }];
     if (tieneComparativo) {
       series.push({
         name: 'Periodo anterior',
@@ -146,9 +145,7 @@ export class MetricChart {
    */
   private opcionesColumnas(puntos: MetricPoint[]): ApexOptions {
     const tieneComparativo = puntos.some((p) => p.comparativo != null);
-    const series = [
-      { name: this.nombreSerie(), data: puntos.map((p) => this.redondear(p.valor)) },
-    ];
+    const series = [{ name: this.nombreSerie(), data: puntos.map((p) => this.redondear(p.valor)) }];
     if (tieneComparativo) {
       series.push({
         name: this.nombreComparativo(),
@@ -180,7 +177,9 @@ export class MetricChart {
         categories: puntos.map((p) => p.etiqueta),
         labels: { style: { fontSize: '11px' } },
       },
-      yaxis: { labels: { formatter: (v: number) => this.formatoCorto(v), style: { fontSize: '11px' } } },
+      yaxis: {
+        labels: { formatter: (v: number) => this.formatoCorto(v), style: { fontSize: '11px' } },
+      },
       legend: { show: tieneComparativo, position: 'top', horizontalAlign: 'right' },
       tooltip: { y: { formatter: (v: number) => this.formatoLargo(v) } },
     };
@@ -233,9 +232,7 @@ export class MetricChart {
    */
   private opcionesArea(puntos: MetricPoint[]): ApexOptions {
     const tieneComparativo = puntos.some((p) => p.comparativo != null);
-    const series = [
-      { name: this.nombreSerie(), data: puntos.map((p) => this.redondear(p.valor)) },
-    ];
+    const series = [{ name: this.nombreSerie(), data: puntos.map((p) => this.redondear(p.valor)) }];
     if (tieneComparativo) {
       series.push({
         name: this.nombreComparativo(),
@@ -272,7 +269,9 @@ export class MetricChart {
         axisBorder: { show: false },
         axisTicks: { show: false },
       },
-      yaxis: { labels: { formatter: (v: number) => this.formatoCorto(v), style: { fontSize: '11px' } } },
+      yaxis: {
+        labels: { formatter: (v: number) => this.formatoCorto(v), style: { fontSize: '11px' } },
+      },
       legend: { show: tieneComparativo, position: 'top', horizontalAlign: 'right' },
       tooltip: { y: { formatter: (v: number) => this.formatoLargo(v) } },
     };

@@ -16,7 +16,7 @@
 // errores inline). Solo tokens del Sistema de Diseno.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   AbstractControl,
@@ -98,6 +98,7 @@ function coincidenPassword(grupo: AbstractControl): ValidationErrors | null {
     AddressAutocomplete,
   ],
   templateUrl: './perfil.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './perfil.scss',
 })
 export class PlataformaPerfil {
@@ -121,7 +122,8 @@ export class PlataformaPerfil {
    * `admin_empresa` o un tenant asociado). Solo en ese caso se muestra la
    * seccion "Datos de mi empresa"; el super_admin (sin tenant) no la ve.
    */
-  protected readonly esAdminEmpresa = this.auth.tieneRol(ROL_ADMIN_EMPRESA) || this.auth.tenantId() !== null;
+  protected readonly esAdminEmpresa =
+    this.auth.tieneRol(ROL_ADMIN_EMPRESA) || this.auth.tenantId() !== null;
 
   /** Estado de carga de los datos de la propia Empresa (GET /empresas/mi-empresa). */
   protected readonly estadoEmpresa = signal<EstadoSolicitud<null>>(cargando());
@@ -155,7 +157,10 @@ export class PlataformaPerfil {
   protected readonly formulario = this.fb.nonNullable.group(
     {
       passwordActual: ['', [Validators.required]],
-      passwordNueva: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(255)]],
+      passwordNueva: [
+        '',
+        [Validators.required, Validators.minLength(8), Validators.maxLength(255)],
+      ],
       confirmarPassword: ['', [Validators.required]],
     },
     { validators: coincidenPassword },
@@ -209,7 +214,11 @@ export class PlataformaPerfil {
           passwordActual: v.passwordActual,
           passwordNueva: v.passwordNueva,
         }),
-        { tipo: 'guardar', textoProceso: 'Actualizando contraseña…', textoExito: 'Contraseña actualizada' },
+        {
+          tipo: 'guardar',
+          textoProceso: 'Actualizando contraseña…',
+          textoExito: 'Contraseña actualizada',
+        },
       )
       .subscribe({
         next: () => {

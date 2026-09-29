@@ -8,7 +8,7 @@
 // POST/PUT via ListasPreciosService y cierra devolviendo la Lista resultante.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -60,6 +60,7 @@ function aIsoFecha(valor: unknown): string | null {
     MatIconModule,
   ],
   templateUrl: './lista-form-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './lista-form-dialog.scss',
 })
 export class ListaFormDialog {

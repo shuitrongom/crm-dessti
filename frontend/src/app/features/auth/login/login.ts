@@ -9,7 +9,7 @@
 // retorno si la habia (deep-link protegido por guarda).
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -37,6 +37,7 @@ import { mensajeDeError } from '../../../core/services/error-mensajes';
     MatProgressSpinnerModule,
   ],
   templateUrl: './login.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './login.scss',
 })
 export class Login {
@@ -130,4 +131,3 @@ export class Login {
     void this.router.navigateByUrl(destino);
   }
 }
-

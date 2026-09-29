@@ -8,7 +8,7 @@
 // con los dashboards de activos/tesoreria.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DecimalPipe, PercentPipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
@@ -41,6 +41,7 @@ import { IndicadoresCalidad } from '../models/calidad.models';
     DashboardSection,
   ],
   templateUrl: './panel.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../calidad.scss',
 })
 export class CalidadPanel {

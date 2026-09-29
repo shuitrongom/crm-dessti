@@ -12,7 +12,7 @@
 // puede refrescar; la logica de ventana es pura y esta cubierta por pruebas.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -50,11 +50,7 @@ import { PlantillasService } from '../services/plantillas.service';
 import { ClientesService } from '../../comercial/services/clientes.service';
 import { Cliente } from '../../comercial/models/comercial.models';
 import { PaginaResponse } from '../../../core/models/pagina-response';
-import {
-  Conversacion,
-  MensajeSocial,
-  PlantillaMensaje,
-} from '../models/social.models';
+import { Conversacion, MensajeSocial, PlantillaMensaje } from '../models/social.models';
 import { ETIQUETA_CANAL, ETIQUETA_TIPO_MENSAJE, ICONO_CANAL } from '../social-etiquetas';
 import {
   EstadoVentana,
@@ -87,6 +83,7 @@ import {
     EstadoChip,
   ],
   templateUrl: './bandeja.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './bandeja.scss',
 })
 export class Bandeja {

@@ -8,7 +8,7 @@
 // cierra devolviendo la Oportunidad actualizada (Req 2.1, 63.1).
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -43,6 +43,7 @@ export interface AsignarCanalDialogData {
     MatIconModule,
   ],
   templateUrl: './asignar-canal-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './asignar-canal-dialog.scss',
 })
 export class AsignarCanalDialog {

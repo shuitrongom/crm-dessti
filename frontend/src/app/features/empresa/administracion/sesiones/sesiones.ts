@@ -9,7 +9,7 @@
 // hay nombre). Al seleccionar una cuenta se cargan sus sesiones en una tabla.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatCardModule } from '@angular/material/card';
@@ -58,6 +58,7 @@ import { UsuariosService, Usuario } from '../services/usuarios.service';
     CeldaTablaDirective,
   ],
   templateUrl: './sesiones.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './sesiones.scss',
 })
 export class AdminSesiones {

@@ -8,13 +8,16 @@
 // respuesta, simplemente se omite (no rompe la fila).
 // =============================================================================
 
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, computed, inject, input, ChangeDetectionStrategy } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
 
 import { InteligenciaNegocio, Indicador } from '../models/reportes.models';
-import { IndicadorInfoDialog, type DatosIndicadorInfo } from '../../../shared/indicadores/indicador-info-dialog';
+import {
+  IndicadorInfoDialog,
+  type DatosIndicadorInfo,
+} from '../../../shared/indicadores/indicador-info-dialog';
 import { fichaIndicador } from '../../../shared/indicadores/indicadores-catalogo';
 
 /** KPI destacado ya resuelto para la vista. */
@@ -41,6 +44,7 @@ interface DefDestacado {
   selector: 'app-scorecard',
   imports: [DecimalPipe, MatIconModule],
   templateUrl: './scorecard.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './scorecard.scss',
 })
 export class Scorecard {
@@ -59,7 +63,12 @@ export class Scorecard {
       comparativo: d.comparativo,
       variacion: d.variacion,
     };
-    this.dialog.open(IndicadorInfoDialog, { data: datos, width: '32rem', maxWidth: '92vw', autoFocus: false });
+    this.dialog.open(IndicadorInfoDialog, {
+      data: datos,
+      width: '32rem',
+      maxWidth: '92vw',
+      autoFocus: false,
+    });
   }
 
   /** Claves prioritarias, en orden de aparicion, con su icono y semantica. */

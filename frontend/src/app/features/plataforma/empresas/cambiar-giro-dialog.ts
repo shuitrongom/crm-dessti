@@ -14,7 +14,7 @@
 // responsive; solo tokens del Sistema de Diseno.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -48,6 +48,7 @@ export interface CambiarGiroDialogData {
     MatIconModule,
   ],
   templateUrl: './cambiar-giro-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './cambiar-giro-dialog.scss',
 })
 export class CambiarGiroDialog {

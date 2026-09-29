@@ -11,7 +11,7 @@
 // (en secuencia). El 422 de roles se mapea a un mensaje de plan/rol.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -44,6 +44,7 @@ export interface EditarUsuarioDialogData {
     SelectableCard,
   ],
   templateUrl: './editar-usuario-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './usuario-dialog.scss',
 })
 export class EditarUsuarioDialog {

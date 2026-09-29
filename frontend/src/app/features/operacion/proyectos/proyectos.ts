@@ -6,7 +6,7 @@
 // el avance consolidado por sitio. Acciones gobernadas por permiso proyecto:{...}.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -48,6 +48,7 @@ import { ProyectoFormDialog, ProyectoFormDialogData } from './proyecto-form-dial
     CeldaTablaDirective,
   ],
   templateUrl: './proyectos.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './proyectos.scss',
 })
 export class OperacionProyectos {

@@ -8,7 +8,7 @@
 // cierra devolviendo el Almacen resultante.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -44,6 +44,7 @@ export interface AlmacenFormDialogData {
     MatIconModule,
   ],
   templateUrl: './almacen-form-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './almacen-form-dialog.scss',
 })
 export class AlmacenFormDialog {
@@ -66,9 +67,7 @@ export class AlmacenFormDialog {
   protected readonly guardando = signal(false);
   protected readonly error = signal<string | null>(null);
 
-  protected readonly titulo = computed(() =>
-    this.esEdicion ? 'Editar almacén' : 'Nuevo almacén',
-  );
+  protected readonly titulo = computed(() => (this.esEdicion ? 'Editar almacén' : 'Nuevo almacén'));
   protected readonly subtitulo = computed(() =>
     this.esEdicion
       ? 'Actualiza el nombre y el tipo del almacén.'

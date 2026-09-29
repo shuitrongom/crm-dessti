@@ -19,7 +19,7 @@
 //   - 404 -> error de no encontrada.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -61,6 +61,7 @@ const MAX_LOGO_BYTES = 256 * 1024;
     AddressAutocomplete,
   ],
   templateUrl: './editar-empresa-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './editar-empresa-dialog.scss',
 })
 export class EditarEmpresaDialog {

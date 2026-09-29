@@ -16,7 +16,14 @@
 // sobre esas listas en memoria. Ningun UUID se muestra ni se teclea.
 // =============================================================================
 
-import { Component, computed, inject, signal, WritableSignal } from '@angular/core';
+import {
+  Component,
+  computed,
+  inject,
+  signal,
+  WritableSignal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -108,6 +115,7 @@ const ETIQUETA_TIPO_KARDEX: Record<string, string> = {
     CeldaTablaDirective,
   ],
   templateUrl: './inventario-avanzado.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './inventario-avanzado.scss',
 })
 export class OperacionInventarioAvanzado {
@@ -125,7 +133,10 @@ export class OperacionInventarioAvanzado {
   protected readonly puedeLeerAlmacen = this.auth.tienePermiso('almacen', 'listar');
   protected readonly puedeLeerExistencias = this.auth.tienePermiso('material', 'leer');
   protected readonly puedeLeerKardex = this.auth.tienePermiso('kardex', 'leer');
-  protected readonly puedeCrearMovimiento = this.auth.tienePermiso('movimiento_inventario', 'crear');
+  protected readonly puedeCrearMovimiento = this.auth.tienePermiso(
+    'movimiento_inventario',
+    'crear',
+  );
   protected readonly puedeConfigurarMaterial = this.auth.tienePermiso('material', 'actualizar');
   protected readonly puedeListarLotes = this.auth.tienePermiso('lote', 'listar');
   protected readonly puedeCrearLote = this.auth.tienePermiso('lote', 'crear');

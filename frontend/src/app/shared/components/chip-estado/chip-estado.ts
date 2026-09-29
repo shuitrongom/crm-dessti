@@ -12,16 +12,15 @@
 // en claro y oscuro sin lógica adicional.
 // =============================================================================
 
-import { Component, input } from '@angular/core';
+import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 
 /** Variantes semánticas admitidas por el chip de estado. */
 export type VarianteChipEstado = 'exito' | 'advertencia' | 'error' | 'info' | 'neutro';
 
 @Component({
   selector: 'app-chip-estado',
-  template: `
-    <span class="chip-estado" [attr.data-variante]="variante()">{{ etiqueta() }}</span>
-  `,
+  template: ` <span class="chip-estado" [attr.data-variante]="variante()">{{ etiqueta() }}</span> `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './chip-estado.scss',
 })
 export class ChipEstado {

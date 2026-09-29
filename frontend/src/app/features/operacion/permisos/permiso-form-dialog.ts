@@ -8,7 +8,7 @@
 // via PermisosService y cierra devolviendo el Permiso creado.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -24,11 +24,7 @@ import { provideFechaIsoDatepicker } from '../../../shared/date/provide-fecha-is
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 
 import { PermisosService } from '../services/instalacion.service';
-import {
-  ETIQUETA_TIPO_PERMISO,
-  PermisoInstalacion,
-  TipoPermiso,
-} from '../models/operacion.models';
+import { ETIQUETA_TIPO_PERMISO, PermisoInstalacion, TipoPermiso } from '../models/operacion.models';
 
 @Component({
   selector: 'app-permiso-form-dialog',
@@ -44,6 +40,7 @@ import {
   ],
   providers: [provideFechaIsoDatepicker()],
   templateUrl: './permiso-form-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './permiso-form-dialog.scss',
 })
 export class PermisoFormDialog {

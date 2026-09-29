@@ -7,7 +7,7 @@
 // cuando existe; el campo es editable para corregirlo o indicar otro.
 // =============================================================================
 
-import { Component, Injectable, inject } from '@angular/core';
+import { Component, Injectable, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -41,9 +41,11 @@ export interface DatosEnviarCorreo {
     <h2 mat-dialog-title id="enviar-correo-titulo">Enviar cotizacion por correo</h2>
     <mat-dialog-content>
       <p class="enviar-correo__intro">
-        Se enviara la cotizacion @if (datos.folio) {
+        Se enviara la cotizacion
+        @if (datos.folio) {
           <strong>{{ datos.folio }}</strong>
-        } al correo indicado.
+        }
+        al correo indicado.
       </p>
       <form [formGroup]="form" (ngSubmit)="enviar()" novalidate>
         <mat-form-field appearance="outline" class="enviar-correo__campo">
@@ -70,6 +72,7 @@ export interface DatosEnviarCorreo {
       <button matButton="filled" type="button" cdkFocusInitial (click)="enviar()">Enviar</button>
     </mat-dialog-actions>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: `
     .enviar-correo__intro {
       margin: 0 0 var(--ds-space-3);

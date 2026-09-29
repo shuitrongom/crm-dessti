@@ -7,7 +7,7 @@
 // asignar a cada persona. Solo-lectura.
 // =============================================================================
 
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -28,6 +28,7 @@ export interface DatosRolInfo {
   selector: 'app-rol-info-dialog',
   imports: [MatDialogModule, MatButtonModule, MatIconModule],
   templateUrl: './rol-info-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './rol-info-dialog.scss',
 })
 export class RolInfoDialog {

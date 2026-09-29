@@ -5,7 +5,7 @@
 // Cotizacion y a la creacion de una nueva. Gestiona estados con StateContainer.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
@@ -64,6 +64,7 @@ import {
     EstadoChip,
   ],
   templateUrl: './cotizaciones.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './cotizaciones.scss',
 })
 export class ComercialCotizaciones {

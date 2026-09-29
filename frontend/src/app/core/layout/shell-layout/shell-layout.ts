@@ -11,7 +11,15 @@
 // en pantallas pequenas, colapsando bajo `md` (mobile-first, Req 52).
 // =============================================================================
 
-import { Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  computed,
+  effect,
+  inject,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, RouterLink, RouterLinkActive, RouterOutlet, Router } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -52,6 +60,7 @@ const ETIQUETA_EMPRESA_NEUTRAL = 'Mi empresa';
     MatMenuModule,
   ],
   templateUrl: './shell-layout.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './shell-layout.scss',
 })
 export class ShellLayout {
@@ -323,9 +332,7 @@ export class ShellLayout {
 
   /** `true` cuando el ancho es de escritorio (drawer persistente). */
   protected readonly esEscritorio = toSignal(
-    this.breakpoint
-      .observe(['(min-width: 905px)'])
-      .pipe(map((estado) => estado.matches)),
+    this.breakpoint.observe(['(min-width: 905px)']).pipe(map((estado) => estado.matches)),
     { initialValue: false },
   );
 
@@ -359,5 +366,3 @@ export class ShellLayout {
     });
   }
 }
-
-

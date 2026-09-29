@@ -8,7 +8,7 @@
 // clave estable del indicador, de modo que es consistente en todo el sistema.
 // =============================================================================
 
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -30,6 +30,7 @@ export interface DatosIndicadorInfo {
   selector: 'app-indicador-info-dialog',
   imports: [DecimalPipe, MatDialogModule, MatButtonModule, MatIconModule],
   templateUrl: './indicador-info-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './indicador-info-dialog.scss',
 })
 export class IndicadorInfoDialog {

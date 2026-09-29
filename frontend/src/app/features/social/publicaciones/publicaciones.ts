@@ -7,7 +7,7 @@
 // publicada|fallida). Cada accion se gobierna por permiso atomico.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -67,6 +67,7 @@ import { ETIQUETA_CANAL, ETIQUETA_ESTADO_PUBLICACION, OPCIONES_CANAL } from '../
     EstadoChip,
   ],
   templateUrl: './publicaciones.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './publicaciones.scss',
 })
 export class Publicaciones {
@@ -81,7 +82,10 @@ export class Publicaciones {
   protected readonly tono = tonoDeEstado;
 
   protected readonly puedeCrear = this.auth.tienePermiso('publicacion_social', 'crear');
-  protected readonly puedeCambiarEstado = this.auth.tienePermiso('publicacion_social', 'cambiar_estado');
+  protected readonly puedeCambiarEstado = this.auth.tienePermiso(
+    'publicacion_social',
+    'cambiar_estado',
+  );
 
   protected readonly columnas: ColumnaTabla[] = [
     { clave: 'contenido', encabezado: 'Publicacion' },
@@ -92,10 +96,7 @@ export class Publicaciones {
   ];
 
   // Filtro por canal derivado del origen unico (los cinco canales) mas "todos".
-  protected readonly canales = [
-    { valor: '', etiqueta: 'Todos los canales' },
-    ...OPCIONES_CANAL,
-  ];
+  protected readonly canales = [{ valor: '', etiqueta: 'Todos los canales' }, ...OPCIONES_CANAL];
 
   protected readonly estadosFiltro = [
     { valor: '', etiqueta: 'Todos los estados' },
@@ -140,7 +141,11 @@ export class Publicaciones {
   cargar(): void {
     this.estado.set(cargando());
     this.service
-      .listar({ canal: this.filtroCanal() || null, estado: this.filtroEstado() || null }, this.page(), this.size())
+      .listar(
+        { canal: this.filtroCanal() || null, estado: this.filtroEstado() || null },
+        this.page(),
+        this.size(),
+      )
       .subscribe({
         next: (pagina) => {
           this.total.set(pagina.totalElements);

@@ -11,14 +11,11 @@
 // disponible (Req 14.5). Las acciones se gobiernan por permiso atomico.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
-import {
-  CdkDragDrop,
-  DragDropModule,
-} from '@angular/cdk/drag-drop';
+import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
@@ -95,6 +92,7 @@ const ETAPAS_TERMINALES: ReadonlySet<EtapaOportunidad> = new Set<EtapaOportunida
     KpiTile,
   ],
   templateUrl: './oportunidades.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './oportunidades.scss',
 })
 export class ComercialOportunidades {
@@ -175,10 +173,11 @@ export class ComercialOportunidades {
   );
 
   /** Forecast ponderado del pipeline abierto (MXN): Σ valor * probabilidad / 100 (V81). */
-  protected readonly forecastPonderado = computed<number>(() =>
-    Math.round(
-      (this.abiertas().reduce((acc, o) => acc + valorPonderado(o), 0) + Number.EPSILON) * 100,
-    ) / 100,
+  protected readonly forecastPonderado = computed<number>(
+    () =>
+      Math.round(
+        (this.abiertas().reduce((acc, o) => acc + valorPonderado(o), 0) + Number.EPSILON) * 100,
+      ) / 100,
   );
 
   /** Ticket promedio del pipeline abierto (MXN); 0 si no hay abiertas. */

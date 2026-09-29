@@ -9,7 +9,7 @@
 // gobierna por permiso atomico (deny-by-default).
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CurrencyPipe, DatePipe } from '@angular/common';
@@ -45,7 +45,10 @@ import {
 import { EstadoChip } from '../../finanzas-comun/estado-chip/estado-chip';
 import { humanizarEstado, tonoDeEstado } from '../../finanzas-comun/tono-estado';
 import { aPesos, aCentavos } from '../../finanzas-comun/dinero';
-import { MetricChart, type MetricPoint } from '../../../shared/components/metric-chart/metric-chart';
+import {
+  MetricChart,
+  type MetricPoint,
+} from '../../../shared/components/metric-chart/metric-chart';
 import { KpiTile } from '../../../shared/components/kpi-tile/kpi-tile';
 import { DashboardSection } from '../../../shared/components/dashboard-section/dashboard-section';
 import { ActivosService } from '../services/activos.service';
@@ -75,6 +78,7 @@ import { ActivoFijo } from '../models/activos.models';
     DashboardSection,
   ],
   templateUrl: './activos-fijos.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './activos-fijos.scss',
 })
 export class ActivosFijos {
@@ -200,8 +204,18 @@ export class ActivosFijos {
       }
     }
     return [
-      { etiqueta: 'Línea recta', valor: aPesos(costoRectaC), comparativo: aPesos(netoRectaC), unidad: 'MXN' },
-      { etiqueta: 'Saldos decrecientes', valor: aPesos(costoDecrC), comparativo: aPesos(netoDecrC), unidad: 'MXN' },
+      {
+        etiqueta: 'Línea recta',
+        valor: aPesos(costoRectaC),
+        comparativo: aPesos(netoRectaC),
+        unidad: 'MXN',
+      },
+      {
+        etiqueta: 'Saldos decrecientes',
+        valor: aPesos(costoDecrC),
+        comparativo: aPesos(netoDecrC),
+        unidad: 'MXN',
+      },
     ];
   });
 

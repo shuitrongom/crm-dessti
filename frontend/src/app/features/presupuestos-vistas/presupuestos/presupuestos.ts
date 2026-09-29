@@ -9,7 +9,7 @@
 // por permiso atomico (deny-by-default).
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CurrencyPipe, DecimalPipe } from '@angular/common';
@@ -38,7 +38,10 @@ import {
 } from '../../../shared/models/estado-solicitud';
 
 import { EstadoChip } from '../../finanzas-comun/estado-chip/estado-chip';
-import { MetricChart, type MetricPoint } from '../../../shared/components/metric-chart/metric-chart';
+import {
+  MetricChart,
+  type MetricPoint,
+} from '../../../shared/components/metric-chart/metric-chart';
 import { PresupuestosVistasService } from '../services/presupuestos-vistas.service';
 import { Presupuesto, VariacionPresupuesto } from '../models/presupuestos.models';
 
@@ -61,6 +64,7 @@ import { Presupuesto, VariacionPresupuesto } from '../models/presupuestos.models
     MetricChart,
   ],
   templateUrl: './presupuestos.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../presupuestos.scss',
 })
 export class PresupuestosVistas {
@@ -186,8 +190,18 @@ export class PresupuestosVistas {
    */
   puntosVariacion(v: VariacionPresupuesto): MetricPoint[] {
     return [
-      { etiqueta: 'Ingresos', valor: v.ingresosReales, comparativo: v.ingresosEstimados, unidad: 'MXN' },
-      { etiqueta: 'Egresos', valor: v.egresosReales, comparativo: v.egresosEstimados, unidad: 'MXN' },
+      {
+        etiqueta: 'Ingresos',
+        valor: v.ingresosReales,
+        comparativo: v.ingresosEstimados,
+        unidad: 'MXN',
+      },
+      {
+        etiqueta: 'Egresos',
+        valor: v.egresosReales,
+        comparativo: v.egresosEstimados,
+        unidad: 'MXN',
+      },
     ];
   }
 }

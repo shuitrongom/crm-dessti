@@ -7,7 +7,7 @@
 // MaterialesService y cierra devolviendo `true` si se registro.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -40,6 +40,7 @@ export interface MaterialMovimientoDialogData {
     MatIconModule,
   ],
   templateUrl: './material-movimiento-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './material-movimiento-dialog.scss',
 })
 export class MaterialMovimientoDialog {

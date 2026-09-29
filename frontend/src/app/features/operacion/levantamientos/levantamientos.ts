@@ -9,7 +9,7 @@
 // levantamiento_sitio:{...}.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -65,6 +65,7 @@ import {
     ChipEstado,
   ],
   templateUrl: './levantamientos.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './levantamientos.scss',
 })
 export class OperacionLevantamientos {
@@ -75,7 +76,10 @@ export class OperacionLevantamientos {
   private readonly dialog = inject(MatDialog);
 
   protected readonly puedeCrear = this.auth.tienePermiso('levantamiento_sitio', 'crear');
-  protected readonly puedeCompletar = this.auth.tienePermiso('levantamiento_sitio', 'cambiar_estado');
+  protected readonly puedeCompletar = this.auth.tienePermiso(
+    'levantamiento_sitio',
+    'cambiar_estado',
+  );
   private readonly mapaEstado = ETIQUETA_ESTADO_LEVANTAMIENTO;
   protected readonly estados: EstadoLevantamiento[] = ['en_proceso', 'completado'];
 

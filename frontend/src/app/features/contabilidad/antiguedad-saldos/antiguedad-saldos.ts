@@ -9,7 +9,7 @@
 // Gobernada por cuenta_por_cobrar:leer / cuenta_por_pagar:leer (deny-by-default).
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CurrencyPipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
@@ -48,6 +48,7 @@ import { RenglonAgingCliente, RenglonAgingProveedor } from '../models/contabilid
     CeldaTablaDirective,
   ],
   templateUrl: './antiguedad-saldos.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../contabilidad.scss',
 })
 export class ContabilidadAntiguedadSaldos {
@@ -92,9 +93,10 @@ export class ContabilidadAntiguedadSaldos {
     }
   }
 
-  private kpis(
-    filas: (RenglonAgingCliente | RenglonAgingProveedor)[],
-  ): { total: number; vencido: number } {
+  private kpis(filas: (RenglonAgingCliente | RenglonAgingProveedor)[]): {
+    total: number;
+    vencido: number;
+  } {
     const total = filas.reduce((acc, f) => acc + f.saldoTotal, 0);
     const vencido = filas.reduce((acc, f) => acc + f.rango61a90 + f.rangoMas90, 0);
     return { total, vencido };

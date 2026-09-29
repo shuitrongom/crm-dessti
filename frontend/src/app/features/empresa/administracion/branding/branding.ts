@@ -8,7 +8,7 @@
 // o del recien seleccionado, y un boton para quitarlo.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -85,6 +85,7 @@ const PRESETS_COLOR: ReadonlyArray<PresetColor> = [
     StateContainer,
   ],
   templateUrl: './branding.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './branding.scss',
 })
 export class AdminBranding {

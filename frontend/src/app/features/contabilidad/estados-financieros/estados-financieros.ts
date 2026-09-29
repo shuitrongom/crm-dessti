@@ -10,7 +10,7 @@
 // El permiso estado_financiero:leer gobierna el acceso (deny-by-default).
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { CurrencyPipe } from '@angular/common';
@@ -56,6 +56,7 @@ import {
     EstadoChip,
   ],
   templateUrl: './estados-financieros.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../contabilidad.scss',
 })
 export class ContabilidadEstadosFinancieros {

@@ -8,7 +8,7 @@
 // accesible con desangrado por nivel.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DatePipe, DecimalPipe } from '@angular/common';
@@ -63,6 +63,7 @@ import { OrganigramaArbol } from './organigrama-arbol';
     OrganigramaArbol,
   ],
   templateUrl: './organizacion.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../rhnomina.scss',
 })
 export class RhNominaOrganizacion {
@@ -75,7 +76,10 @@ export class RhNominaOrganizacion {
   protected readonly puedeCrearPuesto = this.auth.tienePermiso('puesto', 'crear');
   protected readonly puedeVerOrganigrama = this.auth.tienePermiso('organigrama', 'leer');
   protected readonly puedeCrearEvaluacion = this.auth.tienePermiso('evaluacion_desempeno', 'crear');
-  protected readonly puedeVerEvaluaciones = this.auth.tienePermiso('evaluacion_desempeno', 'listar');
+  protected readonly puedeVerEvaluaciones = this.auth.tienePermiso(
+    'evaluacion_desempeno',
+    'listar',
+  );
 
   // --- Puestos ---------------------------------------------------------------
   protected readonly puestosColumnas: ColumnaTabla[] = [
@@ -231,7 +235,11 @@ export class RhNominaOrganizacion {
           calificacion: v.calificacion,
           comentarios: v.comentarios || null,
         }),
-        { tipo: 'crear', textoProceso: 'Registrando evaluación…', textoExito: 'Evaluación registrada' },
+        {
+          tipo: 'crear',
+          textoProceso: 'Registrando evaluación…',
+          textoExito: 'Evaluación registrada',
+        },
       )
       .subscribe({
         next: () => {

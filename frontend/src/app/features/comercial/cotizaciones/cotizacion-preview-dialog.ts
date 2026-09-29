@@ -9,7 +9,7 @@
 // URL se revoca al cerrar el dialogo para no filtrar memoria.
 // =============================================================================
 
-import { Component, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnDestroy, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -29,6 +29,7 @@ export interface CotizacionPreviewDialogData {
   selector: 'app-cotizacion-preview-dialog',
   imports: [MatDialogModule, MatButtonModule, MatIconModule],
   templateUrl: './cotizacion-preview-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './cotizacion-preview-dialog.scss',
 })
 export class CotizacionPreviewDialog implements OnDestroy {

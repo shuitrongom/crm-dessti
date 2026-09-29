@@ -14,7 +14,7 @@
 // aplica, el periodo de prueba. Alta/edicion via dialogo.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
@@ -70,6 +70,7 @@ interface ChipsModulos {
   templateUrl: './planes.html',
   styleUrl: './planes.scss',
   // Traduce el paginador al espanol de forma acotada (mismo intl que DataTable).
+  changeDetection: ChangeDetectionStrategy.Eager,
   providers: [{ provide: MatPaginatorIntl, useClass: PaginatorIntlEs }],
 })
 export class PlataformaPlanes {

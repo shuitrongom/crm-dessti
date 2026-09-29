@@ -16,7 +16,7 @@
 // responsive; solo tokens del Sistema de Diseno.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -56,6 +56,7 @@ export interface VigenciaDialogData {
   ],
   providers: [provideFechaIsoDatepicker()],
   templateUrl: './vigencia-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './vigencia-dialog.scss',
 })
 export class VigenciaDialog {
@@ -90,7 +91,11 @@ export class VigenciaDialog {
           vigenciaInicio,
           vigenciaFin: vigenciaFin || null,
         }),
-        { tipo: 'guardar', textoProceso: 'Actualizando vigencia…', textoExito: 'Vigencia actualizada' },
+        {
+          tipo: 'guardar',
+          textoProceso: 'Actualizando vigencia…',
+          textoExito: 'Vigencia actualizada',
+        },
       )
       .subscribe({
         next: (suscripcion) => {

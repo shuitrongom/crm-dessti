@@ -7,7 +7,7 @@
 // datos (no muta nada). Gobernada por reporte_financiero:leer (deny-by-default).
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CurrencyPipe, DatePipe } from '@angular/common';
@@ -53,6 +53,7 @@ import { EstadoCuentaCliente } from '../models/contabilidad.models';
     EstadoChip,
   ],
   templateUrl: './estado-cuenta-cliente.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../contabilidad.scss',
 })
 export class ContabilidadEstadoCuentaCliente {

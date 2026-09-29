@@ -9,7 +9,7 @@
 // los calcula el servidor; la UI solo los formatea (currency es-MX).
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CurrencyPipe } from '@angular/common';
@@ -42,7 +42,10 @@ import {
 import { EstadoChip } from '../../finanzas-comun/estado-chip/estado-chip';
 import { humanizarEstado, tonoDeEstado } from '../../finanzas-comun/tono-estado';
 import { aPesos, aCentavos } from '../../finanzas-comun/dinero';
-import { MetricChart, type MetricPoint } from '../../../shared/components/metric-chart/metric-chart';
+import {
+  MetricChart,
+  type MetricPoint,
+} from '../../../shared/components/metric-chart/metric-chart';
 import { KpiTile } from '../../../shared/components/kpi-tile/kpi-tile';
 import { DashboardSection } from '../../../shared/components/dashboard-section/dashboard-section';
 import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
@@ -71,6 +74,7 @@ import { AccionNomina, accionDeNomina } from '../nomina-estados';
     DashboardSection,
   ],
   templateUrl: './nomina.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../rhnomina.scss',
 })
 export class RhNominaNomina {
@@ -196,13 +200,15 @@ export class RhNominaNomina {
 
   cargar(): void {
     this.estado.set(cargando());
-    this.service.listarNominas(null, this.filtroEstado() || null, this.page(), this.size()).subscribe({
-      next: (pagina) => {
-        this.total.set(pagina.totalElements);
-        this.estado.set(conDatos(pagina.content, pagina.content.length === 0));
-      },
-      error: (e: HttpErrorResponse) => this.estado.set(conError(mensajeDeError(e))),
-    });
+    this.service
+      .listarNominas(null, this.filtroEstado() || null, this.page(), this.size())
+      .subscribe({
+        next: (pagina) => {
+          this.total.set(pagina.totalElements);
+          this.estado.set(conDatos(pagina.content, pagina.content.length === 0));
+        },
+        error: (e: HttpErrorResponse) => this.estado.set(conError(mensajeDeError(e))),
+      });
   }
 
   cambiarPagina(evento: CambioPagina): void {
@@ -228,11 +234,14 @@ export class RhNominaNomina {
     }
     this.guardando.set(true);
     this.overlay
-      .ejecutar(this.service.crearNomina({ periodoNomina: this.formAlta.getRawValue().periodoNomina }), {
-        tipo: 'crear',
-        textoProceso: 'Creando nómina…',
-        textoExito: 'Nómina creada',
-      })
+      .ejecutar(
+        this.service.crearNomina({ periodoNomina: this.formAlta.getRawValue().periodoNomina }),
+        {
+          tipo: 'crear',
+          textoProceso: 'Creando nómina…',
+          textoExito: 'Nómina creada',
+        },
+      )
       .subscribe({
         next: () => {
           this.guardando.set(false);
@@ -260,7 +269,11 @@ export class RhNominaNomina {
     }
     const peticion$ =
       accion.accion === 'calcular'
-        ? this.service.calcularNomina(nomina.id, { aguinaldo: null, ptu: null, tasaInfonavit: null })
+        ? this.service.calcularNomina(nomina.id, {
+            aguinaldo: null,
+            ptu: null,
+            tasaInfonavit: null,
+          })
         : accion.accion === 'autorizar'
           ? this.service.autorizarNomina(nomina.id)
           : accion.accion === 'timbrar'

@@ -9,7 +9,7 @@
 // refresque.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -47,6 +47,7 @@ export interface SitioFormDialogData {
     MatIconModule,
   ],
   templateUrl: './sitio-form-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './sitio-form-dialog.scss',
 })
 export class SitioFormDialog {

@@ -8,10 +8,16 @@
 // origen recargue).
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { FormArray, FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormArray,
+  FormBuilder,
+  FormControl,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -45,6 +51,7 @@ export interface LevantamientoFotosDialogData {
     StateContainer,
   ],
   templateUrl: './levantamiento-fotos-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './levantamiento-fotos-dialog.scss',
 })
 export class LevantamientoFotosDialog {

@@ -5,7 +5,7 @@
 // fiscal, total, estado y fecha de timbrado. Solo lectura.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 
@@ -41,6 +41,7 @@ import { Factura } from '../models/portal.models';
     CeldaTablaDirective,
     EstadoChip,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './portal-facturas.html',
 })
 export class PortalFacturas {

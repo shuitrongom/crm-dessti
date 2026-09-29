@@ -8,7 +8,7 @@
 // vista de Recepciones enlazando la Orden_Compra.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CurrencyPipe, DatePipe } from '@angular/common';
@@ -71,6 +71,7 @@ const TRANSICIONES: Record<string, { estado: string; etiqueta: string; destructi
     EstadoChip,
   ],
   templateUrl: './ordenes-compra.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../compras.scss',
 })
 export class ComprasOrdenesCompra {

@@ -6,7 +6,7 @@
 // que devuelve una Promesa<boolean> con la decision del Usuario.
 // =============================================================================
 
-import { Component, Injectable, inject } from '@angular/core';
+import { Component, Injectable, inject, ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import {
   MAT_DIALOG_DATA,
@@ -31,6 +31,7 @@ export interface DatosConfirmacion {
 @Component({
   selector: 'app-confirm-dialog',
   imports: [MatDialogModule, MatButtonModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <h2 mat-dialog-title id="confirm-dialog-titulo">{{ datos.titulo }}</h2>
     <mat-dialog-content>

@@ -13,14 +13,17 @@
 // internamente y jamas se pide teclear.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import {
+  MatAutocompleteModule,
+  MatAutocompleteSelectedEvent,
+} from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -49,6 +52,7 @@ import { Empresa, EstadoEmpresa } from '../models/plataforma.models';
     PageHeader,
   ],
   templateUrl: './offboarding.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './offboarding.scss',
 })
 export class PlataformaOffboarding {
@@ -240,8 +244,7 @@ export class PlataformaOffboarding {
     }
     const ok = await this.confirm.confirmar({
       titulo: 'Cancelar empresa',
-      mensaje:
-        `Se cancelara "${empresa.nombre}" e iniciara su periodo de gracia. Durante ese periodo se puede revertir. Deseas continuar?`,
+      mensaje: `Se cancelara "${empresa.nombre}" e iniciara su periodo de gracia. Durante ese periodo se puede revertir. Deseas continuar?`,
       textoConfirmar: 'Cancelar empresa',
       destructiva: true,
     });
@@ -270,8 +273,7 @@ export class PlataformaOffboarding {
     }
     const ok = await this.confirm.confirmar({
       titulo: 'Eliminar datos definitivamente',
-      mensaje:
-        `Esta accion elimina o anonimiza los datos de negocio de "${empresa.nombre}" de forma irreversible (se preservan los comprobantes fiscales). Solo procede tras vencer el periodo de gracia. Deseas continuar?`,
+      mensaje: `Esta accion elimina o anonimiza los datos de negocio de "${empresa.nombre}" de forma irreversible (se preservan los comprobantes fiscales). Solo procede tras vencer el periodo de gracia. Deseas continuar?`,
       textoConfirmar: 'Eliminar definitivamente',
       destructiva: true,
     });

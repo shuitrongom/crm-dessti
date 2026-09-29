@@ -8,7 +8,7 @@
 // Gobernada por transferencia_bancaria:crear / :listar (deny-by-default).
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CurrencyPipe, DatePipe } from '@angular/common';
@@ -61,6 +61,7 @@ import { CuentaBancaria, TransferenciaBancaria } from '../models/tesoreria.model
     CeldaTablaDirective,
   ],
   templateUrl: './transferencias.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../tesoreria.scss',
 })
 export class TesoreriaTransferencias {
@@ -161,7 +162,11 @@ export class TesoreriaTransferencias {
           fecha: v.fecha,
           concepto: v.concepto.trim() || null,
         }),
-        { tipo: 'traspasar', textoProceso: 'Registrando transferencia…', textoExito: 'Transferencia registrada' },
+        {
+          tipo: 'traspasar',
+          textoProceso: 'Registrando transferencia…',
+          textoExito: 'Transferencia registrada',
+        },
       )
       .subscribe({
         next: () => {
@@ -175,7 +180,9 @@ export class TesoreriaTransferencias {
           this.guardando.set(false);
           if (e.status === 422) {
             const campos = erroresDeCampo(e);
-            this.toast.error(campos.length ? campos.map((c) => c.mensaje).join(' ') : mensajeDeError(e));
+            this.toast.error(
+              campos.length ? campos.map((c) => c.mensaje).join(' ') : mensajeDeError(e),
+            );
             return;
           }
           this.toast.error(mensajeDeError(e));

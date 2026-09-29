@@ -7,7 +7,7 @@
 // excepciones). Tras conciliar se muestra la diferencia resultante como indicador.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CurrencyPipe } from '@angular/common';
@@ -60,6 +60,7 @@ import { ConciliacionBancaria, CuentaBancaria } from '../models/tesoreria.models
     EstadoChip,
   ],
   templateUrl: './cuentas-bancarias.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../tesoreria.scss',
 })
 export class TesoreriaCuentasBancarias {
@@ -161,7 +162,12 @@ export class TesoreriaCuentasBancarias {
     this.guardando.set(true);
     this.overlay
       .ejecutar(
-        this.service.crearCuenta({ nombre: v.nombre, banco: v.banco, clabe: v.clabe || null, moneda: v.moneda || null }),
+        this.service.crearCuenta({
+          nombre: v.nombre,
+          banco: v.banco,
+          clabe: v.clabe || null,
+          moneda: v.moneda || null,
+        }),
         { tipo: 'crear', textoProceso: 'Creando cuenta…', textoExito: 'Cuenta creada' },
       )
       .subscribe({
@@ -198,12 +204,14 @@ export class TesoreriaCuentasBancarias {
       return;
     }
     const v = this.formImport.getRawValue();
-    const movimientos = (v.movimientos as {
-      fecha: string;
-      monto: number;
-      referencia: string;
-      descripcion: string;
-    }[]).map((m) => ({
+    const movimientos = (
+      v.movimientos as {
+        fecha: string;
+        monto: number;
+        referencia: string;
+        descripcion: string;
+      }[]
+    ).map((m) => ({
       fecha: m.fecha,
       monto: m.monto,
       referencia: m.referencia || null,

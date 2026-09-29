@@ -11,7 +11,7 @@
 // Al guardar, cierra devolviendo la Orden creada.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -52,6 +52,7 @@ export type OrdenFabricacionFormDialogData = Record<string, never>;
     EntitySelect,
   ],
   templateUrl: './orden-fabricacion-form-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './orden-fabricacion-form-dialog.scss',
 })
 export class OrdenFabricacionFormDialog {
@@ -100,9 +101,7 @@ export class OrdenFabricacionFormDialog {
     filtro: string,
   ): Observable<PaginaResponse<Cotizacion>> => {
     const termino = filtro.trim().toLowerCase();
-    const lista = this.nombres
-      .cotizaciones()
-      .filter((c) => c.estado === 'aprobada');
+    const lista = this.nombres.cotizaciones().filter((c) => c.estado === 'aprobada');
     const content = termino
       ? lista.filter((c) => (c.folio ?? '').toLowerCase().includes(termino))
       : lista.slice(0, 20);

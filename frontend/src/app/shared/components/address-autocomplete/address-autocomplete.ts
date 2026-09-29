@@ -18,7 +18,14 @@
 // ayuda descriptivo y estados de carga/sin resultados legibles.
 // =============================================================================
 
-import { Component, DestroyRef, inject, output, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  inject,
+  output,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -55,6 +62,7 @@ export interface DireccionAutocompletada {
     MatProgressSpinnerModule,
   ],
   templateUrl: './address-autocomplete.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './address-autocomplete.scss',
 })
 export class AddressAutocomplete {

@@ -8,7 +8,7 @@
 // devolviendo la evidencia creada (en estado pendiente de aprobacion).
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -18,7 +18,11 @@ import { OperacionOverlayService } from '../../../shared/components/operacion-ov
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 
 import { EvidenciasService } from '../services/evidencias.service';
-import { EvidenciaAvance, ETIQUETA_FASE_SITIO, FaseSitioGenerica } from '../models/operacion.models';
+import {
+  EvidenciaAvance,
+  ETIQUETA_FASE_SITIO,
+  FaseSitioGenerica,
+} from '../models/operacion.models';
 
 /** Tipos MIME admitidos para la evidencia (alineado con el backend). */
 const TIPOS_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
@@ -37,6 +41,7 @@ export interface EvidenciaSubirDialogData {
   selector: 'app-evidencia-subir-dialog',
   imports: [MatDialogModule, MatButtonModule, MatIconModule],
   templateUrl: './evidencia-subir-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './evidencia-subir-dialog.scss',
 })
 export class EvidenciaSubirDialog {

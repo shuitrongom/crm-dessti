@@ -7,7 +7,7 @@
 // POST/PUT via CanalesVentaService y cierra devolviendo el Canal resultante.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -41,6 +41,7 @@ export interface CanalVentaFormDialogData {
     MatIconModule,
   ],
   templateUrl: './canal-venta-form-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './canal-venta-form-dialog.scss',
 })
 export class CanalVentaFormDialog {

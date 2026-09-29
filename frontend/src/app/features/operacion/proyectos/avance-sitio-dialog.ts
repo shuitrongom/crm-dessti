@@ -9,7 +9,7 @@
 // PUT .../sitios/{id}/avance via ProyectosService y cierra con el Proyecto.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -68,6 +68,7 @@ export interface AvanceSitioDialogData {
     MatIconModule,
   ],
   templateUrl: './avance-sitio-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './avance-sitio-dialog.scss',
 })
 export class AvanceSitioDialog {

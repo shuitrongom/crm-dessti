@@ -8,7 +8,7 @@
 // módulo 'contabilidad' y el permiso contabilidad_electronica gobiernan el acceso.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CurrencyPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -22,7 +22,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 
-import { ContabilidadElectronicaService, ArchivoDescargado } from '../services/contabilidad-electronica.service';
+import {
+  ContabilidadElectronicaService,
+  ArchivoDescargado,
+} from '../services/contabilidad-electronica.service';
 import {
   VistaPreviaBalanza,
   VistaPreviaCatalogo,
@@ -43,6 +46,7 @@ import {
     PageHeader,
   ],
   templateUrl: './contabilidad-electronica.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../contabilidad.scss',
 })
 export class ContabilidadElectronica {
@@ -68,7 +72,10 @@ export class ContabilidadElectronica {
   private readonly hoy = new Date();
 
   protected readonly formPeriodo = this.fb.nonNullable.group({
-    anio: [this.hoy.getFullYear(), [Validators.required, Validators.min(2000), Validators.max(2999)]],
+    anio: [
+      this.hoy.getFullYear(),
+      [Validators.required, Validators.min(2000), Validators.max(2999)],
+    ],
     mes: [this.hoy.getMonth() + 1, [Validators.required, Validators.min(1), Validators.max(12)]],
   });
 

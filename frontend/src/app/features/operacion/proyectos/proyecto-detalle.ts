@@ -7,7 +7,15 @@
 // acciones se gobiernan por permiso proyecto:{leer,actualizar}.
 // =============================================================================
 
-import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  computed,
+  inject,
+  input,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -69,6 +77,7 @@ import {
     DashboardSection,
   ],
   templateUrl: './proyecto-detalle.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './proyecto-detalle.scss',
 })
 export class OperacionProyectoDetalle implements OnInit {
@@ -238,8 +247,7 @@ export class OperacionProyectoDetalle implements OnInit {
   avanzarSitio(sitio: SitioFase, destino: FaseSitioGenerica): void {
     // Entregar (desde en_instalacion) exige evidencia aprobada (Req 3.2): se avisa
     // en el modal; el backend aplica la guarda y responde 422 si falta.
-    const requiereEvidencia =
-      destino === 'entregado' && sitio.fase === 'en_instalacion';
+    const requiereEvidencia = destino === 'entregado' && sitio.fase === 'en_instalacion';
     // Pasar a instalación exige levantamiento completado + permiso vigente
     // (Req 3-bis.2): se avisa en el modal; el backend valida y responde 422 si falta.
     const requierePrecondicionesInstalacion = destino === 'en_instalacion';

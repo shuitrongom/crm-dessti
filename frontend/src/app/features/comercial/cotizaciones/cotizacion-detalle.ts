@@ -8,7 +8,15 @@
 // gobiernan por permiso atomico (deny-by-default).
 // =============================================================================
 
-import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  computed,
+  inject,
+  input,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
@@ -76,6 +84,7 @@ import {
     EstadoChip,
   ],
   templateUrl: './cotizacion-detalle.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './cotizacion-detalle.scss',
 })
 export class ComercialCotizacionDetalle implements OnInit {
@@ -109,7 +118,12 @@ export class ComercialCotizacionDetalle implements OnInit {
   protected readonly etiquetaEstadoPrueba = ETIQUETA_ESTADO_PRUEBA;
   protected readonly tonoEstado = tonoDeEstado;
   protected readonly columnasPartidas = [
-    'descripcion', 'cantidad', 'precioUnitario', 'descuento', 'iva', 'subtotal',
+    'descripcion',
+    'cantidad',
+    'precioUnitario',
+    'descuento',
+    'iva',
+    'subtotal',
   ];
 
   /** Etiqueta legible de la tasa de IVA de una partida para la tabla (V80). */
@@ -142,9 +156,7 @@ export class ComercialCotizacionDetalle implements OnInit {
   });
 
   /** Codigo de moneda efectivo de la cotizacion (MXN por defecto). */
-  protected readonly moneda = computed(
-    () => this.cotizacion()?.moneda || MONEDA_POR_DEFECTO,
-  );
+  protected readonly moneda = computed(() => this.cotizacion()?.moneda || MONEDA_POR_DEFECTO);
 
   /** Titulo con folio para el encabezado ("Cotizacion COT-2026-0001"). */
   protected readonly titulo = computed(() => {
@@ -392,8 +404,12 @@ export class ComercialCotizacionDetalle implements OnInit {
     this.formPartidaAbierto.update((v) => !v);
     if (this.formPartidaAbierto()) {
       this.formPartida.reset({
-        productoId: '', descripcion: '', cantidad: 1, precioUnitario: null,
-        descuento: null, tasaIva: TASA_IVA_POR_DEFECTO,
+        productoId: '',
+        descripcion: '',
+        cantidad: 1,
+        precioUnitario: null,
+        descuento: null,
+        tasaIva: TASA_IVA_POR_DEFECTO,
       });
     }
   }

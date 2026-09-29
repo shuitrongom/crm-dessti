@@ -13,7 +13,7 @@
 // logo se carga como archivo de imagen (<= 256 KB) y se envia como data-URI.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -75,6 +75,7 @@ type TipoInstrumento = 'plan' | 'suscripcion';
     SelectableCard,
   ],
   templateUrl: './crear-empresa-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './crear-empresa-dialog.scss',
 })
 export class CrearEmpresaDialog {
@@ -171,8 +172,7 @@ export class CrearEmpresaDialog {
    * Suscripcion que admita prueba (Req 4.5).
    */
   protected readonly mostrarOtorgarPrueba = computed<boolean>(
-    () =>
-      this.tipoInstrumentoSeleccionado() === 'suscripcion' && this.paqueteAdmitePrueba(),
+    () => this.tipoInstrumentoSeleccionado() === 'suscripcion' && this.paqueteAdmitePrueba(),
   );
 
   /**
@@ -268,11 +268,7 @@ export class CrearEmpresaDialog {
     const claves = new Set(this.modulosDelInstrumento());
     const ajenos = new Set<string>();
     for (const modulo of this.catalogoModulos()) {
-      if (
-        claves.has(modulo.clave) &&
-        modulo.giro !== null &&
-        modulo.giro !== giroEmpresa
-      ) {
+      if (claves.has(modulo.clave) && modulo.giro !== null && modulo.giro !== giroEmpresa) {
         ajenos.add(modulo.giro);
       }
     }
@@ -569,26 +565,26 @@ export class CrearEmpresaDialog {
     this.overlay
       .ejecutar(
         this.empresasService.crear({
-        nombre: v.nombre.trim(),
-        giroId: v.giroId,
-        rfc: v.rfc.trim().toUpperCase(),
-        // Instrumento comercial EXCLUYENTE: exactamente uno queda con valor y el
-        // otro en null (Req 4.1-4.4). El backend valida el XOR (422).
-        planId: esPlan ? v.planId : null,
-        paqueteSuscripcionId: esPlan ? null : v.paqueteSuscripcionId,
-        otorgarPrueba: !esPlan && this.paqueteAdmitePrueba() ? v.otorgarPrueba : false,
-        adminIdentificador: v.adminIdentificador.trim(),
-        adminPassword: v.adminPassword ? v.adminPassword : null,
-        modulosHabilitados: this.modulosHabilitadosSolicitados(),
-        nombreComercial: this.opcional(v.nombreComercial),
-        emailContacto: this.opcional(v.emailContacto),
-        telefono: this.opcional(v.telefono),
-        sitioWeb: this.opcional(v.sitioWeb),
-        direccionCalle: this.opcional(v.direccionCalle),
-        direccionCiudad: this.opcional(v.direccionCiudad),
-        direccionEstado: this.opcional(v.direccionEstado),
-        direccionCp: this.opcional(v.direccionCp),
-        direccionPais: this.opcional(v.direccionPais),
+          nombre: v.nombre.trim(),
+          giroId: v.giroId,
+          rfc: v.rfc.trim().toUpperCase(),
+          // Instrumento comercial EXCLUYENTE: exactamente uno queda con valor y el
+          // otro en null (Req 4.1-4.4). El backend valida el XOR (422).
+          planId: esPlan ? v.planId : null,
+          paqueteSuscripcionId: esPlan ? null : v.paqueteSuscripcionId,
+          otorgarPrueba: !esPlan && this.paqueteAdmitePrueba() ? v.otorgarPrueba : false,
+          adminIdentificador: v.adminIdentificador.trim(),
+          adminPassword: v.adminPassword ? v.adminPassword : null,
+          modulosHabilitados: this.modulosHabilitadosSolicitados(),
+          nombreComercial: this.opcional(v.nombreComercial),
+          emailContacto: this.opcional(v.emailContacto),
+          telefono: this.opcional(v.telefono),
+          sitioWeb: this.opcional(v.sitioWeb),
+          direccionCalle: this.opcional(v.direccionCalle),
+          direccionCiudad: this.opcional(v.direccionCiudad),
+          direccionEstado: this.opcional(v.direccionEstado),
+          direccionCp: this.opcional(v.direccionCp),
+          direccionPais: this.opcional(v.direccionPais),
           notas: this.opcional(v.notas),
           logo: this.logo() ?? undefined,
         }),

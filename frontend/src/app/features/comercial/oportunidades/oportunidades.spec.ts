@@ -274,5 +274,9 @@ describe('ComercialOportunidades', () => {
     configurar();
     resolverCargaInicial([oportunidadDto()]);
     await esperarSinViolaciones(fixture);
-  });
+    // axe-core es intensivo en CPU y el render del pipeline (Kanban) es pesado;
+    // bajo carga puede superar el limite por defecto de 5s. Se alinea con el
+    // resto de pruebas axe usando el timeout inline de 30s (el builder no
+    // aplica de forma fiable el testTimeout global a este caso).
+  }, 30000);
 });

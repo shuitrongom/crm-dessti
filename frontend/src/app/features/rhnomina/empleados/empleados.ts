@@ -8,7 +8,7 @@
 // mensajes en espanol.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CurrencyPipe, DatePipe } from '@angular/common';
@@ -65,6 +65,7 @@ import { ContratoLaboral, Empleado, Incidencia } from '../models/rhnomina.models
     EstadoChip,
   ],
   templateUrl: './empleados.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../rhnomina.scss',
 })
 export class RhNominaEmpleados {
@@ -124,13 +125,15 @@ export class RhNominaEmpleados {
 
   cargar(): void {
     this.estado.set(cargando());
-    this.service.listarEmpleados(this.filtroNombre() || null, null, this.page(), this.size()).subscribe({
-      next: (pagina) => {
-        this.total.set(pagina.totalElements);
-        this.estado.set(conDatos(pagina.content, pagina.content.length === 0));
-      },
-      error: (e: HttpErrorResponse) => this.estado.set(conError(mensajeDeError(e))),
-    });
+    this.service
+      .listarEmpleados(this.filtroNombre() || null, null, this.page(), this.size())
+      .subscribe({
+        next: (pagina) => {
+          this.total.set(pagina.totalElements);
+          this.estado.set(conDatos(pagina.content, pagina.content.length === 0));
+        },
+        error: (e: HttpErrorResponse) => this.estado.set(conError(mensajeDeError(e))),
+      });
   }
 
   cambiarPagina(evento: CambioPagina): void {
@@ -255,7 +258,12 @@ export class RhNominaEmpleados {
       .subscribe({
         next: () => {
           this.toast.exito('Incidencia registrada.');
-          this.formIncidencia.reset({ periodoNomina: '', tipo: 'falta', cantidad: null, descripcion: '' });
+          this.formIncidencia.reset({
+            periodoNomina: '',
+            tipo: 'falta',
+            cantidad: null,
+            descripcion: '',
+          });
           this.seleccionar(empleado);
         },
         error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),

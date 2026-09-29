@@ -5,7 +5,7 @@
 // por Cliente; la UI nunca envia clienteId). Solo lectura.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -47,6 +47,7 @@ import { Cotizacion } from '../models/portal.models';
     CeldaTablaDirective,
     EstadoChip,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './portal-cotizaciones.html',
 })
 export class PortalCotizaciones {

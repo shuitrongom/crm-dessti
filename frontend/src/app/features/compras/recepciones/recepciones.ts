@@ -8,7 +8,7 @@
 // deriva el estado de la Orden (recibida_parcial / recibida_total).
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DatePipe } from '@angular/common';
@@ -56,6 +56,7 @@ import { OrdenCompra, RecepcionMercancia } from '../models/compras.models';
     CeldaTablaDirective,
   ],
   templateUrl: './recepciones.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../compras.scss',
 })
 export class ComprasRecepciones {
@@ -166,9 +167,9 @@ export class ComprasRecepciones {
       return;
     }
     const v = this.formRegistro.getRawValue();
-    const partidas = (v.partidas as { partidaOrdenCompraId: string; cantidadRecibida: number }[]).filter(
-      (p) => p.cantidadRecibida > 0,
-    );
+    const partidas = (
+      v.partidas as { partidaOrdenCompraId: string; cantidadRecibida: number }[]
+    ).filter((p) => p.cantidadRecibida > 0);
     if (partidas.length === 0) {
       this.toast.info('Captura al menos una cantidad recibida.');
       return;
@@ -181,22 +182,22 @@ export class ComprasRecepciones {
         textoExito: 'Recepción registrada',
       })
       .subscribe({
-      next: () => {
-        this.guardando.set(false);
-        this.toast.exito('Recepcion registrada.');
-        this.ordenSeleccionada.set(null);
-        this.formRegistro.reset({ ordenCompraId: '' });
-        this.formRegistro.setControl(
-          'partidas',
-          this.fb.array<ReturnType<ComprasRecepciones['crearRenglon']>>([]),
-        );
-        this.page.set(0);
-        this.cargar();
-      },
-      error: (e: HttpErrorResponse) => {
-        this.guardando.set(false);
-        this.toast.error(mensajeDeError(e));
-      },
-    });
+        next: () => {
+          this.guardando.set(false);
+          this.toast.exito('Recepcion registrada.');
+          this.ordenSeleccionada.set(null);
+          this.formRegistro.reset({ ordenCompraId: '' });
+          this.formRegistro.setControl(
+            'partidas',
+            this.fb.array<ReturnType<ComprasRecepciones['crearRenglon']>>([]),
+          );
+          this.page.set(0);
+          this.cargar();
+        },
+        error: (e: HttpErrorResponse) => {
+          this.guardando.set(false);
+          this.toast.error(mensajeDeError(e));
+        },
+      });
   }
 }

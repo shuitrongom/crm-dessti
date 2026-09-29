@@ -9,7 +9,7 @@
 // estados con StateContainer.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -54,6 +54,7 @@ import { ClienteFormDialog, ClienteFormDialogData } from './cliente-form-dialog'
     CeldaTablaDirective,
   ],
   templateUrl: './clientes.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './clientes.scss',
 })
 export class ComercialClientes {

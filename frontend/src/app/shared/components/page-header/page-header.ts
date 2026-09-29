@@ -5,7 +5,7 @@
 // vista), subtitulo opcional y una zona de acciones proyectada a la derecha.
 // =============================================================================
 
-import { Component, input } from '@angular/core';
+import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
   selector: 'app-page-header',
@@ -22,6 +22,7 @@ import { Component, input } from '@angular/core';
       </div>
     </header>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './page-header.scss',
 })
 export class PageHeader {

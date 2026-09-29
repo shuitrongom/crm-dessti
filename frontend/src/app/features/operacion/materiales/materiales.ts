@@ -10,7 +10,7 @@
 // permiso material:{...} y movimiento_inventario:crear.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -64,6 +64,7 @@ import {
     CeldaTablaDirective,
   ],
   templateUrl: './materiales.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './materiales.scss',
 })
 export class OperacionMateriales {

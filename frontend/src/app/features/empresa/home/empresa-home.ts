@@ -12,7 +12,7 @@
 // permiso, el bloque no se solicita ni se renderiza.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatDialog } from '@angular/material/dialog';
 import { forkJoin, of } from 'rxjs';
@@ -37,7 +37,10 @@ import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../shared/components/state-container/state-container';
 import { ProgressBadge } from '../../../shared/components/progress-badge/progress-badge';
 import { IndicatorCard } from '../../../shared/components/indicator-card/indicator-card';
-import { MetricChart, type MetricPoint } from '../../../shared/components/metric-chart/metric-chart';
+import {
+  MetricChart,
+  type MetricPoint,
+} from '../../../shared/components/metric-chart/metric-chart';
 import { Scorecard } from '../../reportes/scorecard/scorecard';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -45,9 +48,16 @@ import { MatIconModule } from '@angular/material/icon';
 import { BrandingService } from '../services/branding.service';
 import { MiEmpresaService } from '../services/mi-empresa.service';
 import { EstrategiaVistasService } from '../../estrategia-vistas/services/estrategia-vistas.service';
-import { EsenciaEmpresa, ObjetivoEstrategico } from '../../estrategia-vistas/models/estrategia.models';
+import {
+  EsenciaEmpresa,
+  ObjetivoEstrategico,
+} from '../../estrategia-vistas/models/estrategia.models';
 import { TableroService } from '../../reportes/services/tablero.service';
-import { IndicadoresArea, InteligenciaNegocio, Tablero } from '../../reportes/models/reportes.models';
+import {
+  IndicadoresArea,
+  InteligenciaNegocio,
+  Tablero,
+} from '../../reportes/models/reportes.models';
 import { OportunidadesService } from '../../comercial/services/oportunidades.service';
 import { CotizacionesService } from '../../comercial/services/cotizaciones.service';
 import { Oportunidad } from '../../comercial/models/comercial.models';
@@ -98,6 +108,7 @@ function resumenComercialVacio(): ResumenComercial {
     MatIconModule,
   ],
   templateUrl: './empresa-home.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './empresa-home.scss',
 })
 export class EmpresaHome {
@@ -238,9 +249,7 @@ export class EmpresaHome {
   /** Elige dona para varios conteos sin comparativo; barras en el resto. */
   protected tipoGraficaArea(grupo: IndicadoresArea): 'dona' | 'barras' {
     const hayComparativo = grupo.indicadores.some((i) => i.comparativo != null);
-    const todosConteo = grupo.indicadores.every(
-      (i) => (i.unidad ?? '').toLowerCase() === 'conteo',
-    );
+    const todosConteo = grupo.indicadores.every((i) => (i.unidad ?? '').toLowerCase() === 'conteo');
     if (!hayComparativo && todosConteo && grupo.indicadores.length >= 3) {
       return 'dona';
     }
@@ -252,7 +261,12 @@ export class EmpresaHome {
    * el mismo modal del tablero (mismo catalogo de indicadores). La clave debe
    * coincidir con una del catalogo para que muestre la explicacion correcta.
    */
-  protected abrirInfoComercial(clave: string, etiqueta: string, valor: number, unidad: string): void {
+  protected abrirInfoComercial(
+    clave: string,
+    etiqueta: string,
+    valor: number,
+    unidad: string,
+  ): void {
     const datos: DatosIndicadorInfo = { clave, etiqueta, valor, unidad };
     this.dialog.open(IndicadorInfoDialog, {
       data: datos,
@@ -312,7 +326,9 @@ export class EmpresaHome {
   cargarBranding(): void {
     if (!this.auth.tienePermiso('branding', 'leer')) {
       // Sin permiso de branding: se omite el bloque (deny-by-default, Req 3).
-      this.branding.set(conDatos<Branding>({ nombreVisible: null, logo: null, colorPrimario: null }));
+      this.branding.set(
+        conDatos<Branding>({ nombreVisible: null, logo: null, colorPrimario: null }),
+      );
       return;
     }
     this.branding.set(cargando());
@@ -326,7 +342,10 @@ export class EmpresaHome {
     // Gating por Modulo (deny-by-default): si la Empresa no tiene contratado el
     // Modulo 'estrategia', se omite el bloque SIN llamar al endpoint (evita el
     // 403/500 por Modulo no contratado). Requiere ademas el permiso.
-    if (!this.auth.tieneModulo('estrategia') || !this.auth.tienePermiso('planeacion_estrategica', 'leer')) {
+    if (
+      !this.auth.tieneModulo('estrategia') ||
+      !this.auth.tienePermiso('planeacion_estrategica', 'leer')
+    ) {
       this.esencia.set(conDatos<EsenciaEmpresa>(vaciaEsencia(), true));
       return;
     }
@@ -347,7 +366,10 @@ export class EmpresaHome {
   cargarObjetivos(): void {
     // Gating por Modulo 'estrategia' (deny-by-default) ademas del permiso: sin el
     // Modulo contratado se omite el bloque sin llamar al endpoint.
-    if (!this.auth.tieneModulo('estrategia') || !this.auth.tienePermiso('objetivo_estrategico', 'listar')) {
+    if (
+      !this.auth.tieneModulo('estrategia') ||
+      !this.auth.tienePermiso('objetivo_estrategico', 'listar')
+    ) {
       this.objetivos.set(conDatos<ObjetivoEstrategico[]>([], true));
       return;
     }
@@ -408,12 +430,10 @@ export class EmpresaHome {
           oportunidadesAbiertas: abiertas.length,
           cotizaciones: (cotizaciones?.content ?? []).length,
         };
-        const vacio =
-          resumen.oportunidadesAbiertas === 0 && resumen.cotizaciones === 0;
+        const vacio = resumen.oportunidadesAbiertas === 0 && resumen.cotizaciones === 0;
         this.resumenComercial.set(conDatos(resumen, vacio));
       },
-      error: (e: HttpErrorResponse) =>
-        this.resumenComercial.set(conError(mensajeDeError(e))),
+      error: (e: HttpErrorResponse) => this.resumenComercial.set(conError(mensajeDeError(e))),
     });
   }
 }

@@ -8,7 +8,7 @@
 // explicativo del indicador. Acciones gobernadas por permiso (deny-by-default).
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
@@ -60,6 +60,7 @@ type FiltroEstado = 'activo' | 'inactivo' | 'todos';
     CeldaTablaDirective,
   ],
   templateUrl: './productos.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './productos.scss',
 })
 export class ComercialProductos {

@@ -9,7 +9,7 @@
 // hace POST/PUT via ProductosService y cierra devolviendo el Producto resultante.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -52,6 +52,7 @@ export interface ProductoFormDialogData {
     MatIconModule,
   ],
   templateUrl: './producto-form-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './producto-form-dialog.scss',
 })
 export class ProductoFormDialog {
@@ -79,7 +80,9 @@ export class ProductoFormDialog {
   protected readonly fotoError = signal<string | null>(null);
 
   /** Titulo/subtitulo del dialogo segun el modo. */
-  protected readonly titulo = computed(() => (this.esEdicion ? 'Editar producto' : 'Nuevo producto'));
+  protected readonly titulo = computed(() =>
+    this.esEdicion ? 'Editar producto' : 'Nuevo producto',
+  );
   protected readonly subtitulo = computed(() =>
     this.esEdicion
       ? 'Actualiza los datos del producto o servicio de tu catálogo.'

@@ -10,7 +10,7 @@
 // aria, foco) y responsive; solo tokens del Sistema de Diseno.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -30,6 +30,7 @@ export interface UsuariosEmpresaDialogData {
   selector: 'app-usuarios-empresa-dialog',
   imports: [MatDialogModule, MatButtonModule, MatIconModule],
   templateUrl: './usuarios-empresa-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './usuarios-empresa-dialog.scss',
 })
 export class UsuariosEmpresaDialog {
@@ -59,11 +60,7 @@ export class UsuariosEmpresaDialog {
         this.cargando.set(false);
       },
       error: (e: HttpErrorResponse) => {
-        this.error.set(
-          e.status === 404
-            ? 'No se encontró la empresa.'
-            : mensajeDeError(e),
-        );
+        this.error.set(e.status === 404 ? 'No se encontró la empresa.' : mensajeDeError(e));
         this.cargando.set(false);
       },
     });

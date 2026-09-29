@@ -6,7 +6,7 @@
 // estado externo de SOLO LECTURA desde la Marketing API de Meta (Req 65.9).
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -60,6 +60,7 @@ import { ETIQUETA_CANAL, OPCIONES_CANAL } from '../social-etiquetas';
     CeldaTablaDirective,
   ],
   templateUrl: './campanas.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './campanas.scss',
 })
 export class Campanas {
@@ -82,10 +83,7 @@ export class Campanas {
   ];
 
   // Filtro por canal derivado del origen unico (los cinco canales) mas "todos".
-  protected readonly canales = [
-    { valor: '', etiqueta: 'Todos los canales' },
-    ...OPCIONES_CANAL,
-  ];
+  protected readonly canales = [{ valor: '', etiqueta: 'Todos los canales' }, ...OPCIONES_CANAL];
 
   // Opciones del alta: los cinco canales mas "sin canal" (campana no ligada).
   protected readonly canalesAlta = [{ valor: '', etiqueta: 'Sin canal' }, ...OPCIONES_CANAL];

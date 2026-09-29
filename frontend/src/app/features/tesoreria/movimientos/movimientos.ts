@@ -7,7 +7,7 @@
 // vista de cuentas bancarias.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -48,6 +48,7 @@ import { MovimientoBancario } from '../models/tesoreria.models';
     EstadoChip,
   ],
   templateUrl: './movimientos.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../tesoreria.scss',
 })
 export class TesoreriaMovimientos {
@@ -83,13 +84,15 @@ export class TesoreriaMovimientos {
 
   cargar(): void {
     this.estado.set(cargando());
-    this.service.listarMovimientos(null, this.filtroEstado() || null, this.page(), this.size()).subscribe({
-      next: (pagina) => {
-        this.total.set(pagina.totalElements);
-        this.estado.set(conDatos(pagina.content, pagina.content.length === 0));
-      },
-      error: (e: HttpErrorResponse) => this.estado.set(conError(mensajeDeError(e))),
-    });
+    this.service
+      .listarMovimientos(null, this.filtroEstado() || null, this.page(), this.size())
+      .subscribe({
+        next: (pagina) => {
+          this.total.set(pagina.totalElements);
+          this.estado.set(conDatos(pagina.content, pagina.content.length === 0));
+        },
+        error: (e: HttpErrorResponse) => this.estado.set(conError(mensajeDeError(e))),
+      });
   }
 
   cambiarPagina(evento: CambioPagina): void {

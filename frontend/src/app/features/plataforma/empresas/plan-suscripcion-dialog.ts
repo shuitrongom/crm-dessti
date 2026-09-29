@@ -25,11 +25,16 @@
 // Sistema de Diseno; espanol es-MX.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import {
+  MAT_DIALOG_DATA,
+  MatDialog,
+  MatDialogModule,
+  MatDialogRef,
+} from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
@@ -88,6 +93,7 @@ const ETIQUETAS_ESTADO: Record<EstadoSuscripcion, string> = {
   ],
   providers: [provideFechaIsoDatepicker()],
   templateUrl: './plan-suscripcion-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './plan-suscripcion-dialog.scss',
 })
 export class PlanSuscripcionDialog {
@@ -166,7 +172,9 @@ export class PlanSuscripcionDialog {
    * verdad del backend) y cae en el de la suscripcion vigente cargada.
    */
   protected readonly tipoInstrumento = computed<TipoInstrumento | null>(() => {
-    return this.data.empresa.planVigente?.tipoInstrumento ?? this.vigente()?.tipoInstrumento ?? null;
+    return (
+      this.data.empresa.planVigente?.tipoInstrumento ?? this.vigente()?.tipoInstrumento ?? null
+    );
   });
 
   /** Etiqueta humana del tipo de instrumento vigente ('Plan' | 'Suscripcion'). */

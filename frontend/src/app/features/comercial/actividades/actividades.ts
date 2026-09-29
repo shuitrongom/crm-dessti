@@ -14,7 +14,14 @@
 // Consume exclusivamente ActividadesService. Gated por actividad:listar.
 // =============================================================================
 
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
@@ -93,6 +100,7 @@ const GRUPOS_META: readonly { clave: GrupoUrgencia; etiqueta: string; icono: str
     KpiTile,
   ],
   templateUrl: './actividades.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './actividades.scss',
 })
 export class ComercialActividades implements OnInit {

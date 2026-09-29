@@ -4,7 +4,11 @@
 <header class="eh-hero">
   <div class="eh-hero__izq">
     @if (brandingData?.logo) {
-      <img class="eh-hero__logo" [src]="brandingData?.logo" alt="Logo de la empresa" />
+      <img
+        class="eh-hero__logo"
+        [src]="$safeNavigationMigration(brandingData?.logo)"
+        alt="Logo de la empresa"
+      />
     } @else {
       <span class="eh-hero__logo-icono" aria-hidden="true">
         <mat-icon>domain</mat-icon>
@@ -56,7 +60,14 @@
           <button
             type="button"
             class="eh-kpi-card eh-kpi-card--primario"
-            (click)="abrirInfoComercial('valor_pipeline_abierto', 'Valor en pipeline', resumenComercial().datos?.valorPipeline ?? 0, 'MXN')"
+            (click)="
+              abrirInfoComercial(
+                'valor_pipeline_abierto',
+                'Valor en pipeline',
+                resumenComercial().datos?.valorPipeline ?? 0,
+                'MXN'
+              )
+            "
             aria-label="Ver explicación de Valor en pipeline"
           >
             <span class="eh-kpi-card__icono"><mat-icon>payments</mat-icon></span>
@@ -68,12 +79,21 @@
           <button
             type="button"
             class="eh-kpi-card eh-kpi-card--info"
-            (click)="abrirInfoComercial('oportunidades_pipeline_abierto', 'Oportunidades abiertas', resumenComercial().datos?.oportunidadesAbiertas ?? 0, 'conteo')"
+            (click)="
+              abrirInfoComercial(
+                'oportunidades_pipeline_abierto',
+                'Oportunidades abiertas',
+                resumenComercial().datos?.oportunidadesAbiertas ?? 0,
+                'conteo'
+              )
+            "
             aria-label="Ver explicación de Oportunidades abiertas"
           >
             <span class="eh-kpi-card__icono"><mat-icon>trending_up</mat-icon></span>
             <mat-icon class="eh-kpi-card__info" aria-hidden="true">info</mat-icon>
-            <span class="eh-kpi-card__valor">{{ resumenComercial().datos?.oportunidadesAbiertas ?? 0 }}</span>
+            <span class="eh-kpi-card__valor">{{
+              resumenComercial().datos?.oportunidadesAbiertas ?? 0
+            }}</span>
             <span class="eh-kpi-card__label">Oportunidades abiertas</span>
             <span class="eh-kpi-card__sub">En etapas activas del pipeline</span>
           </button>
@@ -82,12 +102,21 @@
           <button
             type="button"
             class="eh-kpi-card eh-kpi-card--neutro"
-            (click)="abrirInfoComercial('cotizaciones_registradas', 'Cotizaciones', resumenComercial().datos?.cotizaciones ?? 0, 'conteo')"
+            (click)="
+              abrirInfoComercial(
+                'cotizaciones_registradas',
+                'Cotizaciones',
+                resumenComercial().datos?.cotizaciones ?? 0,
+                'conteo'
+              )
+            "
             aria-label="Ver explicación de Cotizaciones"
           >
             <span class="eh-kpi-card__icono"><mat-icon>request_quote</mat-icon></span>
             <mat-icon class="eh-kpi-card__info" aria-hidden="true">info</mat-icon>
-            <span class="eh-kpi-card__valor">{{ resumenComercial().datos?.cotizaciones ?? 0 }}</span>
+            <span class="eh-kpi-card__valor">{{
+              resumenComercial().datos?.cotizaciones ?? 0
+            }}</span>
             <span class="eh-kpi-card__label">Cotizaciones</span>
             <span class="eh-kpi-card__sub">Registradas en el sistema</span>
           </button>
@@ -134,7 +163,9 @@
                 <app-metric-chart
                   [datos]="puntosArea(area)"
                   [tipo]="tipoGraficaArea(area)"
-                  [titulo]="tipoGraficaArea(area) === 'dona' ? 'Distribucion' : 'Indicadores del area'"
+                  [titulo]="
+                    tipoGraficaArea(area) === 'dona' ? 'Distribucion' : 'Indicadores del area'
+                  "
                 />
               </div>
               <div class="eh-area__kpis">

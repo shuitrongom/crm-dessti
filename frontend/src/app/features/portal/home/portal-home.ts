@@ -8,7 +8,7 @@
 // shell.
 // =============================================================================
 
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 
@@ -18,6 +18,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 @Component({
   selector: 'app-portal-home',
   imports: [MatCardModule, MatIconModule, PageHeader],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <app-page-header
       titulo="Portal del cliente"
@@ -27,8 +28,8 @@ import { AuthService } from '../../../core/auth/auth.service';
       <mat-card-content>
         <p class="admin-sin-datos">
           <mat-icon aria-hidden="true">info</mat-icon>
-          Desde aqui podras consultar la informacion de tus proyectos y solicitudes.
-          Las secciones del portal se habilitaran proximamente.
+          Desde aqui podras consultar la informacion de tus proyectos y solicitudes. Las secciones
+          del portal se habilitaran proximamente.
         </p>
       </mat-card-content>
     </mat-card>

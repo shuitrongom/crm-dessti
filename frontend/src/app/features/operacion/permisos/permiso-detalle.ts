@@ -12,7 +12,15 @@
 // PageHeader, es-MX, solo design tokens y WCAG AA.
 // =============================================================================
 
-import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  computed,
+  inject,
+  input,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
 import { RouterLink } from '@angular/router';
@@ -22,10 +30,7 @@ import { MatIconModule } from '@angular/material/icon';
 
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../shared/components/state-container/state-container';
-import {
-  ChipEstado,
-  VarianteChipEstado,
-} from '../../../shared/components/chip-estado/chip-estado';
+import { ChipEstado, VarianteChipEstado } from '../../../shared/components/chip-estado/chip-estado';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -54,6 +59,7 @@ import {
     ChipEstado,
   ],
   templateUrl: './permiso-detalle.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './permiso-detalle.scss',
 })
 export class OperacionPermisoDetalle implements OnInit {

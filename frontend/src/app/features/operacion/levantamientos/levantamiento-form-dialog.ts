@@ -8,7 +8,7 @@
 // hace POST via LevantamientosService y cierra devolviendo el Levantamiento.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -34,6 +34,7 @@ import { LevantamientoSitio } from '../models/operacion.models';
     MatIconModule,
   ],
   templateUrl: './levantamiento-form-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './levantamiento-form-dialog.scss',
 })
 export class LevantamientoFormDialog {

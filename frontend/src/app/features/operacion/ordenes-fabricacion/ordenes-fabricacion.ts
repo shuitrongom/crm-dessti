@@ -9,7 +9,7 @@
 // abren el modal explicativo. Acciones gobernadas por orden_fabricacion:{...}.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Observable, of } from 'rxjs';
@@ -73,6 +73,7 @@ import { OrdenFabricacionFormDialog } from './orden-fabricacion-form-dialog';
     CeldaTablaDirective,
   ],
   templateUrl: './ordenes-fabricacion.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './ordenes-fabricacion.scss',
 })
 export class OperacionOrdenesFabricacion {
@@ -85,7 +86,10 @@ export class OperacionOrdenesFabricacion {
   private readonly dialog = inject(MatDialog);
 
   protected readonly puedeCrear = this.auth.tienePermiso('orden_fabricacion', 'crear');
-  protected readonly puedeCambiarEstado = this.auth.tienePermiso('orden_fabricacion', 'cambiar_estado');
+  protected readonly puedeCambiarEstado = this.auth.tienePermiso(
+    'orden_fabricacion',
+    'cambiar_estado',
+  );
   private readonly mapaEstado = ETIQUETA_ESTADO_OF;
   protected readonly estados: EstadoOrdenFabricacion[] = [
     'pendiente',

@@ -14,7 +14,7 @@
 // Accesible (labels, foco, aria) y responsive; solo tokens del Sistema de Diseno.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   AbstractControl,
@@ -39,12 +39,7 @@ import { mensajeDeError } from '../../../core/services/error-mensajes';
 import { rfcValidator } from '../../../shared/validators/rfc.validator';
 
 import { ClientesService } from '../services/clientes.service';
-import {
-  Cliente,
-  ClienteRequest,
-  TIPOS_PERSONA,
-  TipoPersona,
-} from '../models/comercial.models';
+import { Cliente, ClienteRequest, TIPOS_PERSONA, TipoPersona } from '../models/comercial.models';
 
 /** Longitud maxima del campo de notas (coincide con la cota del backend). */
 const MAX_NOTAS = 1000;
@@ -81,6 +76,7 @@ function alMenosUnContacto(control: AbstractControl): ValidationErrors | null {
     AddressAutocomplete,
   ],
   templateUrl: './cliente-form-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './cliente-form-dialog.scss',
 })
 export class ClienteFormDialog {

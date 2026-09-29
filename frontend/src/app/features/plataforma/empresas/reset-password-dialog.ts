@@ -13,7 +13,7 @@
 // (labels, foco, aria) y responsive; solo tokens del Sistema de Diseno.
 // =============================================================================
 
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   AbstractControl,
@@ -90,6 +90,7 @@ function limpiarNoCoincide(control: AbstractControl): void {
     MatRadioModule,
   ],
   templateUrl: './reset-password-dialog.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './reset-password-dialog.scss',
 })
 export class ResetPasswordDialog {
@@ -155,9 +156,7 @@ export class ResetPasswordDialog {
     }
     const modo = this.formulario.controls.modo.value;
     const body =
-      modo === 'explicita'
-        ? { password: this.formulario.controls.password.value }
-        : undefined;
+      modo === 'explicita' ? { password: this.formulario.controls.password.value } : undefined;
 
     this.enviando.set(true);
     this.overlay
@@ -167,28 +166,30 @@ export class ResetPasswordDialog {
         textoExito: 'Contraseña restablecida',
       })
       .subscribe({
-      next: (resultado) => {
-        this.enviando.set(false);
-        if (resultado.passwordTemporal) {
-          // Se muestra una unica vez en el propio dialogo (con copiado).
-          this.resultado.set(resultado);
-        } else {
-          // Contrasena explicita: no hay temporal que mostrar; cierra con exito.
-          this.toast.exito(`Contraseña actualizada para ${resultado.identificador}.`);
-          this.dialogRef.close(true);
-        }
-      },
-      error: (e: HttpErrorResponse) => {
-        this.enviando.set(false);
-        if (e.status === 404) {
-          this.error.set('No se encontró un administrador para esta empresa.');
-        } else if (e.status === 422) {
-          this.error.set('La contraseña indicada no es válida. Debe tener entre 8 y 255 caracteres.');
-        } else {
-          this.error.set(mensajeDeError(e));
-        }
-      },
-    });
+        next: (resultado) => {
+          this.enviando.set(false);
+          if (resultado.passwordTemporal) {
+            // Se muestra una unica vez en el propio dialogo (con copiado).
+            this.resultado.set(resultado);
+          } else {
+            // Contrasena explicita: no hay temporal que mostrar; cierra con exito.
+            this.toast.exito(`Contraseña actualizada para ${resultado.identificador}.`);
+            this.dialogRef.close(true);
+          }
+        },
+        error: (e: HttpErrorResponse) => {
+          this.enviando.set(false);
+          if (e.status === 404) {
+            this.error.set('No se encontró un administrador para esta empresa.');
+          } else if (e.status === 422) {
+            this.error.set(
+              'La contraseña indicada no es válida. Debe tener entre 8 y 255 caracteres.',
+            );
+          } else {
+            this.error.set(mensajeDeError(e));
+          }
+        },
+      });
   }
 
   /** Copia la contrasena temporal al portapapeles (feedback temporal). */

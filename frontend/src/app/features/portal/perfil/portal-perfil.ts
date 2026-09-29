@@ -5,7 +5,7 @@
 // El backend acota al Cliente del usuario del portal; la UI nunca envía clienteId.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatCardModule } from '@angular/material/card';
 
@@ -25,6 +25,7 @@ import { PerfilCliente } from '../models/portal.models';
 @Component({
   selector: 'app-portal-perfil',
   imports: [MatCardModule, PageHeader, StateContainer],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './portal-perfil.html',
 })
 export class PortalPerfil {

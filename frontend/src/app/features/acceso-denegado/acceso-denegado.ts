@@ -6,7 +6,7 @@
 // su propio ambito segun su rol.
 // =============================================================================
 
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -21,8 +21,8 @@ import { AuthService } from '../../core/auth/auth.service';
       <mat-icon class="acceso-denegado__icono" aria-hidden="true">lock</mat-icon>
       <h1 class="acceso-denegado__titulo">Acceso denegado</h1>
       <p class="acceso-denegado__texto">
-        No tienes permiso para ver esta seccion. Si crees que es un error,
-        contacta al administrador de tu empresa.
+        No tienes permiso para ver esta seccion. Si crees que es un error, contacta al administrador
+        de tu empresa.
       </p>
       <button matButton="filled" type="button" (click)="irAInicio()">
         <mat-icon aria-hidden="true">home</mat-icon>
@@ -30,6 +30,7 @@ import { AuthService } from '../../core/auth/auth.service';
       </button>
     </main>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [
     `
       .acceso-denegado {

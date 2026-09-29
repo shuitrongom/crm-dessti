@@ -8,7 +8,7 @@
 // como insignia (conciliada/discrepancia). El backend valida cada transicion.
 // =============================================================================
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CurrencyPipe, DatePipe } from '@angular/common';
@@ -65,6 +65,7 @@ import { FacturaProveedor } from '../models/compras.models';
     EstadoChip,
   ],
   templateUrl: './facturas-proveedor.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: '../compras.scss',
 })
 export class ComprasFacturasProveedor {
@@ -79,7 +80,10 @@ export class ComprasFacturasProveedor {
   protected readonly humanizar = humanizarEstado;
 
   protected readonly puedeCrear = this.auth.tienePermiso('factura_proveedor', 'crear');
-  protected readonly puedeCambiarEstado = this.auth.tienePermiso('factura_proveedor', 'cambiar_estado');
+  protected readonly puedeCambiarEstado = this.auth.tienePermiso(
+    'factura_proveedor',
+    'cambiar_estado',
+  );
 
   protected readonly columnas: ColumnaTabla[] = [
     { clave: 'folio', encabezado: 'Folio proveedor' },
