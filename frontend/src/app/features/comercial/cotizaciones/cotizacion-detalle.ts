@@ -40,6 +40,7 @@ import { EstadoChip } from '../../finanzas-comun/estado-chip/estado-chip';
 import { tonoDeEstado } from '../../finanzas-comun/tono-estado';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
 import { AuthService } from '../../../core/auth/auth.service';
+import { GIRO_ANUNCIOS } from '../../../core/auth/auth.models';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 import { PaginaResponse } from '../../../core/models/pagina-response';
 import { FaseSolicitud } from '../../../shared/models/estado-solicitud';
@@ -104,9 +105,22 @@ export class ComercialCotizacionDetalle implements OnInit {
   protected readonly puedeActualizar = this.auth.tienePermiso('cotizacion', 'actualizar');
   protected readonly puedeLeer = this.auth.tienePermiso('cotizacion', 'leer');
   protected readonly puedeCambiarEstado = this.auth.tienePermiso('cotizacion', 'cambiar_estado');
-  protected readonly puedeGenerarPrueba = this.auth.tienePermiso('prueba_diseno', 'crear');
-  protected readonly puedeListarPruebas = this.auth.tienePermiso('prueba_diseno', 'listar');
-  protected readonly puedeDecidirPrueba = this.auth.tienePermiso('prueba_diseno', 'cambiar_estado');
+  /**
+   * Las Pruebas de Diseno pertenecen al Vertical_Anuncios: sus endpoints exigen
+   * (backend, PruebaDisenoController) el Modulo `operacion` habilitado Y el Giro
+   * `anuncios-luminosos` Y el permiso atomico. El gating del frontend replica las
+   * TRES condiciones para no disparar llamadas que el backend rechazaria con 403
+   * (evita el toast de "sin permiso") ni ofrecer acciones no permitidas. Mismo
+   * patron que NavigationService para los items del vertical (Req 9.2, 9.3, 15).
+   */
+  private readonly puedeOperacionAnuncios =
+    this.auth.tieneModulo('operacion') && this.auth.esGiro(GIRO_ANUNCIOS);
+  protected readonly puedeGenerarPrueba =
+    this.puedeOperacionAnuncios && this.auth.tienePermiso('prueba_diseno', 'crear');
+  protected readonly puedeListarPruebas =
+    this.puedeOperacionAnuncios && this.auth.tienePermiso('prueba_diseno', 'listar');
+  protected readonly puedeDecidirPrueba =
+    this.puedeOperacionAnuncios && this.auth.tienePermiso('prueba_diseno', 'cambiar_estado');
   /** El enlace al Cliente solo se ofrece si el Usuario puede abrir su Ficha 360 (Req 3.1, 7.2). */
   protected readonly puedeVerCliente = this.auth.tienePermiso('cliente', 'leer');
   /** El enlace a la Oportunidad de origen solo se ofrece si el Usuario puede leerla (Req 3.1, 7.2). */

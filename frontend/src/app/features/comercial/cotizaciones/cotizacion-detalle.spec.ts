@@ -36,13 +36,34 @@ registerLocaleData(localeEsMx);
  */
 class AuthServiceStub {
   private readonly denegados = new Set<string>();
+  /** Por defecto el tenant es de anuncios-luminosos con el modulo operacion. */
+  private modulos = new Set<string>(['operacion']);
+  private giroClave: string | null = 'anuncios-luminosos';
 
   denegar(recurso: string, operacion: string): void {
     this.denegados.add(`${recurso}:${operacion}`);
   }
 
+  /** Simula un tenant sin el modulo indicado (gating por modulo del vertical). */
+  sinModulo(clave: string): void {
+    this.modulos.delete(clave);
+  }
+
+  /** Simula un tenant de otro Giro (gating por giro del Vertical_Anuncios). */
+  conGiro(clave: string | null): void {
+    this.giroClave = clave;
+  }
+
   tienePermiso(recurso: string, operacion: string): boolean {
     return !this.denegados.has(`${recurso}:${operacion}`);
+  }
+
+  tieneModulo(clave: string): boolean {
+    return this.modulos.has(clave);
+  }
+
+  esGiro(clave: string): boolean {
+    return this.giroClave === clave;
   }
 }
 
@@ -433,6 +454,44 @@ describe('ComercialCotizacionDetalle', () => {
     expect(req.request.method).toBe('POST');
     req.flush({ ...cotizacion(), estado: 'enviada', validoHasta: fechaISO(30) });
     expect(toast.exito).toHaveBeenCalled();
+  });
+
+  // ---------------------------------------------------------------------------
+  // Gating del Vertical_Anuncios para Pruebas de Diseno (Req 9.2, 9.3, 15):
+  // los endpoints exigen modulo `operacion` + giro `anuncios-luminosos` + permiso.
+  // Si falta el giro o el modulo, la vista NO debe disparar la XHR (evita el 403
+  // y el toast) ni ofrecer el boton "Generar prueba".
+  // ---------------------------------------------------------------------------
+
+  /** Monta el detalle SIN esperar la XHR de pruebas (no debe dispararse). */
+  function iniciarSinPruebas(dto: Cotizacion = cotizacion()): void {
+    fixture = TestBed.createComponent(ComercialCotizacionDetalle);
+    fixture.componentRef.setInput('id', 'cot-1');
+    fixture.detectChanges();
+    http.expectOne('/api/v1/cotizaciones/cot-1').flush(dto);
+    resolverCanales();
+    fixture.detectChanges();
+  }
+
+  it('con giro distinto a anuncios-luminosos NO consulta pruebas de diseno ni ofrece generar (Req 9.3)', () => {
+    auth.conGiro('manufactura');
+    iniciarSinPruebas();
+    // No debe existir ninguna peticion al endpoint de pruebas (evita el 403).
+    http.expectNone((r) => r.url === '/api/v1/cotizaciones/cot-1/pruebas-diseno');
+    const boton = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('button'),
+    ).find((b) => (b.textContent ?? '').includes('Generar prueba'));
+    expect(boton).toBeUndefined();
+  });
+
+  it('sin el modulo operacion NO consulta pruebas de diseno ni ofrece generar (Req 9.2)', () => {
+    auth.sinModulo('operacion');
+    iniciarSinPruebas();
+    http.expectNone((r) => r.url === '/api/v1/cotizaciones/cot-1/pruebas-diseno');
+    const boton = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('button'),
+    ).find((b) => (b.textContent ?? '').includes('Generar prueba'));
+    expect(boton).toBeUndefined();
   });
 
   it('no tiene violaciones de accesibilidad (WCAG 2.1 A/AA)', async () => {
