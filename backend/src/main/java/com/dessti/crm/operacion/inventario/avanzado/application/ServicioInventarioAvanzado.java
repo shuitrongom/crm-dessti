@@ -469,6 +469,68 @@ public class ServicioInventarioAvanzado {
         return paginar(lotes, pageable).map(LoteDto::de);
     }
 
+    /**
+     * Actualiza la fecha de caducidad de un Lote (Req 60). El codigo y el Material del
+     * Lote son inmutables; solo la caducidad puede corregirse. Verifica que el Lote sea
+     * accesible (404) y audita.
+     *
+     * @param loteId         identificador del Lote.
+     * @param fechaCaducidad nueva fecha de caducidad; {@code null} = sin caducidad.
+     * @return el DTO del Lote actualizado.
+     * @throws RecursoNoEncontradoException si el Lote no es accesible (404).
+     */
+    @Transactional
+    public LoteDto actualizarLote(UUID loteId, LocalDate fechaCaducidad) {
+        String actor = actorActual();
+        Lote lote = cargarLote(loteId, actor);
+        lote.actualizarCaducidad(fechaCaducidad, actor);
+        Lote guardado = loteRepository.save(lote);
+        auditar(actor, "actualizar", RECURSO_LOTE, guardado.getId(),
+                "actualizada caducidad del Lote '" + guardado.getCodigo() + "'",
+                null, guardado.getCodigo());
+        return LoteDto.de(guardado);
+    }
+
+    /**
+     * Da de baja (elimina) un Lote de forma SEGURA (Req 60): solo si no tiene historial
+     * de movimientos de Kardex ni capas de costo que lo referencien (FK sin cascada de
+     * V26). Un Lote en uso NO puede eliminarse para preservar la integridad contable del
+     * inventario; se rechaza con 422. Verifica que el Lote sea accesible (404) y audita.
+     *
+     * @param loteId identificador del Lote.
+     * @throws RecursoNoEncontradoException si el Lote no es accesible (404).
+     * @throws ReglaNegocioException si el Lote tiene movimientos o capas asociados (422).
+     */
+    @Transactional
+    public void eliminarLote(UUID loteId) {
+        String actor = actorActual();
+        Lote lote = cargarLote(loteId, actor);
+        if (movimientoRepository.existsByLoteId(loteId) || capaCostoRepository.existsByLoteId(loteId)) {
+            throw new ReglaNegocioException(
+                    "No se puede eliminar el Lote '" + lote.getCodigo()
+                            + "': tiene movimientos de inventario asociados.");
+        }
+        loteRepository.delete(lote);
+        auditar(actor, "eliminar", RECURSO_LOTE, lote.getId(),
+                "baja del Lote '" + lote.getCodigo() + "' del Material " + lote.getMaterialId(),
+                null, lote.getCodigo());
+    }
+
+    /**
+     * Carga un Lote por id dentro del tenant vigente; si no es accesible (inexistente o
+     * de otro tenant) audita el intento y lanza 404 (Req 23.3).
+     */
+    private Lote cargarLote(UUID loteId, String actor) {
+        if (loteId == null) {
+            throw new RecursoNoEncontradoException("No se encontro el Lote solicitado.");
+        }
+        return loteRepository.findById(loteId)
+                .orElseGet(() -> {
+                    auditarAccesoCruzado(actor, RECURSO_LOTE, loteId);
+                    throw new RecursoNoEncontradoException("No se encontro el Lote solicitado.");
+                });
+    }
+
     // ------------------------------------------------------------------
     // Nucleo del registro de movimientos (reutilizado por transferencias)
     // ------------------------------------------------------------------

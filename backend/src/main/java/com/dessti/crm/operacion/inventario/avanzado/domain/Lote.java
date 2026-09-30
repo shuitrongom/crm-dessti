@@ -76,6 +76,19 @@ public class Lote extends TenantScopedEntity {
         return lote;
     }
 
+    /**
+     * Actualiza la fecha de caducidad del Lote (Req 60). El {@code codigo} y el
+     * {@code material_id} son inmutables (el codigo es unico por Material y sirve de
+     * identidad de negocio del Lote); solo la caducidad puede corregirse.
+     *
+     * @param fechaCaducidad nueva fecha de caducidad; {@code null} = sin caducidad.
+     * @param actor          identificador de quien edita, para {@code updated_by}.
+     */
+    public void actualizarCaducidad(LocalDate fechaCaducidad, String actor) {
+        this.fechaCaducidad = fechaCaducidad;
+        this.setUpdatedBy(actor);
+    }
+
     private static String normalizarCodigo(String codigo) {
         if (codigo == null || codigo.isBlank()) {
             throw new ReglaNegocioException("El codigo del Lote es obligatorio.");

@@ -3,6 +3,8 @@ package com.dessti.crm.operacion.inventario.avanzado.adapter.in.rest;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -15,6 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -34,9 +37,11 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.dessti.crm.operacion.inventario.avanzado.application.AlmacenDto;
 import com.dessti.crm.operacion.inventario.avanzado.application.ConfigInventarioMaterialDto;
+import com.dessti.crm.operacion.inventario.avanzado.application.LoteDto;
 import com.dessti.crm.operacion.inventario.avanzado.application.MovimientoAlmacenDto;
 import com.dessti.crm.operacion.inventario.avanzado.application.ServicioInventarioAvanzado;
 import com.dessti.crm.platform.error.RecursoNoEncontradoException;
+import com.dessti.crm.platform.error.ReglaNegocioException;
 import com.dessti.crm.platform.security.MethodSecurityConfig;
 import com.dessti.crm.platform.security.rbac.Autorizador;
 import com.dessti.crm.platform.web.ManejadorGlobalErrores;
@@ -197,6 +202,69 @@ class InventarioAvanzadoControllerTest {
 
         mockMvc.perform(get("/inventario-avanzado/materiales/{materialId}/config-inventario",
                         MATERIAL_ID).with(user("sin_permiso")))
+                .andExpect(status().isForbidden());
+    }
+
+    private static final UUID LOTE_ID = UUID.fromString("88888888-8888-8888-8888-888888888888");
+
+    private static LoteDto loteDto(LocalDate caducidad) {
+        Instant ahora = Instant.parse("2024-05-02T10:00:00Z");
+        return new LoteDto(LOTE_ID, MATERIAL_ID, "L-001", caducidad, 0L, ahora, ahora);
+    }
+
+    @Test
+    void actualizarLote_devuelve200_conLaNuevaCaducidad() throws Exception {
+        when(autorizador.tiene("lote", "actualizar")).thenReturn(true);
+        when(servicio.actualizarLote(eq(LOTE_ID), eq(LocalDate.parse("2027-01-31"))))
+                .thenReturn(loteDto(LocalDate.parse("2027-01-31")));
+
+        mockMvc.perform(put("/inventario-avanzado/lotes/{id}", LOTE_ID)
+                        .with(user("almacen")).with(csrf())
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"fechaCaducidad\":\"2027-01-31\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(LOTE_ID.toString()))
+                .andExpect(jsonPath("$.fechaCaducidad").value("2027-01-31"));
+    }
+
+    @Test
+    void actualizarLote_devuelve403_cuandoFaltaPermiso() throws Exception {
+        when(autorizador.tiene(anyString(), anyString())).thenReturn(false);
+
+        mockMvc.perform(put("/inventario-avanzado/lotes/{id}", LOTE_ID)
+                        .with(user("sin_permiso")).with(csrf())
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"fechaCaducidad\":null}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void eliminarLote_devuelve204_cuandoNoEstaEnUso() throws Exception {
+        when(autorizador.tiene("lote", "eliminar")).thenReturn(true);
+        doNothing().when(servicio).eliminarLote(eq(LOTE_ID));
+
+        mockMvc.perform(delete("/inventario-avanzado/lotes/{id}", LOTE_ID)
+                        .with(user("almacen")).with(csrf()))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void eliminarLote_devuelve422_cuandoElLoteEstaEnUso() throws Exception {
+        when(autorizador.tiene("lote", "eliminar")).thenReturn(true);
+        doThrow(new ReglaNegocioException("No se puede eliminar el Lote 'L-001': tiene movimientos."))
+                .when(servicio).eliminarLote(eq(LOTE_ID));
+
+        mockMvc.perform(delete("/inventario-avanzado/lotes/{id}", LOTE_ID)
+                        .with(user("almacen")).with(csrf()))
+                .andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    void eliminarLote_devuelve403_cuandoFaltaPermiso() throws Exception {
+        when(autorizador.tiene(anyString(), anyString())).thenReturn(false);
+
+        mockMvc.perform(delete("/inventario-avanzado/lotes/{id}", LOTE_ID)
+                        .with(user("sin_permiso")).with(csrf()))
                 .andExpect(status().isForbidden());
     }
 

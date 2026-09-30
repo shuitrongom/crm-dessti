@@ -51,4 +51,14 @@ public interface CapaCostoRepository extends JpaRepository<CapaCosto, UUID> {
               AND c.materialId = :materialId
             """)
     Long maxSecuencia(@Param("almacenId") UUID almacenId, @Param("materialId") UUID materialId);
+
+    /**
+     * Indica si existe alguna capa de costo PEPS que referencie el Lote indicado
+     * dentro del tenant vigente. Sustenta la baja SEGURA de un Lote (Req 60): un
+     * Lote con capas de costo activas no puede eliminarse.
+     *
+     * @param loteId identificador del Lote.
+     * @return {@code true} si alguna capa referencia el Lote.
+     */
+    boolean existsByLoteId(UUID loteId);
 }

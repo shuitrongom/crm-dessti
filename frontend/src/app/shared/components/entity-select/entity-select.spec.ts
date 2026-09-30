@@ -61,9 +61,35 @@ class HostObligatorio {
   readonly detalleDe = (e: EntidadPrueba) => e.detalle;
 }
 
+/** Host con precarga activada: al enfocar (sin teclear) debe mostrar opciones. */
+@Component({
+  imports: [ReactiveFormsModule, EntitySelect],
+  template: `
+    <app-entity-select
+      [formControl]="control"
+      etiqueta="Almacén"
+      [precargar]="true"
+      [buscador]="buscador"
+      [etiquetaDe]="etiquetaDe"
+      [detalleDe]="detalleDe"
+    />
+  `,
+})
+class HostPrecarga {
+  readonly control = new FormControl<string>('', { nonNullable: true });
+  readonly llamadas = signal<string[]>([]);
+  readonly buscador = (filtro: string) => {
+    this.llamadas.update((l) => [...l, filtro]);
+    return of(pagina([ENTIDAD]));
+  };
+  readonly etiquetaDe = (e: EntidadPrueba) => e.nombre;
+  readonly detalleDe = (e: EntidadPrueba) => e.detalle;
+}
+
 /** Superficie protegida del componente que las pruebas necesitan accionar. */
 interface EntitySelectProbe {
   alEscribir(v: string): void;
+  alEnfocar(): void;
   alSeleccionar(evento: { option: { value: EntidadPrueba } }): void;
   limpiar(): void;
   marcarTocado(): void;
@@ -75,6 +101,10 @@ describe('EntitySelect', () => {
 
   beforeEach(async () => {
     vi.useFakeTimers();
+    // Cada bloque construye su propio TestBed; reiniciamos para no chocar con la
+    // instancia dejada por pruebas previas (evita "test module already
+    // instantiated" al configurar el modulo del describe anidado).
+    TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [HostObligatorio, NoopAnimationsModule],
     }).compileComponents();
@@ -140,5 +170,42 @@ describe('EntitySelect', () => {
   it('no tiene violaciones de accesibilidad (WCAG 2.1 A/AA)', async () => {
     vi.useRealTimers();
     await esperarSinViolaciones(fixture);
+  });
+
+  describe('precarga opt-in', () => {
+    let fixturePre: ComponentFixture<HostPrecarga>;
+    let hostPre: HostPrecarga;
+
+    beforeEach(async () => {
+      // El beforeEach externo ya instancio un TestBed con HostObligatorio; hay
+      // que reiniciarlo antes de reconfigurar para este host (de lo contrario
+      // Angular lanza "test module already instantiated").
+      TestBed.resetTestingModule();
+      await TestBed.configureTestingModule({
+        imports: [HostPrecarga, NoopAnimationsModule],
+      }).compileComponents();
+      fixturePre = TestBed.createComponent(HostPrecarga);
+      hostPre = fixturePre.componentInstance;
+      fixturePre.detectChanges();
+    });
+
+    function probePre(): EntitySelectProbe {
+      const debug = fixturePre.debugElement.query((n) => n.name === 'app-entity-select');
+      return debug.componentInstance as unknown as EntitySelectProbe;
+    }
+
+    it('al enfocar sin teclear consulta el buscador con termino vacio (muestra opciones)', () => {
+      // Sin foco no se ha consultado nada aun.
+      expect(hostPre.llamadas()).toEqual([]);
+
+      probePre().alEnfocar();
+      fixturePre.detectChanges();
+      vi.advanceTimersByTime(300);
+      fixturePre.detectChanges();
+
+      // La precarga dispara la busqueda con termino vacio para mostrar las
+      // primeras opciones disponibles al Usuario.
+      expect(hostPre.llamadas()).toContain('');
+    });
   });
 });

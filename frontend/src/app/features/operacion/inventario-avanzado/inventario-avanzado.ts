@@ -141,6 +141,8 @@ export class OperacionInventarioAvanzado {
   protected readonly puedeConfigurarMaterial = this.auth.tienePermiso('material', 'actualizar');
   protected readonly puedeListarLotes = this.auth.tienePermiso('lote', 'listar');
   protected readonly puedeCrearLote = this.auth.tienePermiso('lote', 'crear');
+  protected readonly puedeActualizarLote = this.auth.tienePermiso('lote', 'actualizar');
+  protected readonly puedeEliminarLote = this.auth.tienePermiso('lote', 'eliminar');
 
   protected readonly tipos = ['sucursal', 'bodega'];
   protected readonly metodosCosteo: { valor: MetodoCosteo; etiqueta: string }[] = (
@@ -223,6 +225,19 @@ export class OperacionInventarioAvanzado {
     return existencia.cantidad * existencia.costoPromedio;
   }
 
+  /**
+   * Explica en lenguaje de negocio el metodo de costeo elegido en Configuracion,
+   * para que el Usuario entienda su efecto (promedio ponderado vs PEPS/FIFO).
+   * Deriva del valor actual del formulario de configuracion.
+   */
+  protected readonly explicacionMetodoCosteo = computed<string>(() => {
+    const metodo = this.valorConfig()?.metodoCosteo;
+    if (metodo === 'peps') {
+      return 'PEPS (primeras entradas, primeras salidas): las salidas consumen primero el costo de los lotes más antiguos. Útil para trazar el costo real y priorizar lo que entró antes.';
+    }
+    return 'Promedio ponderado: cada entrada recalcula un costo promedio único del material; las salidas usan ese promedio. Suaviza las variaciones de precio.';
+  });
+
   protected readonly formFiltroExistencias = this.fb.nonNullable.group({
     almacenId: [''],
     materialId: [''],
@@ -246,6 +261,14 @@ export class OperacionInventarioAvanzado {
 
   /** Numero de Almacenes cargados en el catalogo de nombres. */
   protected readonly totalAlmacenesResumen = computed(() => this.nombres.almacenes().length);
+  /** KPI: almacenes activos en la pagina cargada de la pestana Almacenes. */
+  protected readonly totalAlmacenesActivos = computed<number>(
+    () => this.almacenes().filter((a) => a.activo).length,
+  );
+  /** KPI: almacenes inactivos en la pagina cargada de la pestana Almacenes. */
+  protected readonly totalAlmacenesInactivos = computed<number>(
+    () => this.almacenes().filter((a) => !a.activo).length,
+  );
   /** Numero total de Materiales dados de alta (catalogo base cargado). */
   protected readonly totalMateriales = computed(() => this.nombres.listaMateriales().length);
   /** `true` cuando existe al menos un Material dado de alta. */
@@ -400,12 +423,47 @@ export class OperacionInventarioAvanzado {
   protected readonly sizeLotes = signal(20);
   protected readonly guardandoLote = signal(false);
   protected readonly materialLotesId = signal<string>('');
+  /** Id del lote en edicion de caducidad; null cuando no se edita ninguno. */
+  protected readonly editandoLoteId = signal<string | null>(null);
 
   protected readonly columnasLotes: ColumnaTabla[] = [
-    { clave: 'codigo', encabezado: 'Codigo' },
+    { clave: 'codigo', encabezado: 'Código' },
     { clave: 'fechaCaducidad', encabezado: 'Caducidad' },
     { clave: 'estado', encabezado: 'Estado' },
+    { clave: 'acciones', encabezado: 'Acciones', alineacion: 'fin' },
   ];
+
+  /** Filtro de estado de caducidad de los lotes: todos/vigentes/próximos/caducados. */
+  protected readonly filtroEstadoLote = signal<
+    'todos' | 'vigente' | 'proximo' | 'caducado' | 'sin_caducidad'
+  >('todos');
+
+  /** Lotes tras aplicar el filtro de estado de caducidad (deriva de lotes()). */
+  protected readonly lotesFiltrados = computed<Lote[]>(() => {
+    const estado = this.filtroEstadoLote();
+    const todos = this.lotes();
+    if (estado === 'todos') {
+      return todos;
+    }
+    return todos.filter((l) => this.estadoLote(l) === estado);
+  });
+
+  /** KPI: numero de lotes caducados en el material cargado. */
+  protected readonly totalLotesCaducados = computed<number>(
+    () => this.lotes().filter((l) => this.estadoLote(l) === 'caducado').length,
+  );
+  /** KPI: numero de lotes proximos a caducar (<= 30 dias). */
+  protected readonly totalLotesProximos = computed<number>(
+    () => this.lotes().filter((l) => this.estadoLote(l) === 'proximo').length,
+  );
+  /** KPI: numero de lotes vigentes (con o sin caducidad, no proximos ni caducados). */
+  protected readonly totalLotesVigentes = computed<number>(
+    () =>
+      this.lotes().filter((l) => {
+        const e = this.estadoLote(l);
+        return e === 'vigente' || e === 'sin_caducidad';
+      }).length,
+  );
 
   protected readonly formLoteMaterial = this.fb.nonNullable.group({
     materialId: ['', [Validators.required]],
@@ -1057,6 +1115,79 @@ export class OperacionInventarioAvanzado {
           this.toast.error(mensajeDeError(e));
         },
       });
+  }
+
+  /** Cambia el filtro de estado de caducidad de los lotes mostrados. */
+  cambiarFiltroEstadoLote(
+    estado: 'todos' | 'vigente' | 'proximo' | 'caducado' | 'sin_caducidad',
+  ): void {
+    this.filtroEstadoLote.set(estado);
+  }
+
+  /**
+   * Inicia la edicion de la caducidad de un Lote: precarga el formulario con su
+   * codigo (solo lectura durante la edicion) y su caducidad, y marca el lote en
+   * edicion. Al guardar se hace PUT (solo cambia la caducidad, Req 60).
+   */
+  editarCaducidadLote(lote: Lote): void {
+    this.editandoLoteId.set(lote.id);
+    this.formLote.setValue({ codigo: lote.codigo, fechaCaducidad: lote.fechaCaducidad ?? null });
+    this.formLote.controls.codigo.disable();
+  }
+
+  /** Cancela la edicion de caducidad y limpia el formulario. */
+  cancelarEdicionLote(): void {
+    this.editandoLoteId.set(null);
+    this.formLote.controls.codigo.enable();
+    this.formLote.reset({ codigo: '', fechaCaducidad: null });
+  }
+
+  /** Guarda la nueva caducidad del Lote en edicion (PUT /lotes/{id}, Req 60). */
+  guardarCaducidadLote(): void {
+    const loteId = this.editandoLoteId();
+    if (!loteId) {
+      return;
+    }
+    const fechaCaducidad = this.formLote.getRawValue().fechaCaducidad || null;
+    this.guardandoLote.set(true);
+    this.service.actualizarLote(loteId, fechaCaducidad).subscribe({
+      next: () => {
+        this.guardandoLote.set(false);
+        this.toast.exito('Lote actualizado.');
+        this.cancelarEdicionLote();
+        this.cargarLotes();
+      },
+      error: (e: HttpErrorResponse) => {
+        this.guardandoLote.set(false);
+        this.toast.error(mensajeDeError(e));
+      },
+    });
+  }
+
+  /** Da de baja un Lote con confirmacion; el backend rechaza (422) si esta en uso. */
+  async eliminarLote(lote: Lote): Promise<void> {
+    const ok = await this.confirm.confirmar({
+      titulo: 'Dar de baja lote',
+      mensaje: `El lote "${lote.codigo}" se eliminará. Solo es posible si no tiene movimientos de inventario asociados. ¿Continuar?`,
+      textoConfirmar: 'Dar de baja',
+      destructiva: true,
+    });
+    if (!ok) {
+      return;
+    }
+    this.service.eliminarLote(lote.id).subscribe({
+      next: () => {
+        this.toast.exito('Lote dado de baja.');
+        this.cargarLotes();
+      },
+      error: (e: HttpErrorResponse) => {
+        if (e.status === 422) {
+          this.toast.error('No se puede eliminar: el lote tiene movimientos de inventario.');
+          return;
+        }
+        this.toast.error(mensajeDeError(e));
+      },
+    });
   }
 
   /** Estado de caducidad de un lote: 'caducado' | 'proximo' | 'vigente' | 'sin_caducidad'. */

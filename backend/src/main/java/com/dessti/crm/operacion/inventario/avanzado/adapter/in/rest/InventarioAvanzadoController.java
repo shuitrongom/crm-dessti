@@ -361,4 +361,36 @@ public class InventarioAvanzadoController {
         Pageable pageable = PageRequestFactory.acotando(page, size);
         return PaginaResponse.de(servicio.listarLotes(materialId, pageable));
     }
+
+    /**
+     * Actualiza un Lote (Req 60): corrige su fecha de caducidad. El codigo del Lote es
+     * inmutable (identidad de negocio). 200 OK con el {@link LoteDto} actualizado; 404 si
+     * el Lote no es accesible.
+     *
+     * @param loteId  identificador del Lote.
+     * @param request nueva fecha de caducidad (opcional).
+     * @return 200 OK con el {@link LoteDto} actualizado.
+     */
+    @PutMapping("/lotes/{loteId}")
+    @PreAuthorize("@autorizador.moduloHabilitado('inventario-avanzado') and @autorizador.tiene('lote','actualizar')")
+    public ResponseEntity<LoteDto> actualizarLote(
+            @PathVariable("loteId") UUID loteId,
+            @Valid @RequestBody ActualizarLoteRequest request) {
+        return ResponseEntity.ok(servicio.actualizarLote(loteId, request.fechaCaducidad()));
+    }
+
+    /**
+     * Da de baja (elimina) un Lote de forma segura (Req 60): solo si no tiene movimientos
+     * de Kardex ni capas de costo asociados. 204 No Content si se elimina; 404 si el Lote
+     * no es accesible; 422 si el Lote esta en uso (tiene movimientos).
+     *
+     * @param loteId identificador del Lote.
+     * @return 204 No Content.
+     */
+    @DeleteMapping("/lotes/{loteId}")
+    @PreAuthorize("@autorizador.moduloHabilitado('inventario-avanzado') and @autorizador.tiene('lote','eliminar')")
+    public ResponseEntity<Void> eliminarLote(@PathVariable("loteId") UUID loteId) {
+        servicio.eliminarLote(loteId);
+        return ResponseEntity.noContent().build();
+    }
 }

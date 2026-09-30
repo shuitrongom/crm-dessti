@@ -336,3 +336,28 @@
 .inventario-avanzado__campo-ancho {
   grid-column: 1 / -1;
 }
+
+// Filtro de estado de caducidad en la pestana Lotes.
+.inventario-avanzado__filtro-lote {
+  width: 100%;
+  max-width: 320px;
+  margin-bottom: var(--ds-space-3);
+}
+
+// Ayuda explicativa del metodo de costeo en Configuracion.
+.inventario-avanzado__costeo-ayuda {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ds-space-2);
+  margin: 0 0 var(--ds-space-3);
+  padding: var(--ds-space-2) var(--ds-space-3);
+  border-radius: var(--ds-radius-sm, 0.375rem);
+  background: color-mix(in srgb, var(--ds-color-info, #1b6a8c) 8%, transparent);
+  color: var(--ds-color-text-muted, #4b5563);
+  font-size: var(--ds-font-size-sm, 0.875rem);
+
+  mat-icon {
+    color: var(--ds-color-info, #1b6a8c);
+    flex: 0 0 auto;
+  }
+}

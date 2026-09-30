@@ -55,22 +55,38 @@
                 ayuda="Materiales cuya existencia esta en o por debajo de su punto de reorden."
               />
             }
-            <!-- Valor del inventario: honesto sobre lo paginado; sin cero enganoso si no hay existencias cargadas -->
-            <app-stat-card
-              etiqueta="Valor del inventario (cargado)"
-              [valor]="
-                hayExistenciasCargadas()
-                  ? ((valorInventarioCargado() | currency: 'MXN' : 'symbol-narrow') ?? '—')
-                  : 'Sin datos'
+            <!-- Valor del inventario: honesto sobre lo paginado; sin cero enganoso si no hay
+                 existencias cargadas. Clicable para explicar como se calcula (coherente con
+                 las otras tarjetas del tablero). -->
+            <button
+              type="button"
+              class="kpi-boton"
+              (click)="
+                abrirInfoKpi(
+                  'valuacion_inventario_total',
+                  'Valor del inventario (cargado)',
+                  valorInventarioCargado(),
+                  'moneda'
+                )
               "
-              icono="payments"
-              tono="neutro"
-              [ayuda]="
-                hayExistenciasCargadas()
-                  ? 'Calculado sobre las existencias cargadas en la pestana Existencias (sobre lo paginado).'
-                  : 'Consulta la pestana Existencias para valorizar el inventario cargado.'
-              "
-            />
+              aria-label="Ver explicación del Valor del inventario cargado"
+            >
+              <app-stat-card
+                etiqueta="Valor del inventario (cargado)"
+                [valor]="
+                  hayExistenciasCargadas()
+                    ? ((valorInventarioCargado() | currency: 'MXN' : 'symbol-narrow') ?? '—')
+                    : 'Sin datos'
+                "
+                icono="payments"
+                tono="neutro"
+                [ayuda]="
+                  hayExistenciasCargadas()
+                    ? 'Calculado sobre las existencias cargadas en la pestana Existencias (sobre lo paginado).'
+                    : 'Consulta la pestana Existencias para valorizar el inventario cargado.'
+                "
+              />
+            </button>
           </div>
 
           <section class="inventario-avanzado__seccion" aria-labelledby="titulo-alertas">
@@ -134,6 +150,7 @@
             formControlName="almacenId"
             etiqueta="Almacen"
             placeholder="Filtrar por almacen…"
+            [precargar]="true"
             [buscador]="buscarAlmacen"
             [etiquetaDe]="etiquetaAlmacen"
           />
@@ -141,6 +158,7 @@
             formControlName="materialId"
             etiqueta="Material"
             placeholder="Filtrar por material…"
+            [precargar]="true"
             [buscador]="buscarMaterial"
             [etiquetaDe]="etiquetaMaterial"
             [detalleDe]="detalleMaterial"
@@ -265,6 +283,7 @@
                       formControlName="almacenId"
                       etiqueta="Almacen"
                       placeholder="Elige el almacen…"
+                      [precargar]="true"
                       [obligatorio]="true"
                       [buscador]="buscarAlmacen"
                       [etiquetaDe]="etiquetaAlmacen"
@@ -273,6 +292,7 @@
                       formControlName="materialId"
                       etiqueta="Material"
                       placeholder="Elige el material…"
+                      [precargar]="true"
                       [obligatorio]="true"
                       [buscador]="buscarMaterial"
                       [etiquetaDe]="etiquetaMaterial"
@@ -316,6 +336,7 @@
                       formControlName="almacenId"
                       etiqueta="Almacen"
                       placeholder="Elige el almacen…"
+                      [precargar]="true"
                       [obligatorio]="true"
                       [buscador]="buscarAlmacen"
                       [etiquetaDe]="etiquetaAlmacen"
@@ -324,6 +345,7 @@
                       formControlName="materialId"
                       etiqueta="Material"
                       placeholder="Elige el material…"
+                      [precargar]="true"
                       [obligatorio]="true"
                       [buscador]="buscarMaterial"
                       [etiquetaDe]="etiquetaMaterial"
@@ -363,6 +385,7 @@
                       formControlName="almacenOrigenId"
                       etiqueta="Almacen de origen"
                       placeholder="Elige el origen…"
+                      [precargar]="true"
                       [obligatorio]="true"
                       [buscador]="buscarAlmacen"
                       [etiquetaDe]="etiquetaAlmacen"
@@ -371,6 +394,7 @@
                       formControlName="almacenDestinoId"
                       etiqueta="Almacen de destino"
                       placeholder="Elige el destino…"
+                      [precargar]="true"
                       [obligatorio]="true"
                       [buscador]="buscarAlmacen"
                       [etiquetaDe]="etiquetaAlmacen"
@@ -379,6 +403,7 @@
                       formControlName="materialId"
                       etiqueta="Material"
                       placeholder="Elige el material…"
+                      [precargar]="true"
                       [obligatorio]="true"
                       [buscador]="buscarMaterial"
                       [etiquetaDe]="etiquetaMaterial"
@@ -431,6 +456,7 @@
             formControlName="almacenId"
             etiqueta="Almacen"
             placeholder="Elige el almacen…"
+            [precargar]="true"
             [obligatorio]="true"
             [buscador]="buscarAlmacen"
             [etiquetaDe]="etiquetaAlmacen"
@@ -439,6 +465,7 @@
             formControlName="materialId"
             etiqueta="Material"
             placeholder="Elige el material…"
+            [precargar]="true"
             [obligatorio]="true"
             [buscador]="buscarMaterial"
             [etiquetaDe]="etiquetaMaterial"
@@ -527,6 +554,7 @@
             formControlName="materialId"
             etiqueta="Material"
             placeholder="Elige el material…"
+            [precargar]="true"
             [obligatorio]="true"
             [buscador]="buscarMaterial"
             [etiquetaDe]="etiquetaMaterial"
@@ -537,27 +565,55 @@
           </div>
         </form>
 
-        @if (puedeCrearLote) {
+        @if (puedeCrearLote || editandoLoteId()) {
           <mat-card appearance="outlined" class="operacion-form">
             <mat-card-content>
-              <form class="inventario-avanzado__lote-form" [formGroup]="formLote" (ngSubmit)="crearLote()" novalidate>
-                <mat-form-field appearance="outline">
-                  <mat-label>Código de lote</mat-label>
-                  <input matInput type="text" formControlName="codigo" required />
-                  @if (formLote.controls.codigo.hasError('required') && formLote.controls.codigo.touched) {
-                    <mat-error>El código es obligatorio.</mat-error>
-                  }
-                </mat-form-field>
-                <mat-form-field appearance="outline">
-                  <mat-label>Fecha de caducidad (opcional)</mat-label>
-                  <input matInput [matDatepicker]="pickerCaducidad" formControlName="fechaCaducidad" />
-                  <mat-datepicker-toggle matSuffix [for]="pickerCaducidad" />
-                  <mat-datepicker #pickerCaducidad />
-                </mat-form-field>
-                <div class="operacion-form__acciones">
-                  <button matButton="filled" type="submit" [disabled]="guardandoLote()">Crear lote</button>
-                </div>
-              </form>
+              @if (editandoLoteId()) {
+                <!-- Modo edicion: solo se corrige la caducidad; el codigo es inmutable. -->
+                <form
+                  class="inventario-avanzado__lote-form"
+                  [formGroup]="formLote"
+                  (ngSubmit)="guardarCaducidadLote()"
+                  novalidate
+                >
+                  <mat-form-field appearance="outline">
+                    <mat-label>Código de lote</mat-label>
+                    <input matInput type="text" formControlName="codigo" />
+                    <mat-hint>El código no se puede cambiar.</mat-hint>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Fecha de caducidad (opcional)</mat-label>
+                    <input matInput [matDatepicker]="pickerCaducidadEdit" formControlName="fechaCaducidad" />
+                    <mat-datepicker-toggle matSuffix [for]="pickerCaducidadEdit" />
+                    <mat-datepicker #pickerCaducidadEdit />
+                  </mat-form-field>
+                  <div class="operacion-form__acciones">
+                    <button matButton type="button" (click)="cancelarEdicionLote()">Cancelar</button>
+                    <button matButton="filled" type="submit" [disabled]="guardandoLote()">
+                      Guardar cambios
+                    </button>
+                  </div>
+                </form>
+              } @else {
+                <form class="inventario-avanzado__lote-form" [formGroup]="formLote" (ngSubmit)="crearLote()" novalidate>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Código de lote</mat-label>
+                    <input matInput type="text" formControlName="codigo" required />
+                    @if (formLote.controls.codigo.hasError('required') && formLote.controls.codigo.touched) {
+                      <mat-error>El código es obligatorio.</mat-error>
+                    }
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Fecha de caducidad (opcional)</mat-label>
+                    <input matInput [matDatepicker]="pickerCaducidad" formControlName="fechaCaducidad" />
+                    <mat-datepicker-toggle matSuffix [for]="pickerCaducidad" />
+                    <mat-datepicker #pickerCaducidad />
+                  </mat-form-field>
+                  <div class="operacion-form__acciones">
+                    <button matButton="filled" type="submit" [disabled]="guardandoLote()">Crear lote</button>
+                  </div>
+                </form>
+              }
             </mat-card-content>
           </mat-card>
         }
@@ -569,10 +625,58 @@
             mensajeVacio="Elige un material para ver sus lotes."
             (reintentar)="cargarLotes()"
           >
+            <!-- KPIs de caducidad del material cargado -->
+            @if (faseLotes() === 'ok') {
+              <section class="operacion-kpis" aria-label="Indicadores de lotes">
+                <app-kpi-tile
+                  icono="inventory_2"
+                  tono="primario"
+                  etiqueta="Lotes"
+                  sublabel="Total del material"
+                  [valor]="totalLotes()"
+                />
+                <app-kpi-tile
+                  icono="check_circle"
+                  tono="exito"
+                  etiqueta="Vigentes"
+                  sublabel="Sin riesgo de caducidad"
+                  [valor]="totalLotesVigentes()"
+                />
+                <app-kpi-tile
+                  icono="schedule"
+                  tono="advertencia"
+                  etiqueta="Por caducar"
+                  sublabel="En 30 días o menos"
+                  [valor]="totalLotesProximos()"
+                />
+                <app-kpi-tile
+                  icono="dangerous"
+                  tono="error"
+                  etiqueta="Caducados"
+                  sublabel="Ya vencidos"
+                  [valor]="totalLotesCaducados()"
+                />
+              </section>
+
+              <mat-form-field appearance="outline" class="inventario-avanzado__filtro-lote">
+                <mat-label>Estado de caducidad</mat-label>
+                <mat-select
+                  [value]="filtroEstadoLote()"
+                  (valueChange)="cambiarFiltroEstadoLote($event)"
+                >
+                  <mat-option value="todos">Todos</mat-option>
+                  <mat-option value="vigente">Vigentes</mat-option>
+                  <mat-option value="proximo">Por caducar</mat-option>
+                  <mat-option value="caducado">Caducados</mat-option>
+                  <mat-option value="sin_caducidad">Sin caducidad</mat-option>
+                </mat-select>
+              </mat-form-field>
+            }
+
             <app-data-table
               [columnas]="columnasLotes"
-              [filas]="lotes()"
-              [total]="totalLotes()"
+              [filas]="lotesFiltrados()"
+              [total]="lotesFiltrados().length"
               [page]="pageLotes()"
               [size]="sizeLotes()"
               (cambioPagina)="onPaginaLotes($event)"
@@ -596,6 +700,36 @@
                   >
                   {{ etiquetaEstadoLote(fila) }}
                 </span>
+              </ng-template>
+              <ng-template appCelda="acciones" let-fila>
+                <div class="operacion-acciones-fila">
+                  @if (puedeActualizarLote) {
+                    <button
+                      matIconButton
+                      type="button"
+                      (click)="editarCaducidadLote(fila)"
+                      matTooltip="Editar caducidad"
+                      aria-label="Editar caducidad del lote"
+                    >
+                      <mat-icon aria-hidden="true">edit_calendar</mat-icon>
+                    </button>
+                  }
+                  @if (puedeEliminarLote) {
+                    <button
+                      matIconButton
+                      type="button"
+                      class="ds-boton-destructivo"
+                      (click)="eliminarLote(fila)"
+                      matTooltip="Dar de baja"
+                      aria-label="Dar de baja lote"
+                    >
+                      <mat-icon aria-hidden="true">delete</mat-icon>
+                    </button>
+                  }
+                  @if (!puedeActualizarLote && !puedeEliminarLote) {
+                    <span class="operacion-sin-acciones">—</span>
+                  }
+                </div>
               </ng-template>
             </app-data-table>
           </app-state-container>
@@ -621,7 +755,7 @@
                 formControlName="materialId"
                 etiqueta="Material"
                 placeholder="Elige el material…"
-                [obligatorio]="true"
+                [precargar]="true"
                 [buscador]="buscarMaterial"
                 [etiquetaDe]="etiquetaMaterial"
                 [detalleDe]="detalleMaterial"
@@ -634,6 +768,12 @@
                   }
                 </mat-select>
               </mat-form-field>
+              @if (formConfig.controls.materialId.value) {
+                <p class="inventario-avanzado__costeo-ayuda" role="note">
+                  <mat-icon aria-hidden="true">info</mat-icon>
+                  <span>{{ explicacionMetodoCosteo() }}</span>
+                </p>
+              }
               <mat-form-field appearance="outline">
                 <mat-label>Stock máximo (opcional)</mat-label>
                 <input matInput type="number" formControlName="stockMaximo" min="0" />
@@ -730,6 +870,31 @@
           mensajeVacio="No hay almacenes registrados."
           (reintentar)="cargarAlmacenes()"
         >
+          @if (faseAlmacenes() === 'ok') {
+            <section class="operacion-kpis" aria-label="Indicadores de almacenes">
+              <app-kpi-tile
+                icono="warehouse"
+                tono="primario"
+                etiqueta="Almacenes"
+                sublabel="En esta página"
+                [valor]="totalAlmacenes()"
+              />
+              <app-kpi-tile
+                icono="check_circle"
+                tono="exito"
+                etiqueta="Activos"
+                sublabel="Operativos"
+                [valor]="totalAlmacenesActivos()"
+              />
+              <app-kpi-tile
+                icono="cancel"
+                tono="neutro"
+                etiqueta="Inactivos"
+                sublabel="Dados de baja"
+                [valor]="totalAlmacenesInactivos()"
+              />
+            </section>
+          }
           <app-data-table
             [columnas]="columnasAlmacenes"
             [filas]="almacenes()"

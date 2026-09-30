@@ -30,7 +30,8 @@
       [disabled]="deshabilitado()"
       [value]="texto()"
       (input)="alEscribir($any($event.target).value)"
-      (blur)="marcarTocado()"
+      (focus)="alEnfocar()"
+      (blur)="alDesenfocar()"
       [matAutocomplete]="auto"
     />
     @if (ayuda(); as textoAyuda) {

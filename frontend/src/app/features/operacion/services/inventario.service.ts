@@ -279,4 +279,22 @@ export class InventarioAvanzadoService {
       { params },
     );
   }
+
+  /**
+   * Actualiza la fecha de caducidad de un Lote (Req 60). El codigo es inmutable; solo
+   * la caducidad se corrige. `fechaCaducidad` null = sin caducidad.
+   */
+  actualizarLote(loteId: string, fechaCaducidad: string | null): Observable<Lote> {
+    return this.http.put<Lote>(this.api.url(`/inventario-avanzado/lotes/${loteId}`), {
+      fechaCaducidad,
+    });
+  }
+
+  /**
+   * Da de baja (elimina) un Lote (Req 60). El backend rechaza (422) si el Lote tiene
+   * movimientos de inventario asociados, para preservar la integridad contable.
+   */
+  eliminarLote(loteId: string): Observable<void> {
+    return this.http.delete<void>(this.api.url(`/inventario-avanzado/lotes/${loteId}`));
+  }
 }

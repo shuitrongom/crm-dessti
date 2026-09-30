@@ -57,4 +57,15 @@ public interface MovimientoAlmacenRepository extends JpaRepository<MovimientoAlm
             @Param("desde") Instant desde,
             @Param("hasta") Instant hasta,
             Pageable pageable);
+
+    /**
+     * Indica si existe algun movimiento de Kardex que referencie el Lote indicado
+     * dentro del tenant vigente. Sustenta la baja SEGURA de un Lote (Req 60): un
+     * Lote con historial de movimientos no puede eliminarse para preservar la
+     * integridad contable del inventario.
+     *
+     * @param loteId identificador del Lote.
+     * @return {@code true} si algun movimiento referencia el Lote.
+     */
+    boolean existsByLoteId(UUID loteId);
 }

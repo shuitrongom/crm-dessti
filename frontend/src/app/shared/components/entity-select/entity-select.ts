@@ -101,9 +101,18 @@ export class EntitySelect<T extends EntidadSeleccionable = EntidadSeleccionable>
   readonly detalleDe = input<(entidad: T) => string | null>(() => null);
   /** Minimo de caracteres antes de disparar la busqueda. */
   readonly minCaracteres = input<number>(1);
+  /**
+   * Si es `true`, al enfocar el campo (sin teclear) se muestran ya las primeras
+   * opciones disponibles (busqueda con termino vacio). Util cuando el Usuario no
+   * sabe que hay dado de alta. Por defecto `false` para no cambiar el resto de
+   * pantallas que usan el selector.
+   */
+  readonly precargar = input<boolean>(false);
 
   /** Texto tecleado en el campo de busqueda. */
   protected readonly texto = signal('');
+  /** Marca que el campo esta enfocado (para disparar la precarga con termino vacio). */
+  protected readonly enfocado = signal(false);
   /** Entidad actualmente seleccionada (o null). */
   protected readonly seleccionada = signal<T | null>(null);
   /** Indica una busqueda en curso. */
@@ -119,14 +128,26 @@ export class EntitySelect<T extends EntidadSeleccionable = EntidadSeleccionable>
   private alCambiar: (valor: string) => void = () => {};
   private alTocar: () => void = () => {};
 
-  /** Resultados del autocompletado, reactivos al texto con debounce. */
+  /**
+   * Disparador de busqueda: combina el texto tecleado con el foco (para la
+   * precarga). Cuando `precargar` esta activo, un termino vacio con el campo
+   * enfocado tambien busca (primeras opciones). El `computed` reune ambas señales.
+   */
+  private readonly consulta = computed(() => ({
+    termino: this.texto().trim(),
+    enfocado: this.enfocado(),
+  }));
+
+  /** Resultados del autocompletado, reactivos al texto/foco con debounce. */
   protected readonly resultados = toSignal(
-    toObservable(this.texto).pipe(
-      debounceTime(300),
-      distinctUntilChanged(),
-      switchMap((q) => {
-        const termino = q.trim();
-        if (termino.length < this.minCaracteres()) {
+    toObservable(this.consulta).pipe(
+      debounceTime(250),
+      distinctUntilChanged((a, b) => a.termino === b.termino && a.enfocado === b.enfocado),
+      switchMap(({ termino, enfocado }) => {
+        // Con precarga y campo enfocado, un termino vacio busca las primeras
+        // opciones; en caso normal se exige el minimo de caracteres.
+        const precargando = this.precargar() && enfocado && termino.length === 0;
+        if (!precargando && termino.length < this.minCaracteres()) {
           this.buscando.set(false);
           return of([] as T[]);
         }
@@ -172,6 +193,17 @@ export class EntitySelect<T extends EntidadSeleccionable = EntidadSeleccionable>
       this.valorId.set('');
       this.alCambiar('');
     }
+  }
+
+  /** Marca el campo como enfocado (dispara la precarga de opciones si aplica). */
+  protected alEnfocar(): void {
+    this.enfocado.set(true);
+  }
+
+  /** Quita el foco; ademas marca el control como tocado para la validacion. */
+  protected alDesenfocar(): void {
+    this.enfocado.set(false);
+    this.marcarTocado();
   }
 
   /** Fija la entidad elegida del autocompletado y emite su id al formulario. */

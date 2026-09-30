@@ -28,6 +28,16 @@ public interface LoteRepository extends JpaRepository<Lote, UUID> {
     List<Lote> findByMaterialId(UUID materialId);
 
     /**
+     * Busca un Lote por su identificador dentro del tenant vigente (Req 60), para
+     * editar su caducidad o darlo de baja. Un Lote de otro tenant devuelve vacio
+     * (la aplicacion lo traduce a 404).
+     *
+     * @param id identificador del Lote.
+     * @return el Lote, o vacio.
+     */
+    Optional<Lote> findById(UUID id);
+
+    /**
      * Busca un Lote de un Material por su codigo dentro del tenant vigente (codigo unico
      * por Material, Req 60). Util para evitar duplicados en el alta.
      *
