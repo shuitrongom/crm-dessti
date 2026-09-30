@@ -437,6 +437,24 @@ const CATALOGO: Record<string, FichaIndicador> = {
   },
 
   // ---- Compras ----
+  proveedores_pagina: {
+    icono: 'local_shipping', tono: 'primario', corta: 'Proveedores',
+    que: 'Proveedores mostrados en la página actual del listado.',
+    como: 'Se cuentan los proveedores traídos en la página cargada según el filtro.',
+    porque: 'Da una referencia rápida del tamaño de tu catálogo de abastecimiento.',
+  },
+  proveedores_activos: {
+    icono: 'check_circle', tono: 'exito', corta: 'Proveedores activos',
+    que: 'Proveedores activos, disponibles para nuevas órdenes de compra.',
+    como: 'Se cuentan los proveedores en estado activo dentro de la página cargada.',
+    porque: 'Son los orígenes de abastecimiento con los que puedes operar hoy.',
+  },
+  proveedores_inactivos: {
+    icono: 'block', tono: 'neutro', corta: 'Proveedores inactivos',
+    que: 'Proveedores dados de baja lógica (conservan su histórico).',
+    como: 'Se cuentan los proveedores en estado inactivo dentro de la página cargada.',
+    porque: 'Puedes reactivarlos cuando vuelvas a comprarles; su RFC queda liberado mientras tanto.',
+  },
   ordenes_compra_abiertas: {
     icono: 'shopping_cart', tono: 'info', corta: 'Compras en curso',
     que: 'Órdenes de compra emitidas y aún abiertas.',

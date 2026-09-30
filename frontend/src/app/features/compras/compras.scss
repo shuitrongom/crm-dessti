@@ -37,6 +37,12 @@
   }
 }
 
+// El buscador premium (autocompletado) ocupa más ancho que los selects simples.
+.compras-buscador {
+  flex: 1 1 22rem;
+  min-inline-size: 18rem;
+}
+
 .partidas {
   display: flex;
   flex-direction: column;
@@ -84,4 +90,19 @@
   span {
     overflow-wrap: anywhere;
   }
+}
+
+// Subdato bajo el nombre del proveedor (persona de contacto) en la tabla.
+.proveedor-subdato {
+  display: block;
+  font-size: var(--ds-font-size-sm, 0.8125rem);
+  margin-top: 2px;
+}
+
+// Tira de KPIs premium (mismo lenguaje visual que el resto del sistema).
+.operacion-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--ds-space-3, 1rem);
+  margin-bottom: var(--ds-space-4, 1.25rem);
 }

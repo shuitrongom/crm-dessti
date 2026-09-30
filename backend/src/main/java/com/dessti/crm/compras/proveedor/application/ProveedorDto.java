@@ -12,12 +12,19 @@ import com.dessti.crm.compras.proveedor.domain.Proveedor;
  * @param id        identificador del Proveedor.
  * @param nombre    razon social o nombre.
  * @param rfc       identificador fiscal (normalizado a mayusculas).
- * @param email     correo electronico; puede ser {@code null}.
- * @param telefono  telefono; puede ser {@code null}.
- * @param activo    {@code true} si el Proveedor esta vigente (no dado de baja).
- * @param version   version para concurrencia optimista (Req 49).
- * @param createdAt instante de alta (UTC).
- * @param updatedAt instante de la ultima modificacion (UTC).
+ * @param email            correo electronico; puede ser {@code null}.
+ * @param telefono         telefono; puede ser {@code null}.
+ * @param personaContacto  persona de contacto; puede ser {@code null} (V89).
+ * @param regimenFiscal    clave del regimen fiscal; puede ser {@code null} (V89).
+ * @param diasCredito      dias de credito; puede ser {@code null} = de contado (V89).
+ * @param domicilioCalle   calle del domicilio fiscal; puede ser {@code null} (V89).
+ * @param domicilioCiudad  ciudad; puede ser {@code null} (V89).
+ * @param domicilioEstado  estado; puede ser {@code null} (V89).
+ * @param codigoPostal     codigo postal; puede ser {@code null} (V89).
+ * @param activo           {@code true} si el Proveedor esta vigente (no dado de baja).
+ * @param version          version para concurrencia optimista (Req 49).
+ * @param createdAt        instante de alta (UTC).
+ * @param updatedAt        instante de la ultima modificacion (UTC).
  */
 public record ProveedorDto(
         UUID id,
@@ -25,6 +32,13 @@ public record ProveedorDto(
         String rfc,
         String email,
         String telefono,
+        String personaContacto,
+        String regimenFiscal,
+        Integer diasCredito,
+        String domicilioCalle,
+        String domicilioCiudad,
+        String domicilioEstado,
+        String codigoPostal,
         boolean activo,
         long version,
         Instant createdAt,
@@ -43,6 +57,13 @@ public record ProveedorDto(
                 proveedor.getRfc(),
                 proveedor.getEmail(),
                 proveedor.getTelefono(),
+                proveedor.getPersonaContacto(),
+                proveedor.getRegimenFiscal(),
+                proveedor.getDiasCredito(),
+                proveedor.getDomicilioCalle(),
+                proveedor.getDomicilioCiudad(),
+                proveedor.getDomicilioEstado(),
+                proveedor.getCodigoPostal(),
                 proveedor.isActivo(),
                 proveedor.getVersion(),
                 proveedor.getCreatedAt(),

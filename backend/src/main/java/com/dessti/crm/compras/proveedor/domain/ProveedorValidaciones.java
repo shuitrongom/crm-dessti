@@ -46,6 +46,24 @@ public final class ProveedorValidaciones {
     /** Longitud maxima del email (coincide con VARCHAR(320) de V28). */
     public static final int LONGITUD_MAXIMA_EMAIL = 320;
 
+    /** Longitud maxima de la persona de contacto (coincide con VARCHAR(200) de V89). */
+    public static final int LONGITUD_MAXIMA_PERSONA_CONTACTO = 200;
+
+    /** Longitud maxima del regimen fiscal (coincide con VARCHAR(10) de V89). */
+    public static final int LONGITUD_MAXIMA_REGIMEN_FISCAL = 10;
+
+    /** Longitud maxima de la calle del domicilio (coincide con VARCHAR(300) de V89). */
+    public static final int LONGITUD_MAXIMA_CALLE = 300;
+
+    /** Longitud maxima de ciudad y estado del domicilio (coincide con VARCHAR(150) de V89). */
+    public static final int LONGITUD_MAXIMA_LOCALIDAD = 150;
+
+    /** Tope de dias de credito admitido (defensa razonable de negocio). */
+    public static final int DIAS_CREDITO_MAXIMO = 365;
+
+    /** Codigo postal mexicano: exactamente 5 digitos (Req 29, V89). */
+    private static final Pattern PATRON_CODIGO_POSTAL = Pattern.compile("^[0-9]{5}$");
+
     /**
      * Formato del RFC mexicano (ya en mayusculas): 3-4 letras (o &amp;/Ñ) de la
      * clave, 6 digitos de fecha (AAMMDD) y 3 caracteres de homoclave
@@ -169,5 +187,90 @@ public final class ProveedorValidaciones {
                     "Debe proporcionarse al menos un dato de contacto del Proveedor: un correo "
                             + "electronico valido o un telefono de 10 a 15 digitos.");
         }
+    }
+
+    /**
+     * Normaliza un texto libre OPCIONAL recortando espacios; un valor nulo/en
+     * blanco se interpreta como ausencia y devuelve {@code null}. Rechaza (422) si
+     * excede el maximo indicado. Reutilizable para persona de contacto, calle,
+     * ciudad y estado del domicilio (Req 29, V89).
+     *
+     * @param valor   texto a normalizar; puede ser {@code null}.
+     * @param maximo  longitud maxima permitida.
+     * @param etiqueta nombre del campo para el mensaje de error.
+     * @return el texto recortado, o {@code null} si no se proporciono.
+     * @throws ReglaNegocioException si excede el maximo (422).
+     */
+    public static String normalizarTextoOpcional(String valor, int maximo, String etiqueta) {
+        if (valor == null || valor.isBlank()) {
+            return null;
+        }
+        String normalizado = valor.strip();
+        if (normalizado.length() > maximo) {
+            throw new ReglaNegocioException(etiqueta + " no puede exceder " + maximo + " caracteres.");
+        }
+        return normalizado;
+    }
+
+    /**
+     * Normaliza la clave del regimen fiscal OPCIONAL (Req 29, V89): recorta, pasa a
+     * mayusculas y acota a 10 caracteres. Nulo/blanco = ausencia.
+     *
+     * @param valor clave del regimen fiscal; puede ser {@code null}.
+     * @return la clave normalizada en mayusculas, o {@code null}.
+     * @throws ReglaNegocioException si excede el maximo (422).
+     */
+    public static String normalizarRegimenFiscal(String valor) {
+        if (valor == null || valor.isBlank()) {
+            return null;
+        }
+        String normalizado = valor.strip().toUpperCase(Locale.ROOT);
+        if (normalizado.length() > LONGITUD_MAXIMA_REGIMEN_FISCAL) {
+            throw new ReglaNegocioException(
+                    "El regimen fiscal no puede exceder " + LONGITUD_MAXIMA_REGIMEN_FISCAL + " caracteres.");
+        }
+        return normalizado;
+    }
+
+    /**
+     * Valida los dias de credito OPCIONALES (Req 29, V89): si se informan, no
+     * pueden ser negativos ni exceder el tope de negocio. Nulo = sin condiciones
+     * de credito (pago de contado).
+     *
+     * @param valor dias de credito; puede ser {@code null}.
+     * @return el valor si es valido, o {@code null}.
+     * @throws ReglaNegocioException si es negativo o excede el tope (422).
+     */
+    public static Integer normalizarDiasCredito(Integer valor) {
+        if (valor == null) {
+            return null;
+        }
+        if (valor < 0) {
+            throw new ReglaNegocioException("Los dias de credito no pueden ser negativos.");
+        }
+        if (valor > DIAS_CREDITO_MAXIMO) {
+            throw new ReglaNegocioException(
+                    "Los dias de credito no pueden exceder " + DIAS_CREDITO_MAXIMO + " dias.");
+        }
+        return valor;
+    }
+
+    /**
+     * Valida y normaliza el codigo postal OPCIONAL (Req 29, V89): si se informa,
+     * debe constar de exactamente 5 digitos. Nulo/blanco = ausencia.
+     *
+     * @param valor codigo postal; puede ser {@code null}.
+     * @return el codigo postal recortado, o {@code null}.
+     * @throws ReglaNegocioException si no consta de 5 digitos (422).
+     */
+    public static String normalizarCodigoPostal(String valor) {
+        if (valor == null || valor.isBlank()) {
+            return null;
+        }
+        String normalizado = valor.strip();
+        if (!PATRON_CODIGO_POSTAL.matcher(normalizado).matches()) {
+            throw new ReglaNegocioException("El codigo postal debe constar de 5 digitos.");
+        }
+        return normalizado;
     }
 }

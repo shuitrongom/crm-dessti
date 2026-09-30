@@ -1,0 +1,59 @@
+// Buscador premium con sugerencias en vivo. El campo ocupa el ancho de su
+// contenedor; el panel de opciones lo pinta MatAutocomplete en un overlay.
+:host {
+  display: block;
+}
+
+.search-ac__campo {
+  inline-size: 100%;
+}
+
+// Fila de una sugerencia: icono + textos (etiqueta con match resaltado + detalle).
+.search-ac__opcion {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2, 0.5rem);
+}
+
+.search-ac__opcion-icono {
+  flex: 0 0 auto;
+  color: var(--ds-color-text-muted, #6b7280);
+  font-size: 1.125rem;
+  inline-size: 1.125rem;
+  block-size: 1.125rem;
+}
+
+.search-ac__opcion-textos {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  line-height: 1.25;
+}
+
+.search-ac__opcion-etiqueta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Resalta la coincidencia del término dentro de la etiqueta.
+.search-ac__match {
+  color: var(--ds-color-primary, #6b4bd8);
+  font-weight: var(--ds-font-weight-semibold, 600);
+}
+
+.search-ac__opcion-detalle {
+  font-size: var(--ds-font-size-sm, 0.8125rem);
+  color: var(--ds-color-text-muted, #6b7280);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Estado "sin coincidencias".
+.search-ac__vacio {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-2, 0.5rem);
+  color: var(--ds-color-text-muted, #6b7280);
+}

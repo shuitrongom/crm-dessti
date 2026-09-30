@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.dessti.crm.compras.proveedor.adapter.out.persistence.ProveedorRepository;
+import com.dessti.crm.compras.proveedor.domain.DatosProveedor;
 import com.dessti.crm.compras.proveedor.domain.Proveedor;
 import com.dessti.crm.platform.audit.AuditoriaPort;
 import com.dessti.crm.platform.audit.EventoAuditoria;
@@ -83,8 +84,11 @@ public class ServicioProveedores {
 
         // Construye y valida el Proveedor (Req 29.1) antes de la comprobacion de
         // unicidad, para que un dato invalido produzca 422 y no 409.
-        Proveedor proveedor = Proveedor.crear(
-                comando.nombre(), comando.rfc(), comando.email(), comando.telefono(), actor);
+        Proveedor proveedor = Proveedor.crear(new DatosProveedor(
+                comando.nombre(), comando.rfc(), comando.email(), comando.telefono(),
+                comando.personaContacto(), comando.regimenFiscal(), comando.diasCredito(),
+                comando.domicilioCalle(), comando.domicilioCiudad(), comando.domicilioEstado(),
+                comando.codigoPostal()), actor);
 
         // Pre-comprobacion de unicidad de RFC entre activos del tenant (Req 29.2).
         if (proveedorRepository.existsByRfcAndActivoTrue(proveedor.getRfc())) {
@@ -118,7 +122,11 @@ public class ServicioProveedores {
         }
         Proveedor proveedor = cargarActivo(proveedorId, actor);
 
-        proveedor.actualizar(comando.nombre(), comando.rfc(), comando.email(), comando.telefono(), actor);
+        proveedor.actualizar(new DatosProveedor(
+                comando.nombre(), comando.rfc(), comando.email(), comando.telefono(),
+                comando.personaContacto(), comando.regimenFiscal(), comando.diasCredito(),
+                comando.domicilioCalle(), comando.domicilioCiudad(), comando.domicilioEstado(),
+                comando.codigoPostal()), actor);
 
         // Si cambia el RFC, comprobar que no colisione con OTRO Proveedor activo.
         if (proveedorRepository.existsByRfcAndActivoTrue(proveedor.getRfc())

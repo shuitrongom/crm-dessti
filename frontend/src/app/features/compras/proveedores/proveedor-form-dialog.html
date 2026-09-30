@@ -1,0 +1,187 @@
+<mat-dialog-content class="proveedor-form__content">
+  <form class="ds-form" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+    <header class="ds-form__header">
+      <h2 class="ds-form__header-title" mat-dialog-title>{{ titulo() }}</h2>
+      <p class="ds-form__header-subtitle">{{ subtitulo() }}</p>
+    </header>
+
+    @if (error()) {
+      <p class="ds-form__note ds-form__note--warn" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </p>
+    }
+
+    <!-- Identificación fiscal -->
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Identificación</h3>
+        <p class="ds-form__section-desc">Razón social y RFC. El RFC debe ser único entre proveedores activos.</p>
+      </div>
+      <div class="ds-form__section-body">
+        <div class="ds-form__grid">
+          <div class="ds-form__field ds-form__field--full">
+            <mat-form-field appearance="outline">
+              <mat-label>Nombre / razón social</mat-label>
+              <input matInput type="text" formControlName="nombre" autocomplete="off" maxlength="200" required />
+              @if (form.controls.nombre.hasError('required') && form.controls.nombre.touched) {
+                <mat-error>El nombre o razón social es obligatorio.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field ds-form__field--full">
+            <mat-form-field appearance="outline">
+              <mat-label>RFC</mat-label>
+              <input
+                matInput
+                type="text"
+                formControlName="rfc"
+                autocomplete="off"
+                maxlength="13"
+                (input)="normalizarRfc($event)"
+                required
+              />
+              <mat-hint>Solo mayúsculas, números y &amp;. Se normaliza automáticamente.</mat-hint>
+              @if (form.controls.rfc.hasError('required') && form.controls.rfc.touched) {
+                <mat-error>El RFC es obligatorio.</mat-error>
+              }
+              @if (form.controls.rfc.hasError('minlength') || form.controls.rfc.hasError('maxlength')) {
+                <mat-error>El RFC debe tener entre 12 y 13 caracteres.</mat-error>
+              }
+              @if (form.controls.rfc.hasError('duplicado')) {
+                <mat-error>Ya existe un proveedor activo con este RFC.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Régimen fiscal (opcional)</mat-label>
+              <input matInput type="text" formControlName="regimenFiscal" autocomplete="off" maxlength="10" />
+              <mat-hint>Clave del catálogo SAT.</mat-hint>
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contacto -->
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Contacto</h3>
+        <p class="ds-form__section-desc">Al menos un dato de contacto (correo o teléfono) es obligatorio.</p>
+      </div>
+      <div class="ds-form__section-body">
+        <div class="ds-form__grid">
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Correo</mat-label>
+              <input matInput type="email" formControlName="email" autocomplete="off" maxlength="320" />
+              @if (form.controls.email.hasError('email')) {
+                <mat-error>El formato del correo no es válido.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Teléfono</mat-label>
+              <input
+                matInput
+                type="tel"
+                formControlName="telefono"
+                autocomplete="off"
+                inputmode="numeric"
+                maxlength="15"
+                (input)="soloDigitos($event, 'telefono', 15)"
+              />
+              <mat-hint>10 dígitos.</mat-hint>
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field ds-form__field--full">
+            <mat-form-field appearance="outline">
+              <mat-label>Persona de contacto (opcional)</mat-label>
+              <input matInput type="text" formControlName="personaContacto" autocomplete="off" maxlength="200" />
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Condiciones comerciales -->
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Condiciones comerciales</h3>
+        <p class="ds-form__section-desc">Días de crédito para las órdenes de compra (vacío = de contado).</p>
+      </div>
+      <div class="ds-form__section-body">
+        <div class="ds-form__grid">
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Días de crédito (opcional)</mat-label>
+              <input matInput type="number" formControlName="diasCredito" min="0" max="365" />
+              @if (form.controls.diasCredito.hasError('min') || form.controls.diasCredito.hasError('max')) {
+                <mat-error>Los días de crédito deben estar entre 0 y 365.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Domicilio fiscal -->
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Domicilio fiscal</h3>
+        <p class="ds-form__section-desc">Opcional, útil para la facturación del proveedor.</p>
+      </div>
+      <div class="ds-form__section-body">
+        <div class="ds-form__grid">
+          <div class="ds-form__field ds-form__field--full">
+            <mat-form-field appearance="outline">
+              <mat-label>Calle y número (opcional)</mat-label>
+              <input matInput type="text" formControlName="domicilioCalle" autocomplete="off" maxlength="300" />
+            </mat-form-field>
+          </div>
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Ciudad (opcional)</mat-label>
+              <input matInput type="text" formControlName="domicilioCiudad" autocomplete="off" maxlength="150" />
+            </mat-form-field>
+          </div>
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Estado (opcional)</mat-label>
+              <input matInput type="text" formControlName="domicilioEstado" autocomplete="off" maxlength="150" />
+            </mat-form-field>
+          </div>
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Código postal (opcional)</mat-label>
+              <input
+                matInput
+                type="text"
+                formControlName="codigoPostal"
+                autocomplete="off"
+                inputmode="numeric"
+                maxlength="5"
+                (input)="soloDigitos($event, 'codigoPostal', 5)"
+              />
+              @if (form.controls.codigoPostal.hasError('pattern')) {
+                <mat-error>El código postal debe constar de 5 dígitos.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+    </section>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancelar()" [disabled]="guardando()">Cancelar</button>
+  <button matButton="filled" type="button" (click)="guardar()" [disabled]="guardando() || form.invalid">
+    {{ esEdicion ? 'Guardar cambios' : 'Crear proveedor' }}
+  </button>
+</mat-dialog-actions>

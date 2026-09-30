@@ -17,6 +17,20 @@ export interface Proveedor {
   rfc: string;
   email: string | null;
   telefono: string | null;
+  /** Persona de contacto; null si no aplica (V89). */
+  personaContacto: string | null;
+  /** Clave del régimen fiscal (SAT); null si no aplica (V89). */
+  regimenFiscal: string | null;
+  /** Días de crédito; null = de contado (V89). */
+  diasCredito: number | null;
+  /** Calle y número del domicilio fiscal; null si no aplica (V89). */
+  domicilioCalle: string | null;
+  /** Ciudad/municipio; null si no aplica (V89). */
+  domicilioCiudad: string | null;
+  /** Estado/entidad; null si no aplica (V89). */
+  domicilioEstado: string | null;
+  /** Código postal (5 dígitos); null si no aplica (V89). */
+  codigoPostal: string | null;
   activo: boolean;
   version: number;
   createdAt: string;
@@ -29,6 +43,13 @@ export interface GuardarProveedorRequest {
   rfc: string;
   email: string | null;
   telefono: string | null;
+  personaContacto: string | null;
+  regimenFiscal: string | null;
+  diasCredito: number | null;
+  domicilioCalle: string | null;
+  domicilioCiudad: string | null;
+  domicilioEstado: string | null;
+  codigoPostal: string | null;
 }
 
 // --- Requisiciones de compra (Req 30) — RequisicionCompraDto ----------------

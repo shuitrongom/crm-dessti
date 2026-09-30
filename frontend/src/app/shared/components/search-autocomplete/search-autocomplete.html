@@ -1,0 +1,59 @@
+<mat-form-field appearance="outline" class="search-ac__campo">
+  <mat-label>{{ etiqueta() }}</mat-label>
+  <mat-icon matPrefix aria-hidden="true">search</mat-icon>
+  <input
+    matInput
+    type="text"
+    autocomplete="off"
+    [placeholder]="placeholder()"
+    [value]="texto()"
+    (input)="alEscribir($any($event.target).value)"
+    (focus)="alEnfocar()"
+    (blur)="alDesenfocar()"
+    [matAutocomplete]="auto"
+  />
+  @if (hayTexto()) {
+    <button
+      matIconButton
+      matSuffix
+      type="button"
+      class="search-ac__limpiar"
+      aria-label="Limpiar búsqueda"
+      (click)="limpiar()"
+    >
+      <mat-icon aria-hidden="true">close</mat-icon>
+    </button>
+  }
+  @if (ayuda(); as textoAyuda) {
+    <mat-hint>{{ textoAyuda }}</mat-hint>
+  }
+</mat-form-field>
+
+<mat-autocomplete #auto="matAutocomplete" (optionSelected)="alSeleccionar($event)">
+  @for (entidad of sugerencias(); track entidad.id) {
+    <mat-option [value]="entidad" class="search-ac__opcion">
+      <mat-icon class="search-ac__opcion-icono" aria-hidden="true">{{ iconoDe()(entidad) }}</mat-icon>
+      <span class="search-ac__opcion-textos">
+        <span class="search-ac__opcion-etiqueta">
+          @for (seg of segmentos(entidad); track $index) {
+            @if (seg.match) {
+              <strong class="search-ac__match">{{ seg.texto }}</strong>
+            } @else {
+              <span>{{ seg.texto }}</span>
+            }
+          }
+        </span>
+        @if (detalleDe()(entidad); as detalle) {
+          <span class="search-ac__opcion-detalle">{{ detalle }}</span>
+        }
+      </span>
+    </mat-option>
+  } @empty {
+    @if (sinCoincidencias()) {
+      <mat-option disabled class="search-ac__vacio">
+        <mat-icon aria-hidden="true">search_off</mat-icon>
+        Sin coincidencias.
+      </mat-option>
+    }
+  }
+</mat-autocomplete>

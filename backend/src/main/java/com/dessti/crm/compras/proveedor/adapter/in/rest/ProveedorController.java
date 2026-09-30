@@ -89,7 +89,14 @@ public class ProveedorController {
                 request.nombre(),
                 request.rfc(),
                 request.email(),
-                request.telefono()));
+                request.telefono(),
+                request.personaContacto(),
+                request.regimenFiscal(),
+                request.diasCredito(),
+                request.domicilioCalle(),
+                request.domicilioCiudad(),
+                request.domicilioEstado(),
+                request.codigoPostal()));
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
@@ -123,7 +130,14 @@ public class ProveedorController {
                 request.nombre(),
                 request.rfc(),
                 request.email(),
-                request.telefono()));
+                request.telefono(),
+                request.personaContacto(),
+                request.regimenFiscal(),
+                request.diasCredito(),
+                request.domicilioCalle(),
+                request.domicilioCiudad(),
+                request.domicilioEstado(),
+                request.codigoPostal()));
         return ResponseEntity.ok(dto);
     }
 

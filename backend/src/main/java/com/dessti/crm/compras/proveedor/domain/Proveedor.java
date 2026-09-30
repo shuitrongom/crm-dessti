@@ -63,6 +63,34 @@ public class Proveedor extends TenantScopedEntity {
     @Column(name = "telefono")
     private String telefono;
 
+    /** Nombre de la persona de contacto; {@code null} si no aplica (Req 29, V89). */
+    @Column(name = "persona_contacto")
+    private String personaContacto;
+
+    /** Clave del regimen fiscal (catalogo SAT); {@code null} si no aplica (Req 29, V89). */
+    @Column(name = "regimen_fiscal")
+    private String regimenFiscal;
+
+    /** Dias de credito (condiciones de pago); {@code null} = de contado (Req 29, V89). */
+    @Column(name = "dias_credito")
+    private Integer diasCredito;
+
+    /** Calle y numero del domicilio fiscal; {@code null} si no aplica (Req 29, V89). */
+    @Column(name = "domicilio_calle")
+    private String domicilioCalle;
+
+    /** Ciudad/municipio del domicilio fiscal; {@code null} si no aplica (Req 29, V89). */
+    @Column(name = "domicilio_ciudad")
+    private String domicilioCiudad;
+
+    /** Estado/entidad del domicilio fiscal; {@code null} si no aplica (Req 29, V89). */
+    @Column(name = "domicilio_estado")
+    private String domicilioEstado;
+
+    /** Codigo postal (5 digitos); {@code null} si no aplica (Req 29, V89). */
+    @Column(name = "codigo_postal")
+    private String codigoPostal;
+
     /** Bandera de borrado logico (Req 29.5); {@code true} mientras el Proveedor esta vigente. */
     @Column(name = "activo", nullable = false)
     private boolean activo;
@@ -89,14 +117,14 @@ public class Proveedor extends TenantScopedEntity {
      *         obligatorio falta o es invalido, o si no hay al menos un dato de
      *         contacto (Req 29.1, 422).
      */
-    public static Proveedor crear(String nombre, String rfc, String email, String telefono, String actor) {
+    public static Proveedor crear(DatosProveedor datos, String actor) {
+        if (datos == null) {
+            throw new com.dessti.crm.platform.error.ReglaNegocioException(
+                    "Los datos del Proveedor son obligatorios.");
+        }
         Proveedor proveedor = new Proveedor();
         proveedor.id = UUID.randomUUID();
-        proveedor.nombre = ProveedorValidaciones.normalizarNombre(nombre);
-        proveedor.rfc = ProveedorValidaciones.normalizarRfc(rfc);
-        proveedor.email = ProveedorValidaciones.normalizarEmail(email);
-        proveedor.telefono = ProveedorValidaciones.normalizarTelefono(telefono);
-        ProveedorValidaciones.exigirAlMenosUnContacto(proveedor.email, proveedor.telefono);
+        proveedor.aplicarDatos(datos);
         proveedor.activo = true;
         proveedor.setCreatedBy(actor);
         proveedor.setUpdatedBy(actor);
@@ -116,17 +144,43 @@ public class Proveedor extends TenantScopedEntity {
      * @throws com.dessti.crm.platform.error.ReglaNegocioException si algun dato
      *         es invalido o falta al menos un dato de contacto (Req 29.1, 422).
      */
-    public void actualizar(String nombre, String rfc, String email, String telefono, String actor) {
-        String nuevoNombre = ProveedorValidaciones.normalizarNombre(nombre);
-        String nuevoRfc = ProveedorValidaciones.normalizarRfc(rfc);
-        String nuevoEmail = ProveedorValidaciones.normalizarEmail(email);
-        String nuevoTelefono = ProveedorValidaciones.normalizarTelefono(telefono);
+    public void actualizar(DatosProveedor datos, String actor) {
+        if (datos == null) {
+            throw new com.dessti.crm.platform.error.ReglaNegocioException(
+                    "Los datos del Proveedor son obligatorios.");
+        }
+        aplicarDatos(datos);
+        this.setUpdatedBy(actor);
+    }
+
+    /**
+     * Normaliza, valida y asigna todos los datos editables del Proveedor a partir
+     * de {@link DatosProveedor} (Req 29, V89). Centraliza la logica compartida por
+     * el alta y la edicion: exige nombre y RFC validos, al menos un contacto, y
+     * normaliza los datos fiscales/comerciales opcionales.
+     */
+    private void aplicarDatos(DatosProveedor datos) {
+        String nuevoNombre = ProveedorValidaciones.normalizarNombre(datos.nombre());
+        String nuevoRfc = ProveedorValidaciones.normalizarRfc(datos.rfc());
+        String nuevoEmail = ProveedorValidaciones.normalizarEmail(datos.email());
+        String nuevoTelefono = ProveedorValidaciones.normalizarTelefono(datos.telefono());
         ProveedorValidaciones.exigirAlMenosUnContacto(nuevoEmail, nuevoTelefono);
         this.nombre = nuevoNombre;
         this.rfc = nuevoRfc;
         this.email = nuevoEmail;
         this.telefono = nuevoTelefono;
-        this.setUpdatedBy(actor);
+        this.personaContacto = ProveedorValidaciones.normalizarTextoOpcional(
+                datos.personaContacto(), ProveedorValidaciones.LONGITUD_MAXIMA_PERSONA_CONTACTO,
+                "La persona de contacto");
+        this.regimenFiscal = ProveedorValidaciones.normalizarRegimenFiscal(datos.regimenFiscal());
+        this.diasCredito = ProveedorValidaciones.normalizarDiasCredito(datos.diasCredito());
+        this.domicilioCalle = ProveedorValidaciones.normalizarTextoOpcional(
+                datos.domicilioCalle(), ProveedorValidaciones.LONGITUD_MAXIMA_CALLE, "La calle");
+        this.domicilioCiudad = ProveedorValidaciones.normalizarTextoOpcional(
+                datos.domicilioCiudad(), ProveedorValidaciones.LONGITUD_MAXIMA_LOCALIDAD, "La ciudad");
+        this.domicilioEstado = ProveedorValidaciones.normalizarTextoOpcional(
+                datos.domicilioEstado(), ProveedorValidaciones.LONGITUD_MAXIMA_LOCALIDAD, "El estado");
+        this.codigoPostal = ProveedorValidaciones.normalizarCodigoPostal(datos.codigoPostal());
     }
 
     /**
@@ -185,6 +239,34 @@ public class Proveedor extends TenantScopedEntity {
 
     public String getTelefono() {
         return telefono;
+    }
+
+    public String getPersonaContacto() {
+        return personaContacto;
+    }
+
+    public String getRegimenFiscal() {
+        return regimenFiscal;
+    }
+
+    public Integer getDiasCredito() {
+        return diasCredito;
+    }
+
+    public String getDomicilioCalle() {
+        return domicilioCalle;
+    }
+
+    public String getDomicilioCiudad() {
+        return domicilioCiudad;
+    }
+
+    public String getDomicilioEstado() {
+        return domicilioEstado;
+    }
+
+    public String getCodigoPostal() {
+        return codigoPostal;
     }
 
     public boolean isActivo() {
