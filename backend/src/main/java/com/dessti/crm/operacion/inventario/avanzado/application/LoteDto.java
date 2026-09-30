@@ -10,19 +10,23 @@ import com.dessti.crm.operacion.inventario.avanzado.domain.Lote;
  * DTO de salida de un {@link Lote} (Req 12.2, 60), distinto de la entidad de
  * persistencia.
  *
- * @param id             identificador del Lote.
- * @param materialId     Material al que pertenece el Lote.
- * @param codigo         codigo del Lote.
- * @param fechaCaducidad fecha de caducidad, o {@code null} si no aplica.
- * @param version        version para concurrencia optimista (Req 49).
- * @param createdAt      instante de alta (UTC).
- * @param updatedAt      instante de la ultima modificacion (UTC).
+ * @param id               identificador del Lote.
+ * @param materialId       Material al que pertenece el Lote.
+ * @param codigo           codigo del Lote.
+ * @param fechaCaducidad   fecha de caducidad, o {@code null} si no aplica.
+ * @param fechaFabricacion fecha de fabricacion/recepcion, o {@code null} (Req 60, V86).
+ * @param notas            observaciones libres, o {@code null} (Req 60, V86).
+ * @param version          version para concurrencia optimista (Req 49).
+ * @param createdAt        instante de alta (UTC).
+ * @param updatedAt        instante de la ultima modificacion (UTC).
  */
 public record LoteDto(
         UUID id,
         UUID materialId,
         String codigo,
         LocalDate fechaCaducidad,
+        LocalDate fechaFabricacion,
+        String notas,
         long version,
         Instant createdAt,
         Instant updatedAt) {
@@ -39,6 +43,8 @@ public record LoteDto(
                 lote.getMaterialId(),
                 lote.getCodigo(),
                 lote.getFechaCaducidad(),
+                lote.getFechaFabricacion(),
+                lote.getNotas(),
                 lote.getVersion(),
                 lote.getCreatedAt(),
                 lote.getUpdatedAt());

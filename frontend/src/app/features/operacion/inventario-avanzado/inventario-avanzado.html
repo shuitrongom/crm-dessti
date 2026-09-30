@@ -55,39 +55,60 @@
                 ayuda="Materiales cuya existencia esta en o por debajo de su punto de reorden."
               />
             }
-            <!-- Valor del inventario: honesto sobre lo paginado; sin cero enganoso si no hay
-                 existencias cargadas. Clicable para explicar como se calcula (coherente con
-                 las otras tarjetas del tablero). -->
+            <!-- Valor TOTAL del inventario calculado en el servidor (no sobre lo paginado):
+                 total real del tenant. Clicable para explicar como se calcula. -->
             <button
               type="button"
               class="kpi-boton"
               (click)="
                 abrirInfoKpi(
                   'valuacion_inventario_total',
-                  'Valor del inventario (cargado)',
-                  valorInventarioCargado(),
+                  'Valor del inventario',
+                  valorInventarioTotal(),
                   'moneda'
                 )
               "
-              aria-label="Ver explicación del Valor del inventario cargado"
+              aria-label="Ver explicación del Valor del inventario"
             >
               <app-stat-card
-                etiqueta="Valor del inventario (cargado)"
+                etiqueta="Valor del inventario"
                 [valor]="
-                  hayExistenciasCargadas()
-                    ? ((valorInventarioCargado() | currency: 'MXN' : 'symbol-narrow') ?? '—')
+                  hayResumen()
+                    ? ((valorInventarioTotal() | currency: 'MXN' : 'symbol-narrow') ?? '—')
                     : 'Sin datos'
                 "
                 icono="payments"
                 tono="neutro"
-                [ayuda]="
-                  hayExistenciasCargadas()
-                    ? 'Calculado sobre las existencias cargadas en la pestana Existencias (sobre lo paginado).'
-                    : 'Consulta la pestana Existencias para valorizar el inventario cargado.'
-                "
+                ayuda="Valor total del inventario del tenant (todas las existencias), calculado en el servidor: suma de cantidad × costo promedio."
               />
             </button>
           </div>
+
+          <!-- Desglose de valuación por Almacén (calculado en el servidor) -->
+          @if (hayResumen() && resumenPorAlmacen().length > 0) {
+            <section class="inventario-avanzado__seccion" aria-labelledby="titulo-por-almacen">
+              <h2 id="titulo-por-almacen" class="inventario-avanzado__subtitulo">
+                Valuación por almacén
+              </h2>
+              <app-data-table
+                [columnas]="columnasResumenAlmacen"
+                [filas]="resumenPorAlmacen()"
+                [total]="resumenPorAlmacen().length"
+                [size]="resumenPorAlmacen().length || 20"
+                [opcionesTamano]="[resumenPorAlmacen().length || 20]"
+              >
+                <ng-template appCelda="nombre" let-fila>
+                  {{ fila.nombre || nombreAlmacen(fila.almacenId) }}
+                </ng-template>
+                <ng-template appCelda="cantidadTotal" let-fila>
+                  {{ fila.cantidadTotal | number: '1.0-3' }}
+                </ng-template>
+                <ng-template appCelda="valuacion" let-fila>
+                  {{ (fila.valuacion | currency: 'MXN' : 'symbol-narrow') ?? '—' }}
+                </ng-template>
+              </app-data-table>
+            </section>
+          }
 
           <section class="inventario-avanzado__seccion" aria-labelledby="titulo-alertas">
             <h2 id="titulo-alertas" class="inventario-avanzado__subtitulo">Alertas de stock bajo</h2>
@@ -436,6 +457,76 @@
     </mat-tab>
   }
 
+  <!-- ============================== AJUSTES ============================== -->
+  @if (puedeAjustar) {
+    <mat-tab label="Ajustes">
+      <div class="inventario-avanzado__tab">
+        @if (!hayMateriales()) {
+          <p class="inventario-avanzado__sin-materiales" role="status">
+            <mat-icon aria-hidden="true">info</mat-icon>
+            Aún no hay materiales dados de alta. Crea materiales en Operación para ajustar su inventario.
+          </p>
+        }
+        <mat-card appearance="outlined" class="operacion-form">
+          <mat-card-content>
+            <p class="inventario-avanzado__ayuda">
+              El ajuste por conteo físico concilia el saldo del sistema con la cantidad realmente
+              contada. El sistema calcula la diferencia y registra una entrada o salida de tipo
+              «ajuste», conservando el costo promedio. Si el conteo coincide con el saldo, no se
+              registra movimiento.
+            </p>
+            <form
+              class="inventario-avanzado__lote-form"
+              [formGroup]="formAjuste"
+              (ngSubmit)="registrarAjuste()"
+              novalidate
+            >
+              <app-entity-select
+                formControlName="almacenId"
+                etiqueta="Almacén"
+                placeholder="Elige el almacén…"
+                [precargar]="true"
+                [obligatorio]="true"
+                [buscador]="buscarAlmacen"
+                [etiquetaDe]="etiquetaAlmacen"
+              />
+              <app-entity-select
+                formControlName="materialId"
+                etiqueta="Material"
+                placeholder="Elige el material…"
+                [precargar]="true"
+                [obligatorio]="true"
+                [buscador]="buscarMaterial"
+                [etiquetaDe]="etiquetaMaterial"
+                [detalleDe]="detalleMaterial"
+              />
+              <mat-form-field appearance="outline">
+                <mat-label>Cantidad contada</mat-label>
+                <input matInput type="number" min="0" step="0.001" formControlName="cantidadContada" required />
+                <mat-hint>Cantidad real encontrada en el conteo físico.</mat-hint>
+                @if (formAjuste.controls.cantidadContada.hasError('min')) {
+                  <mat-error>La cantidad contada no puede ser negativa.</mat-error>
+                }
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="inventario-avanzado__campo-ancho">
+                <mat-label>Motivo (opcional)</mat-label>
+                <input matInput type="text" formControlName="motivo" maxlength="500" placeholder="Conteo mensual, merma, etc." />
+              </mat-form-field>
+              @if (errorAjuste()) {
+                <p class="inventario-avanzado__error" role="alert">{{ errorAjuste() }}</p>
+              }
+              <div class="operacion-form__acciones">
+                <button matButton="filled" type="submit" [disabled]="enviandoAjuste()">
+                  Registrar ajuste
+                </button>
+              </div>
+            </form>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+  }
+
   <!-- ============================== KARDEX ============================== -->
   @if (puedeLeerKardex) {
     <mat-tab label="Kardex">
@@ -582,10 +673,26 @@
                     <mat-hint>El código no se puede cambiar.</mat-hint>
                   </mat-form-field>
                   <mat-form-field appearance="outline">
+                    <mat-label>Fecha de fabricación (opcional)</mat-label>
+                    <input matInput [matDatepicker]="pickerFabricacionEdit" formControlName="fechaFabricacion" />
+                    <mat-datepicker-toggle matSuffix [for]="pickerFabricacionEdit" />
+                    <mat-datepicker #pickerFabricacionEdit />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
                     <mat-label>Fecha de caducidad (opcional)</mat-label>
                     <input matInput [matDatepicker]="pickerCaducidadEdit" formControlName="fechaCaducidad" />
                     <mat-datepicker-toggle matSuffix [for]="pickerCaducidadEdit" />
                     <mat-datepicker #pickerCaducidadEdit />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="inventario-avanzado__campo-ancho">
+                    <mat-label>Notas (opcional)</mat-label>
+                    <textarea
+                      matInput
+                      formControlName="notas"
+                      rows="2"
+                      maxlength="500"
+                      placeholder="Proveedor, remisión, observaciones…"
+                    ></textarea>
                   </mat-form-field>
                   <div class="operacion-form__acciones">
                     <button matButton type="button" (click)="cancelarEdicionLote()">Cancelar</button>
@@ -604,10 +711,26 @@
                     }
                   </mat-form-field>
                   <mat-form-field appearance="outline">
+                    <mat-label>Fecha de fabricación (opcional)</mat-label>
+                    <input matInput [matDatepicker]="pickerFabricacion" formControlName="fechaFabricacion" />
+                    <mat-datepicker-toggle matSuffix [for]="pickerFabricacion" />
+                    <mat-datepicker #pickerFabricacion />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
                     <mat-label>Fecha de caducidad (opcional)</mat-label>
                     <input matInput [matDatepicker]="pickerCaducidad" formControlName="fechaCaducidad" />
                     <mat-datepicker-toggle matSuffix [for]="pickerCaducidad" />
                     <mat-datepicker #pickerCaducidad />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="inventario-avanzado__campo-ancho">
+                    <mat-label>Notas (opcional)</mat-label>
+                    <textarea
+                      matInput
+                      formControlName="notas"
+                      rows="2"
+                      maxlength="500"
+                      placeholder="Proveedor, remisión, observaciones…"
+                    ></textarea>
                   </mat-form-field>
                   <div class="operacion-form__acciones">
                     <button matButton="filled" type="submit" [disabled]="guardandoLote()">Crear lote</button>
@@ -682,8 +805,27 @@
               (cambioPagina)="onPaginaLotes($event)"
             >
               <ng-template appCelda="codigo" let-fila>{{ fila.codigo }}</ng-template>
+              <ng-template appCelda="fechaFabricacion" let-fila>
+                {{ fila.fechaFabricacion ? (fila.fechaFabricacion | date: 'mediumDate') : '—' }}
+              </ng-template>
               <ng-template appCelda="fechaCaducidad" let-fila>
                 {{ fila.fechaCaducidad ? (fila.fechaCaducidad | date: 'mediumDate') : '—' }}
+              </ng-template>
+              <ng-template appCelda="existencia" let-fila>
+                @if (existenciaDeLote(fila) !== null) {
+                  {{ existenciaDeLote(fila) | number: '1.0-3' }}
+                } @else {
+                  <span class="operacion-sin-acciones">—</span>
+                }
+              </ng-template>
+              <ng-template appCelda="notas" let-fila>
+                @if (fila.notas) {
+                  <span class="inventario-avanzado__lote-notas" [matTooltip]="fila.notas">{{
+                    fila.notas
+                  }}</span>
+                } @else {
+                  —
+                }
               </ng-template>
               <ng-template appCelda="estado" let-fila>
                 <span
@@ -734,6 +876,102 @@
             </app-data-table>
           </app-state-container>
         }
+      </div>
+    </mat-tab>
+  }
+
+  <!-- ============================== ALERTAS ============================== -->
+  @if (puedeListarAlertas) {
+    <mat-tab label="Alertas">
+      <div class="inventario-avanzado__tab">
+        <p class="inventario-avanzado__ayuda">
+          Bitácora de alertas de stock detectadas automáticamente al registrar movimientos:
+          stock mínimo (bajo el punto de reorden), sugerencia de reabastecimiento y stock máximo.
+          Marca una alerta como atendida cuando le des seguimiento.
+        </p>
+
+        <mat-button-toggle-group
+          class="inventario-avanzado__filtro-alertas"
+          [value]="filtroAlertas()"
+          (change)="cambiarFiltroAlertas($event.value)"
+          aria-label="Filtro de alertas"
+        >
+          <mat-button-toggle value="pendientes">Pendientes</mat-button-toggle>
+          <mat-button-toggle value="atendidas">Atendidas</mat-button-toggle>
+          <mat-button-toggle value="todas">Todas</mat-button-toggle>
+        </mat-button-toggle-group>
+
+        <app-state-container
+          [fase]="faseAlertasStock()"
+          [mensajeError]="errorAlertasStock()"
+          mensajeVacio="No hay alertas de stock con este filtro."
+          (reintentar)="cargarAlertasStock()"
+        >
+          <app-data-table
+            [columnas]="columnasAlertasStock"
+            [filas]="alertasStock()"
+            [total]="totalAlertasStock()"
+            [page]="pageAlertasStock()"
+            [size]="sizeAlertasStock()"
+            (cambioPagina)="onPaginaAlertasStock($event)"
+          >
+            <ng-template appCelda="detectadaEn" let-fila>
+              {{ fila.detectadaEn | date: 'short' }}
+            </ng-template>
+            <ng-template appCelda="tipo" let-fila>
+              <span
+                class="inventario-avanzado__alerta-tipo"
+                [class.inventario-avanzado__alerta-tipo--minimo]="fila.tipo === 'minimo'"
+                [class.inventario-avanzado__alerta-tipo--maximo]="fila.tipo === 'maximo'"
+                [class.inventario-avanzado__alerta-tipo--reabastecimiento]="fila.tipo === 'reabastecimiento'"
+              >
+                <mat-icon aria-hidden="true">{{ iconoTipoAlerta(fila.tipo) }}</mat-icon>
+                {{ etiquetaTipoAlerta(fila.tipo) }}
+              </span>
+            </ng-template>
+            <ng-template appCelda="material" let-fila>
+              {{ fila.nombreMaterial || nombreMaterial(fila.materialId) }}
+            </ng-template>
+            <ng-template appCelda="almacen" let-fila>{{ nombreAlmacen(fila.almacenId) }}</ng-template>
+            <ng-template appCelda="cantidad" let-fila>{{ fila.cantidad | number: '1.0-3' }}</ng-template>
+            <ng-template appCelda="umbral" let-fila>{{ fila.umbral | number: '1.0-3' }}</ng-template>
+            <ng-template appCelda="estado" let-fila>
+              <span
+                class="inventario-avanzado__alerta-estado"
+                [class.inventario-avanzado__alerta-estado--atendida]="fila.atendida"
+              >
+                {{ fila.atendida ? 'Atendida' : 'Pendiente' }}
+              </span>
+            </ng-template>
+            <ng-template appCelda="acciones" let-fila>
+              @if (puedeActualizarAlerta) {
+                @if (fila.atendida) {
+                  <button
+                    matButton
+                    type="button"
+                    (click)="marcarAlerta(fila, false)"
+                    matTooltip="Reabrir"
+                  >
+                    <mat-icon aria-hidden="true">undo</mat-icon>
+                    Reabrir
+                  </button>
+                } @else {
+                  <button
+                    matButton="tonal"
+                    type="button"
+                    (click)="marcarAlerta(fila, true)"
+                    matTooltip="Marcar como atendida"
+                  >
+                    <mat-icon aria-hidden="true">done</mat-icon>
+                    Atender
+                  </button>
+                }
+              } @else {
+                <span class="operacion-sin-acciones">—</span>
+              }
+            </ng-template>
+          </app-data-table>
+        </app-state-container>
       </div>
     </mat-tab>
   }

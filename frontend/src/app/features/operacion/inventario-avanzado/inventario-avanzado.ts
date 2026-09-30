@@ -25,7 +25,7 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { of, Observable, distinctUntilChanged } from 'rxjs';
@@ -67,14 +67,17 @@ import { InventarioAvanzadoService } from '../services/inventario.service';
 import { AlmacenFormDialog, AlmacenFormDialogData } from './almacen-form-dialog';
 import { NombresInventarioService } from '../services/nombres-inventario.service';
 import {
+  AlertaInventario,
   Almacen,
   ConfigInventarioMaterial,
   ETIQUETA_METODO_COSTEO,
   ExistenciaAlmacen,
+  ExistenciaLote,
   Lote,
   Material,
   MetodoCosteo,
   MovimientoAlmacen,
+  ResumenInventario,
 } from '../models/operacion.models';
 
 /** Umbral (dias) para marcar un lote como "proximo a caducar". */
@@ -96,6 +99,7 @@ const ETIQUETA_TIPO_KARDEX: Record<string, string> = {
     ReactiveFormsModule,
     CurrencyPipe,
     DatePipe,
+    DecimalPipe,
     MatCardModule,
     MatTabsModule,
     MatFormFieldModule,
@@ -140,9 +144,16 @@ export class OperacionInventarioAvanzado {
   );
   protected readonly puedeConfigurarMaterial = this.auth.tienePermiso('material', 'actualizar');
   protected readonly puedeListarLotes = this.auth.tienePermiso('lote', 'listar');
+  protected readonly puedeLeerLote = this.auth.tienePermiso('lote', 'leer');
   protected readonly puedeCrearLote = this.auth.tienePermiso('lote', 'crear');
   protected readonly puedeActualizarLote = this.auth.tienePermiso('lote', 'actualizar');
   protected readonly puedeEliminarLote = this.auth.tienePermiso('lote', 'eliminar');
+  protected readonly puedeAjustar = this.auth.tienePermiso('movimiento_inventario', 'ajustar');
+  protected readonly puedeListarAlertas = this.auth.tienePermiso('alerta_inventario', 'listar');
+  protected readonly puedeActualizarAlerta = this.auth.tienePermiso(
+    'alerta_inventario',
+    'actualizar',
+  );
 
   protected readonly tipos = ['sucursal', 'bodega'];
   protected readonly metodosCosteo: { valor: MetodoCosteo; etiqueta: string }[] = (
@@ -226,6 +237,17 @@ export class OperacionInventarioAvanzado {
   }
 
   /**
+   * Valor del inventario sobre las existencias CARGADAS en la tabla de Existencias
+   * (suma cantidad * costoPromedio de la pagina mostrada). Es un total de lo paginado,
+   * complementario al valor GLOBAL del servidor mostrado en el Resumen.
+   */
+  protected readonly valorInventarioCargado = computed(() =>
+    this.existencias().reduce((acc, e) => acc + e.cantidad * e.costoPromedio, 0),
+  );
+  /** `true` cuando hay al menos una existencia cargada para valorizar en la tabla. */
+  protected readonly hayExistenciasCargadas = computed(() => this.existencias().length > 0);
+
+  /**
    * Explica en lenguaje de negocio el metodo de costeo elegido en Configuracion,
    * para que el Usuario entienda su efecto (promedio ponderado vs PEPS/FIFO).
    * Deriva del valor actual del formulario de configuracion.
@@ -276,15 +298,24 @@ export class OperacionInventarioAvanzado {
   /** Numero de Materiales bajo su stock minimo. */
   protected readonly totalStockBajo = computed(() => this.materialesStockBajo().length);
   /**
-   * Valor total del inventario sobre las existencias CARGADAS en la tabla actual
-   * (suma cantidad * costoPromedio). Es un calculo sobre lo paginado, no un total
-   * global del servidor.
+   * Resumen global del inventario calculado EN EL SERVIDOR (valuacion total,
+   * almacenes con existencias y desglose por Almacen). Reemplaza el calculo previo
+   * sobre la pagina cargada por el total global real (Req 60). `null` mientras no
+   * se ha cargado o si el usuario no tiene permiso.
    */
-  protected readonly valorInventarioCargado = computed(() =>
-    this.existencias().reduce((acc, e) => acc + e.cantidad * e.costoPromedio, 0),
-  );
-  /** `true` cuando hay al menos una existencia cargada para valorizar. */
-  protected readonly hayExistenciasCargadas = computed(() => this.existencias().length > 0);
+  protected readonly resumen = signal<ResumenInventario | null>(null);
+  /** Valor total del inventario del servidor (0 si aun no hay resumen). */
+  protected readonly valorInventarioTotal = computed(() => this.resumen()?.valuacionTotal ?? 0);
+  /** `true` cuando el resumen del servidor tiene valor para mostrar. */
+  protected readonly hayResumen = computed(() => this.resumen() !== null);
+  /** Desglose por Almacen del resumen del servidor. */
+  protected readonly resumenPorAlmacen = computed(() => this.resumen()?.porAlmacen ?? []);
+
+  protected readonly columnasResumenAlmacen: ColumnaTabla[] = [
+    { clave: 'nombre', encabezado: 'Almacén' },
+    { clave: 'cantidadTotal', encabezado: 'Cantidad total', alineacion: 'fin' },
+    { clave: 'valuacion', encabezado: 'Valuación', alineacion: 'fin' },
+  ];
 
   /**
    * Materiales por reabastecer segun el punto de reorden CONFIGURADO por Material.
@@ -428,10 +459,25 @@ export class OperacionInventarioAvanzado {
 
   protected readonly columnasLotes: ColumnaTabla[] = [
     { clave: 'codigo', encabezado: 'Código' },
+    { clave: 'fechaFabricacion', encabezado: 'Fabricación' },
     { clave: 'fechaCaducidad', encabezado: 'Caducidad' },
+    { clave: 'existencia', encabezado: 'Existencia', alineacion: 'fin' },
+    { clave: 'notas', encabezado: 'Notas' },
     { clave: 'estado', encabezado: 'Estado' },
     { clave: 'acciones', encabezado: 'Acciones', alineacion: 'fin' },
   ];
+
+  /**
+   * Existencia viva por Lote del Material cargado (Req 60), indexada por loteId para
+   * pintar la columna "Existencia" en la tabla de Lotes. Se carga junto con los Lotes.
+   */
+  protected readonly existenciasPorLote = signal<Map<string, number>>(new Map());
+
+  /** Cantidad viva de un lote (suma de todos los almacenes), o null si se desconoce. */
+  existenciaDeLote(lote: Lote): number | null {
+    const mapa = this.existenciasPorLote();
+    return mapa.has(lote.id) ? (mapa.get(lote.id) as number) : null;
+  }
 
   /** Filtro de estado de caducidad de los lotes: todos/vigentes/próximos/caducados. */
   protected readonly filtroEstadoLote = signal<
@@ -472,7 +518,45 @@ export class OperacionInventarioAvanzado {
   protected readonly formLote = this.fb.nonNullable.group({
     codigo: ['', [Validators.required, Validators.maxLength(100)]],
     fechaCaducidad: [null as string | null],
+    fechaFabricacion: [null as string | null],
+    notas: ['', [Validators.maxLength(500)]],
   });
+
+  // ---------------------------------------------------------------------------
+  // Ajuste de inventario por conteo fisico (Req 60)
+  // ---------------------------------------------------------------------------
+  protected readonly enviandoAjuste = signal(false);
+  protected readonly errorAjuste = signal<string | undefined>(undefined);
+
+  protected readonly formAjuste = this.fb.nonNullable.group({
+    almacenId: ['', [Validators.required]],
+    materialId: ['', [Validators.required]],
+    cantidadContada: [0, [Validators.required, Validators.min(0)]],
+    motivo: ['', [Validators.maxLength(500)]],
+  });
+
+  // ---------------------------------------------------------------------------
+  // Alertas de stock consultables (Req 60)
+  // ---------------------------------------------------------------------------
+  protected readonly faseAlertasStock = signal<FaseSolicitud>('vacio');
+  protected readonly errorAlertasStock = signal<string | undefined>(undefined);
+  protected readonly alertasStock = signal<AlertaInventario[]>([]);
+  protected readonly totalAlertasStock = signal(0);
+  protected readonly pageAlertasStock = signal(0);
+  protected readonly sizeAlertasStock = signal(20);
+  /** Filtro de seguimiento de alertas: pendientes/atendidas/todas. */
+  protected readonly filtroAlertas = signal<'pendientes' | 'atendidas' | 'todas'>('pendientes');
+
+  protected readonly columnasAlertasStock: ColumnaTabla[] = [
+    { clave: 'detectadaEn', encabezado: 'Detectada' },
+    { clave: 'tipo', encabezado: 'Tipo' },
+    { clave: 'material', encabezado: 'Material' },
+    { clave: 'almacen', encabezado: 'Almacén' },
+    { clave: 'cantidad', encabezado: 'Cantidad', alineacion: 'fin' },
+    { clave: 'umbral', encabezado: 'Umbral', alineacion: 'fin' },
+    { clave: 'estado', encabezado: 'Estado' },
+    { clave: 'acciones', encabezado: 'Acciones', alineacion: 'fin' },
+  ];
 
   constructor() {
     if (this.puedeLeerAlmacen) {
@@ -487,6 +571,10 @@ export class OperacionInventarioAvanzado {
         if (this.puedeLeerExistencias) {
           this.cargarExistencias();
           this.cargarAlertas();
+          this.cargarResumen();
+        }
+        if (this.puedeListarAlertas) {
+          this.cargarAlertasStock();
         }
       },
       error: (e: HttpErrorResponse) => {
@@ -515,12 +603,28 @@ export class OperacionInventarioAvanzado {
         if (this.puedeLeerExistencias) {
           this.cargarExistencias();
           this.cargarAlertas();
+          this.cargarResumen();
+        }
+        if (this.puedeListarAlertas) {
+          this.cargarAlertasStock();
         }
       },
       error: (e: HttpErrorResponse) => {
         this.errorResumen.set(mensajeDeError(e));
         this.faseResumen.set('error');
       },
+    });
+  }
+
+  /** Carga el resumen global del inventario calculado en el servidor (Req 60). */
+  cargarResumen(): void {
+    if (!this.puedeLeerExistencias) {
+      return;
+    }
+    this.service.consultarResumen().subscribe({
+      next: (resumen) => this.resumen.set(resumen),
+      // El resumen es complementario: si falla, no rompe el tablero (se omite el KPI).
+      error: () => this.resumen.set(null),
     });
   }
 
@@ -1071,11 +1175,33 @@ export class OperacionInventarioAvanzado {
         this.lotes.set(pagina.content);
         this.totalLotes.set(pagina.totalElements);
         this.faseLotes.set(pagina.content.length === 0 ? 'vacio' : 'ok');
+        this.cargarExistenciasPorLote(materialId);
       },
       error: (e: HttpErrorResponse) => {
         this.errorLotes.set(mensajeDeError(e));
         this.faseLotes.set('error');
       },
+    });
+  }
+
+  /**
+   * Carga la existencia viva por Lote del Material (Req 60) para enriquecer la tabla de
+   * Lotes con la columna "Existencia" (suma por lote de todos los almacenes). Es
+   * complementaria: si falla o falta permiso, la tabla de Lotes sigue funcionando.
+   */
+  private cargarExistenciasPorLote(materialId: string): void {
+    if (!this.puedeLeerLote && !this.puedeListarLotes) {
+      return;
+    }
+    this.service.consultarExistenciasPorLote(materialId).subscribe({
+      next: (filas) => {
+        const mapa = new Map<string, number>();
+        for (const f of filas) {
+          mapa.set(f.loteId, (mapa.get(f.loteId) ?? 0) + f.cantidad);
+        }
+        this.existenciasPorLote.set(mapa);
+      },
+      error: () => this.existenciasPorLote.set(new Map()),
     });
   }
 
@@ -1101,12 +1227,19 @@ export class OperacionInventarioAvanzado {
       .crearLote(materialId, {
         codigo: v.codigo.trim(),
         fechaCaducidad: v.fechaCaducidad || null,
+        fechaFabricacion: v.fechaFabricacion || null,
+        notas: v.notas?.trim() || null,
       })
       .subscribe({
         next: () => {
           this.guardandoLote.set(false);
           this.toast.exito('Lote creado.');
-          this.formLote.reset({ codigo: '', fechaCaducidad: null });
+          this.formLote.reset({
+            codigo: '',
+            fechaCaducidad: null,
+            fechaFabricacion: null,
+            notas: '',
+          });
           this.materialLotesId.set(materialId);
           this.cargarLotes();
         },
@@ -1131,37 +1264,51 @@ export class OperacionInventarioAvanzado {
    */
   editarCaducidadLote(lote: Lote): void {
     this.editandoLoteId.set(lote.id);
-    this.formLote.setValue({ codigo: lote.codigo, fechaCaducidad: lote.fechaCaducidad ?? null });
+    this.formLote.setValue({
+      codigo: lote.codigo,
+      fechaCaducidad: lote.fechaCaducidad ?? null,
+      fechaFabricacion: lote.fechaFabricacion ?? null,
+      notas: lote.notas ?? '',
+    });
     this.formLote.controls.codigo.disable();
   }
 
-  /** Cancela la edicion de caducidad y limpia el formulario. */
+  /** Cancela la edicion de Lote y limpia el formulario. */
   cancelarEdicionLote(): void {
     this.editandoLoteId.set(null);
     this.formLote.controls.codigo.enable();
-    this.formLote.reset({ codigo: '', fechaCaducidad: null });
+    this.formLote.reset({ codigo: '', fechaCaducidad: null, fechaFabricacion: null, notas: '' });
   }
 
-  /** Guarda la nueva caducidad del Lote en edicion (PUT /lotes/{id}, Req 60). */
+  /**
+   * Guarda los datos editables del Lote en edicion (caducidad, fabricacion y notas)
+   * mediante PUT /lotes/{id} (Req 60). El codigo es inmutable.
+   */
   guardarCaducidadLote(): void {
     const loteId = this.editandoLoteId();
     if (!loteId) {
       return;
     }
-    const fechaCaducidad = this.formLote.getRawValue().fechaCaducidad || null;
+    const v = this.formLote.getRawValue();
     this.guardandoLote.set(true);
-    this.service.actualizarLote(loteId, fechaCaducidad).subscribe({
-      next: () => {
-        this.guardandoLote.set(false);
-        this.toast.exito('Lote actualizado.');
-        this.cancelarEdicionLote();
-        this.cargarLotes();
-      },
-      error: (e: HttpErrorResponse) => {
-        this.guardandoLote.set(false);
-        this.toast.error(mensajeDeError(e));
-      },
-    });
+    this.service
+      .actualizarLote(loteId, {
+        fechaCaducidad: v.fechaCaducidad || null,
+        fechaFabricacion: v.fechaFabricacion || null,
+        notas: v.notas?.trim() || null,
+      })
+      .subscribe({
+        next: () => {
+          this.guardandoLote.set(false);
+          this.toast.exito('Lote actualizado.');
+          this.cancelarEdicionLote();
+          this.cargarLotes();
+        },
+        error: (e: HttpErrorResponse) => {
+          this.guardandoLote.set(false);
+          this.toast.error(mensajeDeError(e));
+        },
+      });
   }
 
   /** Da de baja un Lote con confirmacion; el backend rechaza (422) si esta en uso. */
@@ -1258,6 +1405,132 @@ export class OperacionInventarioAvanzado {
   }
 
   // ---------------------------------------------------------------------------
+  // Ajuste de inventario por conteo fisico (Req 60)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Registra un ajuste de inventario por conteo fisico (Req 60): el backend concilia el
+   * saldo con la cantidad contada y genera una entrada/salida de tipo ajuste por la
+   * diferencia, o ningun movimiento si coincide. Tras aplicarlo recarga existencias/resumen.
+   */
+  registrarAjuste(): void {
+    if (this.formAjuste.invalid) {
+      this.formAjuste.markAllAsTouched();
+      return;
+    }
+    const v = this.formAjuste.getRawValue();
+    this.errorAjuste.set(undefined);
+    this.enviandoAjuste.set(true);
+    this.service
+      .ajustarInventario(v.almacenId, {
+        materialId: v.materialId,
+        cantidadContada: v.cantidadContada,
+        motivo: v.motivo?.trim() || null,
+      })
+      .subscribe({
+        next: (movimiento) => {
+          this.enviandoAjuste.set(false);
+          this.toast.exito(
+            movimiento
+              ? 'Ajuste registrado.'
+              : 'El conteo coincide con el saldo: no se requirió ajuste.',
+          );
+          this.formAjuste.reset({ almacenId: '', materialId: '', cantidadContada: 0, motivo: '' });
+          if (this.puedeLeerExistencias) {
+            this.cargarExistencias();
+            this.cargarResumen();
+          }
+        },
+        error: (e: HttpErrorResponse) => {
+          this.enviandoAjuste.set(false);
+          this.errorAjuste.set(mensajeDeError(e));
+        },
+      });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Alertas de stock consultables (Req 60)
+  // ---------------------------------------------------------------------------
+
+  /** Carga la bitacora persistente de alertas de stock del tenant (Req 60). */
+  cargarAlertasStock(): void {
+    if (!this.puedeListarAlertas) {
+      return;
+    }
+    const filtro = this.filtroAlertas();
+    const atendida = filtro === 'todas' ? null : filtro === 'atendidas';
+    this.faseAlertasStock.set('cargando');
+    this.service
+      .listarAlertas(atendida, null, this.pageAlertasStock(), this.sizeAlertasStock())
+      .subscribe({
+        next: (pagina) => {
+          this.alertasStock.set(pagina.content);
+          this.totalAlertasStock.set(pagina.totalElements);
+          this.faseAlertasStock.set(pagina.content.length === 0 ? 'vacio' : 'ok');
+        },
+        error: (e: HttpErrorResponse) => {
+          this.errorAlertasStock.set(mensajeDeError(e));
+          this.faseAlertasStock.set('error');
+        },
+      });
+  }
+
+  /** Cambia el filtro de seguimiento de alertas y recarga. */
+  cambiarFiltroAlertas(filtro: 'pendientes' | 'atendidas' | 'todas'): void {
+    this.filtroAlertas.set(filtro);
+    this.pageAlertasStock.set(0);
+    this.cargarAlertasStock();
+  }
+
+  onPaginaAlertasStock(evento: { page: number; size: number }): void {
+    this.pageAlertasStock.set(evento.page);
+    this.sizeAlertasStock.set(evento.size);
+    this.cargarAlertasStock();
+  }
+
+  /** Marca una alerta como atendida o no atendida (seguimiento, Req 60). */
+  marcarAlerta(alerta: AlertaInventario, atendida: boolean): void {
+    if (!this.puedeActualizarAlerta) {
+      return;
+    }
+    this.service.actualizarAlerta(alerta.id, atendida).subscribe({
+      next: () => {
+        this.toast.exito(atendida ? 'Alerta marcada como atendida.' : 'Alerta reabierta.');
+        this.cargarAlertasStock();
+      },
+      error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
+    });
+  }
+
+  /** Etiqueta es-MX del tipo de alerta. */
+  etiquetaTipoAlerta(tipo: string): string {
+    switch (tipo) {
+      case 'minimo':
+        return 'Stock mínimo';
+      case 'maximo':
+        return 'Stock máximo';
+      case 'reabastecimiento':
+        return 'Reabastecer';
+      default:
+        return tipo;
+    }
+  }
+
+  /** Icono (Material Symbols) del tipo de alerta (refuerza el estado, no solo color). */
+  iconoTipoAlerta(tipo: string): string {
+    switch (tipo) {
+      case 'minimo':
+        return 'trending_down';
+      case 'maximo':
+        return 'trending_up';
+      case 'reabastecimiento':
+        return 'add_shopping_cart';
+      default:
+        return 'notifications';
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // Navegacion de pestanas
   // ---------------------------------------------------------------------------
 
@@ -1267,8 +1540,10 @@ export class OperacionInventarioAvanzado {
       { clave: 'resumen', visible: this.puedeLeerExistencias },
       { clave: 'existencias', visible: this.puedeLeerExistencias },
       { clave: 'movimientos', visible: this.puedeCrearMovimiento },
+      { clave: 'ajustes', visible: this.puedeAjustar },
       { clave: 'kardex', visible: this.puedeLeerKardex },
       { clave: 'lotes', visible: this.puedeListarLotes || this.puedeCrearLote },
+      { clave: 'alertas', visible: this.puedeListarAlertas },
       { clave: 'configuracion', visible: this.puedeConfigurarMaterial },
       { clave: 'almacenes', visible: this.puedeLeerAlmacen },
     ];

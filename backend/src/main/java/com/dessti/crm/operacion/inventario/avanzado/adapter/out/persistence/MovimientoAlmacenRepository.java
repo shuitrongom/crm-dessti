@@ -68,4 +68,41 @@ public interface MovimientoAlmacenRepository extends JpaRepository<MovimientoAlm
      * @return {@code true} si algun movimiento referencia el Lote.
      */
     boolean existsByLoteId(UUID loteId);
+
+    /**
+     * Agrega la EXISTENCIA VIVA POR LOTE de un Material dentro del tenant vigente (Req 60),
+     * derivada del Kardex append-only: por cada movimiento con {@code lote_id}, suma la
+     * cantidad de las ENTRADAS y las patas de ENTRADA de transferencia, y resta las SALIDAS
+     * y las patas de SALIDA de transferencia. Los movimientos de ajuste por conteo fisico no
+     * llevan lote (son a nivel Material/Almacen), por lo que no distorsionan este saldo.
+     *
+     * <p>El resultado se agrupa por {@code (lote_id, almacen_id)} para conocer cuanto queda
+     * de cada Lote en cada Almacen. El filtro opcional por Almacen se aplica con una cota
+     * null-safe: si {@code almacenId} es {@code null}, no restringe (patron
+     * {@code CAST(:almacenId AS ...) IS NULL}). Acotada al tenant por el filtro de Hibernate
+     * y la RLS (Req 23).</p>
+     *
+     * @param materialId Material cuyos Lotes se agregan; obligatorio.
+     * @param almacenId  Almacen a filtrar; {@code null} agrega todos los Almacenes.
+     * @return filas {@code [loteId, almacenId, cantidadNeta]} con solo movimientos con lote.
+     */
+    @Query("""
+            SELECT m.loteId, m.almacenId,
+                   COALESCE(SUM(CASE
+                       WHEN m.tipo IN (com.dessti.crm.operacion.inventario.avanzado.domain.TipoMovimientoAlmacen.ENTRADA,
+                                       com.dessti.crm.operacion.inventario.avanzado.domain.TipoMovimientoAlmacen.TRANSFERENCIA_ENTRADA)
+                            THEN m.cantidad
+                       WHEN m.tipo IN (com.dessti.crm.operacion.inventario.avanzado.domain.TipoMovimientoAlmacen.SALIDA,
+                                       com.dessti.crm.operacion.inventario.avanzado.domain.TipoMovimientoAlmacen.TRANSFERENCIA_SALIDA)
+                            THEN -m.cantidad
+                       ELSE 0 END), 0)
+            FROM MovimientoAlmacen m
+            WHERE m.materialId = :materialId
+              AND m.loteId IS NOT NULL
+              AND (CAST(:almacenId AS uuid) IS NULL OR m.almacenId = :almacenId)
+            GROUP BY m.loteId, m.almacenId
+            """)
+    java.util.List<Object[]> agregarExistenciaPorLote(
+            @Param("materialId") UUID materialId,
+            @Param("almacenId") UUID almacenId);
 }

@@ -484,6 +484,8 @@ describe('OperacionInventarioAvanzado', () => {
         materialId: MATERIAL_UUID,
         codigo: 'LOTE-CADUCADO',
         fechaCaducidad: ayer,
+        fechaFabricacion: null,
+        notas: null,
         version: 0,
         createdAt: '2026-01-01T00:00:00Z',
         updatedAt: '2026-01-01T00:00:00Z',
@@ -497,6 +499,14 @@ describe('OperacionInventarioAvanzado', () => {
       )
       .flush(pagina(lotes));
     fixture.detectChanges();
+    // cargarLotes tambien consulta la existencia por lote (complementaria).
+    for (const req of http.match(
+      (r) =>
+        r.method === 'GET' &&
+        r.url === `/api/v1/inventario-avanzado/materiales/${MATERIAL_UUID}/lotes/existencias`,
+    )) {
+      req.flush([]);
+    }
 
     expect(vista().lotes().map((l) => l.codigo)).toContain('LOTE-CADUCADO');
     // El lote con caducidad en el pasado se clasifica como caducado.
@@ -518,8 +528,20 @@ describe('OperacionInventarioAvanzado', () => {
       )
       .flush(pagina<Lote>([]));
     fixture.detectChanges();
+    for (const req of http.match(
+      (r) =>
+        r.method === 'GET' &&
+        r.url === `/api/v1/inventario-avanzado/materiales/${MATERIAL_UUID}/lotes/existencias`,
+    )) {
+      req.flush([]);
+    }
 
-    vista().formLote.setValue({ codigo: 'L-NUEVO', fechaCaducidad: null });
+    vista().formLote.setValue({
+      codigo: 'L-NUEVO',
+      fechaCaducidad: null,
+      fechaFabricacion: null,
+      notas: '',
+    });
     vista().crearLote();
 
     const post = http.expectOne(
@@ -527,16 +549,26 @@ describe('OperacionInventarioAvanzado', () => {
         r.method === 'POST' &&
         r.url === `/api/v1/inventario-avanzado/materiales/${MATERIAL_UUID}/lotes`,
     );
-    expect(post.request.body).toEqual({ codigo: 'L-NUEVO', fechaCaducidad: null });
+    expect(post.request.body).toEqual({
+      codigo: 'L-NUEVO',
+      fechaCaducidad: null,
+      fechaFabricacion: null,
+      notas: null,
+    });
     post.flush({
       id: 'l2',
       materialId: MATERIAL_UUID,
       codigo: 'L-NUEVO',
       fechaCaducidad: null,
+      fechaFabricacion: null,
+      notas: null,
       version: 0,
       createdAt: '2026-01-01T00:00:00Z',
       updatedAt: '2026-01-01T00:00:00Z',
     } as Lote);
+    // Tras crear, se recarga la lista de lotes (GET /lotes) y, en su callback,
+    // la existencia por lote (GET /lotes/existencias). El orden importa: primero
+    // se resuelve /lotes, lo que dispara /lotes/existencias, y luego se drena este.
     http
       .expectOne(
         (r) =>
@@ -544,6 +576,13 @@ describe('OperacionInventarioAvanzado', () => {
           r.url === `/api/v1/inventario-avanzado/materiales/${MATERIAL_UUID}/lotes`,
       )
       .flush(pagina<Lote>([]));
+    for (const req of http.match(
+      (r) =>
+        r.method === 'GET' &&
+        r.url === `/api/v1/inventario-avanzado/materiales/${MATERIAL_UUID}/lotes/existencias`,
+    )) {
+      req.flush([]);
+    }
     expect(toast.exitos).toContain('Lote creado.');
   });
 

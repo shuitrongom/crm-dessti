@@ -659,6 +659,20 @@ export interface ConfigInventarioMaterial {
 export interface CrearLoteRequest {
   codigo: string;
   fechaCaducidad?: string | null;
+  /** Fecha de fabricacion/recepcion del Lote; opcional (V86). */
+  fechaFabricacion?: string | null;
+  /** Notas/observaciones libres; opcional, <= 500 (V86). */
+  notas?: string | null;
+}
+
+/**
+ * Cuerpo para actualizar un Lote (ActualizarLoteRequest). El codigo es inmutable;
+ * son editables la caducidad, la fecha de fabricacion y las notas (V86).
+ */
+export interface ActualizarLoteRequest {
+  fechaCaducidad?: string | null;
+  fechaFabricacion?: string | null;
+  notas?: string | null;
 }
 
 /** Lote de un Material (LoteDto). */
@@ -667,7 +681,62 @@ export interface Lote {
   materialId: string;
   codigo: string;
   fechaCaducidad: string | null;
+  /** Fecha de fabricacion/recepcion, o null (V86). */
+  fechaFabricacion: string | null;
+  /** Notas/observaciones libres, o null (V86). */
+  notas: string | null;
   version: number;
   createdAt: string;
   updatedAt: string;
+}
+
+/**
+ * Existencia viva por Lote de un Material (ExistenciaLoteDto), derivada del Kardex.
+ * Solo lectura: cantidad neta disponible del Lote en un Almacen.
+ */
+export interface ExistenciaLote {
+  loteId: string;
+  codigo: string | null;
+  almacenId: string;
+  cantidad: number;
+  fechaCaducidad: string | null;
+  fechaFabricacion: string | null;
+}
+
+/** Cuerpo para ajustar el inventario por conteo fisico (AjustarInventarioRequest). */
+export interface AjustarInventarioRequest {
+  materialId: string;
+  cantidadContada: number;
+  motivo?: string | null;
+}
+
+/** Desglose de un Almacen dentro del resumen (ResumenInventarioDto.ResumenAlmacenDto). */
+export interface ResumenAlmacen {
+  almacenId: string;
+  nombre: string | null;
+  cantidadTotal: number;
+  valuacion: number;
+}
+
+/** Resumen global del inventario del tenant (ResumenInventarioDto). */
+export interface ResumenInventario {
+  valuacionTotal: number;
+  almacenesConExistencias: number;
+  porAlmacen: ResumenAlmacen[];
+}
+
+/** Tipo de una alerta de stock. */
+export type TipoAlertaInventario = 'minimo' | 'maximo' | 'reabastecimiento';
+
+/** Alerta de stock consultable (AlertaInventarioDto). */
+export interface AlertaInventario {
+  id: string;
+  tipo: TipoAlertaInventario;
+  almacenId: string;
+  materialId: string;
+  nombreMaterial: string | null;
+  cantidad: number;
+  umbral: number;
+  atendida: boolean;
+  detectadaEn: string;
 }

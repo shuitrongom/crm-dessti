@@ -17,12 +17,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.dessti.crm.operacion.inventario.adapter.out.persistence.MaterialRepository;
+import com.dessti.crm.operacion.inventario.avanzado.adapter.out.persistence.AlertaInventarioRepository;
 import com.dessti.crm.operacion.inventario.avanzado.adapter.out.persistence.AlmacenRepository;
 import com.dessti.crm.operacion.inventario.avanzado.adapter.out.persistence.CapaCostoRepository;
 import com.dessti.crm.operacion.inventario.avanzado.adapter.out.persistence.ConfigInventarioMaterialRepository;
 import com.dessti.crm.operacion.inventario.avanzado.adapter.out.persistence.ExistenciaAlmacenRepository;
 import com.dessti.crm.operacion.inventario.avanzado.adapter.out.persistence.LoteRepository;
 import com.dessti.crm.operacion.inventario.avanzado.adapter.out.persistence.MovimientoAlmacenRepository;
+import com.dessti.crm.operacion.inventario.avanzado.domain.AlertaInventario;
 import com.dessti.crm.operacion.inventario.avanzado.domain.Almacen;
 import com.dessti.crm.operacion.inventario.avanzado.domain.CapaCosto;
 import com.dessti.crm.operacion.inventario.avanzado.domain.CapaCostoValor;
@@ -92,6 +94,7 @@ public class ServicioInventarioAvanzado {
     private final CapaCostoRepository capaCostoRepository;
     private final LoteRepository loteRepository;
     private final MaterialRepository materialRepository;
+    private final AlertaInventarioRepository alertaRepository;
     private final NotificadorInventarioAvanzadoPort notificador;
     private final AuditoriaPort auditoria;
     private final Clock clock;
@@ -103,6 +106,7 @@ public class ServicioInventarioAvanzado {
                                       CapaCostoRepository capaCostoRepository,
                                       LoteRepository loteRepository,
                                       MaterialRepository materialRepository,
+                                      AlertaInventarioRepository alertaRepository,
                                       NotificadorInventarioAvanzadoPort notificador,
                                       AuditoriaPort auditoria,
                                       Clock clock) {
@@ -113,6 +117,7 @@ public class ServicioInventarioAvanzado {
         this.capaCostoRepository = capaCostoRepository;
         this.loteRepository = loteRepository;
         this.materialRepository = materialRepository;
+        this.alertaRepository = alertaRepository;
         this.notificador = notificador;
         this.auditoria = auditoria;
         this.clock = clock;
@@ -345,6 +350,42 @@ public class ServicioInventarioAvanzado {
                 .map(ExistenciaAlmacenDto::de);
     }
 
+    /**
+     * Calcula, ENTERAMENTE EN EL SERVIDOR, el resumen global del inventario del tenant
+     * vigente (Req 60, 22): la valuacion total ({@code SUM(cantidad*costo)}), el numero de
+     * Almacenes con existencias y el desglose por Almacen (cantidad y valuacion), ordenado
+     * por valuacion descendente. Operacion de SOLO LECTURA que reutiliza las agregaciones ya
+     * definidas en {@code ExistenciaAlmacenRepository}, evitando que la UI sume cifra a cifra.
+     *
+     * @return el {@link ResumenInventarioDto} del tenant vigente.
+     */
+    @Transactional(readOnly = true)
+    public ResumenInventarioDto consultarResumen() {
+        BigDecimal valuacionTotal = existenciaRepository.sumarValuacionTotal();
+        long almacenesConExistencias = existenciaRepository.contarAlmacenesConExistencias();
+
+        // Nombres de Almacenes del tenant, indexados por id (pocos por tenant).
+        java.util.Map<UUID, String> nombrePorAlmacen = new java.util.HashMap<>();
+        for (Almacen almacen : almacenRepository.findAll()) {
+            nombrePorAlmacen.put(almacen.getId(), almacen.getNombre());
+        }
+
+        List<ResumenInventarioDto.ResumenAlmacenDto> porAlmacen = new ArrayList<>();
+        for (Object[] fila : existenciaRepository.resumirPorAlmacen()) {
+            UUID almacenId = (UUID) fila[0];
+            BigDecimal cantidad = (BigDecimal) fila[1];
+            BigDecimal valuacion = (BigDecimal) fila[2];
+            porAlmacen.add(new ResumenInventarioDto.ResumenAlmacenDto(
+                    almacenId, nombrePorAlmacen.get(almacenId), cantidad, valuacion));
+        }
+        // Orden estable por valuacion descendente (los Almacenes de mayor valor primero).
+        porAlmacen.sort((a, b) -> b.valuacion().compareTo(a.valuacion()));
+
+        return new ResumenInventarioDto(
+                valuacionTotal == null ? BigDecimal.ZERO : valuacionTotal,
+                almacenesConExistencias, porAlmacen);
+    }
+
     // ------------------------------------------------------------------
     // Registro de movimientos con costeo (Req 60, tarea 23.2)
     // ------------------------------------------------------------------
@@ -423,6 +464,81 @@ public class ServicioInventarioAvanzado {
     }
 
     // ------------------------------------------------------------------
+    // Ajuste de inventario por conteo fisico (Req 60)
+    // ------------------------------------------------------------------
+
+    /**
+     * Ajusta el inventario de un Material en un Almacen conciliando el saldo del sistema con
+     * la cantidad CONTADA fisicamente (Req 60). Calcula la diferencia contra el saldo vigente
+     * y registra un movimiento de tipo {@link TipoMovimientoAlmacen#AJUSTE}:
+     * <ul>
+     *   <li>si la cantidad contada es MAYOR que el saldo, una ENTRADA por la diferencia, con
+     *       el COSTO PROMEDIO VIGENTE (si no hay saldo previo, costo 0), para no distorsionar
+     *       la valuacion unitaria;</li>
+     *   <li>si la cantidad contada es MENOR, una SALIDA por la diferencia (el costeo lo
+     *       resuelve el metodo del Material, igual que cualquier salida);</li>
+     *   <li>si COINCIDE con el saldo, no registra movimiento y devuelve {@code null} (no hay
+     *       nada que ajustar).</li>
+     * </ul>
+     * A diferencia de una entrada normal, el ajuste NO admite lote: es una conciliacion del
+     * saldo agregado del (Almacen, Material). Verifica accesibilidad (404) y audita.
+     *
+     * @param comando datos del ajuste (Almacen, Material, cantidad contada, motivo).
+     * @return el DTO del movimiento de ajuste registrado, o {@code null} si no hubo diferencia.
+     * @throws RecursoNoEncontradoException si el Almacen o el Material no son accesibles (404).
+     * @throws ReglaNegocioException si la cantidad contada es negativa (422).
+     */
+    @Transactional
+    public MovimientoAlmacenDto ajustarInventario(AjustarInventarioCommand comando) {
+        String actor = actorActual();
+        cargarAlmacen(comando.almacenId(), actor);
+        cargarMaterial(comando.materialId(), actor);
+        if (comando.cantidadContada() == null || comando.cantidadContada().signum() < 0) {
+            throw new ReglaNegocioException("La cantidad contada no puede ser negativa.");
+        }
+
+        BigDecimal contada = comando.cantidadContada();
+        ExistenciaAlmacen existencia = existenciaRepository
+                .findByAlmacenIdAndMaterialId(comando.almacenId(), comando.materialId())
+                .orElse(null);
+        BigDecimal saldoActual = existencia == null ? BigDecimal.ZERO : existencia.getCantidad();
+        BigDecimal costoVigente = existencia == null ? BigDecimal.ZERO : existencia.getCostoPromedio();
+
+        int comparacion = contada.compareTo(saldoActual);
+        if (comparacion == 0) {
+            // Sin diferencia: el conteo confirma el saldo. No se genera movimiento.
+            return null;
+        }
+
+        String motivoAjuste = motivoAjuste(comando.motivo());
+        if (comparacion > 0) {
+            // Faltaba registrar existencia: ENTRADA por la diferencia al costo vigente.
+            BigDecimal diferencia = contada.subtract(saldoActual);
+            RegistrarMovimientoAlmacenCommand entrada = new RegistrarMovimientoAlmacenCommand(
+                    comando.almacenId(), comando.materialId(), null, diferencia, costoVigente, motivoAjuste);
+            return aplicarEntradaInterna(entrada, TipoMovimientoAlmacen.AJUSTE, null, actor);
+        }
+        // Sobraba existencia en el sistema: SALIDA por la diferencia.
+        BigDecimal diferencia = saldoActual.subtract(contada);
+        RegistrarMovimientoAlmacenCommand salida = new RegistrarMovimientoAlmacenCommand(
+                comando.almacenId(), comando.materialId(), null, diferencia, null, motivoAjuste);
+        return aplicarSalidaInterna(salida, TipoMovimientoAlmacen.AJUSTE, null, actor);
+    }
+
+    /**
+     * Compone el motivo del ajuste anteponiendo un prefijo estable de trazabilidad al texto
+     * del usuario (si lo hay), para distinguir en el Kardex los movimientos originados por un
+     * conteo fisico.
+     */
+    private static String motivoAjuste(String motivoUsuario) {
+        String prefijo = "Ajuste por conteo fisico";
+        if (motivoUsuario == null || motivoUsuario.isBlank()) {
+            return prefijo;
+        }
+        return prefijo + ": " + motivoUsuario.trim();
+    }
+
+    // ------------------------------------------------------------------
     // Lotes (Req 60, tarea 23.2)
     // ------------------------------------------------------------------
 
@@ -444,7 +560,8 @@ public class ServicioInventarioAvanzado {
                     throw new ReglaNegocioException(
                             "Ya existe un Lote con ese codigo para el Material.");
                 });
-        Lote lote = Lote.crear(comando.materialId(), comando.codigo(), comando.fechaCaducidad(), actor);
+        Lote lote = Lote.crear(comando.materialId(), comando.codigo(), comando.fechaCaducidad(),
+                comando.fechaFabricacion(), comando.notas(), actor);
         Lote guardado = loteRepository.save(lote);
         auditar(actor, "crear", RECURSO_LOTE, guardado.getId(),
                 "alta de Lote '" + guardado.getCodigo() + "' del Material " + comando.materialId(),
@@ -470,23 +587,68 @@ public class ServicioInventarioAvanzado {
     }
 
     /**
+     * Consulta la EXISTENCIA VIVA por Lote de un Material (Req 60), de SOLO LECTURA. Como no
+     * hay una tabla materializada de existencia por lote, la cifra se AGREGA en el servidor
+     * sobre el Kardex append-only ({@code movimiento_almacen}): por cada Lote y Almacen, suma
+     * las entradas y resta las salidas. Solo se devuelven los Lotes con existencia neta
+     * distinta de cero (los agotados no aparecen). Verifica que el Material sea accesible (404).
+     *
+     * @param materialId Material cuyos Lotes se agregan; obligatorio.
+     * @param almacenId  Almacen a filtrar; {@code null} agrega todos los Almacenes.
+     * @return la existencia por Lote (posiblemente vacio), enriquecida con caducidad/fabricacion.
+     * @throws RecursoNoEncontradoException si el Material no es accesible (404).
+     */
+    @Transactional(readOnly = true)
+    public List<ExistenciaLoteDto> consultarExistenciasPorLote(UUID materialId, UUID almacenId) {
+        String actor = actorActual();
+        cargarMaterial(materialId, actor);
+
+        // Datos de identidad/caducidad de los Lotes del Material, indexados por id.
+        java.util.Map<UUID, Lote> lotesPorId = new java.util.HashMap<>();
+        for (Lote lote : loteRepository.findByMaterialId(materialId)) {
+            lotesPorId.put(lote.getId(), lote);
+        }
+
+        List<ExistenciaLoteDto> resultado = new ArrayList<>();
+        for (Object[] fila : movimientoRepository.agregarExistenciaPorLote(materialId, almacenId)) {
+            UUID loteId = (UUID) fila[0];
+            UUID almacenDeFila = (UUID) fila[1];
+            BigDecimal cantidad = (BigDecimal) fila[2];
+            if (cantidad == null || cantidad.signum() == 0) {
+                continue;
+            }
+            Lote lote = lotesPorId.get(loteId);
+            String codigo = lote == null ? null : lote.getCodigo();
+            LocalDate caducidad = lote == null ? null : lote.getFechaCaducidad();
+            LocalDate fabricacion = lote == null ? null : lote.getFechaFabricacion();
+            resultado.add(new ExistenciaLoteDto(
+                    loteId, codigo, almacenDeFila, cantidad, caducidad, fabricacion));
+        }
+        return resultado;
+    }
+
+    /**
      * Actualiza la fecha de caducidad de un Lote (Req 60). El codigo y el Material del
      * Lote son inmutables; solo la caducidad puede corregirse. Verifica que el Lote sea
      * accesible (404) y audita.
      *
-     * @param loteId         identificador del Lote.
-     * @param fechaCaducidad nueva fecha de caducidad; {@code null} = sin caducidad.
+     * @param loteId           identificador del Lote.
+     * @param fechaCaducidad   nueva fecha de caducidad; {@code null} = sin caducidad.
+     * @param fechaFabricacion nueva fecha de fabricacion; {@code null} = sin dato (V86).
+     * @param notas            nuevas notas; {@code null}/vacio = sin notas (V86).
      * @return el DTO del Lote actualizado.
      * @throws RecursoNoEncontradoException si el Lote no es accesible (404).
+     * @throws ReglaNegocioException si fabricacion es posterior a caducidad o notas exceden 500 (422).
      */
     @Transactional
-    public LoteDto actualizarLote(UUID loteId, LocalDate fechaCaducidad) {
+    public LoteDto actualizarLote(UUID loteId, LocalDate fechaCaducidad,
+                                  LocalDate fechaFabricacion, String notas) {
         String actor = actorActual();
         Lote lote = cargarLote(loteId, actor);
-        lote.actualizarCaducidad(fechaCaducidad, actor);
+        lote.actualizarDatos(fechaCaducidad, fechaFabricacion, notas, actor);
         Lote guardado = loteRepository.save(lote);
         auditar(actor, "actualizar", RECURSO_LOTE, guardado.getId(),
-                "actualizada caducidad del Lote '" + guardado.getCodigo() + "'",
+                "actualizados datos del Lote '" + guardado.getCodigo() + "'",
                 null, guardado.getCodigo());
         return LoteDto.de(guardado);
     }
@@ -657,6 +819,54 @@ public class ServicioInventarioAvanzado {
     }
 
     // ------------------------------------------------------------------
+    // Alertas de stock consultables (Req 60)
+    // ------------------------------------------------------------------
+
+    /**
+     * Lista de forma paginada las alertas de stock del tenant vigente (Req 60), ordenadas por
+     * deteccion descendente, con filtros opcionales por estado de seguimiento y por Almacen.
+     * De SOLO LECTURA. Las alertas las persiste el adaptador
+     * {@code NotificadorInventarioAvanzadoPersistente} cuando el servicio detecta una
+     * condicion de stock al registrar un movimiento.
+     *
+     * @param atendida  estado de seguimiento a filtrar; {@code null} no filtra.
+     * @param almacenId Almacen a filtrar; {@code null} no filtra.
+     * @param pageable  parametros de paginacion ya acotados (20/100).
+     * @return la pagina de alertas como DTOs.
+     */
+    @Transactional(readOnly = true)
+    public Page<AlertaInventarioDto> listarAlertas(Boolean atendida, UUID almacenId,
+                                                   Pageable pageable) {
+        return alertaRepository.buscarConFiltros(atendida, almacenId, pageable)
+                .map(AlertaInventarioDto::de);
+    }
+
+    /**
+     * Marca una alerta de stock como atendida o no atendida (seguimiento, Req 60) y audita.
+     * Verifica que la alerta sea accesible (404 en caso contrario).
+     *
+     * @param alertaId identificador de la alerta.
+     * @param atendida nuevo estado de seguimiento.
+     * @return el DTO de la alerta actualizada.
+     * @throws RecursoNoEncontradoException si la alerta no es accesible (404).
+     */
+    @Transactional
+    public AlertaInventarioDto marcarAlertaAtendida(UUID alertaId, boolean atendida) {
+        String actor = actorActual();
+        AlertaInventario alerta = alertaRepository.findById(alertaId)
+                .orElseThrow(() -> {
+                    auditarAccesoCruzado(actor, "alerta_inventario", alertaId);
+                    return new RecursoNoEncontradoException("No se encontro la Alerta solicitada.");
+                });
+        alerta.marcarAtendida(atendida, actor);
+        AlertaInventario guardada = alertaRepository.save(alerta);
+        auditar(actor, "actualizar", "alerta_inventario", guardada.getId(),
+                "alerta marcada como " + (atendida ? "atendida" : "no atendida"),
+                null, String.valueOf(atendida));
+        return AlertaInventarioDto.de(guardada);
+    }
+
+    // ------------------------------------------------------------------
     // Evaluacion de notificaciones (reutilizable por la tarea 23.2)
     // ------------------------------------------------------------------
 
@@ -786,7 +996,7 @@ public class ServicioInventarioAvanzado {
         String codigo = normalizar(loteCodigo);
         return loteRepository.findByMaterialIdAndCodigo(materialId, codigo)
                 .orElseGet(() -> {
-                    Lote nuevo = Lote.crear(materialId, codigo, null, actor);
+                    Lote nuevo = Lote.crear(materialId, codigo, null, null, null, actor);
                     return loteRepository.save(nuevo);
                 });
     }

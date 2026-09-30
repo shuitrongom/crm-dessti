@@ -22,6 +22,9 @@ import { Observable } from 'rxjs';
 import { ApiConfigService } from '../../../core/services/api-config.service';
 import { PaginaResponse } from '../../../core/models/pagina-response';
 import {
+  ActualizarLoteRequest,
+  AjustarInventarioRequest,
+  AlertaInventario,
   Almacen,
   AlmacenRequest,
   ConfigInventarioMaterial,
@@ -29,6 +32,7 @@ import {
   CrearLoteRequest,
   EstadoMaterial,
   ExistenciaAlmacen,
+  ExistenciaLote,
   Lote,
   Material,
   MaterialRequest,
@@ -37,6 +41,7 @@ import {
   MovimientoRequest,
   RegistrarEntradaRequest,
   RegistrarSalidaRequest,
+  ResumenInventario,
   TransferirRequest,
 } from '../models/operacion.models';
 
@@ -281,13 +286,11 @@ export class InventarioAvanzadoService {
   }
 
   /**
-   * Actualiza la fecha de caducidad de un Lote (Req 60). El codigo es inmutable; solo
-   * la caducidad se corrige. `fechaCaducidad` null = sin caducidad.
+   * Actualiza los datos EDITABLES de un Lote (Req 60): caducidad, fecha de fabricacion y
+   * notas. El codigo es inmutable. Un campo omitido/null se envia como null (sin dato).
    */
-  actualizarLote(loteId: string, fechaCaducidad: string | null): Observable<Lote> {
-    return this.http.put<Lote>(this.api.url(`/inventario-avanzado/lotes/${loteId}`), {
-      fechaCaducidad,
-    });
+  actualizarLote(loteId: string, body: ActualizarLoteRequest): Observable<Lote> {
+    return this.http.put<Lote>(this.api.url(`/inventario-avanzado/lotes/${loteId}`), body);
   }
 
   /**
@@ -296,5 +299,78 @@ export class InventarioAvanzadoService {
    */
   eliminarLote(loteId: string): Observable<void> {
     return this.http.delete<void>(this.api.url(`/inventario-avanzado/lotes/${loteId}`));
+  }
+
+  /**
+   * Consulta la existencia viva por Lote de un Material (Req 60), solo lectura. La cifra
+   * se agrega en el servidor sobre el Kardex; solo devuelve Lotes con existencia distinta
+   * de cero. Filtro opcional por Almacen.
+   */
+  consultarExistenciasPorLote(
+    materialId: string,
+    almacenId?: string | null,
+  ): Observable<ExistenciaLote[]> {
+    let params = new HttpParams();
+    if (almacenId) {
+      params = params.set('almacenId', almacenId);
+    }
+    return this.http.get<ExistenciaLote[]>(
+      this.api.url(`/inventario-avanzado/materiales/${materialId}/lotes/existencias`),
+      { params },
+    );
+  }
+
+  /**
+   * Ajusta el inventario de un Material en un Almacen por conteo fisico (Req 60): concilia
+   * el saldo con la cantidad contada. El backend genera una entrada/salida de tipo ajuste
+   * por la diferencia, o no genera movimiento si coincide (devuelve null en ese caso).
+   */
+  ajustarInventario(
+    almacenId: string,
+    body: AjustarInventarioRequest,
+  ): Observable<MovimientoAlmacen | null> {
+    return this.http.post<MovimientoAlmacen | null>(
+      this.api.url(`/inventario-avanzado/almacenes/${almacenId}/ajustes`),
+      body,
+    );
+  }
+
+  /**
+   * Consulta el resumen global del inventario del tenant (Req 60), calculado en el
+   * servidor: valuacion total, numero de Almacenes con existencias y desglose por Almacen.
+   */
+  consultarResumen(): Observable<ResumenInventario> {
+    return this.http.get<ResumenInventario>(this.api.url('/inventario-avanzado/resumen'));
+  }
+
+  /**
+   * Lista las alertas de stock del tenant (Req 60), ordenadas por deteccion descendente,
+   * con filtros opcionales por estado de seguimiento y por Almacen.
+   */
+  listarAlertas(
+    atendida: boolean | null,
+    almacenId: string | null,
+    page: number,
+    size: number,
+  ): Observable<PaginaResponse<AlertaInventario>> {
+    let params = new HttpParams().set('page', page).set('size', size);
+    if (atendida !== null) {
+      params = params.set('atendida', atendida);
+    }
+    if (almacenId) {
+      params = params.set('almacenId', almacenId);
+    }
+    return this.http.get<PaginaResponse<AlertaInventario>>(
+      this.api.url('/inventario-avanzado/alertas'),
+      { params },
+    );
+  }
+
+  /** Marca una alerta de stock como atendida o no atendida (seguimiento, Req 60). */
+  actualizarAlerta(alertaId: string, atendida: boolean): Observable<AlertaInventario> {
+    return this.http.put<AlertaInventario>(
+      this.api.url(`/inventario-avanzado/alertas/${alertaId}`),
+      { atendida },
+    );
   }
 }

@@ -9,12 +9,16 @@ import java.util.UUID;
  * entidad JPA. La validacion de formato (codigo 1..100, unicidad por Material dentro del
  * tenant) la refuerzan el dominio ({@code Lote.crear}) y la restriccion {@code UNIQUE} de V26.
  *
- * @param materialId     Material del Lote; obligatorio.
- * @param codigo         codigo del Lote; obligatorio, 1..100 caracteres.
- * @param fechaCaducidad fecha de caducidad; opcional ({@code null} = sin caducidad).
+ * @param materialId       Material del Lote; obligatorio.
+ * @param codigo           codigo del Lote; obligatorio, 1..100 caracteres.
+ * @param fechaCaducidad   fecha de caducidad; opcional ({@code null} = sin caducidad).
+ * @param fechaFabricacion fecha de fabricacion/recepcion; opcional (Req 60, V86).
+ * @param notas            observaciones libres; opcional, <= 500 (Req 60, V86).
  */
 public record CrearLoteCommand(
         UUID materialId,
         String codigo,
-        LocalDate fechaCaducidad) {
+        LocalDate fechaCaducidad,
+        LocalDate fechaFabricacion,
+        String notas) {
 }

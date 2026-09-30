@@ -11,6 +11,7 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -205,17 +206,91 @@ class InventarioAvanzadoControllerTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void consultarResumen_devuelve200_conValuacionYDesglose() throws Exception {
+        when(autorizador.tiene("material", "leer")).thenReturn(true);
+        var resumen = new com.dessti.crm.operacion.inventario.avanzado.application.ResumenInventarioDto(
+                new BigDecimal("1500.0000"), 2L,
+                List.of(new com.dessti.crm.operacion.inventario.avanzado.application.ResumenInventarioDto.ResumenAlmacenDto(
+                        ALMACEN_ID, "Central", new BigDecimal("100.000"), new BigDecimal("1000.0000"))));
+        when(servicio.consultarResumen()).thenReturn(resumen);
+
+        mockMvc.perform(get("/inventario-avanzado/resumen").with(user("almacen")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.valuacionTotal").value(1500.0))
+                .andExpect(jsonPath("$.almacenesConExistencias").value(2))
+                .andExpect(jsonPath("$.porAlmacen[0].nombre").value("Central"));
+    }
+
+    @Test
+    void consultarExistenciasPorLote_devuelve200_conLaLista() throws Exception {
+        when(autorizador.tiene("lote", "leer")).thenReturn(true);
+        when(servicio.consultarExistenciasPorLote(eq(MATERIAL_ID), any()))
+                .thenReturn(List.of(new com.dessti.crm.operacion.inventario.avanzado.application.ExistenciaLoteDto(
+                        UUID.fromString("88888888-8888-8888-8888-888888888888"), "L-001",
+                        ALMACEN_ID, new BigDecimal("7.000"),
+                        java.time.LocalDate.parse("2027-01-31"), null)));
+
+        mockMvc.perform(get("/inventario-avanzado/materiales/{materialId}/lotes/existencias", MATERIAL_ID)
+                        .with(user("almacen")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].codigo").value("L-001"))
+                .andExpect(jsonPath("$[0].cantidad").value(7.0));
+    }
+
+    @Test
+    void ajustarInventario_devuelve200_cuandoHayDiferencia() throws Exception {
+        when(autorizador.tiene("movimiento_inventario", "ajustar")).thenReturn(true);
+        when(servicio.ajustarInventario(any())).thenReturn(movimientoDto());
+
+        mockMvc.perform(post("/inventario-avanzado/almacenes/{almacenId}/ajustes", ALMACEN_ID)
+                        .with(user("almacen")).with(csrf())
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"materialId\":\"" + MATERIAL_ID
+                                + "\",\"cantidadContada\":25,\"motivo\":\"conteo mensual\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tipo").value("entrada"));
+    }
+
+    @Test
+    void ajustarInventario_devuelve204_cuandoNoHayDiferencia() throws Exception {
+        when(autorizador.tiene("movimiento_inventario", "ajustar")).thenReturn(true);
+        when(servicio.ajustarInventario(any())).thenReturn(null);
+
+        mockMvc.perform(post("/inventario-avanzado/almacenes/{almacenId}/ajustes", ALMACEN_ID)
+                        .with(user("almacen")).with(csrf())
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"materialId\":\"" + MATERIAL_ID + "\",\"cantidadContada\":10}"))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void ajustarInventario_devuelve403_cuandoFaltaPermiso() throws Exception {
+        when(autorizador.tiene(anyString(), anyString())).thenReturn(false);
+
+        mockMvc.perform(post("/inventario-avanzado/almacenes/{almacenId}/ajustes", ALMACEN_ID)
+                        .with(user("sin_permiso")).with(csrf())
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"materialId\":\"" + MATERIAL_ID + "\",\"cantidadContada\":10}"))
+                .andExpect(status().isForbidden());
+    }
+
     private static final UUID LOTE_ID = UUID.fromString("88888888-8888-8888-8888-888888888888");
 
     private static LoteDto loteDto(LocalDate caducidad) {
+        return loteDto(caducidad, null, null);
+    }
+
+    private static LoteDto loteDto(LocalDate caducidad, LocalDate fabricacion, String notas) {
         Instant ahora = Instant.parse("2024-05-02T10:00:00Z");
-        return new LoteDto(LOTE_ID, MATERIAL_ID, "L-001", caducidad, 0L, ahora, ahora);
+        return new LoteDto(LOTE_ID, MATERIAL_ID, "L-001", caducidad, fabricacion, notas, 0L, ahora, ahora);
     }
 
     @Test
     void actualizarLote_devuelve200_conLaNuevaCaducidad() throws Exception {
         when(autorizador.tiene("lote", "actualizar")).thenReturn(true);
-        when(servicio.actualizarLote(eq(LOTE_ID), eq(LocalDate.parse("2027-01-31"))))
+        when(servicio.actualizarLote(eq(LOTE_ID), eq(LocalDate.parse("2027-01-31")),
+                any(), any()))
                 .thenReturn(loteDto(LocalDate.parse("2027-01-31")));
 
         mockMvc.perform(put("/inventario-avanzado/lotes/{id}", LOTE_ID)
@@ -225,6 +300,23 @@ class InventarioAvanzadoControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(LOTE_ID.toString()))
                 .andExpect(jsonPath("$.fechaCaducidad").value("2027-01-31"));
+    }
+
+    @Test
+    void actualizarLote_devuelve200_conFabricacionYNotas() throws Exception {
+        when(autorizador.tiene("lote", "actualizar")).thenReturn(true);
+        when(servicio.actualizarLote(eq(LOTE_ID), any(), eq(LocalDate.parse("2026-01-15")),
+                eq("remision 4451")))
+                .thenReturn(loteDto(null, LocalDate.parse("2026-01-15"), "remision 4451"));
+
+        mockMvc.perform(put("/inventario-avanzado/lotes/{id}", LOTE_ID)
+                        .with(user("almacen")).with(csrf())
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"fechaCaducidad\":null,\"fechaFabricacion\":\"2026-01-15\","
+                                + "\"notas\":\"remision 4451\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fechaFabricacion").value("2026-01-15"))
+                .andExpect(jsonPath("$.notas").value("remision 4451"));
     }
 
     @Test
@@ -265,6 +357,51 @@ class InventarioAvanzadoControllerTest {
 
         mockMvc.perform(delete("/inventario-avanzado/lotes/{id}", LOTE_ID)
                         .with(user("sin_permiso")).with(csrf()))
+                .andExpect(status().isForbidden());
+    }
+
+    private static final UUID ALERTA_ID = UUID.fromString("99999999-9999-9999-9999-999999999999");
+
+    private static com.dessti.crm.operacion.inventario.avanzado.application.AlertaInventarioDto alertaDto(
+            boolean atendida) {
+        return new com.dessti.crm.operacion.inventario.avanzado.application.AlertaInventarioDto(
+                ALERTA_ID, "minimo", ALMACEN_ID, MATERIAL_ID, "Perfil",
+                new BigDecimal("2.000"), new BigDecimal("5.000"), atendida,
+                Instant.parse("2024-05-02T10:00:00Z"));
+    }
+
+    @Test
+    void listarAlertas_devuelve200_conLaPagina() throws Exception {
+        when(autorizador.tiene("alerta_inventario", "listar")).thenReturn(true);
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<com.dessti.crm.operacion.inventario.avanzado.application.AlertaInventarioDto> pagina =
+                new PageImpl<>(List.of(alertaDto(false)), pageable, 1);
+        when(servicio.listarAlertas(any(), any(), any(Pageable.class))).thenReturn(pagina);
+
+        mockMvc.perform(get("/inventario-avanzado/alertas").with(user("almacen")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].tipo").value("minimo"))
+                .andExpect(jsonPath("$.content[0].atendida").value(false));
+    }
+
+    @Test
+    void actualizarAlerta_devuelve200_cuandoSeMarcaAtendida() throws Exception {
+        when(autorizador.tiene("alerta_inventario", "actualizar")).thenReturn(true);
+        when(servicio.marcarAlertaAtendida(eq(ALERTA_ID), eq(true))).thenReturn(alertaDto(true));
+
+        mockMvc.perform(put("/inventario-avanzado/alertas/{id}", ALERTA_ID)
+                        .with(user("almacen")).with(csrf())
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"atendida\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.atendida").value(true));
+    }
+
+    @Test
+    void listarAlertas_devuelve403_cuandoFaltaPermiso() throws Exception {
+        when(autorizador.tiene(anyString(), anyString())).thenReturn(false);
+
+        mockMvc.perform(get("/inventario-avanzado/alertas").with(user("sin_permiso")))
                 .andExpect(status().isForbidden());
     }
 

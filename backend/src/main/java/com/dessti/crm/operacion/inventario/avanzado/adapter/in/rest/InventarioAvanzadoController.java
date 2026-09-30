@@ -23,11 +23,15 @@ import com.dessti.crm.operacion.inventario.avanzado.application.AlmacenDto;
 import com.dessti.crm.operacion.inventario.avanzado.application.ConfigInventarioMaterialDto;
 import com.dessti.crm.operacion.inventario.avanzado.application.ConfigurarInventarioMaterialCommand;
 import com.dessti.crm.operacion.inventario.avanzado.application.CrearAlmacenCommand;
+import com.dessti.crm.operacion.inventario.avanzado.application.AjustarInventarioCommand;
+import com.dessti.crm.operacion.inventario.avanzado.application.AlertaInventarioDto;
 import com.dessti.crm.operacion.inventario.avanzado.application.ExistenciaAlmacenDto;
+import com.dessti.crm.operacion.inventario.avanzado.application.ExistenciaLoteDto;
 import com.dessti.crm.operacion.inventario.avanzado.application.CrearLoteCommand;
 import com.dessti.crm.operacion.inventario.avanzado.application.LoteDto;
 import com.dessti.crm.operacion.inventario.avanzado.application.MovimientoAlmacenDto;
 import com.dessti.crm.operacion.inventario.avanzado.application.RegistrarMovimientoAlmacenCommand;
+import com.dessti.crm.operacion.inventario.avanzado.application.ResumenInventarioDto;
 import com.dessti.crm.operacion.inventario.avanzado.application.TransferirCommand;
 import com.dessti.crm.operacion.inventario.avanzado.application.ServicioInventarioAvanzado;
 import com.dessti.crm.platform.web.pagination.PageRequestFactory;
@@ -260,6 +264,19 @@ public class InventarioAvanzadoController {
         return PaginaResponse.de(servicio.listarExistencias(almacenId, materialId, pageable));
     }
 
+    /**
+     * Devuelve el resumen global del inventario del tenant (Req 60, 22), calculado en el
+     * servidor: valuacion total, numero de Almacenes con existencias y desglose por Almacen.
+     * De solo lectura.
+     *
+     * @return 200 OK con el {@link ResumenInventarioDto}.
+     */
+    @GetMapping("/resumen")
+    @PreAuthorize("@autorizador.moduloHabilitado('inventario-avanzado') and @autorizador.tiene('material','leer')")
+    public ResponseEntity<ResumenInventarioDto> consultarResumen() {
+        return ResponseEntity.ok(servicio.consultarResumen());
+    }
+
     // ------------------------------------------------------------------
     // Movimientos con costeo, transferencias y lotes (Req 60, tarea 23.2)
     // ------------------------------------------------------------------
@@ -326,6 +343,31 @@ public class InventarioAvanzadoController {
     }
 
     /**
+     * Ajusta el inventario de un Material en un Almacen por conteo fisico (Req 60): concilia
+     * el saldo del sistema con la cantidad contada, generando una ENTRADA o SALIDA de tipo
+     * {@code ajuste} por la diferencia. Devuelve 200 OK con el movimiento de ajuste, o
+     * 204 No Content si la cantidad contada coincide con el saldo (no hay nada que ajustar).
+     * 404 si el Almacen o el Material no son accesibles; 422 si la cantidad contada es
+     * negativa. Se gobierna con el permiso dedicado {@code movimiento_inventario:ajustar}.
+     *
+     * @param almacenId Almacen del conteo fisico.
+     * @param request   Material, cantidad contada y motivo.
+     * @return 200 OK con el {@link MovimientoAlmacenDto} del ajuste, o 204 si no hubo diferencia.
+     */
+    @PostMapping("/almacenes/{almacenId}/ajustes")
+    @PreAuthorize("@autorizador.moduloHabilitado('inventario-avanzado') and @autorizador.tiene('movimiento_inventario','ajustar')")
+    public ResponseEntity<MovimientoAlmacenDto> ajustarInventario(
+            @PathVariable("almacenId") UUID almacenId,
+            @Valid @RequestBody AjustarInventarioRequest request) {
+        MovimientoAlmacenDto dto = servicio.ajustarInventario(new AjustarInventarioCommand(
+                almacenId, request.materialId(), request.cantidadContada(), request.motivo()));
+        if (dto == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(dto);
+    }
+
+    /**
      * Da de alta un Lote de un Material (Req 60.4). 201 Created con el Lote. 404 si el
      * Material no es accesible; 422 si el codigo es invalido o ya existe.
      *
@@ -339,7 +381,8 @@ public class InventarioAvanzadoController {
             @PathVariable("materialId") UUID materialId,
             @Valid @RequestBody CrearLoteRequest request) {
         LoteDto dto = servicio.crearLote(new CrearLoteCommand(
-                materialId, request.codigo(), request.fechaCaducidad()));
+                materialId, request.codigo(), request.fechaCaducidad(),
+                request.fechaFabricacion(), request.notas()));
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
@@ -363,6 +406,24 @@ public class InventarioAvanzadoController {
     }
 
     /**
+     * Consulta la existencia viva por Lote de un Material (Req 60), de solo lectura. La cifra
+     * se agrega en el servidor sobre el Kardex (no hay tabla materializada por lote); solo se
+     * devuelven los Lotes con existencia neta distinta de cero. Filtro opcional por Almacen.
+     * 404 si el Material no es accesible.
+     *
+     * @param materialId Material cuyos Lotes se consultan.
+     * @param almacenId  Almacen a filtrar; opcional (todos si se omite).
+     * @return 200 OK con la lista de {@link ExistenciaLoteDto}.
+     */
+    @GetMapping("/materiales/{materialId}/lotes/existencias")
+    @PreAuthorize("@autorizador.moduloHabilitado('inventario-avanzado') and @autorizador.tiene('lote','leer')")
+    public java.util.List<ExistenciaLoteDto> consultarExistenciasPorLote(
+            @PathVariable("materialId") UUID materialId,
+            @RequestParam(name = "almacenId", required = false) UUID almacenId) {
+        return servicio.consultarExistenciasPorLote(materialId, almacenId);
+    }
+
+    /**
      * Actualiza un Lote (Req 60): corrige su fecha de caducidad. El codigo del Lote es
      * inmutable (identidad de negocio). 200 OK con el {@link LoteDto} actualizado; 404 si
      * el Lote no es accesible.
@@ -376,7 +437,8 @@ public class InventarioAvanzadoController {
     public ResponseEntity<LoteDto> actualizarLote(
             @PathVariable("loteId") UUID loteId,
             @Valid @RequestBody ActualizarLoteRequest request) {
-        return ResponseEntity.ok(servicio.actualizarLote(loteId, request.fechaCaducidad()));
+        return ResponseEntity.ok(servicio.actualizarLote(loteId, request.fechaCaducidad(),
+                request.fechaFabricacion(), request.notas()));
     }
 
     /**
@@ -392,5 +454,44 @@ public class InventarioAvanzadoController {
     public ResponseEntity<Void> eliminarLote(@PathVariable("loteId") UUID loteId) {
         servicio.eliminarLote(loteId);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Lista las alertas de stock del tenant (Req 60), de solo lectura, ordenadas por
+     * deteccion descendente, con filtros opcionales por estado de seguimiento y por Almacen.
+     * Las alertas se generan automaticamente cuando un movimiento cruza el punto de reorden o
+     * el stock maximo del Material.
+     *
+     * @param atendida  estado de seguimiento a filtrar; opcional.
+     * @param almacenId Almacen a filtrar; opcional.
+     * @param page      numero de pagina 0-index; opcional.
+     * @param size      tamano de pagina; opcional (por defecto 20, maximo 100).
+     * @return 200 OK con la pagina de {@link AlertaInventarioDto}.
+     */
+    @GetMapping("/alertas")
+    @PreAuthorize("@autorizador.moduloHabilitado('inventario-avanzado') and @autorizador.tiene('alerta_inventario','listar')")
+    public PaginaResponse<AlertaInventarioDto> listarAlertas(
+            @RequestParam(name = "atendida", required = false) Boolean atendida,
+            @RequestParam(name = "almacenId", required = false) UUID almacenId,
+            @RequestParam(name = "page", required = false) Integer page,
+            @RequestParam(name = "size", required = false) Integer size) {
+        Pageable pageable = PageRequestFactory.acotando(page, size);
+        return PaginaResponse.de(servicio.listarAlertas(atendida, almacenId, pageable));
+    }
+
+    /**
+     * Da seguimiento a una alerta de stock (Req 60): la marca como atendida o no atendida.
+     * 200 OK con la alerta actualizada; 404 si la alerta no es accesible.
+     *
+     * @param alertaId identificador de la alerta.
+     * @param request  nuevo estado de seguimiento.
+     * @return 200 OK con el {@link AlertaInventarioDto} actualizado.
+     */
+    @PutMapping("/alertas/{alertaId}")
+    @PreAuthorize("@autorizador.moduloHabilitado('inventario-avanzado') and @autorizador.tiene('alerta_inventario','actualizar')")
+    public ResponseEntity<AlertaInventarioDto> actualizarAlerta(
+            @PathVariable("alertaId") UUID alertaId,
+            @Valid @RequestBody ActualizarAlertaRequest request) {
+        return ResponseEntity.ok(servicio.marcarAlertaAtendida(alertaId, request.atendida()));
     }
 }

@@ -176,6 +176,8 @@ describe('InventarioAvanzadoService', () => {
       materialId: MATERIAL_ID,
       codigo: 'L-001',
       fechaCaducidad: '2025-12-31',
+      fechaFabricacion: null,
+      notas: null,
       version: 0,
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z',
