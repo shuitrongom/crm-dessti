@@ -269,6 +269,27 @@ public class ServicioInventarioAvanzado {
         return ConfigInventarioMaterialDto.de(guardada);
     }
 
+    /**
+     * Consulta (SOLO LECTURA) la configuracion de inventario de un Material (Req 60), para
+     * que la UI la relea sin reescribirla (evita el upsert ciego). Si el Material aun no tiene
+     * configuracion, devuelve la PREDETERMINADA en memoria (metodo promedio, sin control de
+     * lote, ceros) SIN persistirla, de modo que la UI muestre valores por defecto coherentes
+     * con lo que aplicaria un movimiento. Verifica que el Material sea accesible (404).
+     *
+     * @param materialId identificador del Material.
+     * @return el DTO de la configuracion (persistida o la predeterminada), con el punto de
+     *         reorden derivado.
+     * @throws RecursoNoEncontradoException si el Material no es accesible (404, Req 23.3).
+     */
+    @Transactional(readOnly = true)
+    public ConfigInventarioMaterialDto consultarConfigInventario(UUID materialId) {
+        String actor = actorActual();
+        cargarMaterial(materialId, actor);
+        ConfigInventarioMaterial config = configRepository.findByMaterialId(materialId)
+                .orElseGet(() -> ConfigInventarioMaterial.predeterminada(materialId, actor));
+        return ConfigInventarioMaterialDto.de(config);
+    }
+
     // ------------------------------------------------------------------
     // Kardex por Almacen (SOLO LECTURA, Req 60)
     // ------------------------------------------------------------------

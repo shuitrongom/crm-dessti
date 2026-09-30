@@ -160,6 +160,14 @@
           mensajeVacio="No hay existencias para el filtro seleccionado."
           (reintentar)="cargarExistencias()"
         >
+          @if (hayExistenciasCargadas()) {
+            <p class="inventario-avanzado__valor-total" role="status">
+              <mat-icon aria-hidden="true">payments</mat-icon>
+              Valor de lo mostrado:
+              <strong>{{ valorInventarioCargado() | currency: 'MXN' : 'symbol-narrow' }}</strong>
+              <span class="inventario-avanzado__valor-nota">(suma de la página cargada)</span>
+            </p>
+          }
           <app-data-table
             [columnas]="columnasExistencias"
             [filas]="existencias()"
@@ -180,6 +188,9 @@
             <ng-template appCelda="cantidad" let-fila>{{ fila.cantidad }}</ng-template>
             <ng-template appCelda="costoPromedio" let-fila>
               {{ fila.costoPromedio | currency: 'MXN' : 'symbol-narrow' }}
+            </ng-template>
+            <ng-template appCelda="valorizacion" let-fila>
+              {{ valorizacionDe(fila) | currency: 'MXN' : 'symbol-narrow' }}
             </ng-template>
             <ng-template appCelda="acciones" let-fila>
               @if (puedeLeerKardex) {
@@ -279,6 +290,11 @@
                       <mat-label>Código de lote (opcional)</mat-label>
                       <input matInput type="text" formControlName="loteCodigo" />
                     </mat-form-field>
+                    <mat-form-field appearance="outline" class="inventario-avanzado__campo-ancho">
+                      <mat-label>Motivo (opcional)</mat-label>
+                      <input matInput type="text" formControlName="motivo" maxlength="500"
+                             placeholder="Ej. compra, ajuste, devolución…" />
+                    </mat-form-field>
                     @if (errorEntrada()) {
                       <p class="inventario-avanzado__error" role="alert">{{ errorEntrada() }}</p>
                     }
@@ -320,6 +336,11 @@
                     <mat-form-field appearance="outline">
                       <mat-label>Código de lote (opcional)</mat-label>
                       <input matInput type="text" formControlName="loteCodigo" />
+                    </mat-form-field>
+                    <mat-form-field appearance="outline" class="inventario-avanzado__campo-ancho">
+                      <mat-label>Motivo (opcional)</mat-label>
+                      <input matInput type="text" formControlName="motivo" maxlength="500"
+                             placeholder="Ej. consumo, merma, ajuste…" />
                     </mat-form-field>
                     @if (errorSalida()) {
                       <p class="inventario-avanzado__error" role="alert">{{ errorSalida() }}</p>
@@ -366,6 +387,11 @@
                     <mat-form-field appearance="outline">
                       <mat-label>Cantidad</mat-label>
                       <input matInput type="number" formControlName="cantidad" min="0" required />
+                    </mat-form-field>
+                    <mat-form-field appearance="outline" class="inventario-avanzado__campo-ancho">
+                      <mat-label>Motivo (opcional)</mat-label>
+                      <input matInput type="text" formControlName="motivo" maxlength="500"
+                             placeholder="Ej. reubicación, surtido a sucursal…" />
                     </mat-form-field>
                     @if (errorTransferencia()) {
                       <p class="inventario-avanzado__error" role="alert">{{ errorTransferencia() }}</p>
@@ -418,8 +444,30 @@
             [etiquetaDe]="etiquetaMaterial"
             [detalleDe]="detalleMaterial"
           />
+          <mat-form-field appearance="outline">
+            <mat-label>Desde (opcional)</mat-label>
+            <input matInput [matDatepicker]="pickerDesde" formControlName="desde" />
+            <mat-datepicker-toggle matSuffix [for]="pickerDesde" />
+            <mat-datepicker #pickerDesde />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Hasta (opcional)</mat-label>
+            <input matInput [matDatepicker]="pickerHasta" formControlName="hasta" />
+            <mat-datepicker-toggle matSuffix [for]="pickerHasta" />
+            <mat-datepicker #pickerHasta />
+          </mat-form-field>
           <div class="inventario-avanzado__filtros-acciones">
             <button matButton="filled" type="submit">Consultar Kardex</button>
+            <button
+              matButton
+              type="button"
+              [disabled]="!hayKardex()"
+              (click)="exportarKardexCsv()"
+              aria-label="Exportar el Kardex consultado a CSV"
+            >
+              <mat-icon aria-hidden="true">download</mat-icon>
+              Exportar CSV
+            </button>
           </div>
         </form>
 
@@ -449,6 +497,9 @@
             <ng-template appCelda="saldoCantidad" let-fila>{{ fila.saldoCantidad }}</ng-template>
             <ng-template appCelda="saldoCostoTotal" let-fila>
               {{ fila.saldoCostoTotal | currency: 'MXN' : 'symbol-narrow' }}
+            </ng-template>
+            <ng-template appCelda="motivo" let-fila>
+              {{ fila.motivo || '—' }}
             </ng-template>
           </app-data-table>
         </app-state-container>
@@ -618,17 +669,38 @@
                   <mat-error>El stock de seguridad no puede ser negativo.</mat-error>
                 }
               </mat-form-field>
+              <!-- Punto de reorden derivado en vivo (misma formula que el backend):
+                   consumo promedio * tiempo de entrega + stock de seguridad. -->
+              @if (formConfig.controls.materialId.value) {
+                <div class="inventario-avanzado__reorden" role="status" aria-live="polite">
+                  <mat-icon aria-hidden="true">notifications_active</mat-icon>
+                  <div>
+                    <span class="inventario-avanzado__reorden-etiqueta">Punto de reorden estimado</span>
+                    <span class="inventario-avanzado__reorden-valor">{{ puntoReordenPreview() }}</span>
+                    <span class="inventario-avanzado__reorden-formula">
+                      Cuando las existencias bajen a este nivel conviene reabastecer
+                      (consumo × tiempo de entrega + stock de seguridad).
+                    </span>
+                  </div>
+                </div>
+              }
+
               <div class="operacion-form__acciones">
-                <button matButton="filled" type="submit" [disabled]="guardandoConfig()">
+                <button matButton="filled" type="submit" [disabled]="guardandoConfig() || cargandoConfig()">
                   Guardar configuracion
                 </button>
               </div>
             </form>
 
-            @if (configGuardada(); as config) {
+            @if (cargandoConfig()) {
+              <p class="inventario-avanzado__config-cargando" role="status">
+                <mat-icon aria-hidden="true">hourglass_empty</mat-icon>
+                Cargando la configuración del material…
+              </p>
+            } @else if (configGuardada(); as config) {
               <div class="inventario-avanzado__config-resultado" role="status">
                 <p>
-                  Configuracion guardada. Punto de reorden calculado:
+                  Configuración vigente. Punto de reorden:
                   <strong>{{ config.puntoReorden }}</strong>
                 </p>
               </div>

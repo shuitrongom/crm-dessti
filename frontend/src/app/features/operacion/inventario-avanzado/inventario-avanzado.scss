@@ -265,3 +265,74 @@
     height: 1.125rem;
   }
 }
+
+// -----------------------------------------------------------------------------
+// Mejoras fase 1 (config: punto de reorden en vivo; existencias: valor total)
+// -----------------------------------------------------------------------------
+
+// Panel del punto de reorden estimado en la pestana Configuracion.
+.inventario-avanzado__reorden {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ds-space-2);
+  margin: var(--ds-space-3) 0;
+  padding: var(--ds-space-3);
+  border: 1px solid color-mix(in srgb, var(--ds-color-info, #1b6a8c) 32%, transparent);
+  background: color-mix(in srgb, var(--ds-color-info, #1b6a8c) 8%, transparent);
+  border-radius: var(--ds-radius-md, 0.5rem);
+
+  mat-icon {
+    color: var(--ds-color-info, #1b6a8c);
+    flex: 0 0 auto;
+  }
+}
+
+.inventario-avanzado__reorden-etiqueta {
+  display: block;
+  font-size: var(--ds-font-size-xs, 0.75rem);
+  color: var(--ds-color-text-muted, #6b7280);
+}
+
+.inventario-avanzado__reorden-valor {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.inventario-avanzado__reorden-formula {
+  display: block;
+  font-size: var(--ds-font-size-xs, 0.75rem);
+  color: var(--ds-color-text-muted, #6b7280);
+  margin-top: var(--ds-space-1);
+}
+
+.inventario-avanzado__config-cargando {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  color: var(--ds-color-text-muted, #6b7280);
+  margin-top: var(--ds-space-2);
+}
+
+// Total valorizado sobre las existencias cargadas.
+.inventario-avanzado__valor-total {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-2);
+  margin: 0 0 var(--ds-space-2);
+
+  mat-icon {
+    color: var(--ds-color-success, #2e7d4f);
+  }
+}
+
+.inventario-avanzado__valor-nota {
+  color: var(--ds-color-text-muted, #6b7280);
+  font-size: var(--ds-font-size-xs, 0.75rem);
+}
+
+// Campo de motivo a ancho completo dentro del grid de movimientos.
+.inventario-avanzado__campo-ancho {
+  grid-column: 1 / -1;
+}

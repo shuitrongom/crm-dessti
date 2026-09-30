@@ -254,6 +254,7 @@ describe('OperacionInventarioAvanzado', () => {
       cantidad: 8,
       costoUnitario: 100,
       loteCodigo: 'L-001',
+      motivo: 'compra inicial',
     });
     vista().registrarEntrada();
 
@@ -265,6 +266,7 @@ describe('OperacionInventarioAvanzado', () => {
       cantidad: 8,
       costoUnitario: 100,
       loteCodigo: 'L-001',
+      motivo: 'compra inicial',
     });
     post.flush({} as MovimientoAlmacen);
 
@@ -284,6 +286,7 @@ describe('OperacionInventarioAvanzado', () => {
       materialId: MATERIAL_UUID,
       cantidad: 2,
       loteCodigo: '',
+      motivo: '',
     });
     vista().registrarSalida();
 
@@ -294,6 +297,7 @@ describe('OperacionInventarioAvanzado', () => {
       materialId: MATERIAL_UUID,
       cantidad: 2,
       loteCodigo: null,
+      motivo: null,
     });
     post.flush({} as MovimientoAlmacen);
     for (const req of http.match((r) => r.url === URL_EXISTENCIAS && r.method === 'GET')) {
@@ -311,6 +315,7 @@ describe('OperacionInventarioAvanzado', () => {
       materialId: MATERIAL_UUID,
       cantidad: 999,
       loteCodigo: '',
+      motivo: '',
     });
     vista().registrarSalida();
 
@@ -337,6 +342,7 @@ describe('OperacionInventarioAvanzado', () => {
       almacenDestinoId: ALMACEN2_UUID,
       materialId: MATERIAL_UUID,
       cantidad: 4,
+      motivo: '',
     });
     vista().registrarTransferencia();
 
@@ -348,6 +354,7 @@ describe('OperacionInventarioAvanzado', () => {
       almacenDestinoId: ALMACEN2_UUID,
       materialId: MATERIAL_UUID,
       cantidad: 4,
+      motivo: null,
     });
     post.flush({} as MovimientoAlmacen);
     for (const req of http.match((r) => r.url === URL_EXISTENCIAS && r.method === 'GET')) {
@@ -381,6 +388,41 @@ describe('OperacionInventarioAvanzado', () => {
     await crear();
     resolverArranque();
 
+    // Flujo real: primero se elige el material -> precarga (GET config, sin
+    // reescribir); luego el Usuario ajusta los campos y guarda (PUT).
+    vista().formConfig.setValue({
+      materialId: MATERIAL_UUID,
+      metodoCosteo: 'promedio',
+      stockMaximo: null,
+      controlLote: false,
+      consumoPromedio: 0,
+      tiempoEntregaDias: 0,
+      stockSeguridad: 0,
+    });
+    http
+      .expectOne(
+        (r) =>
+          r.method === 'GET' &&
+          r.url === `/api/v1/inventario-avanzado/materiales/${MATERIAL_UUID}/config-inventario`,
+      )
+      .flush({
+        id: 'c0',
+        materialId: MATERIAL_UUID,
+        metodoCosteo: 'promedio',
+        stockMaximo: null,
+        controlLote: false,
+        consumoPromedio: 0,
+        tiempoEntregaDias: 0,
+        stockSeguridad: 0,
+        puntoReorden: 0,
+        version: 0,
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z',
+      } as ConfigInventarioMaterial);
+    fixture.detectChanges();
+
+    // El Usuario ajusta los parametros tras la precarga (mismo material, por lo
+    // que distinctUntilChanged evita una segunda precarga que pisara los cambios).
     vista().formConfig.setValue({
       materialId: MATERIAL_UUID,
       metodoCosteo: 'peps',
@@ -390,6 +432,8 @@ describe('OperacionInventarioAvanzado', () => {
       tiempoEntregaDias: 5,
       stockSeguridad: 2,
     });
+    fixture.detectChanges();
+
     vista().guardarConfig();
 
     const put = http.expectOne(
@@ -656,6 +700,111 @@ describe('OperacionInventarioAvanzado', () => {
       expect(t).not.toContain(MATERIAL_UUID);
     }
   });
+
+  it('al elegir material en Configuracion precarga su config (GET) sin reescribir', async () => {
+    await crear();
+    resolverArranque();
+
+    // Elegir el material dispara la precarga por GET (sin PUT).
+    (vista().formConfig as unknown as { patchValue(v: Record<string, unknown>): void }).patchValue({
+      materialId: MATERIAL_UUID,
+    });
+    const get = http.expectOne(
+      (r) =>
+        r.method === 'GET' &&
+        r.url === `/api/v1/inventario-avanzado/materiales/${MATERIAL_UUID}/config-inventario`,
+    );
+    get.flush({
+      id: 'c9',
+      materialId: MATERIAL_UUID,
+      metodoCosteo: 'peps',
+      stockMaximo: 50,
+      controlLote: true,
+      consumoPromedio: 4,
+      tiempoEntregaDias: 2,
+      stockSeguridad: 3,
+      puntoReorden: 11,
+      version: 0,
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z',
+    } as ConfigInventarioMaterial);
+    fixture.detectChanges();
+
+    // La config precargada queda disponible (con el punto de reorden derivado).
+    expect(vista().configGuardada()?.puntoReorden).toBe(11);
+    // No se emitio ningun PUT durante la precarga.
+    http.expectNone(
+      (r) =>
+        r.method === 'PUT' &&
+        r.url === `/api/v1/inventario-avanzado/materiales/${MATERIAL_UUID}/config-inventario`,
+    );
+  });
+
+  it('el Kardex se consulta con rango de fechas y expone la columna motivo', async () => {
+    await crear();
+    resolverArranque();
+    // La tabla del Kardex vive en la pestana Kardex (indice 3 con todos los permisos);
+    // mat-tab solo renderiza la activa, asi que hay que activarla para ver la tabla.
+    activarPestana(3);
+
+    // Selecciona almacen+material y un rango de fechas.
+    (
+      vista().formKardex as unknown as { setValue(v: Record<string, unknown>): void }
+    ).setValue({
+      almacenId: ALMACEN_UUID,
+      materialId: MATERIAL_UUID,
+      desde: '2026-01-01',
+      hasta: '2026-01-31',
+    });
+    (fixture.componentInstance as unknown as { consultarKardex(): void }).consultarKardex();
+
+    const req = http.expectOne(
+      (r) =>
+        r.method === 'GET' &&
+        r.url === `${URL_ALMACENES}/${ALMACEN_UUID}/materiales/${MATERIAL_UUID}/kardex`,
+    );
+    // El rango viaja como instantes ISO (dia completo).
+    expect(req.request.params.get('desde')).toBe('2026-01-01T00:00:00.000Z');
+    expect(req.request.params.get('hasta')).toBe('2026-01-31T23:59:59.999Z');
+    req.flush(
+      pagina<MovimientoAlmacen>([
+        {
+          id: 'm1',
+          almacenId: ALMACEN_UUID,
+          materialId: MATERIAL_UUID,
+          loteId: null,
+          tipo: 'entrada',
+          cantidad: 5,
+          costoUnitario: 10,
+          costoTotal: 50,
+          saldoCantidad: 5,
+          saldoCostoTotal: 50,
+          transferenciaId: null,
+          motivo: 'compra a proveedor',
+          version: 0,
+          createdAt: '2026-01-10T12:00:00Z',
+        } as MovimientoAlmacen,
+      ]),
+    );
+    fixture.detectChanges();
+
+    // El motivo del movimiento se muestra en la tabla del Kardex.
+    expect(texto()).toContain('compra a proveedor');
+  });
+
+  it('Existencias muestra la valorizacion por fila (cantidad * costo promedio)', async () => {
+    await crear();
+    // existencia: cantidad 3 * costo 120.5 = 361.5
+    resolverArranque({ existencias: [existenciaFalsa()] });
+    activarPestana(1);
+
+    const valor = (
+      fixture.componentInstance as unknown as {
+        valorizacionDe(e: ExistenciaAlmacen): number;
+      }
+    ).valorizacionDe(existenciaFalsa());
+    expect(valor).toBeCloseTo(361.5, 2);
+  }, 30000);
 
   it('no tiene violaciones de accesibilidad (WCAG 2.1 A/AA)', async () => {
     await crear();

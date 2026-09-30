@@ -173,14 +173,26 @@ export class InventarioAvanzadoService {
     );
   }
 
-  /** Consulta el Kardex cronologico de un Material en un Almacen (Req 60), solo lectura. */
+  /**
+   * Consulta el Kardex cronologico de un Material en un Almacen (Req 60), solo lectura,
+   * con rango de fechas opcional. `desde`/`hasta` en ISO-8601 (date-time); si se omiten,
+   * el backend no acota por fecha.
+   */
   consultarKardex(
     almacenId: string,
     materialId: string,
     page: number,
     size: number,
+    desde?: string | null,
+    hasta?: string | null,
   ): Observable<PaginaResponse<MovimientoAlmacen>> {
-    const params = new HttpParams().set('page', page).set('size', size);
+    let params = new HttpParams().set('page', page).set('size', size);
+    if (desde && desde.trim().length > 0) {
+      params = params.set('desde', desde.trim());
+    }
+    if (hasta && hasta.trim().length > 0) {
+      params = params.set('hasta', hasta.trim());
+    }
     return this.http.get<PaginaResponse<MovimientoAlmacen>>(
       this.api.url(`/inventario-avanzado/almacenes/${almacenId}/materiales/${materialId}/kardex`),
       { params },
@@ -237,6 +249,17 @@ export class InventarioAvanzadoService {
     return this.http.put<ConfigInventarioMaterial>(
       this.api.url(`/inventario-avanzado/materiales/${materialId}/config-inventario`),
       body,
+    );
+  }
+
+  /**
+   * Consulta (solo lectura) la configuracion de inventario de un Material (Req 60)
+   * para releerla sin reescribirla. Si el Material no tiene configuracion, el backend
+   * devuelve la predeterminada (metodo promedio, sin control de lote, ceros).
+   */
+  consultarConfigInventario(materialId: string): Observable<ConfigInventarioMaterial> {
+    return this.http.get<ConfigInventarioMaterial>(
+      this.api.url(`/inventario-avanzado/materiales/${materialId}/config-inventario`),
     );
   }
 

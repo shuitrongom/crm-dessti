@@ -24,10 +24,11 @@ import {
   WritableSignal,
   ChangeDetectionStrategy,
 } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { of, Observable } from 'rxjs';
+import { of, Observable, distinctUntilChanged } from 'rxjs';
 import { MatCardModule } from '@angular/material/card';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -213,8 +214,14 @@ export class OperacionInventarioAvanzado {
     { clave: 'material', encabezado: 'Material' },
     { clave: 'cantidad', encabezado: 'Cantidad', alineacion: 'fin' },
     { clave: 'costoPromedio', encabezado: 'Costo promedio', alineacion: 'fin' },
+    { clave: 'valorizacion', encabezado: 'Valorización', alineacion: 'fin' },
     { clave: 'acciones', encabezado: 'Acciones', alineacion: 'fin' },
   ];
+
+  /** Valorizacion de una fila de existencia (cantidad * costo promedio). */
+  valorizacionDe(existencia: ExistenciaAlmacen): number {
+    return existencia.cantidad * existencia.costoPromedio;
+  }
 
   protected readonly formFiltroExistencias = this.fb.nonNullable.group({
     almacenId: [''],
@@ -292,6 +299,7 @@ export class OperacionInventarioAvanzado {
     cantidad: [0, [Validators.required, Validators.min(0.0001)]],
     costoUnitario: [0, [Validators.required, Validators.min(0)]],
     loteCodigo: [''],
+    motivo: ['', [Validators.maxLength(500)]],
   });
 
   protected readonly formSalida = this.fb.nonNullable.group({
@@ -299,6 +307,7 @@ export class OperacionInventarioAvanzado {
     materialId: ['', [Validators.required]],
     cantidad: [0, [Validators.required, Validators.min(0.0001)]],
     loteCodigo: [''],
+    motivo: ['', [Validators.maxLength(500)]],
   });
 
   protected readonly formTransferencia = this.fb.nonNullable.group({
@@ -306,6 +315,7 @@ export class OperacionInventarioAvanzado {
     almacenDestinoId: ['', [Validators.required]],
     materialId: ['', [Validators.required]],
     cantidad: [0, [Validators.required, Validators.min(0.0001)]],
+    motivo: ['', [Validators.maxLength(500)]],
   });
 
   // ---------------------------------------------------------------------------
@@ -326,11 +336,15 @@ export class OperacionInventarioAvanzado {
     { clave: 'costoTotal', encabezado: 'Costo total', alineacion: 'fin' },
     { clave: 'saldoCantidad', encabezado: 'Saldo', alineacion: 'fin' },
     { clave: 'saldoCostoTotal', encabezado: 'Saldo costo', alineacion: 'fin' },
+    { clave: 'motivo', encabezado: 'Motivo' },
   ];
 
   protected readonly formKardex = this.fb.nonNullable.group({
     almacenId: ['', [Validators.required]],
     materialId: ['', [Validators.required]],
+    // Rango de fechas opcional (el backend acota por createdAt); ISO yyyy-MM-dd.
+    desde: [null as string | null],
+    hasta: [null as string | null],
   });
 
   /** Indice de pestana seleccionada (para navegar por codigo). */
@@ -340,6 +354,7 @@ export class OperacionInventarioAvanzado {
   // Configuracion
   // ---------------------------------------------------------------------------
   protected readonly guardandoConfig = signal(false);
+  protected readonly cargandoConfig = signal(false);
   protected readonly configGuardada = signal<ConfigInventarioMaterial | null>(null);
 
   protected readonly formConfig = this.fb.nonNullable.group({
@@ -350,6 +365,28 @@ export class OperacionInventarioAvanzado {
     consumoPromedio: [0, [Validators.required, Validators.min(0)]],
     tiempoEntregaDias: [0, [Validators.required, Validators.min(0)]],
     stockSeguridad: [0, [Validators.required, Validators.min(0)]],
+  });
+
+  /**
+   * Valor reactivo del formulario de configuracion, para derivar el punto de
+   * reorden en vivo mientras el Usuario captura (misma formula que el backend:
+   * consumoPromedio * tiempoEntregaDias + stockSeguridad).
+   */
+  private readonly valorConfig = toSignal(this.formConfig.valueChanges, {
+    initialValue: this.formConfig.getRawValue(),
+  });
+
+  /**
+   * Punto de reorden derivado previsualizado (Req 60). Replica el calculo del
+   * backend para orientar la captura; el valor oficial lo devuelve el servidor.
+   */
+  protected readonly puntoReordenPreview = computed<number>(() => {
+    const v = this.valorConfig();
+    const consumo = Number(v?.consumoPromedio ?? 0);
+    const dias = Number(v?.tiempoEntregaDias ?? 0);
+    const seguridad = Number(v?.stockSeguridad ?? 0);
+    const bruto = consumo * dias + seguridad;
+    return Math.round((bruto + Number.EPSILON) * 1000) / 1000;
   });
 
   // ---------------------------------------------------------------------------
@@ -400,6 +437,14 @@ export class OperacionInventarioAvanzado {
         this.faseResumen.set('error');
       },
     });
+
+    // Al elegir un Material DISTINTO en Configuracion, se relee su config (GET,
+    // sin reescribir) para prellenar el formulario y no guardar a ciegas. Se usa
+    // distinctUntilChanged para NO re-precargar (y pisar los ajustes del Usuario)
+    // cuando el control re-emite el mismo material.
+    this.formConfig.controls.materialId.valueChanges
+      .pipe(distinctUntilChanged(), takeUntilDestroyed())
+      .subscribe((materialId) => this.precargarConfig(materialId));
   }
 
   /** Reintenta la carga de catalogos y del tablero Resumen tras un error. */
@@ -596,6 +641,8 @@ export class OperacionInventarioAvanzado {
     this.formKardex.setValue({
       almacenId: existencia.almacenId,
       materialId: existencia.materialId,
+      desde: null,
+      hasta: null,
     });
     this.pageKardex.set(0);
     this.pestanaSeleccionada.set(this.indicePestana('kardex'));
@@ -672,6 +719,7 @@ export class OperacionInventarioAvanzado {
         cantidad: v.cantidad,
         costoUnitario: v.costoUnitario,
         loteCodigo: v.loteCodigo?.trim() || null,
+        motivo: v.motivo?.trim() || null,
       })
       .subscribe({
         next: () => {
@@ -683,6 +731,7 @@ export class OperacionInventarioAvanzado {
             cantidad: 0,
             costoUnitario: 0,
             loteCodigo: '',
+            motivo: '',
           });
           this.recargarTrasMovimiento();
         },
@@ -706,12 +755,19 @@ export class OperacionInventarioAvanzado {
         materialId: v.materialId,
         cantidad: v.cantidad,
         loteCodigo: v.loteCodigo?.trim() || null,
+        motivo: v.motivo?.trim() || null,
       })
       .subscribe({
         next: () => {
           this.enviandoSalida.set(false);
           this.toast.exito('Salida registrada.');
-          this.formSalida.reset({ almacenId: '', materialId: '', cantidad: 0, loteCodigo: '' });
+          this.formSalida.reset({
+            almacenId: '',
+            materialId: '',
+            cantidad: 0,
+            loteCodigo: '',
+            motivo: '',
+          });
           this.recargarTrasMovimiento();
         },
         error: (e: HttpErrorResponse) => {
@@ -739,6 +795,7 @@ export class OperacionInventarioAvanzado {
         almacenDestinoId: v.almacenDestinoId,
         materialId: v.materialId,
         cantidad: v.cantidad,
+        motivo: v.motivo?.trim() || null,
       })
       .subscribe({
         next: () => {
@@ -749,6 +806,7 @@ export class OperacionInventarioAvanzado {
             almacenDestinoId: '',
             materialId: '',
             cantidad: 0,
+            motivo: '',
           });
           this.recargarTrasMovimiento();
         },
@@ -778,9 +836,13 @@ export class OperacionInventarioAvanzado {
       return;
     }
     const v = this.formKardex.getRawValue();
+    // Las fechas se capturan como yyyy-MM-dd; se convierten a instantes ISO para
+    // acotar el dia completo (desde = inicio del dia; hasta = fin del dia).
+    const desde = v.desde ? `${v.desde}T00:00:00.000Z` : null;
+    const hasta = v.hasta ? `${v.hasta}T23:59:59.999Z` : null;
     this.faseKardex.set('cargando');
     this.service
-      .consultarKardex(v.almacenId, v.materialId, this.pageKardex(), this.sizeKardex())
+      .consultarKardex(v.almacenId, v.materialId, this.pageKardex(), this.sizeKardex(), desde, hasta)
       .subscribe({
         next: (pagina) => {
           this.kardex.set(pagina.content);
@@ -800,9 +862,110 @@ export class OperacionInventarioAvanzado {
     this.consultarKardex();
   }
 
+  /** `true` si hay filas de Kardex cargadas para exportar. */
+  protected readonly hayKardex = computed(() => this.kardex().length > 0);
+
+  /**
+   * Exporta a CSV las filas del Kardex actualmente cargadas (la pagina consultada),
+   * resolviendo Almacen y Material por nombre (nunca UUID). Es una utilidad de
+   * cliente sobre los datos ya traidos; no consulta de nuevo al servidor.
+   */
+  exportarKardexCsv(): void {
+    const filas = this.kardex();
+    if (filas.length === 0) {
+      return;
+    }
+    const v = this.formKardex.getRawValue();
+    const almacen = this.nombreAlmacen(v.almacenId);
+    const material = this.nombreMaterial(v.materialId);
+    const encabezados = [
+      'Fecha',
+      'Almacen',
+      'Material',
+      'Tipo',
+      'Cantidad',
+      'Costo unitario',
+      'Costo total',
+      'Saldo',
+      'Saldo costo',
+      'Motivo',
+    ];
+    const escapar = (valor: string): string => {
+      // Entrecomilla y duplica comillas si el valor contiene separador, comillas o salto.
+      const limpio = valor ?? '';
+      return /[",\n;]/.test(limpio) ? `"${limpio.replace(/"/g, '""')}"` : limpio;
+    };
+    const lineas = filas.map((m) =>
+      [
+        new Date(m.createdAt).toISOString(),
+        almacen,
+        material,
+        this.etiquetaTipoKardex(m.tipo),
+        String(m.cantidad),
+        String(m.costoUnitario),
+        String(m.costoTotal),
+        String(m.saldoCantidad),
+        String(m.saldoCostoTotal),
+        m.motivo ?? '',
+      ]
+        .map((c) => escapar(c))
+        .join(','),
+    );
+    const csv = [encabezados.join(','), ...lineas].join('\r\n');
+    // BOM UTF-8 para que Excel respete acentos.
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `kardex-${material}-${almacen}.csv`.replace(/\s+/g, '_');
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   // ---------------------------------------------------------------------------
   // Configuracion
   // ---------------------------------------------------------------------------
+
+  /**
+   * Al elegir un Material en la pestana Configuracion, relee su configuracion del
+   * backend (GET, sin reescribir) y prellena el formulario. Si el Material aun no
+   * tiene configuracion, el backend devuelve la predeterminada (promedio, sin lote,
+   * ceros), de modo que el Usuario ve valores coherentes en vez de un formulario
+   * en blanco. Evita el "guardado ciego".
+   */
+  precargarConfig(materialId: string): void {
+    const id = (materialId ?? '').trim();
+    if (!id) {
+      this.configGuardada.set(null);
+      return;
+    }
+    this.cargandoConfig.set(true);
+    this.service.consultarConfigInventario(id).subscribe({
+      next: (config) => {
+        this.cargandoConfig.set(false);
+        // Si el Usuario cambio de Material mientras cargaba, se ignora.
+        if (this.formConfig.getRawValue().materialId !== id) {
+          return;
+        }
+        this.configGuardada.set(config);
+        this.formConfig.patchValue(
+          {
+            metodoCosteo: config.metodoCosteo,
+            stockMaximo: config.stockMaximo,
+            controlLote: config.controlLote,
+            consumoPromedio: config.consumoPromedio,
+            tiempoEntregaDias: config.tiempoEntregaDias,
+            stockSeguridad: config.stockSeguridad,
+          },
+          { emitEvent: true },
+        );
+      },
+      error: (e: HttpErrorResponse) => {
+        this.cargandoConfig.set(false);
+        this.toast.error(mensajeDeError(e));
+      },
+    });
+  }
 
   guardarConfig(): void {
     if (this.formConfig.invalid) {

@@ -197,6 +197,22 @@ public class InventarioAvanzadoController {
     }
 
     /**
+     * Consulta (solo lectura) la configuracion de inventario de un Material (Req 60), para
+     * releerla en la UI sin reescribirla. Si el Material aun no tiene configuracion, se
+     * devuelve la predeterminada (metodo promedio, sin control de lote, ceros) sin
+     * persistirla. 404 si el Material no es accesible.
+     *
+     * @param materialId identificador del Material.
+     * @return 200 OK con el {@link ConfigInventarioMaterialDto} (persistido o predeterminado).
+     */
+    @GetMapping("/materiales/{materialId}/config-inventario")
+    @PreAuthorize("@autorizador.moduloHabilitado('inventario-avanzado') and @autorizador.tiene('material','leer')")
+    public ResponseEntity<ConfigInventarioMaterialDto> consultarConfigInventario(
+            @PathVariable("materialId") UUID materialId) {
+        return ResponseEntity.ok(servicio.consultarConfigInventario(materialId));
+    }
+
+    /**
      * Lista el Kardex cronologico de un Material en un Almacen (Req 60), de solo lectura,
      * con rango de fechas opcional. 404 si el Almacen o el Material no son accesibles.
      *

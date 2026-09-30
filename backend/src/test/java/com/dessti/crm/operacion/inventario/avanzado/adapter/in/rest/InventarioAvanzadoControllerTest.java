@@ -33,6 +33,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.dessti.crm.operacion.inventario.avanzado.application.AlmacenDto;
+import com.dessti.crm.operacion.inventario.avanzado.application.ConfigInventarioMaterialDto;
 import com.dessti.crm.operacion.inventario.avanzado.application.MovimientoAlmacenDto;
 import com.dessti.crm.operacion.inventario.avanzado.application.ServicioInventarioAvanzado;
 import com.dessti.crm.platform.error.RecursoNoEncontradoException;
@@ -164,6 +165,38 @@ class InventarioAvanzadoControllerTest {
         mockMvc.perform(get(
                         "/inventario-avanzado/almacenes/{almacenId}/materiales/{materialId}/kardex",
                         ALMACEN_ID, MATERIAL_ID).with(user("sin_permiso")))
+                .andExpect(status().isForbidden());
+    }
+
+    private static ConfigInventarioMaterialDto configDto() {
+        Instant ahora = Instant.parse("2024-05-02T10:00:00Z");
+        // puntoReorden = consumo(2) * dias(3) + seguridad(4) = 10
+        return new ConfigInventarioMaterialDto(
+                UUID.fromString("77777777-7777-7777-7777-777777777777"),
+                MATERIAL_ID, "promedio", new BigDecimal("100.000"), false,
+                new BigDecimal("2.000"), 3, new BigDecimal("4.000"),
+                new BigDecimal("10.000"), 0L, ahora, ahora);
+    }
+
+    @Test
+    void consultarConfigInventario_devuelve200_conElPuntoDeReordenDerivado() throws Exception {
+        when(autorizador.tiene("material", "leer")).thenReturn(true);
+        when(servicio.consultarConfigInventario(eq(MATERIAL_ID))).thenReturn(configDto());
+
+        mockMvc.perform(get("/inventario-avanzado/materiales/{materialId}/config-inventario",
+                        MATERIAL_ID).with(user("almacen")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.materialId").value(MATERIAL_ID.toString()))
+                .andExpect(jsonPath("$.metodoCosteo").value("promedio"))
+                .andExpect(jsonPath("$.puntoReorden").value(10.0));
+    }
+
+    @Test
+    void consultarConfigInventario_devuelve403_cuandoFaltaPermiso() throws Exception {
+        when(autorizador.tiene(anyString(), anyString())).thenReturn(false);
+
+        mockMvc.perform(get("/inventario-avanzado/materiales/{materialId}/config-inventario",
+                        MATERIAL_ID).with(user("sin_permiso")))
                 .andExpect(status().isForbidden());
     }
 
