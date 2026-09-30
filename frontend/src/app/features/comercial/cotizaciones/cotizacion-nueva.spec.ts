@@ -44,8 +44,11 @@ interface EntitySelectProbe {
 
 /** Superficie protegida del componente. */
 interface CotizacionNuevaProbe {
-  partidas: { at(i: number): { get(n: string): { setValue(v: unknown): void } | null } };
+  partidas: {
+    at(i: number): { get(n: string): { setValue(v: unknown): void; value: unknown } | null };
+  };
   total(): number;
+  estadoPrecioDe(i: number): string;
   crear(): void;
 }
 
@@ -98,13 +101,41 @@ describe('ComercialCotizacionNueva', () => {
     fixture.detectChanges();
   }
 
-  it('envia clienteId y productoId como UUID y calcula el total previsualizado', () => {
+  /**
+   * Atiende la consulta de precio sugerido que dispara el componente al elegir un
+   * Producto (GET /productos/{id}/precio-sugerido). Responde con `disponible` y el
+   * precio indicados (por defecto, sin sugerencia) para mantener el HTTP mock limpio.
+   */
+  async function atenderPrecioSugerido(
+    productoId: string,
+    disponible = false,
+    precioSugerido: number | null = null,
+  ): Promise<void> {
+    const req = http.expectOne(
+      (r) => r.method === 'GET' && r.url === `/api/v1/productos/${productoId}/precio-sugerido`,
+    );
+    req.flush({
+      productoId,
+      precioSugerido,
+      disponible,
+      fechaReferencia: '2026-03-15',
+      segmentoCliente: null,
+    });
+    // El componente aplica el precio/estado en un microtask (evita NG0100), por lo
+    // que hay que dejar correr la microcola antes de comprobar y volver a detectar.
+    await Promise.resolve();
+    fixture.detectChanges();
+  }
+
+  it('envia clienteId y productoId como UUID y calcula el total previsualizado', async () => {
     const componente = fixture.componentInstance as unknown as CotizacionNuevaProbe;
 
     // Selector 0 = Cliente (cabecera), Selector 1 = Producto (partida 1).
     const [selCliente, selProducto] = selectores();
     elegir(selCliente, '/api/v1/clientes', CLIENTE);
     elegir(selProducto, '/api/v1/productos', PRODUCTO);
+    // Al elegir Producto se consulta su precio de lista; en este caso sin sugerencia.
+    await atenderPrecioSugerido(PRODUCTO.id, false);
 
     // Completa la partida y verifica el total previsualizado (2 * 100 = 200).
     componente.partidas.at(0).get('descripcion')!.setValue('Letrero principal');
@@ -203,6 +234,54 @@ describe('ComercialCotizacionNueva', () => {
       ],
     });
     post.flush({ id: 'c3' } as Cotizacion);
+  });
+
+  it('al elegir un producto aplica el precio de lista sugerido y suma el total', async () => {
+    const componente = fixture.componentInstance as unknown as CotizacionNuevaProbe;
+
+    const [selCliente, selProducto] = selectores();
+    elegir(selCliente, '/api/v1/clientes', CLIENTE);
+    elegir(selProducto, '/api/v1/productos', PRODUCTO);
+    // El backend sugiere 250 desde la lista de precios vigente.
+    await atenderPrecioSugerido(PRODUCTO.id, true, 250);
+
+    // El precio se coloca solo; el importe deja de verse en cero.
+    expect(componente.partidas.at(0).get('precioUnitario')!.value).toBe(250);
+    expect(componente.estadoPrecioDe(0)).toBe('aplicado');
+
+    componente.partidas.at(0).get('descripcion')!.setValue('Rotulo');
+    componente.partidas.at(0).get('cantidad')!.setValue(2);
+    fixture.detectChanges();
+    // Base 2*250=500 + IVA 16% (80) = 580.
+    expect(componente.total()).toBe(580);
+  });
+
+  it('marca sin-precio cuando el producto no tiene precio de lista vigente', async () => {
+    const componente = fixture.componentInstance as unknown as CotizacionNuevaProbe;
+
+    const [selCliente, selProducto] = selectores();
+    elegir(selCliente, '/api/v1/clientes', CLIENTE);
+    elegir(selProducto, '/api/v1/productos', PRODUCTO);
+    await atenderPrecioSugerido(PRODUCTO.id, false);
+
+    expect(componente.partidas.at(0).get('precioUnitario')!.value).toBeNull();
+    expect(componente.estadoPrecioDe(0)).toBe('sin-precio');
+  });
+
+  it('no sobrescribe el precio que el usuario ya capturo a mano', () => {
+    const componente = fixture.componentInstance as unknown as CotizacionNuevaProbe;
+
+    const [selCliente, selProducto] = selectores();
+    elegir(selCliente, '/api/v1/clientes', CLIENTE);
+    // El usuario captura primero el precio manualmente.
+    componente.partidas.at(0).get('precioUnitario')!.setValue(999);
+    fixture.detectChanges();
+    // Luego elige el producto: al haber precio capturado (estado manual) no se
+    // consulta la sugerencia ni se pisa el 999 (no se emite peticion de precio).
+    elegir(selProducto, '/api/v1/productos', PRODUCTO);
+
+    expect(componente.partidas.at(0).get('precioUnitario')!.value).toBe(999);
+    expect(componente.estadoPrecioDe(0)).toBe('manual');
   });
 
   it('no tiene violaciones de accesibilidad (WCAG 2.1 A/AA)', async () => {

@@ -218,6 +218,26 @@ describe('OperacionMateriales', () => {
     expect(toast.exitos).toContain('Material creado.');
   });
 
+  it('muestra "Sin existencia" (no "Stock bajo") cuando las existencias son 0', async () => {
+    await crear();
+    // existencias 0: aunque el backend marque stockBajo, la UI debe distinguir la
+    // ausencia total de existencias con su propio estado (mas grave que stock bajo).
+    resolverArranque([materialFalso({ existencias: 0, stockBajo: true })]);
+
+    const t = texto();
+    expect(t).toContain('Sin existencia');
+    expect(t).not.toContain('Stock bajo');
+  });
+
+  it('muestra "Stock bajo" cuando hay existencias pero por debajo del minimo', async () => {
+    await crear();
+    resolverArranque([materialFalso({ existencias: 3, stockBajo: true })]);
+
+    const t = texto();
+    expect(t).toContain('Stock bajo');
+    expect(t).not.toContain('Sin existencia');
+  });
+
   it('no tiene violaciones de accesibilidad (WCAG 2.1 A/AA)', async () => {
     await crear();
     resolverArranque([materialFalso()]);

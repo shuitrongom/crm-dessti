@@ -178,11 +178,12 @@ class ServicioCanalesVentaTest {
         CanalVenta canal = CanalVenta.crear("Directo", "desc", "ventas");
         Pageable pageable = PageRequest.of(0, 20);
         Page<CanalVenta> pagina = new PageImpl<>(List.of(canal), pageable, 1);
-        when(repositorio.buscarActivosPorNombre(eq("dir"), any(Pageable.class))).thenReturn(pagina);
+        when(repositorio.buscarPorNombreYEstado(eq("dir"), eq(Boolean.TRUE), any(Pageable.class)))
+                .thenReturn(pagina);
 
-        Page<CanalVentaDto> resultado = servicio.listarCanales("DIR", pageable);
+        Page<CanalVentaDto> resultado = servicio.listarCanales("DIR", Boolean.TRUE, pageable);
 
         assertThat(resultado.getContent()).hasSize(1);
-        verify(repositorio).buscarActivosPorNombre(eq("dir"), any(Pageable.class));
+        verify(repositorio).buscarPorNombreYEstado(eq("dir"), eq(Boolean.TRUE), any(Pageable.class));
     }
 }

@@ -24,18 +24,22 @@ public interface MovimientoAlmacenRepository extends JpaRepository<MovimientoAlm
 
     /**
      * Lista de forma paginada el Kardex cronologico (por {@code created_at} ascendente)
-     * de un Material en un Almacen dentro del tenant vigente, con rango de fechas opcional
-     * (Req 60). Los limites nulos no restringen:
+     * de un Material en un Almacen dentro del tenant vigente, acotado por un rango de
+     * fechas (Req 60).
      *
-     * <ul>
-     *   <li>{@code desde} nulo: sin cota inferior de fecha.</li>
-     *   <li>{@code hasta} nulo: sin cota superior de fecha.</li>
-     * </ul>
+     * <p><strong>Cotas de fecha SIEMPRE tipadas (sin {@code ":param IS NULL OR ..."}):</strong>
+     * los limites {@code desde}/{@code hasta} nunca son nulos aqui; la semantica "sin
+     * limite" la aporta la capa de aplicacion sustituyendo un nulo por una cota centinela
+     * ({@code RangoPeriodo.instanteDesdeOMinimo}/{@code instanteHastaOMaximo}). Asi
+     * PostgreSQL puede inferir el tipo del bind y se evita el error
+     * "could not determine data type of parameter" que produce un bind {@code timestamptz}
+     * nulo. Es el mismo patron ya usado por el resto de repositorios del proyecto que
+     * filtran por fecha.</p>
      *
      * @param almacenId  Almacen cuyo Kardex se consulta.
      * @param materialId Material cuyo Kardex se consulta.
-     * @param desde      instante minimo (inclusive); {@code null} no filtra.
-     * @param hasta      instante maximo (inclusive); {@code null} no filtra.
+     * @param desde      instante minimo (inclusive); cota centinela si no se filtra.
+     * @param hasta      instante maximo (inclusive); cota centinela si no se filtra.
      * @param pageable   parametros de paginacion ya acotados (20/100).
      * @return la pagina de movimientos del Kardex en orden cronologico ascendente.
      */
@@ -43,8 +47,8 @@ public interface MovimientoAlmacenRepository extends JpaRepository<MovimientoAlm
             SELECT m FROM MovimientoAlmacen m
             WHERE m.almacenId = :almacenId
               AND m.materialId = :materialId
-              AND (:desde IS NULL OR m.createdAt >= :desde)
-              AND (:hasta IS NULL OR m.createdAt <= :hasta)
+              AND m.createdAt >= :desde
+              AND m.createdAt <= :hasta
             ORDER BY m.createdAt ASC
             """)
     Page<MovimientoAlmacen> buscarKardex(

@@ -21,8 +21,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 
+import { Observable } from 'rxjs';
+
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../shared/components/state-container/state-container';
+import { EntitySelect } from '../../../shared/components/entity-select/entity-select';
 import {
   CambioPagina,
   CeldaTablaDirective,
@@ -34,6 +37,7 @@ import { NotificacionesService } from '../../../shared/services/notificaciones.s
 import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
+import { PaginaResponse } from '../../../core/models/pagina-response';
 import {
   EstadoSolicitud,
   cargando,
@@ -43,6 +47,8 @@ import {
 
 import { EstadoChip } from '../../finanzas-comun/estado-chip/estado-chip';
 import { humanizarEstado, tonoDeEstado } from '../../finanzas-comun/tono-estado';
+import { MaterialesService } from '../../operacion/services/inventario.service';
+import { Material } from '../../operacion/models/operacion.models';
 import { ComprasService } from '../services/compras.service';
 import { RequisicionCompra } from '../models/compras.models';
 
@@ -74,6 +80,7 @@ const TRANSICIONES: Record<string, { estado: string; etiqueta: string; destructi
     MatMenuModule,
     PageHeader,
     StateContainer,
+    EntitySelect,
     DataTable,
     CeldaTablaDirective,
     EstadoChip,
@@ -85,10 +92,22 @@ const TRANSICIONES: Record<string, { estado: string; etiqueta: string; destructi
 export class ComprasRequisiciones {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(ComprasService);
+  private readonly materiales = inject(MaterialesService);
   private readonly confirm = inject(ConfirmDialogService);
   private readonly toast = inject(NotificacionesService);
   private readonly overlay = inject(OperacionOverlayService);
   private readonly auth = inject(AuthService);
+
+  /** Busca Materiales activos por nombre para el selector de partida (sin UUID). */
+  protected readonly buscarMaterial = (filtro: string): Observable<PaginaResponse<Material>> =>
+    this.materiales.listar(filtro, 'activo', false, 0, 20);
+
+  /** Etiqueta principal de un Material en el selector. */
+  protected readonly etiquetaMaterial = (material: Material): string => material.nombre;
+
+  /** Detalle secundario (unidad) de un Material en el selector. */
+  protected readonly detalleMaterial = (material: Material): string | null =>
+    material.unidadMedida || null;
 
   protected readonly tono = tonoDeEstado;
   protected readonly humanizar = humanizarEstado;

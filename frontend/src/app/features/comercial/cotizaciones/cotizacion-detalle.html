@@ -44,7 +44,7 @@
             </div>
             <dl class="cotizacion-detalle__meta">
               <div>
-                <dt>Fecha de emision</dt>
+                <dt>Fecha de emisión</dt>
                 <dd>{{ c.fechaEmision ? (c.fechaEmision | date: 'dd/MM/yyyy') : '—' }}</dd>
               </div>
               <div>
@@ -180,7 +180,7 @@
                       <mat-option [value]="canal.id">{{ canal.nombre }}</mat-option>
                     }
                   </mat-select>
-                  <mat-hint>Clasifica la cotizacion por su via comercial (Directo, Referido, Redes...).</mat-hint>
+                  <mat-hint>Clasifica la cotización por su vía comercial (Directo, Referido, Redes...).</mat-hint>
                 </mat-form-field>
                 <div class="cotizacion-detalle__form-acciones">
                   <button matButton type="button" (click)="cerrarAsignarCanal()" [disabled]="guardando()">
@@ -392,7 +392,7 @@
                 }
               </ul>
             } @else {
-              <p class="cotizacion-detalle__vacio">Aun no hay pruebas de diseno para esta cotizacion.</p>
+              <p class="cotizacion-detalle__vacio">Aún no hay pruebas de diseño para esta cotización.</p>
             }
           </mat-card-content>
         </mat-card>

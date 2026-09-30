@@ -64,7 +64,7 @@
 @if (estado().fase === 'vacio') {
   <div class="conexiones-vacio" role="status">
     <mat-icon class="conexiones-vacio__icono" aria-hidden="true">hub</mat-icon>
-    <p class="conexiones-vacio__texto">Aun no has conectado ninguna cuenta.</p>
+    <p class="conexiones-vacio__texto">Aún no has conectado ninguna cuenta.</p>
     @if (puedeCrear && !mostrarAlta()) {
       <button matButton="filled" type="button" (click)="alternarAlta()">
         <mat-icon>add</mat-icon>

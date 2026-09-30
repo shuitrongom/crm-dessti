@@ -42,6 +42,7 @@ import com.dessti.crm.platform.error.RecursoNoEncontradoException;
 import com.dessti.crm.platform.error.ReglaNegocioException;
 import com.dessti.crm.platform.security.rbac.AutenticacionActual;
 import com.dessti.crm.platform.tenant.TenantContext;
+import com.dessti.crm.reportesbi.application.indicadores.RangoPeriodo;
 
 /**
  * Servicio de aplicacion que gobierna el inventario AVANZADO por Almacen (Req 60). Replica
@@ -292,7 +293,14 @@ public class ServicioInventarioAvanzado {
         String actor = actorActual();
         cargarAlmacen(almacenId, actor);
         cargarMaterial(materialId, actor);
-        return movimientoRepository.buscarKardex(almacenId, materialId, desde, hasta, pageable)
+        // Cotas de fecha SIEMPRE tipadas: un limite nulo se sustituye por su cota
+        // centinela para que PostgreSQL infiera el tipo del bind y no falle con
+        // "could not determine data type of parameter" (bind timestamptz nulo). La
+        // semantica "sin limite" se conserva (epoca .. 9999-12-31).
+        Instant desdeEfectivo = RangoPeriodo.instanteDesdeOMinimo(desde);
+        Instant hastaEfectivo = RangoPeriodo.instanteHastaOMaximo(hasta);
+        return movimientoRepository
+                .buscarKardex(almacenId, materialId, desdeEfectivo, hastaEfectivo, pageable)
                 .map(MovimientoAlmacenDto::de);
     }
 

@@ -135,6 +135,23 @@ public class CanalVentaController {
     }
 
     /**
+     * Reactiva un Canal_Venta dado de baja logica (Req 63.1): lo vuelve a marcar
+     * activo conservando su historico. 200 OK con el {@link CanalVentaDto}
+     * reactivado; 404 si no existe o es de otro tenant; 422 si ya estaba activo;
+     * 409 si otro canal activo ya usa su nombre. Se protege con
+     * {@code canal_venta:actualizar} (es una modificacion del recurso, no un alta),
+     * coherente con la baja logica.
+     *
+     * @param id identificador del canal.
+     * @return 200 OK con el {@link CanalVentaDto} reactivado.
+     */
+    @PutMapping("/{id}/activar")
+    @PreAuthorize("@autorizador.moduloHabilitado('comercial') and @autorizador.tiene('canal_venta','actualizar')")
+    public ResponseEntity<CanalVentaDto> activar(@PathVariable("id") UUID id) {
+        return ResponseEntity.ok(servicioCanalesVenta.reactivarCanal(id));
+    }
+
+    /**
      * Lista los Canales de Venta activos del tenant de forma paginada (20 por
      * defecto, 100 maximo) filtrando por nombre sin distinguir mayusculas
      * (Req 63.1).
@@ -148,9 +165,18 @@ public class CanalVentaController {
     @PreAuthorize("@autorizador.moduloHabilitado('comercial') and @autorizador.tiene('canal_venta','listar')")
     public PaginaResponse<CanalVentaDto> listar(
             @RequestParam(name = "filtro", required = false) String filtro,
+            @RequestParam(name = "estado", required = false) String estado,
             @RequestParam(name = "page", required = false) Integer page,
             @RequestParam(name = "size", required = false) Integer size) {
         Pageable pageable = PageRequestFactory.acotando(page, size);
-        return PaginaResponse.de(servicioCanalesVenta.listarCanales(filtro, pageable));
+        // estado: "activo" (por defecto), "inactivo" o "todos". Un valor no
+        // reconocido cae al comportamiento por defecto (solo activos). Poder listar
+        // inactivos habilita reactivarlos desde la interfaz (Req 63.1).
+        Boolean activo = switch (estado == null ? "" : estado.trim().toLowerCase()) {
+            case "inactivo" -> Boolean.FALSE;
+            case "todos" -> null;
+            default -> Boolean.TRUE;
+        };
+        return PaginaResponse.de(servicioCanalesVenta.listarCanales(filtro, activo, pageable));
     }
 }

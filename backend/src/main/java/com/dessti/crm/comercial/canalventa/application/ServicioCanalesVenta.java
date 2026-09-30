@@ -150,6 +150,40 @@ public class ServicioCanalesVenta {
     }
 
     /**
+     * Reactiva un Canal_Venta dado de baja logica del tenant (Req 63.1): vuelve a
+     * marcarlo {@code activo=true} conservando sus datos y audita. Operacion
+     * simetrica a {@link #desactivarCanal(UUID)}.
+     *
+     * <p>Al reactivar, el nombre vuelve a participar del indice unico parcial de
+     * activos (V15); se rechaza con 409 si <em>otro</em> canal activo ya lo usa
+     * (Req 23.6). Un canal ya activo se rechaza con 422.</p>
+     *
+     * @param canalId identificador del canal.
+     * @return el DTO del canal reactivado.
+     * @throws RecursoNoEncontradoException si no existe o es de otro tenant (404).
+     * @throws ReglaNegocioException si el canal ya esta activo (422).
+     * @throws ConflictoUnicidadException si otro canal activo ya usa el nombre (409).
+     */
+    @Transactional
+    public CanalVentaDto reactivarCanal(UUID canalId) {
+        String actor = actorActual();
+        CanalVenta canal = cargarCanalCualquiera(canalId, actor);
+        if (canal.isActivo()) {
+            throw new ReglaNegocioException("El canal de venta ya esta activo.");
+        }
+        if (canalVentaRepository.existePorNombreActivo(normalizar(canal.getNombre()))) {
+            throw new ConflictoUnicidadException(
+                    "No se puede reactivar: ya existe un canal de venta activo con el nombre '"
+                            + canal.getNombre() + "'.");
+        }
+        canal.reactivar(actor);
+        CanalVenta guardado = guardarTraduciendoUnicidad(canal);
+        auditar(actor, "reactivar", guardado.getId(),
+                "reactivado canal de venta '" + guardado.getNombre() + "'");
+        return CanalVentaDto.de(guardado);
+    }
+
+    /**
      * Consulta puntual de un Canal_Venta activo del tenant (Req 4.3, 23.3).
      *
      * @param canalId identificador del canal.
@@ -163,18 +197,20 @@ public class ServicioCanalesVenta {
     }
 
     /**
-     * Listado paginado de Canales de Venta activos del tenant, filtrable por
-     * nombre sin distinguir mayusculas (Req 63.1). Un filtro nulo/blanco lista
-     * todos los canales activos.
+     * Listado paginado de Canales de Venta del tenant, filtrable por nombre sin
+     * distinguir mayusculas (Req 63.1) y por estado. Poder listar inactivos
+     * habilita reactivarlos desde la interfaz (Req 63.1).
      *
      * @param filtro   subcadena a buscar en el nombre; {@code null}/blanco lista todos.
+     * @param activo   {@code true}=activos (por defecto), {@code false}=inactivos,
+     *                 {@code null}=todos.
      * @param pageable parametros de paginacion ya acotados (20/100).
-     * @return la pagina de canales activos como DTOs.
+     * @return la pagina de canales como DTOs.
      */
     @Transactional(readOnly = true)
-    public Page<CanalVentaDto> listarCanales(String filtro, Pageable pageable) {
+    public Page<CanalVentaDto> listarCanales(String filtro, Boolean activo, Pageable pageable) {
         String criterio = (filtro == null) ? "" : normalizar(filtro.strip());
-        return canalVentaRepository.buscarActivosPorNombre(criterio, pageable)
+        return canalVentaRepository.buscarPorNombreYEstado(criterio, activo, pageable)
                 .map(CanalVentaDto::de);
     }
 
@@ -187,6 +223,23 @@ public class ServicioCanalesVenta {
             throw new RecursoNoEncontradoException("No se encontro el canal de venta solicitado.");
         }
         return canalVentaRepository.findByIdAndActivoTrue(canalId)
+                .orElseGet(() -> {
+                    auditarAccesoCruzado(actor, RECURSO_CANAL_VENTA, canalId);
+                    throw new RecursoNoEncontradoException("No se encontro el canal de venta solicitado.");
+                });
+    }
+
+    /**
+     * Carga un Canal_Venta por id dentro del tenant vigente <strong>sin</strong>
+     * exigir que este activo (para reactivar uno dado de baja, Req 63.1); si no es
+     * accesible (inexistente o de otro tenant) audita el intento y lanza 404
+     * (Req 23.3).
+     */
+    private CanalVenta cargarCanalCualquiera(UUID canalId, String actor) {
+        if (canalId == null) {
+            throw new RecursoNoEncontradoException("No se encontro el canal de venta solicitado.");
+        }
+        return canalVentaRepository.findById(canalId)
                 .orElseGet(() -> {
                     auditarAccesoCruzado(actor, RECURSO_CANAL_VENTA, canalId);
                     throw new RecursoNoEncontradoException("No se encontro el canal de venta solicitado.");

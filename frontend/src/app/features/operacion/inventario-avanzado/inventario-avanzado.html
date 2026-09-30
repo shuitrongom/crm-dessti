@@ -276,7 +276,7 @@
                       <input matInput type="number" formControlName="costoUnitario" min="0" required />
                     </mat-form-field>
                     <mat-form-field appearance="outline">
-                      <mat-label>Codigo de lote (opcional)</mat-label>
+                      <mat-label>Código de lote (opcional)</mat-label>
                       <input matInput type="text" formControlName="loteCodigo" />
                     </mat-form-field>
                     @if (errorEntrada()) {
@@ -318,7 +318,7 @@
                       <input matInput type="number" formControlName="cantidad" min="0" required />
                     </mat-form-field>
                     <mat-form-field appearance="outline">
-                      <mat-label>Codigo de lote (opcional)</mat-label>
+                      <mat-label>Código de lote (opcional)</mat-label>
                       <input matInput type="text" formControlName="loteCodigo" />
                     </mat-form-field>
                     @if (errorSalida()) {
@@ -491,10 +491,10 @@
             <mat-card-content>
               <form class="inventario-avanzado__lote-form" [formGroup]="formLote" (ngSubmit)="crearLote()" novalidate>
                 <mat-form-field appearance="outline">
-                  <mat-label>Codigo de lote</mat-label>
+                  <mat-label>Código de lote</mat-label>
                   <input matInput type="text" formControlName="codigo" required />
                   @if (formLote.controls.codigo.hasError('required') && formLote.controls.codigo.touched) {
-                    <mat-error>El codigo es obligatorio.</mat-error>
+                    <mat-error>El código es obligatorio.</mat-error>
                   }
                 </mat-form-field>
                 <mat-form-field appearance="outline">
@@ -576,7 +576,7 @@
                 [detalleDe]="detalleMaterial"
               />
               <mat-form-field appearance="outline">
-                <mat-label>Metodo de costeo</mat-label>
+                <mat-label>Método de costeo</mat-label>
                 <mat-select formControlName="metodoCosteo" required>
                   @for (opcion of metodosCosteo; track opcion.valor) {
                     <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>
@@ -584,10 +584,10 @@
                 </mat-select>
               </mat-form-field>
               <mat-form-field appearance="outline">
-                <mat-label>Stock maximo (opcional)</mat-label>
+                <mat-label>Stock máximo (opcional)</mat-label>
                 <input matInput type="number" formControlName="stockMaximo" min="0" />
                 @if (formConfig.controls.stockMaximo.hasError('min')) {
-                  <mat-error>El stock maximo no puede ser negativo.</mat-error>
+                  <mat-error>El stock máximo no puede ser negativo.</mat-error>
                 }
               </mat-form-field>
               <mat-slide-toggle formControlName="controlLote">Control por lote</mat-slide-toggle>

@@ -128,6 +128,15 @@
              (keyup.enter)="aplicarFiltro($any($event.target).value)"
              placeholder="Escribe y presiona Enter" />
     </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Estado</mat-label>
+      <mat-select [value]="estadoFiltro()" (valueChange)="cambiarEstadoFiltro($event)">
+        <mat-option value="activo">Activos</mat-option>
+        <mat-option value="inactivo">Inactivos</mat-option>
+        <mat-option value="todos">Todos</mat-option>
+      </mat-select>
+    </mat-form-field>
   </div>
 
   <app-data-table
@@ -162,19 +171,26 @@
     </ng-template>
     <ng-template appCelda="alta" let-r>{{ r.createdAt | date: 'dd/MM/yyyy' }}</ng-template>
     <ng-template appCelda="acciones" let-r>
-      @if (puedeActualizar && r.activo) {
+      @if (puedeActualizar) {
         <button matIconButton [matMenuTriggerFor]="menu" aria-label="Acciones del proveedor">
           <mat-icon>more_vert</mat-icon>
         </button>
         <mat-menu #menu="matMenu">
-          <button mat-menu-item type="button" (click)="editar(r)">
-            <mat-icon>edit</mat-icon>
-            <span>Editar</span>
-          </button>
-          <button mat-menu-item type="button" (click)="desactivar(r)">
-            <mat-icon>block</mat-icon>
-            <span>Dar de baja</span>
-          </button>
+          @if (r.activo) {
+            <button mat-menu-item type="button" (click)="editar(r)">
+              <mat-icon>edit</mat-icon>
+              <span>Editar</span>
+            </button>
+            <button mat-menu-item type="button" (click)="desactivar(r)">
+              <mat-icon>block</mat-icon>
+              <span>Dar de baja</span>
+            </button>
+          } @else {
+            <button mat-menu-item type="button" (click)="reactivar(r)">
+              <mat-icon>restart_alt</mat-icon>
+              <span>Reactivar</span>
+            </button>
+          }
         </mat-menu>
       } @else {
         <span class="compras-ayuda">-</span>

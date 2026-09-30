@@ -9,11 +9,18 @@
 // detalle. La accion se gobierna por el permiso cotizacion:crear.
 // =============================================================================
 
-import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  computed,
+  inject,
+  signal,
+  DestroyRef,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -52,6 +59,17 @@ import {
 /** Numero maximo de partidas por Cotizacion (Req 6.2). */
 const MAX_PARTIDAS = 500;
 
+/**
+ * Estado de la sugerencia de precio de una partida (Req 59.4). Alimenta el aviso
+ * de la UI para que el importe no aparente ser cero mientras se arma la cotizacion:
+ *  - `sugiriendo`: se esta consultando el precio de lista del Producto;
+ *  - `aplicado`: se coloco el precio de lista sugerido en el control;
+ *  - `sin-precio`: el Producto no tiene precio de lista vigente (capturar manual);
+ *  - `manual`: el Usuario capturo/ajusto el precio a mano (no se sugiere);
+ *  - `''` (vacio): sin Producto o sin estado.
+ */
+type EstadoPrecio = 'sugiriendo' | 'aplicado' | 'sin-precio' | 'manual' | '';
+
 @Component({
   selector: 'app-comercial-cotizacion-nueva',
   imports: [
@@ -79,6 +97,17 @@ export class ComercialCotizacionNueva {
   private readonly productos = inject(ProductosService);
   private readonly toast = inject(NotificacionesService);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
+
+  /**
+   * Estado de la sugerencia de precio por partida, indexado por el FormGroup de la
+   * partida. Es un signal (no un valor de FormControl leido en el template) para
+   * que la vista lo lea de forma estable dentro de un ciclo de deteccion: al ser
+   * signal, un cambio agenda un ciclo nuevo y no dispara NG0100
+   * (ExpressionChangedAfterItHasBeenChecked). Se indexa por FormGroup para que el
+   * estado viaje con la partida aunque cambie de posicion.
+   */
+  private readonly estados = signal(new Map<FormGroup, EstadoPrecio>());
 
   protected readonly guardando = signal(false);
   protected readonly maxPartidas = MAX_PARTIDAS;
@@ -149,9 +178,13 @@ export class ComercialCotizacionNueva {
     return this.form.get('partidas') as FormArray;
   }
 
-  /** Crea un FormGroup de partida con validaciones de campo. */
+  /**
+   * Crea un FormGroup de partida con validaciones de campo. Incluye un control
+   * auxiliar `estadoPrecio` (no se envia al backend) que registra el estado de la
+   * sugerencia de precio de la partida y viaja con ella aunque cambie de indice.
+   */
   private crearPartida(): FormGroup {
-    return this.fb.nonNullable.group({
+    const grupo = this.fb.nonNullable.group({
       productoId: [''],
       descripcion: ['', [Validators.required, Validators.maxLength(500)]],
       cantidad: [1, [Validators.required, Validators.min(1), Validators.max(999999)]],
@@ -160,6 +193,95 @@ export class ComercialCotizacionNueva {
       descuento: [null as number | null, [Validators.min(0), Validators.max(999999999.99)]],
       tasaIva: [TASA_IVA_POR_DEFECTO as TasaIva],
     });
+
+    // Al elegir un Producto se consulta su precio de lista vigente y se coloca
+    // como sugerencia (Req 59.4), de modo que el subtotal deje de verse en cero.
+    // No se pisa un precio ya capturado por el Usuario.
+    grupo
+      .get('productoId')!
+      .valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((productoId) => this.resolverPrecioSugerido(grupo, productoId as string | null));
+
+    // Si el Usuario captura/ajusta el precio a mano (no por la sugerencia), se
+    // marca como manual para no volver a pisarlo mientras conserve ese Producto.
+    grupo
+      .get('precioUnitario')!
+      .valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        if (this.estadoDe(grupo) !== 'sugiriendo') {
+          this.fijarEstado(grupo, 'manual');
+        }
+      });
+
+    return grupo;
+  }
+
+  /**
+   * Consulta el precio de lista vigente del Producto elegido y lo coloca como
+   * sugerencia en la partida cuando el precio esta vacio (Req 59.4, 59.9). Si el
+   * Producto no tiene precio de lista, se marca `sin-precio` para que el Usuario
+   * lo capture. Un precio ya capturado a mano no se sobrescribe.
+   */
+  private resolverPrecioSugerido(grupo: FormGroup, productoId: string | null): void {
+    const control = grupo.get('precioUnitario')!;
+    const idLimpio = (productoId ?? '').trim();
+    if (!idLimpio) {
+      this.fijarEstado(grupo, '');
+      return;
+    }
+    // No pisar un precio que el Usuario ya capturo manualmente.
+    if (control.value != null && this.estadoDe(grupo) === 'manual') {
+      return;
+    }
+    this.fijarEstado(grupo, 'sugiriendo');
+    this.productos
+      .precioSugerido(idLimpio)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (sugerencia) => {
+          // Si mientras cargaba cambio el Producto de esta partida, se ignora.
+          if ((grupo.get('productoId')!.value ?? '').trim() !== idLimpio) {
+            return;
+          }
+          if (sugerencia.disponible && sugerencia.precioSugerido != null) {
+            control.setValue(sugerencia.precioSugerido, { emitEvent: false });
+            control.markAsDirty();
+            this.fijarEstado(grupo, 'aplicado');
+          } else {
+            this.fijarEstado(grupo, 'sin-precio');
+          }
+        },
+        error: () => {
+          // Ante un fallo de red no se bloquea el flujo: el Usuario captura el
+          // precio a mano. Se limpia el estado para no mostrar un aviso erroneo.
+          this.fijarEstado(grupo, '');
+        },
+      });
+  }
+
+  /** Lee el estado de sugerencia de precio de una partida desde el signal. */
+  private estadoDe(grupo: FormGroup): EstadoPrecio {
+    return this.estados().get(grupo) ?? '';
+  }
+
+  /**
+   * Fija el estado de sugerencia de precio de una partida en el signal. Se crea un
+   * Map nuevo (referencia nueva) para que el signal notifique el cambio y la vista
+   * lo lea de forma estable en el siguiente ciclo (sin NG0100).
+   */
+  private fijarEstado(grupo: FormGroup, estado: EstadoPrecio): void {
+    const copia = new Map(this.estados());
+    if (estado === '') {
+      copia.delete(grupo);
+    } else {
+      copia.set(grupo, estado);
+    }
+    this.estados.set(copia);
+  }
+
+  /** Estado de sugerencia de precio de una partida por indice (para la vista). */
+  estadoPrecioDe(indice: number): EstadoPrecio {
+    return this.estadoDe(this.partidas.at(indice) as FormGroup);
   }
 
   /** Importe bruto previsualizado de una partida por indice (cantidad * precio). */

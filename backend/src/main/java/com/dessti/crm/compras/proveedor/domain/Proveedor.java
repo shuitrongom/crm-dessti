@@ -144,6 +144,21 @@ public class Proveedor extends TenantScopedEntity {
     }
 
     /**
+     * Reactiva un Proveedor dado de baja logica: marca {@code activo=true}
+     * conservando sus datos (Req 29.5, simetrico a {@link #desactivar(String)}).
+     * Al volver a estar activo, su RFC vuelve a participar del indice unico parcial
+     * {@code uq_proveedor_rfc_activo_por_tenant} (V28); por eso la reactivacion se
+     * rechaza en la capa de aplicacion si otro Proveedor activo ya usa ese RFC
+     * (Req 29.2). No modifica los demas datos.
+     *
+     * @param actor identificador de quien reactiva, para {@code updated_by}.
+     */
+    public void reactivar(String actor) {
+        this.activo = true;
+        this.setUpdatedBy(actor);
+    }
+
+    /**
      * Indica si el Proveedor esta activo (no dado de baja logica, Req 29.5).
      *
      * @return {@code true} si el Proveedor esta activo.

@@ -34,11 +34,22 @@
   </section>
 }
 
-<mat-form-field appearance="outline" class="comercial-filtro">
-  <mat-label>Buscar por nombre</mat-label>
-  <input matInput type="search" [value]="filtro()" (change)="aplicarFiltro($any($event.target).value)" />
-  <mat-icon matSuffix aria-hidden="true">search</mat-icon>
-</mat-form-field>
+<div class="comercial-filtros">
+  <mat-form-field appearance="outline" class="comercial-filtro">
+    <mat-label>Buscar por nombre</mat-label>
+    <input matInput type="search" [value]="filtro()" (change)="aplicarFiltro($any($event.target).value)" />
+    <mat-icon matSuffix aria-hidden="true">search</mat-icon>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Estado</mat-label>
+    <mat-select [value]="estadoFiltro()" (valueChange)="cambiarEstadoFiltro($event)">
+      <mat-option value="activo">Activos</mat-option>
+      <mat-option value="inactivo">Inactivos</mat-option>
+      <mat-option value="todos">Todos</mat-option>
+    </mat-select>
+  </mat-form-field>
+</div>
 
 <app-state-container
   [fase]="fase()"
@@ -56,24 +67,44 @@
   >
     <ng-template appCelda="nombre" let-fila>{{ fila.nombre }}</ng-template>
     <ng-template appCelda="descripcion" let-fila>{{ fila.descripcion || '—' }}</ng-template>
+    <ng-template appCelda="estado" let-fila>
+      <span
+        class="canal-estado"
+        [class.canal-estado--activo]="fila.activo"
+        [class.canal-estado--inactivo]="!fila.activo"
+      >
+        <mat-icon class="canal-estado-icono" [attr.aria-label]="fila.activo ? 'Activo' : 'Inactivo'">
+          {{ fila.activo ? 'check_circle' : 'block' }}
+        </mat-icon>
+        {{ fila.activo ? 'Activo' : 'Inactivo' }}
+      </span>
+    </ng-template>
     <ng-template appCelda="acciones" let-fila>
       <div class="comercial-acciones-fila">
-        @if (puedeActualizar) {
-          <button matIconButton type="button" (click)="editar(fila)" matTooltip="Editar" aria-label="Editar canal">
-            <mat-icon aria-hidden="true">edit</mat-icon>
-          </button>
-        }
-        @if (puedeEliminar) {
-          <button
-            matIconButton
-            type="button"
-            class="ds-boton-destructivo"
-            (click)="eliminar(fila)"
-            matTooltip="Dar de baja"
-            aria-label="Dar de baja canal"
-          >
-            <mat-icon aria-hidden="true">delete</mat-icon>
-          </button>
+        @if (fila.activo) {
+          @if (puedeActualizar) {
+            <button matIconButton type="button" (click)="editar(fila)" matTooltip="Editar" aria-label="Editar canal">
+              <mat-icon aria-hidden="true">edit</mat-icon>
+            </button>
+          }
+          @if (puedeEliminar) {
+            <button
+              matIconButton
+              type="button"
+              class="ds-boton-destructivo"
+              (click)="eliminar(fila)"
+              matTooltip="Dar de baja"
+              aria-label="Dar de baja canal"
+            >
+              <mat-icon aria-hidden="true">toggle_off</mat-icon>
+            </button>
+          }
+        } @else {
+          @if (puedeActualizar) {
+            <button matIconButton type="button" (click)="reactivar(fila)" matTooltip="Reactivar" aria-label="Reactivar canal">
+              <mat-icon aria-hidden="true">restart_alt</mat-icon>
+            </button>
+          }
         }
       </div>
     </ng-template>

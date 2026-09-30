@@ -15,6 +15,7 @@ import { DatePipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -51,6 +52,7 @@ import { Proveedor } from '../models/compras.models';
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
+    MatSelectModule,
     MatButtonModule,
     MatIconModule,
     MatMenuModule,
@@ -89,6 +91,8 @@ export class ComprasProveedores {
   protected readonly page = signal(0);
   protected readonly size = signal(20);
   protected readonly filtro = signal('');
+  /** Filtro de estado del listado: activos (por defecto), inactivos o todos. */
+  protected readonly estadoFiltro = signal<'activo' | 'inactivo' | 'todos'>('activo');
   protected readonly guardando = signal(false);
   protected readonly mostrarForm = signal(false);
   /** Id del proveedor en edición; null en alta. */
@@ -112,13 +116,22 @@ export class ComprasProveedores {
 
   cargar(): void {
     this.estado.set(cargando());
-    this.service.listarProveedores(this.filtro() || null, this.page(), this.size()).subscribe({
-      next: (pagina) => {
-        this.total.set(pagina.totalElements);
-        this.estado.set(conDatos(pagina.content, pagina.content.length === 0));
-      },
-      error: (e: HttpErrorResponse) => this.estado.set(conError(mensajeDeError(e))),
-    });
+    this.service
+      .listarProveedores(this.filtro() || null, this.page(), this.size(), this.estadoFiltro())
+      .subscribe({
+        next: (pagina) => {
+          this.total.set(pagina.totalElements);
+          this.estado.set(conDatos(pagina.content, pagina.content.length === 0));
+        },
+        error: (e: HttpErrorResponse) => this.estado.set(conError(mensajeDeError(e))),
+      });
+  }
+
+  /** Cambia el filtro de estado (activo/inactivo/todos) y recarga desde la pagina 0. */
+  cambiarEstadoFiltro(estado: 'activo' | 'inactivo' | 'todos'): void {
+    this.estadoFiltro.set(estado);
+    this.page.set(0);
+    this.cargar();
   }
 
   cambiarPagina(evento: CambioPagina): void {
@@ -267,6 +280,37 @@ export class ComprasProveedores {
           this.cargar();
         },
         error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
+      });
+  }
+
+  /** Reactiva un proveedor dado de baja (Req 29.5), con confirmación. */
+  async reactivar(proveedor: Proveedor): Promise<void> {
+    const ok = await this.confirm.confirmar({
+      titulo: 'Reactivar proveedor',
+      mensaje: `El proveedor "${proveedor.nombre}" volverá a estar activo y disponible para nuevas órdenes. ¿Continuar?`,
+      textoConfirmar: 'Reactivar',
+    });
+    if (!ok) {
+      return;
+    }
+    this.overlay
+      .ejecutar(this.service.reactivarProveedor(proveedor.id), {
+        tipo: 'guardar',
+        textoProceso: 'Reactivando…',
+        textoExito: 'Proveedor reactivado',
+      })
+      .subscribe({
+        next: () => {
+          this.toast.exito('Proveedor reactivado.');
+          this.cargar();
+        },
+        error: (e: HttpErrorResponse) => {
+          if (e.status === 409) {
+            this.toast.error('Ya existe un proveedor activo con ese RFC. Edítalo antes de reactivar.');
+            return;
+          }
+          this.toast.error(mensajeDeError(e));
+        },
       });
   }
 }

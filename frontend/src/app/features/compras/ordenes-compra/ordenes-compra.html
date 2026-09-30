@@ -16,19 +16,30 @@
       <form [formGroup]="formAlta" (ngSubmit)="crear()" novalidate>
         <h2 class="compras-alta__titulo">Nueva orden de compra</h2>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Proveedor (identificador)</mat-label>
-          <input matInput formControlName="proveedorId" autocomplete="off" />
-          <mat-error>Indica el identificador del proveedor.</mat-error>
-        </mat-form-field>
+        <app-entity-select
+          formControlName="proveedorId"
+          etiqueta="Proveedor"
+          ayuda="Busca el proveedor por nombre o RFC y elígelo de la lista."
+          placeholder="Busca por nombre o RFC…"
+          [obligatorio]="true"
+          [buscador]="buscarProveedor"
+          [etiquetaDe]="etiquetaProveedor"
+          [detalleDe]="detalleProveedor"
+        />
 
         <div formArrayName="partidas" class="partidas">
           @for (partida of partidas.controls; track $index) {
             <div class="partidas__renglon" [formGroupName]="$index">
-              <mat-form-field appearance="outline">
-                <mat-label>Material</mat-label>
-                <input matInput formControlName="materialId" autocomplete="off" />
-              </mat-form-field>
+              <app-entity-select
+                formControlName="materialId"
+                etiqueta="Material"
+                ayuda="Busca el material por nombre."
+                placeholder="Busca por nombre…"
+                [obligatorio]="true"
+                [buscador]="buscarMaterial"
+                [etiquetaDe]="etiquetaMaterial"
+                [detalleDe]="detalleMaterial"
+              />
               <mat-form-field appearance="outline">
                 <mat-label>Cantidad</mat-label>
                 <input matInput type="number" min="1" max="999999" formControlName="cantidad" />

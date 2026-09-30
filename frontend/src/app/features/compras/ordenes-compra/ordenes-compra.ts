@@ -20,8 +20,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 
+import { Observable } from 'rxjs';
+
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../shared/components/state-container/state-container';
+import { EntitySelect } from '../../../shared/components/entity-select/entity-select';
 import {
   CambioPagina,
   CeldaTablaDirective,
@@ -32,6 +35,7 @@ import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
+import { PaginaResponse } from '../../../core/models/pagina-response';
 import {
   EstadoSolicitud,
   cargando,
@@ -41,8 +45,10 @@ import {
 
 import { EstadoChip } from '../../finanzas-comun/estado-chip/estado-chip';
 import { humanizarEstado, tonoDeEstado } from '../../finanzas-comun/tono-estado';
+import { MaterialesService } from '../../operacion/services/inventario.service';
+import { Material } from '../../operacion/models/operacion.models';
 import { ComprasService } from '../services/compras.service';
-import { OrdenCompra } from '../models/compras.models';
+import { OrdenCompra, Proveedor } from '../models/compras.models';
 
 /** Transiciones ofrecidas por estado actual (el backend valida la maquina). */
 const TRANSICIONES: Record<string, { estado: string; etiqueta: string; destructiva: boolean }[]> = {
@@ -66,6 +72,7 @@ const TRANSICIONES: Record<string, { estado: string; etiqueta: string; destructi
     MatMenuModule,
     PageHeader,
     StateContainer,
+    EntitySelect,
     DataTable,
     CeldaTablaDirective,
     EstadoChip,
@@ -77,12 +84,35 @@ const TRANSICIONES: Record<string, { estado: string; etiqueta: string; destructi
 export class ComprasOrdenesCompra {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(ComprasService);
+  private readonly materiales = inject(MaterialesService);
   private readonly confirm = inject(ConfirmDialogService);
   private readonly toast = inject(NotificacionesService);
   private readonly auth = inject(AuthService);
 
   protected readonly tono = tonoDeEstado;
   protected readonly humanizar = humanizarEstado;
+
+  /** Busca Proveedores activos por nombre/RFC para el selector (sin UUID). */
+  protected readonly buscarProveedor = (filtro: string): Observable<PaginaResponse<Proveedor>> =>
+    this.service.listarProveedores(filtro, 0, 20, 'activo');
+
+  /** Etiqueta principal de un Proveedor en el selector. */
+  protected readonly etiquetaProveedor = (proveedor: Proveedor): string => proveedor.nombre;
+
+  /** Detalle secundario (RFC) de un Proveedor en el selector. */
+  protected readonly detalleProveedor = (proveedor: Proveedor): string | null =>
+    proveedor.rfc || null;
+
+  /** Busca Materiales activos por nombre para el selector de partida (sin UUID). */
+  protected readonly buscarMaterial = (filtro: string): Observable<PaginaResponse<Material>> =>
+    this.materiales.listar(filtro, 'activo', false, 0, 20);
+
+  /** Etiqueta principal de un Material en el selector. */
+  protected readonly etiquetaMaterial = (material: Material): string => material.nombre;
+
+  /** Detalle secundario (unidad) de un Material en el selector. */
+  protected readonly detalleMaterial = (material: Material): string | null =>
+    material.unidadMedida || null;
 
   protected readonly puedeCrear = this.auth.tienePermiso('orden_compra', 'crear');
   protected readonly puedeCambiarEstado = this.auth.tienePermiso('orden_compra', 'cambiar_estado');

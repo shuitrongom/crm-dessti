@@ -4,13 +4,18 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -21,9 +26,14 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.dessti.crm.operacion.inventario.avanzado.application.AlmacenDto;
+import com.dessti.crm.operacion.inventario.avanzado.application.MovimientoAlmacenDto;
 import com.dessti.crm.operacion.inventario.avanzado.application.ServicioInventarioAvanzado;
 import com.dessti.crm.platform.error.RecursoNoEncontradoException;
 import com.dessti.crm.platform.security.MethodSecurityConfig;
@@ -113,6 +123,47 @@ class InventarioAvanzadoControllerTest {
 
         mockMvc.perform(delete("/inventario-avanzado/almacenes/{id}", ALMACEN_ID)
                         .with(user("sin_permiso")).with(csrf()))
+                .andExpect(status().isForbidden());
+    }
+
+    private static final UUID MATERIAL_ID = UUID.fromString("55555555-5555-5555-5555-555555555555");
+
+    private static MovimientoAlmacenDto movimientoDto() {
+        Instant ahora = Instant.parse("2024-05-02T10:00:00Z");
+        return new MovimientoAlmacenDto(
+                UUID.fromString("66666666-6666-6666-6666-666666666666"),
+                ALMACEN_ID, MATERIAL_ID, null, "entrada",
+                new BigDecimal("10.000"), new BigDecimal("5.0000"), new BigDecimal("50.0000"),
+                new BigDecimal("10.000"), new BigDecimal("50.0000"), null, null, 0L, ahora);
+    }
+
+    @Test
+    void consultarKardex_sinRangoDeFechas_devuelve200_yPasaFechasNulasAlServicio() throws Exception {
+        when(autorizador.tiene("kardex", "leer")).thenReturn(true);
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<MovimientoAlmacenDto> pagina = new PageImpl<>(List.of(movimientoDto()), pageable, 1);
+        // El controller no envia desde/hasta cuando no vienen en la peticion: el
+        // servicio los recibe null (caso que disparaba el error del bind de fecha).
+        when(servicio.consultarKardex(eq(ALMACEN_ID), eq(MATERIAL_ID), isNull(), isNull(),
+                any(Pageable.class))).thenReturn(pagina);
+
+        mockMvc.perform(get(
+                        "/inventario-avanzado/almacenes/{almacenId}/materiales/{materialId}/kardex",
+                        ALMACEN_ID, MATERIAL_ID).with(user("almacen")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].tipo").value("entrada"))
+                .andExpect(jsonPath("$.totalElements").value(1));
+    }
+
+    @Test
+    void consultarKardex_devuelve403_cuandoFaltaPermiso() throws Exception {
+        when(autorizador.tiene(anyString(), anyString())).thenReturn(false);
+
+        mockMvc.perform(get(
+                        "/inventario-avanzado/almacenes/{almacenId}/materiales/{materialId}/kardex",
+                        ALMACEN_ID, MATERIAL_ID).with(user("sin_permiso")))
                 .andExpect(status().isForbidden());
     }
 

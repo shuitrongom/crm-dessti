@@ -155,6 +155,46 @@ public class ServicioProveedores {
     }
 
     /**
+     * Reactiva un Proveedor dado de baja logica del tenant (Req 29.5): vuelve a
+     * marcarlo {@code activo=true} conservando sus datos y audita. Es la operacion
+     * simetrica a {@link #desactivarProveedor(UUID)} y resuelve el hallazgo de que
+     * un Proveedor dado de baja no podia reactivarse.
+     *
+     * <p>Como al reactivar el RFC vuelve a participar del indice unico parcial de
+     * activos (V28), se rechaza con 409 si <em>otro</em> Proveedor activo ya usa
+     * ese RFC (Req 29.2). Un Proveedor ya activo se rechaza con 422 (no hay nada
+     * que reactivar).</p>
+     *
+     * @param proveedorId identificador del Proveedor.
+     * @return el DTO del Proveedor reactivado.
+     * @throws RecursoNoEncontradoException si el Proveedor no existe o pertenece a
+     *         otro tenant (404, Req 23.3).
+     * @throws ReglaNegocioException si el Proveedor ya esta activo (422).
+     * @throws ConflictoUnicidadException si otro Proveedor activo ya usa el RFC
+     *         (409, Req 29.2).
+     */
+    @Transactional
+    public ProveedorDto reactivarProveedor(UUID proveedorId) {
+        String actor = actorActual();
+        Proveedor proveedor = cargarCualquiera(proveedorId, actor);
+        if (proveedor.isActivo()) {
+            throw new ReglaNegocioException("El Proveedor ya esta activo.");
+        }
+        // Al reactivar, el RFC vuelve a competir por el indice de activos: se
+        // rechaza si OTRO Proveedor activo ya lo usa (Req 29.2).
+        if (proveedorRepository.existsByRfcAndActivoTrue(proveedor.getRfc())) {
+            throw new ConflictoUnicidadException(
+                    "No se puede reactivar: ya existe un Proveedor activo con el identificador fiscal '"
+                            + proveedor.getRfc() + "'.");
+        }
+        proveedor.reactivar(actor);
+        Proveedor guardado = guardarTraduciendoUnicidad(proveedor);
+        auditar(actor, "reactivar", guardado.getId(),
+                "reactivado proveedor '" + guardado.getNombre() + "' (rfc=" + guardado.getRfc() + ")");
+        return ProveedorDto.de(guardado);
+    }
+
+    /**
      * Consulta puntual de un Proveedor activo del tenant (Req 23.3). Un Proveedor
      * inexistente, inactivo o de otro tenant produce 404 y se audita el intento
      * como acceso cruzado.
@@ -170,19 +210,21 @@ public class ServicioProveedores {
     }
 
     /**
-     * Listado paginado de Proveedores activos del tenant, filtrable por nombre o
-     * RFC sin distinguir mayusculas (Req 29.3, 29.6). Un filtro nulo o en blanco
-     * devuelve todos los Proveedores activos.
+     * Listado paginado de Proveedores del tenant filtrable por nombre o RFC sin
+     * distinguir mayusculas (Req 29.3, 29.6) y por estado. Poder listar inactivos
+     * habilita reactivarlos desde la interfaz (Req 29.5).
      *
      * @param filtro   subcadena a buscar en nombre o RFC; {@code null}/blanco
      *                 lista todos.
+     * @param activo   {@code true}=activos (por defecto), {@code false}=inactivos,
+     *                 {@code null}=todos.
      * @param pageable parametros de paginacion ya acotados (20/100).
-     * @return la pagina de Proveedores activos como DTOs.
+     * @return la pagina de Proveedores como DTOs.
      */
     @Transactional(readOnly = true)
-    public Page<ProveedorDto> listarProveedores(String filtro, Pageable pageable) {
+    public Page<ProveedorDto> listarProveedores(String filtro, Boolean activo, Pageable pageable) {
         String criterio = (filtro == null) ? "" : filtro.strip().toLowerCase(java.util.Locale.ROOT);
-        return proveedorRepository.buscarActivosPorNombreORfc(criterio, pageable)
+        return proveedorRepository.buscarPorNombreORfcYEstado(criterio, activo, pageable)
                 .map(ProveedorDto::de);
     }
 
@@ -200,6 +242,23 @@ public class ServicioProveedores {
             throw new RecursoNoEncontradoException("No se encontro el Proveedor solicitado.");
         }
         return proveedorRepository.findByIdAndActivoTrue(proveedorId)
+                .orElseGet(() -> {
+                    auditarAccesoCruzado(actor, RECURSO_PROVEEDOR, proveedorId);
+                    throw new RecursoNoEncontradoException("No se encontro el Proveedor solicitado.");
+                });
+    }
+
+    /**
+     * Carga un Proveedor por id dentro del tenant vigente <strong>sin</strong>
+     * exigir que este activo (para reactivar uno dado de baja, Req 29.5); si no es
+     * accesible (inexistente o de otro tenant) audita el intento y lanza 404
+     * (Req 23.3).
+     */
+    private Proveedor cargarCualquiera(UUID proveedorId, String actor) {
+        if (proveedorId == null) {
+            throw new RecursoNoEncontradoException("No se encontro el Proveedor solicitado.");
+        }
+        return proveedorRepository.findById(proveedorId)
                 .orElseGet(() -> {
                     auditarAccesoCruzado(actor, RECURSO_PROVEEDOR, proveedorId);
                     throw new RecursoNoEncontradoException("No se encontro el Proveedor solicitado.");

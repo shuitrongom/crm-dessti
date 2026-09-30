@@ -11,6 +11,7 @@ import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@a
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -43,6 +44,7 @@ import { CanalVentaFormDialog, CanalVentaFormDialogData } from './canal-venta-fo
   imports: [
     MatFormFieldModule,
     MatInputModule,
+    MatSelectModule,
     MatButtonModule,
     MatIconModule,
     MatTooltipModule,
@@ -74,6 +76,8 @@ export class ComercialCanalesVenta {
   protected readonly page = signal(0);
   protected readonly size = signal(20);
   protected readonly filtro = signal('');
+  /** Filtro de estado del listado: activos (por defecto), inactivos o todos. */
+  protected readonly estadoFiltro = signal<'activo' | 'inactivo' | 'todos'>('activo');
 
   /** Numero de Canales activos en la pagina cargada (indicador enterprise). */
   protected readonly canalesActivos = computed<number>(
@@ -83,6 +87,7 @@ export class ComercialCanalesVenta {
   protected readonly columnas: ColumnaTabla[] = [
     { clave: 'nombre', encabezado: 'Nombre' },
     { clave: 'descripcion', encabezado: 'Descripción' },
+    { clave: 'estado', encabezado: 'Estado', alineacion: 'centro' },
     { clave: 'acciones', encabezado: 'Acciones', alineacion: 'fin' },
   ];
 
@@ -92,7 +97,7 @@ export class ComercialCanalesVenta {
 
   cargar(): void {
     this.fase.set('cargando');
-    this.service.listar(this.filtro(), this.page(), this.size()).subscribe({
+    this.service.listar(this.filtro(), this.page(), this.size(), this.estadoFiltro()).subscribe({
       next: (pagina) => {
         this.canales.set(pagina.content);
         this.total.set(pagina.totalElements);
@@ -107,6 +112,13 @@ export class ComercialCanalesVenta {
 
   aplicarFiltro(valor: string): void {
     this.filtro.set(valor);
+    this.page.set(0);
+    this.cargar();
+  }
+
+  /** Cambia el filtro de estado (activo/inactivo/todos) y recarga desde la pagina 0. */
+  cambiarEstadoFiltro(estado: 'activo' | 'inactivo' | 'todos'): void {
+    this.estadoFiltro.set(estado);
     this.page.set(0);
     this.cargar();
   }
@@ -180,6 +192,31 @@ export class ComercialCanalesVenta {
         this.cargar();
       },
       error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
+    });
+  }
+
+  /** Reactiva un canal de venta dado de baja (Req 63.1), con confirmación. */
+  async reactivar(canal: CanalVenta): Promise<void> {
+    const ok = await this.confirm.confirmar({
+      titulo: 'Reactivar canal de venta',
+      mensaje: `El canal "${canal.nombre}" volverá a estar activo y disponible. ¿Continuar?`,
+      textoConfirmar: 'Reactivar',
+    });
+    if (!ok) {
+      return;
+    }
+    this.service.activar(canal.id).subscribe({
+      next: () => {
+        this.toast.exito('Canal reactivado.');
+        this.cargar();
+      },
+      error: (e: HttpErrorResponse) => {
+        if (e.status === 409) {
+          this.toast.error('Ya existe un canal activo con ese nombre. Renómbralo antes de reactivar.');
+          return;
+        }
+        this.toast.error(mensajeDeError(e));
+      },
     });
   }
 }

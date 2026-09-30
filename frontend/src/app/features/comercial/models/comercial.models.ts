@@ -407,6 +407,21 @@ export interface AsignarPrecioRequest {
   precio: number;
 }
 
+/**
+ * Sugerencia de precio de un Producto (PrecioSugeridoDto, Req 59.4, 59.9). Es el
+ * resultado de la regla de seleccion de precio del backend expuesto como consulta,
+ * para previsualizar el precio de lista al armar una Cotizacion antes de guardar.
+ * Si ninguna Lista_Precios vigente aplica, `disponible` es `false` y
+ * `precioSugerido` es `null` (nunca se degrada a 0).
+ */
+export interface PrecioSugerido {
+  productoId: string;
+  precioSugerido: number | null;
+  disponible: boolean;
+  fechaReferencia: string;
+  segmentoCliente: string | null;
+}
+
 /** Canal de venta (CanalVentaDto). */
 export interface CanalVenta {
   id: string;

@@ -144,6 +144,23 @@ public class ProveedorController {
     }
 
     /**
+     * Reactiva un Proveedor dado de baja logica (Req 29.5): lo vuelve a marcar
+     * activo conservando su historico. 200 OK con el {@link ProveedorDto}
+     * reactivado; 404 si no existe o es de otro tenant; 422 si ya estaba activo;
+     * 409 si otro Proveedor activo ya usa su RFC. Se protege con
+     * {@code proveedor:actualizar} (es una modificacion del recurso, no un alta),
+     * coherente con la baja logica.
+     *
+     * @param id identificador del Proveedor.
+     * @return 200 OK con el {@link ProveedorDto} reactivado.
+     */
+    @PutMapping("/{id}/activar")
+    @PreAuthorize("@autorizador.moduloHabilitado('compras') and @autorizador.tiene('proveedor','actualizar')")
+    public ResponseEntity<ProveedorDto> activar(@PathVariable("id") UUID id) {
+        return ResponseEntity.ok(servicioProveedores.reactivarProveedor(id));
+    }
+
+    /**
      * Lista los Proveedores activos del tenant de forma paginada (20 por defecto,
      * 100 maximo) filtrando por nombre o RFC sin distinguir mayusculas (Req 29.3,
      * 29.6). Un {@code filtro} nulo o en blanco lista todos; el {@code size}
@@ -158,9 +175,18 @@ public class ProveedorController {
     @PreAuthorize("@autorizador.moduloHabilitado('compras') and @autorizador.tiene('proveedor','listar')")
     public PaginaResponse<ProveedorDto> listar(
             @RequestParam(name = "filtro", required = false) String filtro,
+            @RequestParam(name = "estado", required = false) String estado,
             @RequestParam(name = "page", required = false) Integer page,
             @RequestParam(name = "size", required = false) Integer size) {
         Pageable pageable = PageRequestFactory.acotando(page, size);
-        return PaginaResponse.de(servicioProveedores.listarProveedores(filtro, pageable));
+        // estado: "activo" (por defecto), "inactivo" o "todos". Un valor no
+        // reconocido cae al comportamiento por defecto (solo activos). Poder listar
+        // inactivos habilita reactivarlos desde la interfaz (Req 29.5).
+        Boolean activo = switch (estado == null ? "" : estado.trim().toLowerCase()) {
+            case "inactivo" -> Boolean.FALSE;
+            case "todos" -> null;
+            default -> Boolean.TRUE;
+        };
+        return PaginaResponse.de(servicioProveedores.listarProveedores(filtro, activo, pageable));
     }
 }

@@ -11,7 +11,7 @@
   <mat-card appearance="outlined" class="cotizacion-nueva__cabecera">
     <mat-card-header>
       <mat-card-title>Datos generales</mat-card-title>
-      <mat-card-subtitle>Cliente, vigencia y condiciones de la cotizacion.</mat-card-subtitle>
+      <mat-card-subtitle>Cliente, vigencia y condiciones de la cotización.</mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
       <app-entity-select
@@ -132,7 +132,15 @@
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>Precio unitario (opcional)</mat-label>
+              <span matTextPrefix>$&nbsp;</span>
               <input matInput type="number" formControlName="precioUnitario" min="0.01" step="0.01" />
+              @if (estadoPrecioDe($index) === 'sugiriendo') {
+                <mat-hint>Buscando precio de lista…</mat-hint>
+              } @else if (estadoPrecioDe($index) === 'aplicado') {
+                <mat-hint>Precio de lista aplicado. Puedes ajustarlo.</mat-hint>
+              } @else if (estadoPrecioDe($index) === 'sin-precio') {
+                <mat-hint>Este producto no tiene precio de lista vigente. Captúralo.</mat-hint>
+              }
               @if (grupo.get('precioUnitario')?.invalid && grupo.get('precioUnitario')?.touched) {
                 <mat-error>El precio debe estar entre 0.01 y 999,999,999.99.</mat-error>
               }
@@ -207,6 +215,6 @@
   </mat-card>
 
   <div class="cotizacion-nueva__pie">
-    <button matButton="filled" type="submit" [disabled]="guardando()">Crear cotizacion</button>
+    <button matButton="filled" type="submit" [disabled]="guardando()">Crear cotización</button>
   </div>
 </form>

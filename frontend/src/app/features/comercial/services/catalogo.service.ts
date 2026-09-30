@@ -21,6 +21,7 @@ import {
   ListaPreciosRequest,
   PrecioProducto,
   PrecioLista,
+  PrecioSugerido,
   Producto,
   ProductoRequest,
 } from '../models/comercial.models';
@@ -81,6 +82,33 @@ export class ProductosService {
   activar(id: string): Observable<Producto> {
     return this.http.put<Producto>(this.api.url(`/productos/${id}/activar`), {});
   }
+
+  /**
+   * Consulta el precio sugerido (de lista) vigente de un Producto (Req 59.4, 59.9)
+   * para previsualizarlo al armar una Cotizacion, sin crearla. Reutiliza la regla
+   * de seleccion del backend. Si ninguna lista vigente aplica, la respuesta trae
+   * `disponible: false` y `precioSugerido: null`.
+   *
+   * @param id       identificador del Producto.
+   * @param segmento segmento del Cliente para preferir su lista; opcional.
+   * @param fecha    fecha de referencia (ISO `yyyy-MM-dd`); opcional, por defecto hoy.
+   */
+  precioSugerido(
+    id: string,
+    segmento?: string | null,
+    fecha?: string | null,
+  ): Observable<PrecioSugerido> {
+    let params = new HttpParams();
+    if (segmento && segmento.trim().length > 0) {
+      params = params.set('segmento', segmento.trim());
+    }
+    if (fecha && fecha.trim().length > 0) {
+      params = params.set('fecha', fecha.trim());
+    }
+    return this.http.get<PrecioSugerido>(this.api.url(`/productos/${id}/precio-sugerido`), {
+      params,
+    });
+  }
 }
 
 @Injectable({ providedIn: 'root' })
@@ -135,14 +163,21 @@ export class CanalesVentaService {
   private readonly http = inject(HttpClient);
   private readonly api = inject(ApiConfigService);
 
-  /** Lista Canales de venta activos de forma paginada, filtrando por nombre (Req 63.1). */
+  /**
+   * Lista Canales de venta de forma paginada, filtrando por nombre y por estado
+   * (Req 63.1). `estado`: 'activo' (por defecto), 'inactivo' o 'todos'. Poder
+   * listar inactivos habilita reactivarlos desde la interfaz.
+   */
   listar(
     filtro: string | null,
     page: number,
     size: number,
+    estado: 'activo' | 'inactivo' | 'todos' = 'activo',
   ): Observable<PaginaResponse<CanalVenta>> {
+    let params = paramsFiltro(filtro, page, size);
+    params = params.set('estado', estado);
     return this.http.get<PaginaResponse<CanalVenta>>(this.api.url('/canales-venta'), {
-      params: paramsFiltro(filtro, page, size),
+      params,
     });
   }
 
@@ -164,5 +199,10 @@ export class CanalesVentaService {
   /** Baja logica de un Canal de venta (Req 63.1). */
   eliminar(id: string): Observable<CanalVenta> {
     return this.http.delete<CanalVenta>(this.api.url(`/canales-venta/${id}`));
+  }
+
+  /** Reactiva un Canal de venta dado de baja (Req 63.1). PUT /{id}/activar. */
+  activar(id: string): Observable<CanalVenta> {
+    return this.http.put<CanalVenta>(this.api.url(`/canales-venta/${id}/activar`), {});
   }
 }

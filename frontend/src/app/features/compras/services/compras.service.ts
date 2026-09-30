@@ -45,8 +45,18 @@ export class ComprasService {
   // Proveedores (Req 29)
   // ---------------------------------------------------------------------------
 
-  listarProveedores(filtro: string | null, page = 0, size = 20): Observable<PaginaResponse<Proveedor>> {
-    let params = new HttpParams().set('page', page).set('size', size);
+  /**
+   * Lista proveedores paginados, filtrando por nombre/RFC y por estado (Req 29.3,
+   * 29.5, 29.6). `estado`: 'activo' (por defecto), 'inactivo' o 'todos'. Poder
+   * listar inactivos habilita reactivarlos desde la interfaz.
+   */
+  listarProveedores(
+    filtro: string | null,
+    page = 0,
+    size = 20,
+    estado: 'activo' | 'inactivo' | 'todos' = 'activo',
+  ): Observable<PaginaResponse<Proveedor>> {
+    let params = new HttpParams().set('page', page).set('size', size).set('estado', estado);
     if (filtro && filtro.trim().length > 0) {
       params = params.set('filtro', filtro.trim());
     }
@@ -63,6 +73,11 @@ export class ComprasService {
 
   desactivarProveedor(id: string): Observable<Proveedor> {
     return this.http.delete<Proveedor>(this.api.url(`/compras/proveedores/${id}`));
+  }
+
+  /** Reactiva un proveedor dado de baja logica (Req 29.5). PUT /{id}/activar. */
+  reactivarProveedor(id: string): Observable<Proveedor> {
+    return this.http.put<Proveedor>(this.api.url(`/compras/proveedores/${id}/activar`), {});
   }
 
   // ---------------------------------------------------------------------------

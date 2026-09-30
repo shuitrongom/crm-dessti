@@ -1,5 +1,5 @@
 <app-page-header
-  titulo="Notas de credito"
+  titulo="Notas de crédito"
   subtitulo="Emite notas de crédito (CFDI de egreso) asociadas a tus facturas ya timbradas."
 >
   @if (puedeCrear) {
@@ -14,7 +14,7 @@
   <mat-card appearance="outlined" class="fact-alta">
     <mat-card-content>
       <form class="ds-dialog-form" [formGroup]="formAlta" (ngSubmit)="emitir()" novalidate>
-        <h2 class="fact-alta__titulo">Emitir nota de credito</h2>
+        <h2 class="fact-alta__titulo">Emitir nota de crédito</h2>
         <mat-form-field appearance="outline">
           <mat-label>Factura (identificador)</mat-label>
           <input matInput formControlName="facturaId" autocomplete="off" />
@@ -34,7 +34,7 @@
 <app-state-container
   [fase]="estado().fase"
   [mensajeError]="estado().mensajeError"
-  mensajeVacio="No hay notas de credito registradas."
+  mensajeVacio="No hay notas de crédito registradas."
   (reintentar)="cargar()"
 >
   @if (hayDatos()) {

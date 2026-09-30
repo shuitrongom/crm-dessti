@@ -68,4 +68,36 @@ public interface CanalVentaRepository extends JpaRepository<CanalVenta, UUID> {
               AND LOWER(c.nombre) LIKE CONCAT('%', :criterio, '%')
             """)
     Page<CanalVenta> buscarActivosPorNombre(@Param("criterio") String criterio, Pageable pageable);
+
+    /**
+     * Busca un Canal_Venta por su identificador dentro del tenant vigente
+     * <strong>sin</strong> exigir que este activo. Sirve para la reactivacion de
+     * un canal dado de baja (Req 63.1): a diferencia de
+     * {@link #findByIdAndActivoTrue(UUID)}, tambien resuelve canales inactivos. Un
+     * canal de otro tenant sigue sin resolverse (aislamiento, Req 23.3).
+     *
+     * @param id identificador del Canal_Venta.
+     * @return el canal (activo o inactivo) del tenant, o vacio.
+     */
+    Optional<CanalVenta> findById(UUID id);
+
+    /**
+     * Listado paginado de Canales de Venta del tenant vigente cuyo nombre contiene
+     * el criterio (sin distinguir mayusculas), filtrable por estado activo/inactivo
+     * o TODOS cuando {@code activo} es {@code null}. Extiende
+     * {@link #buscarActivosPorNombre(String, Pageable)} para poder mostrar y
+     * reactivar los canales dados de baja (Req 63.1).
+     *
+     * @param criterio subcadena a buscar en el nombre (en minusculas).
+     * @param activo   {@code true}=activos, {@code false}=inactivos, {@code null}=todos.
+     * @param pageable parametros de paginacion ya acotados (20/100).
+     * @return la pagina de canales que cumplen el filtro.
+     */
+    @Query("""
+            SELECT c FROM CanalVenta c
+            WHERE LOWER(c.nombre) LIKE CONCAT('%', :criterio, '%')
+              AND (:activo IS NULL OR c.activo = :activo)
+            """)
+    Page<CanalVenta> buscarPorNombreYEstado(@Param("criterio") String criterio,
+                                            @Param("activo") Boolean activo, Pageable pageable);
 }

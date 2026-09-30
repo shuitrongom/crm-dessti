@@ -117,6 +117,20 @@ public class CanalVenta extends TenantScopedEntity {
     }
 
     /**
+     * Reactiva un Canal_Venta dado de baja logica: marca {@code activo=true}
+     * conservando sus datos (Req 63.1, simetrico a {@link #desactivar(String)}).
+     * Al volver a estar activo, su nombre vuelve a participar del indice unico
+     * parcial de activos (V15); por eso la reactivacion se rechaza en la capa de
+     * aplicacion si otro canal activo ya usa ese nombre (Req 23.6).
+     *
+     * @param actor identificador de quien reactiva, para {@code updated_by}.
+     */
+    public void reactivar(String actor) {
+        this.activo = true;
+        this.setUpdatedBy(actor);
+    }
+
+    /**
      * Indica si el Canal_Venta esta activo (no dado de baja logica, Req 63.1).
      *
      * @return {@code true} si el canal esta activo.

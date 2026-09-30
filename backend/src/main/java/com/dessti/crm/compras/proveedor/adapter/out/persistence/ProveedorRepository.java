@@ -78,4 +78,39 @@ public interface ProveedorRepository extends JpaRepository<Proveedor, UUID> {
               )
             """)
     Page<Proveedor> buscarActivosPorNombreORfc(@Param("criterio") String criterio, Pageable pageable);
+
+    /**
+     * Busca un Proveedor por su identificador dentro del tenant vigente
+     * <strong>sin</strong> exigir que este activo. Sirve para la reactivacion de
+     * un Proveedor dado de baja (Req 29.5): a diferencia de
+     * {@link #findByIdAndActivoTrue(UUID)}, tambien resuelve Proveedores inactivos.
+     * Un Proveedor de otro tenant sigue sin resolverse (aislamiento, Req 23.3).
+     *
+     * @param id identificador del Proveedor.
+     * @return el Proveedor (activo o inactivo) del tenant, o vacio.
+     */
+    Optional<Proveedor> findById(UUID id);
+
+    /**
+     * Listado paginado de Proveedores del tenant vigente cuyo nombre o RFC contiene
+     * el criterio (sin distinguir mayusculas), filtrable por estado activo/inactivo
+     * o TODOS cuando {@code activo} es {@code null}. Extiende
+     * {@link #buscarActivosPorNombreORfc(String, Pageable)} para poder mostrar y
+     * reactivar los Proveedores dados de baja (Req 29.5, 29.6).
+     *
+     * @param criterio subcadena a buscar en nombre o RFC (en minusculas).
+     * @param activo   {@code true}=activos, {@code false}=inactivos, {@code null}=todos.
+     * @param pageable parametros de paginacion ya acotados (20/100).
+     * @return la pagina de Proveedores que cumplen el filtro.
+     */
+    @Query("""
+            SELECT p FROM Proveedor p
+            WHERE (
+                    LOWER(p.nombre) LIKE CONCAT('%', :criterio, '%')
+                 OR LOWER(p.rfc)    LIKE CONCAT('%', :criterio, '%')
+              )
+              AND (:activo IS NULL OR p.activo = :activo)
+            """)
+    Page<Proveedor> buscarPorNombreORfcYEstado(@Param("criterio") String criterio,
+                                               @Param("activo") Boolean activo, Pageable pageable);
 }

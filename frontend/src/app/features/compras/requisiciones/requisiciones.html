@@ -14,19 +14,24 @@
   <mat-card appearance="outlined" class="compras-alta">
     <mat-card-content>
     <form [formGroup]="formAlta" (ngSubmit)="crear()" novalidate>
-      <h2 class="compras-alta__titulo">Nueva requisicion</h2>
+      <h2 class="compras-alta__titulo">Nueva requisición</h2>
       <p class="compras-ayuda">
-        Agrega los materiales solicitados. La requisicion se crea en estado borrador.
+        Agrega los materiales solicitados. La requisición se crea en estado borrador.
       </p>
 
       <div formArrayName="partidas" class="partidas">
         @for (partida of partidas.controls; track $index) {
           <div class="partidas__renglon" [formGroupName]="$index">
-            <mat-form-field appearance="outline">
-              <mat-label>Material (identificador)</mat-label>
-              <input matInput formControlName="materialId" autocomplete="off" />
-              <mat-error>Indica el identificador del material.</mat-error>
-            </mat-form-field>
+            <app-entity-select
+              formControlName="materialId"
+              etiqueta="Material"
+              ayuda="Busca el material por nombre y elígelo de la lista."
+              placeholder="Busca por nombre…"
+              [obligatorio]="true"
+              [buscador]="buscarMaterial"
+              [etiquetaDe]="etiquetaMaterial"
+              [detalleDe]="detalleMaterial"
+            />
 
             <mat-form-field appearance="outline">
               <mat-label>Cantidad</mat-label>

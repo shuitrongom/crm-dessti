@@ -1,13 +1,42 @@
+.comercial-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-3);
+  margin-bottom: var(--ds-space-3);
+}
+
 .comercial-filtro {
   width: 100%;
   max-width: 420px;
-  margin-bottom: var(--ds-space-3);
 }
 
 .comercial-acciones-fila {
   display: flex;
   gap: var(--ds-space-1);
   justify-content: flex-end;
+}
+
+// Estado del canal en la tabla: color-token + icono (no solo color, WCAG).
+.canal-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-1);
+  font-weight: 600;
+
+  &--activo {
+    color: var(--ds-color-success, #2e7d4f);
+  }
+
+  &--inactivo {
+    color: var(--ds-color-text-muted, #6b7280);
+  }
+}
+
+.canal-estado-icono {
+  font-size: 1.125rem;
+  width: 1.125rem;
+  height: 1.125rem;
 }
 
 // =============================================================================

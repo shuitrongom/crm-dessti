@@ -130,7 +130,7 @@ describe('Conexiones', () => {
   it('muestra el estado vacio cuando no hay cuentas conectadas', () => {
     resolverLista([]);
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(texto).toContain('Aun no has conectado ninguna cuenta');
+    expect(texto).toContain('Aún no has conectado ninguna cuenta');
   });
 
   it('muestra el estado de error cuando la carga falla', () => {

@@ -11,7 +11,7 @@
 >
   <div class="tes-filtros">
     <mat-form-field appearance="outline">
-      <mat-label>Conciliacion</mat-label>
+      <mat-label>Conciliación</mat-label>
       <mat-select [value]="filtroEstado()" (valueChange)="aplicarFiltro($event)">
         @for (opcion of estadosFiltro; track opcion.valor) {
           <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>

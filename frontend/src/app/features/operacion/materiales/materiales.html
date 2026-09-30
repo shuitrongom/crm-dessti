@@ -98,6 +98,11 @@
           <mat-icon class="materiales-estado-icono" aria-label="Inactivo">block</mat-icon>
           Inactivo
         </span>
+      } @else if (fila.existencias <= 0) {
+        <span class="materiales-estado materiales-estado--sin-existencia">
+          <mat-icon class="materiales-estado-icono" aria-label="Sin existencia">error</mat-icon>
+          Sin existencia
+        </span>
       } @else {
         <span
           class="materiales-estado"

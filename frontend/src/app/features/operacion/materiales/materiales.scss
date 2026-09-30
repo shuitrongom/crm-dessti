@@ -38,6 +38,12 @@
     color: var(--ds-color-warning, #b3760a);
   }
 
+  // Sin existencia (0 unidades): mas grave que stock bajo. Rojo + icono de error
+  // (no solo color, WCAG), para distinguirlo de la simple advertencia de stock.
+  &--sin-existencia {
+    color: var(--ds-color-error, #b3261e);
+  }
+
   &--suficiente {
     color: var(--ds-color-success, #2e7d4f);
   }

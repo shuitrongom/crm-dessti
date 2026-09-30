@@ -176,7 +176,7 @@ class CanalVentaControllerTest {
         when(autorizador.tiene("canal_venta", "listar")).thenReturn(true);
         Pageable pageable = PageRequest.of(0, 20);
         Page<CanalVentaDto> pagina = new PageImpl<>(List.of(canalDto(true)), pageable, 1);
-        when(servicioCanalesVenta.listarCanales(any(), any(Pageable.class))).thenReturn(pagina);
+        when(servicioCanalesVenta.listarCanales(any(), any(), any(Pageable.class))).thenReturn(pagina);
 
         mockMvc.perform(get("/canales-venta").with(user("ventas")))
                 .andExpect(status().isOk())
