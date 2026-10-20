@@ -36,42 +36,51 @@ import com.dessti.crm.platform.security.rbac.AutenticacionActual;
 import com.dessti.crm.platform.tenant.TenantContext;
 
 /**
- * Servicio de aplicacion que gobierna las Cuentas_Por_Cobrar (CxC), los Pagos de
+ * Servicio de aplicacion que gobierna las Cuentas_Por_Cobrar (CxC), los Pagos
+ * de
  * Cliente y el Complemento de Pago (Req 36, 37). Implementa
- * {@link CuentaPorCobrarPort}, la frontera hexagonal que facturacion invoca para
+ * {@link CuentaPorCobrarPort}, la frontera hexagonal que facturacion invoca
+ * para
  * cerrar la integracion con CxC. Replica el patron de
  * {@code ServicioOrdenesFabricacion}/{@code ServicioNotasCredito}.
  *
  * <h2>Operaciones</h2>
  * <ul>
- *   <li><strong>registrarPorFacturaTimbrada (Req 36.1):</strong> al timbrar una
- *       Factura, crea su CxC por el saldo = total. Idempotente: si ya existe una
- *       CxC para esa Factura, no hace nada.</li>
- *   <li><strong>registrarPago (Req 36.2, 36.3, 36.4; Property 13):</strong>
- *       registra un Pago_Cliente y lo aplica a una o varias Facturas; cada
- *       aplicacion disminuye el saldo de la CxC acotada por el saldo (rechazo 422
- *       con excedente si excede, conservando saldos — operacion atomica). Si es
- *       parcialidad/diferido, genera y timbra un Complemento_Pago via el PAC.
- *       Audita el registro y las aplicaciones.</li>
- *   <li><strong>disminuirPorNotaCredito (Req 37.1):</strong> reduce el saldo de la
- *       CxC de una Factura por el monto de una Nota de Credito emitida.</li>
- *   <li><strong>consultarAging (Req 36.5):</strong> antiguedad de saldos por
- *       Cliente clasificada por rango de dias de vencimiento (solo lectura).</li>
- *   <li><strong>consultar / listar (Req 23.3, 36.6):</strong> 404 + auditoria del
- *       intento si no es accesible; listados paginados (20/100) con filtros.</li>
+ * <li><strong>registrarPorFacturaTimbrada (Req 36.1):</strong> al timbrar una
+ * Factura, crea su CxC por el saldo = total. Idempotente: si ya existe una
+ * CxC para esa Factura, no hace nada.</li>
+ * <li><strong>registrarPago (Req 36.2, 36.3, 36.4; Property 13):</strong>
+ * registra un Pago_Cliente y lo aplica a una o varias Facturas; cada
+ * aplicacion disminuye el saldo de la CxC acotada por el saldo (rechazo 422
+ * con excedente si excede, conservando saldos — operacion atomica). Si es
+ * parcialidad/diferido, genera y timbra un Complemento_Pago via el PAC.
+ * Audita el registro y las aplicaciones.</li>
+ * <li><strong>disminuirPorNotaCredito (Req 37.1):</strong> reduce el saldo de
+ * la
+ * CxC de una Factura por el monto de una Nota de Credito emitida.</li>
+ * <li><strong>consultarAging (Req 36.5):</strong> antiguedad de saldos por
+ * Cliente clasificada por rango de dias de vencimiento (solo lectura).</li>
+ * <li><strong>consultar / listar (Req 23.3, 36.6):</strong> 404 + auditoria del
+ * intento si no es accesible; listados paginados (20/100) con filtros.</li>
  * </ul>
  *
  * <h2>Complemento de Pago rechazado (Req 36.4, decision)</h2>
- * <p>Si el PAC rechaza el Timbrado del Complemento_Pago de una parcialidad, la
+ * <p>
+ * Si el PAC rechaza el Timbrado del Complemento_Pago de una parcialidad, la
  * operacion completa se <strong>rechaza con 422</strong> (se revierte la
- * transaccion, conservando saldos) y se audita el rechazo, de modo coherente con el
- * tratamiento del rechazo del PAC en Factura/Nota de Credito (Req 35.2).</p>
+ * transaccion, conservando saldos) y se audita el rechazo, de modo coherente
+ * con el
+ * tratamiento del rechazo del PAC en Factura/Nota de Credito (Req 35.2).
+ * </p>
  *
  * <h2>Aislamiento multi-tenant (Req 23) y auditoria (Req 36.7)</h2>
- * <p>El {@code tenant_id} se deriva del {@link TenantContext} (nunca de la
+ * <p>
+ * El {@code tenant_id} se deriva del {@link TenantContext} (nunca de la
  * peticion, Req 23.4). Cada operacion relevante se audita via
- * {@link AuditoriaPort}. El {@link Clock} inyectado hace deterministas los calculos
- * de antiguedad (Req 36.5).</p>
+ * {@link AuditoriaPort}. El {@link Clock} inyectado hace deterministas los
+ * calculos
+ * de antiguedad (Req 36.5).
+ * </p>
  */
 @Service
 public class ServicioCuentasPorCobrar implements CuentaPorCobrarPort {
@@ -94,12 +103,12 @@ public class ServicioCuentasPorCobrar implements CuentaPorCobrarPort {
     private final PolizaCobroPort polizaCobro;
 
     public ServicioCuentasPorCobrar(CuentaPorCobrarRepository cuentaPorCobrarRepository,
-                                    PagoClienteRepository pagoClienteRepository,
-                                    AplicacionPagoRepository aplicacionPagoRepository,
-                                    PacPort pac,
-                                    AuditoriaPort auditoria,
-                                    Clock clock,
-                                    PolizaCobroPort polizaCobro) {
+            PagoClienteRepository pagoClienteRepository,
+            AplicacionPagoRepository aplicacionPagoRepository,
+            PacPort pac,
+            AuditoriaPort auditoria,
+            Clock clock,
+            PolizaCobroPort polizaCobro) {
         this.cuentaPorCobrarRepository = cuentaPorCobrarRepository;
         this.pagoClienteRepository = pagoClienteRepository;
         this.aplicacionPagoRepository = aplicacionPagoRepository;
@@ -114,13 +123,16 @@ public class ServicioCuentasPorCobrar implements CuentaPorCobrarPort {
     // ------------------------------------------------------------------
 
     /**
-     * Registra la Cuenta_Por_Cobrar de una Factura recien timbrada con saldo = total
-     * (Req 36.1). Idempotente: si ya existe una CxC para la Factura en el tenant, no
+     * Registra la Cuenta_Por_Cobrar de una Factura recien timbrada con saldo =
+     * total
+     * (Req 36.1). Idempotente: si ya existe una CxC para la Factura en el tenant,
+     * no
      * crea otra.
      */
     @Override
     @Transactional
-    public void registrarPorFacturaTimbrada(UUID facturaId, UUID clienteId, BigDecimal total) {
+    public void registrarPorFacturaTimbrada(UUID facturaId, UUID clienteId, BigDecimal total,
+            LocalDate fechaVencimiento) {
         if (facturaId == null) {
             return;
         }
@@ -128,16 +140,19 @@ public class ServicioCuentasPorCobrar implements CuentaPorCobrarPort {
             return; // Idempotencia (Req 36.1).
         }
         String actor = actorActual();
-        CuentaPorCobrar cxc = CuentaPorCobrar.paraFactura(facturaId, clienteId, total, actor);
+        CuentaPorCobrar cxc = CuentaPorCobrar.paraFactura(facturaId, clienteId, total, fechaVencimiento, actor);
         CuentaPorCobrar guardada = cuentaPorCobrarRepository.save(cxc);
         auditar(actor, "crear", RECURSO_CXC, guardada.getId(),
                 "registrada Cuenta_Por_Cobrar por factura timbrada [factura=" + facturaId
-                        + ", saldo=" + guardada.getSaldo().toPlainString() + "]", null, null);
+                        + ", saldo=" + guardada.getSaldo().toPlainString()
+                        + ", vence=" + String.valueOf(guardada.getFechaVencimiento()) + "]",
+                null, null);
     }
 
     /**
      * Disminuye el saldo de la CxC de una Factura por el monto de una Nota de
-     * Credito emitida (Req 37.1). Si no existe CxC para la Factura, no tiene efecto.
+     * Credito emitida (Req 37.1). Si no existe CxC para la Factura, no tiene
+     * efecto.
      */
     @Override
     @Transactional
@@ -165,7 +180,8 @@ public class ServicioCuentasPorCobrar implements CuentaPorCobrarPort {
 
     /**
      * Registra un Pago_Cliente y lo aplica a una o varias Facturas (Req 36.2, 36.3,
-     * 36.4; Property 13). Cada aplicacion disminuye el saldo de la CxC de la Factura
+     * 36.4; Property 13). Cada aplicacion disminuye el saldo de la CxC de la
+     * Factura
      * <em>acotado por el saldo</em>: si el monto excede el saldo pendiente, se
      * rechaza con 422 informando el excedente y, por ser una unica transaccion, se
      * conservan todos los saldos. Si el pago es parcialidad/diferido, se genera y
@@ -173,9 +189,12 @@ public class ServicioCuentasPorCobrar implements CuentaPorCobrarPort {
      *
      * @param comando datos del pago y su desglose de aplicaciones.
      * @return el DTO del Pago_Cliente registrado con sus aplicaciones.
-     * @throws RecursoNoEncontradoException si alguna Factura no tiene CxC accesible (404).
-     * @throws ReglaNegocioException si el pago o las aplicaciones son invalidos, un
-     *         monto excede el saldo (Req 36.3) o el PAC rechaza el complemento (422).
+     * @throws RecursoNoEncontradoException si alguna Factura no tiene CxC accesible
+     *                                      (404).
+     * @throws ReglaNegocioException        si el pago o las aplicaciones son
+     *                                      invalidos, un
+     *                                      monto excede el saldo (Req 36.3) o el
+     *                                      PAC rechaza el complemento (422).
      */
     @Transactional
     public PagoClienteDto registrarPago(RegistrarPagoClienteCommand comando) {
@@ -248,7 +267,8 @@ public class ServicioCuentasPorCobrar implements CuentaPorCobrarPort {
         auditar(actor, "crear", RECURSO_PAGO_CLIENTE, pagoGuardado.getId(),
                 "registrado Pago_Cliente [cliente=" + pagoGuardado.getClienteId() + ", monto="
                         + pagoGuardado.getMonto().toPlainString() + ", parcialidad="
-                        + pagoGuardado.isEsParcialidad() + "]", null, null);
+                        + pagoGuardado.isEsParcialidad() + "]",
+                null, null);
 
         // Req 38.2: poliza de cobro automatica (cargo a bancos, abono a clientes).
         // Degradacion gracil: si el catalogo contable no define las cuentas estandar
@@ -256,8 +276,8 @@ public class ServicioCuentasPorCobrar implements CuentaPorCobrarPort {
         final UUID pagoIdFinal = pagoGuardado.getId();
         final BigDecimal montoFinal = pagoGuardado.getMonto();
         polizaCobro.generarPolizaCobro(
-                        LocalDate.ofInstant(pagoGuardado.getFechaPago(), ZoneOffset.UTC),
-                        pagoIdFinal, montoFinal)
+                LocalDate.ofInstant(pagoGuardado.getFechaPago(), ZoneOffset.UTC),
+                pagoIdFinal, montoFinal)
                 .ifPresentOrElse(
                         polizaId -> auditar(actor, "poliza_cobro", RECURSO_PAGO_CLIENTE, pagoIdFinal,
                                 "poliza de cobro generada [poliza=" + polizaId + "]", null, null),
@@ -350,15 +370,15 @@ public class ServicioCuentasPorCobrar implements CuentaPorCobrarPort {
      */
     @Transactional(readOnly = true)
     public Page<CuentaPorCobrarDto> listarCxC(UUID clienteId, String estado, Pageable pageable) {
-        EstadoCuentaPorCobrar filtro =
-                (estado == null || estado.isBlank()) ? null : interpretarEstado(estado);
+        EstadoCuentaPorCobrar filtro = (estado == null || estado.isBlank()) ? null : interpretarEstado(estado);
         return cuentaPorCobrarRepository.buscarConFiltros(clienteId, filtro, pageable)
                 .map(CuentaPorCobrarDto::de);
     }
 
     /**
      * Calcula la antiguedad de saldos (aging) de las CxC del tenant con saldo
-     * pendiente, agrupada por Cliente y clasificada por rango de dias de vencimiento
+     * pendiente, agrupada por Cliente y clasificada por rango de dias de
+     * vencimiento
      * (Req 36.5). Solo lectura: no muta ninguna CxC. Los dias se miden con el
      * {@link Clock} inyectado desde la fecha de vencimiento (o la de emision cuando
      * no hay vencimiento).
@@ -369,8 +389,7 @@ public class ServicioCuentasPorCobrar implements CuentaPorCobrarPort {
     @Transactional(readOnly = true)
     public AntiguedadSaldosDto consultarAging(UUID clienteId) {
         LocalDate hoy = LocalDate.ofInstant(clock.instant(), ZoneOffset.UTC);
-        List<CuentaPorCobrar> pendientes =
-                cuentaPorCobrarRepository.buscarPendientesParaAging(clienteId);
+        List<CuentaPorCobrar> pendientes = cuentaPorCobrarRepository.buscarPendientesParaAging(clienteId);
 
         Map<UUID, BigDecimal[]> acumulado = new LinkedHashMap<>();
         for (CuentaPorCobrar cxc : pendientes) {
@@ -397,11 +416,12 @@ public class ServicioCuentasPorCobrar implements CuentaPorCobrarPort {
 
     private BigDecimal[] nuevoAcumulador() {
         BigDecimal cero = BigDecimal.ZERO.setScale(ESCALA_MONETARIA, RoundingMode.HALF_UP);
-        return new BigDecimal[] {cero, cero, cero, cero};
+        return new BigDecimal[] { cero, cero, cero, cero };
     }
 
     /**
-     * Dias de antiguedad de una CxC respecto a {@code hoy}: dias transcurridos desde
+     * Dias de antiguedad de una CxC respecto a {@code hoy}: dias transcurridos
+     * desde
      * su fecha de vencimiento, o desde su fecha de emision si no tiene vencimiento.
      * Nunca negativo (una CxC aun no vencida se clasifica en el rango 0-30).
      */
@@ -472,7 +492,7 @@ public class ServicioCuentasPorCobrar implements CuentaPorCobrarPort {
     }
 
     private void auditar(String actor, String accion, String recurso, UUID recursoId,
-                         String detalle, String valorAnterior, String valorNuevo) {
+            String detalle, String valorAnterior, String valorNuevo) {
         auditoria.registrar(EventoAuditoria.deTenant(
                 TenantContext.require(), actor, accion, recurso,
                 detalle + " [id=" + recursoId + "]", valorAnterior, valorNuevo));

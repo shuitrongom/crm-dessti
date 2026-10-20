@@ -21,32 +21,39 @@ import jakarta.persistence.Table;
  * pendiente de cobro de una Factura timbrada, mapeada sobre la tabla
  * {@code cuenta_por_cobrar} de la migracion V31 (Req 36, 37, 23).
  *
- * <p><strong>Multi-tenant (Req 23):</strong> extiende {@link TenantScopedEntity} y
- * hereda {@code tenant_id} (asignado desde el {@code TenantContext} al persistir,
+ * <p>
+ * <strong>Multi-tenant (Req 23):</strong> extiende {@link TenantScopedEntity} y
+ * hereda {@code tenant_id} (asignado desde el {@code TenantContext} al
+ * persistir,
  * nunca desde la peticion, Req 23.4), {@code version} (concurrencia optimista,
  * Req 49) y las marcas de auditoria. El mapeo de columnas coincide
- * <em>exactamente</em> con V31.</p>
+ * <em>exactamente</em> con V31.
+ * </p>
  *
  * <h2>Reglas de dominio (Req 36, 37)</h2>
  * <ul>
- *   <li>{@link #paraFactura} crea la CxC en {@link EstadoCuentaPorCobrar#PENDIENTE}
- *       con {@code saldo == total} cuando la Factura queda timbrada (Req 36.1).</li>
- *   <li>{@link #aplicarPago(BigDecimal, String)} es la <strong>regla de negocio
- *       PURA</strong> que aplica un pago de Cliente acotado por el saldo
- *       (<strong>Property 13</strong>, Req 36.2, 36.3): si el monto no es positivo,
- *       o excede el saldo pendiente, se rechaza con {@link ReglaNegocioException}
- *       <em>sin mutar</em> el saldo (se conserva); en otro caso disminuye el saldo
- *       exactamente por el monto (escala 2, HALF_UP) y deriva el estado.</li>
- *   <li>{@link #disminuir(BigDecimal, String)} reduce el saldo por una Nota de
- *       Credito emitida (Req 37.1); el tope ya lo aplica el submodulo de notas de
- *       credito, pero aqui se acota defensivamente a {@code [0, saldo]}.</li>
- *   <li>{@link #cancelar(String)} transita la CxC a
- *       {@link EstadoCuentaPorCobrar#CANCELADA} (estado final).</li>
+ * <li>{@link #paraFactura} crea la CxC en
+ * {@link EstadoCuentaPorCobrar#PENDIENTE}
+ * con {@code saldo == total} cuando la Factura queda timbrada (Req 36.1).</li>
+ * <li>{@link #aplicarPago(BigDecimal, String)} es la <strong>regla de negocio
+ * PURA</strong> que aplica un pago de Cliente acotado por el saldo
+ * (<strong>Property 13</strong>, Req 36.2, 36.3): si el monto no es positivo,
+ * o excede el saldo pendiente, se rechaza con {@link ReglaNegocioException}
+ * <em>sin mutar</em> el saldo (se conserva); en otro caso disminuye el saldo
+ * exactamente por el monto (escala 2, HALF_UP) y deriva el estado.</li>
+ * <li>{@link #disminuir(BigDecimal, String)} reduce el saldo por una Nota de
+ * Credito emitida (Req 37.1); el tope ya lo aplica el submodulo de notas de
+ * credito, pero aqui se acota defensivamente a {@code [0, saldo]}.</li>
+ * <li>{@link #cancelar(String)} transita la CxC a
+ * {@link EstadoCuentaPorCobrar#CANCELADA} (estado final).</li>
  * </ul>
  *
- * <p>El estado se <strong>deriva del saldo</strong> tras cada aplicacion y la
- * transicion se valida por la maquina de estados pura {@link EstadoCuentaPorCobrar}
- * (409 si es invalida), preservando la coherencia estado&harr;saldo.</p>
+ * <p>
+ * El estado se <strong>deriva del saldo</strong> tras cada aplicacion y la
+ * transicion se valida por la maquina de estados pura
+ * {@link EstadoCuentaPorCobrar}
+ * (409 si es invalida), preservando la coherencia estado&harr;saldo.
+ * </p>
  */
 @Entity
 @Table(name = "cuenta_por_cobrar")
@@ -59,19 +66,30 @@ public class CuentaPorCobrar extends TenantScopedEntity {
     @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
 
-    /** Factura timbrada de origen; una CxC por Factura (UNIQUE en V31) (Req 36.1). */
+    /**
+     * Factura timbrada de origen; una CxC por Factura (UNIQUE en V31) (Req 36.1).
+     */
     @Column(name = "factura_id", nullable = false, updatable = false)
     private UUID facturaId;
 
-    /** Cliente al que se le cobra, para el filtro del listado y el aging (Req 36.5, 36.6). */
+    /**
+     * Cliente al que se le cobra, para el filtro del listado y el aging (Req 36.5,
+     * 36.6).
+     */
     @Column(name = "cliente_id", nullable = false, updatable = false)
     private UUID clienteId;
 
-    /** Total original de la Factura (base del saldo inicial); no negativo (Req 36.1). */
+    /**
+     * Total original de la Factura (base del saldo inicial); no negativo (Req
+     * 36.1).
+     */
     @Column(name = "total", nullable = false, updatable = false)
     private BigDecimal total;
 
-    /** Saldo pendiente de cobro; nunca negativo, acotado a [0, total] (Req 36.2, 36.3). */
+    /**
+     * Saldo pendiente de cobro; nunca negativo, acotado a [0, total] (Req 36.2,
+     * 36.3).
+     */
     @Column(name = "saldo", nullable = false)
     private BigDecimal saldo;
 
@@ -101,11 +119,35 @@ public class CuentaPorCobrar extends TenantScopedEntity {
      * @param clienteId Cliente al que se le cobra; obligatorio.
      * @param total     total de la Factura; obligatorio y no negativo.
      * @param actor     identificador de quien registra (auditoria).
-     * @return la CxC lista para persistir, en {@code pendiente} con {@code saldo == total}.
+     * @return la CxC lista para persistir, en {@code pendiente} con
+     *         {@code saldo == total}.
      * @throws ReglaNegocioException si faltan datos o el total es negativo (422).
      */
     public static CuentaPorCobrar paraFactura(UUID facturaId, UUID clienteId,
-                                              BigDecimal total, String actor) {
+            BigDecimal total, String actor) {
+        return paraFactura(facturaId, clienteId, total, null, actor);
+    }
+
+    /**
+     * Registra una Cuenta_Por_Cobrar para una Factura timbrada con su fecha de
+     * vencimiento (Req 36.1, 36.5). El saldo inicial es el total de la Factura y el
+     * estado es {@link EstadoCuentaPorCobrar#PENDIENTE}. La
+     * {@code fechaVencimiento} se deriva de la fecha de emision mas los dias de
+     * credito del Cliente en el servicio de facturacion (contado si {@code null}).
+     *
+     * @param facturaId        Factura timbrada de origen; obligatoria.
+     * @param clienteId        Cliente al que se le cobra; obligatorio.
+     * @param total            total de la Factura; obligatorio y no negativo.
+     * @param fechaVencimiento fecha de vencimiento para el aging; puede ser
+     *                         {@code null}.
+     * @param actor            identificador de quien registra (auditoria).
+     * @return la CxC lista para persistir, en {@code pendiente} con
+     *         {@code saldo == total}.
+     * @throws ReglaNegocioException si faltan datos o el total es negativo (422).
+     */
+    public static CuentaPorCobrar paraFactura(UUID facturaId, UUID clienteId,
+            BigDecimal total, LocalDate fechaVencimiento,
+            String actor) {
         if (facturaId == null) {
             throw new ReglaNegocioException("La Cuenta_Por_Cobrar debe referenciar una Factura.");
         }
@@ -125,6 +167,7 @@ public class CuentaPorCobrar extends TenantScopedEntity {
         cxc.saldo = totalEscalado;
         cxc.estado = EstadoCuentaPorCobrar.PENDIENTE;
         cxc.fechaEmision = Instant.now();
+        cxc.fechaVencimiento = fechaVencimiento;
         cxc.setCreatedBy(actor);
         cxc.setUpdatedBy(actor);
         return cxc;
@@ -135,14 +178,14 @@ public class CuentaPorCobrar extends TenantScopedEntity {
      * (<strong>Property 13</strong>, Req 36.2, 36.3). Regla de negocio PURA:
      *
      * <ul>
-     *   <li>Si {@code monto} es nulo o no es positivo ({@code <= 0}), se rechaza con
-     *       {@link ReglaNegocioException} y el saldo se conserva.</li>
-     *   <li>Si {@code monto} <strong>excede</strong> el saldo pendiente, se rechaza
-     *       con {@link ReglaNegocioException} cuyo mensaje contiene
-     *       "excede el saldo" y el saldo se conserva <em>sin mutar</em> (Req 36.3).</li>
-     *   <li>En otro caso, el saldo disminuye exactamente por el monto (escala 2,
-     *       HALF_UP), nunca queda negativo, y el estado se deriva del nuevo saldo
-     *       (Req 36.2).</li>
+     * <li>Si {@code monto} es nulo o no es positivo ({@code <= 0}), se rechaza con
+     * {@link ReglaNegocioException} y el saldo se conserva.</li>
+     * <li>Si {@code monto} <strong>excede</strong> el saldo pendiente, se rechaza
+     * con {@link ReglaNegocioException} cuyo mensaje contiene
+     * "excede el saldo" y el saldo se conserva <em>sin mutar</em> (Req 36.3).</li>
+     * <li>En otro caso, el saldo disminuye exactamente por el monto (escala 2,
+     * HALF_UP), nunca queda negativo, y el estado se deriva del nuevo saldo
+     * (Req 36.2).</li>
      * </ul>
      *
      * @param monto monto a aplicar; positivo y {@code <= saldo}.
@@ -164,9 +207,11 @@ public class CuentaPorCobrar extends TenantScopedEntity {
 
     /**
      * Disminuye el saldo por el monto de una Nota de Credito emitida sobre la
-     * Factura (Req 37.1). El tope contra el saldo lo aplica el submodulo de notas de
+     * Factura (Req 37.1). El tope contra el saldo lo aplica el submodulo de notas
+     * de
      * credito; aqui se acota defensivamente a {@code [0, saldo]} de modo que el
-     * saldo nunca quede negativo (si el monto supera el saldo, se descuenta el saldo
+     * saldo nunca quede negativo (si el monto supera el saldo, se descuenta el
+     * saldo
      * restante completo). El estado se deriva del nuevo saldo.
      *
      * @param monto monto de la Nota de Credito; positivo.
@@ -185,7 +230,8 @@ public class CuentaPorCobrar extends TenantScopedEntity {
      * {@link EstadoCuentaPorCobrar#CANCELADA} (estado final).
      *
      * @param actor identificador de quien cancela (auditoria).
-     * @throws TransicionInvalidaException si la CxC ya esta en un estado final (409).
+     * @throws TransicionInvalidaException si la CxC ya esta en un estado final
+     *                                     (409).
      */
     public void cancelar(String actor) {
         transitar(EstadoCuentaPorCobrar.CANCELADA);
