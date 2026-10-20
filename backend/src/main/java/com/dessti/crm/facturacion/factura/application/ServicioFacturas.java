@@ -266,7 +266,11 @@ public class ServicioFacturas {
          * catalogo del SAT (Req 35.4, 35.5). Transita {@code timbrada ->
          * cancelacion_en_proceso}; si el PAC acepta, confirma
          * {@code cancelacion_en_proceso -> cancelada}. El Folio_Fiscal se conserva como
-         * historico inmutable (Req 35.6). Audita el ciclo.
+         * historico inmutable (Req 35.6). Audita el ciclo. Tras confirmar la
+         * cancelacion del CFDI se cancela en cascada la Cuenta_Por_Cobrar de la
+         * Factura via {@link CuentaPorCobrarPort} (Req 35.5); la cascada es
+         * idempotente y degrada sin romper, por lo que no revierte el CFDI ya
+         * cancelado.
          *
          * @param facturaId identificador de la Factura a cancelar.
          * @param motivoSat clave del motivo de cancelacion del SAT; obligatoria (Req
@@ -321,6 +325,11 @@ public class ServicioFacturas {
                 auditar(actor, "cancelar", guardada.getId(),
                                 "factura cancelada [acuse=" + resultado.acuse() + "]",
                                 EstadoFactura.CANCELACION_EN_PROCESO.valorBd(), EstadoFactura.CANCELADA.valorBd());
+                // Req 35.5: al quedar cancelada la Factura, se cancela en cascada su
+                // Cuenta_Por_Cobrar via CuentaPorCobrarPort, dentro de la misma transaccion.
+                // La cascada es idempotente y degrada sin romper (sin CxC o estado final no
+                // lanza), por lo que nunca revierte la cancelacion del CFDI ya confirmada.
+                cuentaPorCobrar.cancelarPorFactura(facturaId);
                 return FacturaDto.de(guardada);
         }
 

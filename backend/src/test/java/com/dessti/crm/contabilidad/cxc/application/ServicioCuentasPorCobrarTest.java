@@ -2,6 +2,7 @@ package com.dessti.crm.contabilidad.cxc.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -12,6 +13,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.AfterEach;
@@ -35,7 +37,8 @@ import com.dessti.crm.platform.tenant.TenantContext;
 /**
  * Pruebas unitarias (Mockito) de {@link ServicioCuentasPorCobrar} centradas en
  * {@code registrarPorFacturaTimbrada} (Req 36.1, 36.5): crea la CxC con la
- * {@code fechaVencimiento} recibida y audita (AC-5/6); respeta la idempotencia de
+ * {@code fechaVencimiento} recibida y audita (AC-5/6); respeta la idempotencia
+ * de
  * {@code existsByFacturaId} (AC-8). No arranca Spring ni base de datos.
  */
 @ExtendWith(MockitoExtension.class)
@@ -46,12 +49,18 @@ class ServicioCuentasPorCobrarTest {
     private static final UUID FACTURA = UUID.fromString("11111111-1111-1111-1111-111111111111");
     private static final UUID CLIENTE = UUID.fromString("22222222-2222-2222-2222-222222222222");
 
-    @Mock private CuentaPorCobrarRepository cuentaPorCobrarRepository;
-    @Mock private PagoClienteRepository pagoClienteRepository;
-    @Mock private AplicacionPagoRepository aplicacionPagoRepository;
-    @Mock private PacPort pac;
-    @Mock private AuditoriaPort auditoria;
-    @Mock private PolizaCobroPort polizaCobro;
+    @Mock
+    private CuentaPorCobrarRepository cuentaPorCobrarRepository;
+    @Mock
+    private PagoClienteRepository pagoClienteRepository;
+    @Mock
+    private AplicacionPagoRepository aplicacionPagoRepository;
+    @Mock
+    private PacPort pac;
+    @Mock
+    private AuditoriaPort auditoria;
+    @Mock
+    private PolizaCobroPort polizaCobro;
 
     private final Clock clock = Clock.fixed(Instant.parse("2025-01-10T12:00:00Z"), ZoneOffset.UTC);
 
@@ -102,5 +111,54 @@ class ServicioCuentasPorCobrarTest {
         verify(cuentaPorCobrarRepository, never()).save(any());
         verify(auditoria, never()).registrar(any());
         verify(cuentaPorCobrarRepository).existsByFacturaId(eq(FACTURA));
+    }
+
+    // ------------------------------------------------------------------
+    // cancelarPorFactura (Req 35.5) — FEAT-003
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("CxC pendiente/parcial -> cancela, guarda y audita 'cancelar' (AC-9)")
+    void cancelaCxCPendiente() {
+        CuentaPorCobrar cxc = CuentaPorCobrar.paraFactura(
+                FACTURA, CLIENTE, new BigDecimal("1160.00"), LocalDate.of(2025, 2, 9), "sistema");
+        when(cuentaPorCobrarRepository.findByFacturaId(FACTURA)).thenReturn(Optional.of(cxc));
+        when(cuentaPorCobrarRepository.save(any(CuentaPorCobrar.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        servicio.cancelarPorFactura(FACTURA);
+
+        ArgumentCaptor<CuentaPorCobrar> captor = ArgumentCaptor.forClass(CuentaPorCobrar.class);
+        verify(cuentaPorCobrarRepository).save(captor.capture());
+        assertThat(captor.getValue().getEstado()).isEqualTo(EstadoCuentaPorCobrar.CANCELADA);
+        verify(auditoria).registrar(argThat(evento -> evento != null && evento.detalle() != null
+                && evento.detalle().contains("cancelada CxC por cancelacion de factura")));
+    }
+
+    @Test
+    @DisplayName("sin CxC para la factura -> audita omision, no guarda, no lanza (AC-10)")
+    void cancelaSinCxC() {
+        when(cuentaPorCobrarRepository.findByFacturaId(FACTURA)).thenReturn(Optional.empty());
+
+        servicio.cancelarPorFactura(FACTURA);
+
+        verify(cuentaPorCobrarRepository, never()).save(any());
+        verify(auditoria).registrar(argThat(evento -> evento != null && evento.detalle() != null
+                && evento.detalle().contains("no existe CxC para la factura")));
+    }
+
+    @Test
+    @DisplayName("CxC en estado final -> audita omision, no guarda, no lanza (AC-10)")
+    void cancelaCxCFinal() {
+        CuentaPorCobrar cxc = CuentaPorCobrar.paraFactura(
+                FACTURA, CLIENTE, new BigDecimal("1160.00"), LocalDate.of(2025, 2, 9), "sistema");
+        cxc.cancelar("sistema"); // estado final: cancelada.
+        when(cuentaPorCobrarRepository.findByFacturaId(FACTURA)).thenReturn(Optional.of(cxc));
+
+        servicio.cancelarPorFactura(FACTURA);
+
+        verify(cuentaPorCobrarRepository, never()).save(any());
+        verify(auditoria).registrar(argThat(evento -> evento != null && evento.detalle() != null
+                && evento.detalle().contains("estado no admite cancelar")));
     }
 }

@@ -24,6 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.dessti.crm.contabilidad.cxc.application.CuentaPorCobrarPort;
 import com.dessti.crm.facturacion.application.PacPort;
+import com.dessti.crm.facturacion.application.ResultadoCancelacion;
 import com.dessti.crm.facturacion.application.ResultadoTimbrado;
 import com.dessti.crm.facturacion.factura.adapter.out.persistence.FacturaRepository;
 import com.dessti.crm.facturacion.factura.domain.DatosFiscalesReceptor;
@@ -150,5 +151,26 @@ class ServicioFacturasTest {
                 // Se audita el fallback a contado por cliente no encontrado.
                 verify(auditoria).registrar(argThat(evento -> evento != null && evento.detalle() != null
                                 && evento.detalle().contains("se asume contado")));
+        }
+
+        // ------------------------------------------------------------------
+        // cancelar: cascada a CxC (Req 35.5) — FEAT-003
+        // ------------------------------------------------------------------
+
+        @Test
+        @DisplayName("cancelar invoca cancelarPorFactura tras confirmar; la degradacion no rompe el CFDI (AC-11)")
+        void cancelarPropagaACxC() {
+                Factura factura = borrador();
+                // Dejar la factura en 'timbrada' para poder cancelarla.
+                factura.timbrar(FOLIO_FISCAL, "SELLO-SAT", FECHA_TIMBRADO, "sistema");
+                when(facturaRepository.findById(eq(factura.getId()))).thenReturn(Optional.of(factura));
+                when(facturaRepository.save(any(Factura.class))).thenAnswer(inv -> inv.getArgument(0));
+                when(pac.cancelar(any())).thenReturn(ResultadoCancelacion.aceptada("ACUSE-1"));
+                // Stub que degrada sin lanzar (comportamiento por defecto del mock: no-op).
+
+                FacturaDto dto = servicio.cancelar(factura.getId(), "02");
+
+                assertThat(dto.estado()).isEqualTo("cancelada");
+                verify(cuentaPorCobrar).cancelarPorFactura(eq(factura.getId()));
         }
 }

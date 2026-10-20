@@ -174,6 +174,39 @@ public class ServicioCuentasPorCobrar implements CuentaPorCobrarPort {
         });
     }
 
+    /**
+     * Cancela en cascada la Cuenta_Por_Cobrar de una Factura al cancelarse el CFDI
+     * (Req 35.5). Idempotente y con degradacion gracil: si no existe CxC para la
+     * Factura o su estado ya es final ({@code pagada}/{@code cancelada}), audita la
+     * omision y retorna sin lanzar, de modo que la cancelacion del CFDI no se
+     * revierte.
+     */
+    @Override
+    @Transactional
+    public void cancelarPorFactura(UUID facturaId) {
+        if (facturaId == null) {
+            return;
+        }
+        String actor = actorActual();
+        cuentaPorCobrarRepository.findByFacturaId(facturaId).ifPresentOrElse(cxc -> {
+            if (cxc.getEstado().esFinal()) {
+                auditar(actor, "cxc_cancelacion_omitida", RECURSO_CXC, cxc.getId(),
+                        "no se cancela la CxC: estado no admite cancelar [factura=" + facturaId
+                                + ", estado=" + cxc.getEstado().valorBd() + "]",
+                        null, null);
+                return;
+            }
+            EstadoCuentaPorCobrar estadoAnterior = cxc.getEstado();
+            cxc.cancelar(actor);
+            CuentaPorCobrar guardada = cuentaPorCobrarRepository.save(cxc);
+            auditar(actor, "cancelar", RECURSO_CXC, guardada.getId(),
+                    "cancelada CxC por cancelacion de factura [factura=" + facturaId + "]",
+                    estadoAnterior.valorBd(), guardada.getEstado().valorBd());
+        }, () -> auditar(actor, "cxc_cancelacion_omitida", RECURSO_CXC, facturaId,
+                "no se cancela la CxC: no existe CxC para la factura [factura=" + facturaId + "]",
+                null, null));
+    }
+
     // ------------------------------------------------------------------
     // Pago de Cliente (Req 36.2, 36.3, 36.4)
     // ------------------------------------------------------------------

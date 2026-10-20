@@ -27,6 +27,10 @@ import java.util.UUID;
  * Credito sobre una Factura, disminuye el saldo de su CxC por el monto
  * (Req 37.1). El tope contra el saldo ya lo aplica el submodulo de notas de
  * credito; la CxC lo acota defensivamente a {@code [0, saldo]}.</li>
+ * <li>{@link #cancelarPorFactura(UUID)} — al cancelar una Factura timbrada,
+ * cancela en cascada su CxC (Req 35.5). Es <strong>idempotente</strong> y
+ * <strong>degrada sin romper</strong>: si no existe CxC para la Factura o su
+ * estado ya es final, no hace nada y nunca lanza.</li>
  * </ul>
  *
  * <p>
@@ -63,4 +67,15 @@ public interface CuentaPorCobrarPort {
      * @param monto     monto de la Nota de Credito a descontar; positivo.
      */
     void disminuirPorNotaCredito(UUID facturaId, BigDecimal monto);
+
+    /**
+     * Cancela en cascada la Cuenta_Por_Cobrar de una Factura al cancelarse el CFDI
+     * (Req 35.5). Es idempotente y degrada sin romper: si no existe una CxC para
+     * {@code facturaId} en el tenant vigente, o su estado ya es final
+     * ({@code pagada}/{@code cancelada}), no tiene efecto y no lanza; la operacion
+     * se audita en todos los casos.
+     *
+     * @param facturaId Factura cuya cancelacion se propaga a su CxC; obligatoria.
+     */
+    void cancelarPorFactura(UUID facturaId);
 }
