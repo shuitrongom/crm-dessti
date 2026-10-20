@@ -123,6 +123,11 @@ export class ClienteFormDialog {
       direccionCp: ['', [Validators.maxLength(10), Validators.pattern(/^\d*$/)]],
       direccionPais: ['', [Validators.maxLength(80)]],
       notas: ['', [Validators.maxLength(MAX_NOTAS)]],
+      // Condiciones de crédito (V90): días obligatorio (default contado = 0),
+      // límite opcional. El límite usa un control explícito que admite null para
+      // sortear el nonNullable del grupo (vacío = sin límite).
+      diasCredito: [0, [Validators.required, Validators.min(0), Validators.max(365)]],
+      limiteCredito: this.fb.control<number | null>(null, { validators: [Validators.min(0)] }),
     },
     { validators: alMenosUnContacto },
   );
@@ -209,6 +214,8 @@ export class ClienteFormDialog {
       direccionCp: cliente.direccionCp ?? '',
       direccionPais: cliente.direccionPais ?? '',
       notas: cliente.notas ?? '',
+      diasCredito: cliente.diasCredito ?? 0,
+      limiteCredito: cliente.limiteCredito ?? null,
     };
   }
 
@@ -235,6 +242,9 @@ export class ClienteFormDialog {
       direccionCp: this.opcional(v.direccionCp),
       direccionPais: this.opcional(v.direccionPais),
       notas: this.opcional(v.notas),
+      diasCredito: Number(v.diasCredito ?? 0),
+      limiteCredito:
+        v.limiteCredito === null || v.limiteCredito === undefined ? null : Number(v.limiteCredito),
     };
   }
 

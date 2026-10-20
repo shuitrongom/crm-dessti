@@ -233,6 +233,64 @@
         </div>
       </div>
     </section>
+
+    <!-- Sección: Condiciones de crédito (two-pane) -->
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Condiciones de crédito</h3>
+        <p class="ds-form__section-desc">
+          Días de crédito para calcular el vencimiento de las facturas y límite de crédito (opcional).
+        </p>
+      </div>
+
+      <div class="ds-form__section-body">
+        <div class="ds-form__grid">
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Días de crédito</mat-label>
+              <input
+                matInput
+                type="number"
+                formControlName="diasCredito"
+                autocomplete="off"
+                inputmode="numeric"
+                min="0"
+                max="365"
+                required
+              />
+              <mat-hint>0 = contado</mat-hint>
+              @if (form.controls.diasCredito.hasError('required') && form.controls.diasCredito.touched) {
+                <mat-error>Los días de crédito son obligatorios.</mat-error>
+              } @else if (form.controls.diasCredito.hasError('min') && form.controls.diasCredito.touched) {
+                <mat-error>Los días de crédito no pueden ser negativos.</mat-error>
+              } @else if (form.controls.diasCredito.hasError('max') && form.controls.diasCredito.touched) {
+                <mat-error>Los días de crédito admiten máximo 365.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="ds-form__field">
+            <mat-form-field appearance="outline">
+              <mat-label>Límite de crédito</mat-label>
+              <input
+                matInput
+                type="number"
+                formControlName="limiteCredito"
+                autocomplete="off"
+                inputmode="decimal"
+                min="0"
+                step="0.01"
+              />
+              <span matTextSuffix>MXN</span>
+              @if (form.controls.limiteCredito.hasError('min') && form.controls.limiteCredito.touched) {
+                <mat-error>El límite de crédito no puede ser negativo.</mat-error>
+              }
+            </mat-form-field>
+            <p class="ds-form__help">Opcional. Déjalo vacío si no aplica un límite.</p>
+          </div>
+        </div>
+      </div>
+    </section>
   </form>
 </mat-dialog-content>
 <mat-dialog-actions align="end">

@@ -52,6 +52,8 @@ interface DialogTest {
       rfc: { hasError(k: string): boolean; setValue(v: string): void };
       telefono: { hasError(k: string): boolean };
       email: { hasError(k: string): boolean };
+      diasCredito: { hasError(k: string): boolean };
+      limiteCredito: { hasError(k: string): boolean };
     };
   };
   onDireccion(d: { calle: string; ciudad: string; estado: string; cp: string; pais: string }): void;
@@ -76,6 +78,8 @@ function clienteDto(over: Record<string, unknown> = {}) {
     direccionCp: null,
     direccionPais: null,
     notas: null,
+    diasCredito: 0,
+    limiteCredito: null,
     activo: true,
     version: 0,
     createdAt: '2026-01-01T00:00:00Z',
@@ -261,6 +265,67 @@ describe('ClienteFormDialog', () => {
       .flush({ detail: 'RFC duplicado' }, { status: 409, statusText: 'Conflict' });
     expect(comp().form.controls.rfc.hasError('duplicado')).toBe(true);
     expect(dialogRef.cerradoCon).toBe('no-cerrado');
+  });
+
+  it('por defecto diasCredito es 0 (contado) y muestra la ayuda "0 = contado"', async () => {
+    await montar();
+    expect(comp().form.getRawValue()['diasCredito']).toBe(0);
+    const hints = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(hints).toContain('0 = contado');
+  });
+
+  it('envia diasCredito numerico y limiteCredito null cuando el limite queda vacio', async () => {
+    await montar();
+    altaValidaMinima();
+    comp().form.patchValue({ diasCredito: 30 });
+    comp().guardar();
+    const req = http.expectOne((r) => r.url === '/api/v1/clientes' && r.method === 'POST');
+    expect(req.request.body.diasCredito).toBe(30);
+    expect(req.request.body.limiteCredito).toBeNull();
+    req.flush(clienteDto());
+  });
+
+  it('envia limiteCredito numerico cuando se captura', async () => {
+    await montar();
+    altaValidaMinima();
+    comp().form.patchValue({ diasCredito: 15, limiteCredito: 50000 });
+    comp().guardar();
+    const req = http.expectOne((r) => r.url === '/api/v1/clientes' && r.method === 'POST');
+    expect(req.request.body.diasCredito).toBe(15);
+    expect(req.request.body.limiteCredito).toBe(50000);
+    req.flush(clienteDto());
+  });
+
+  it('diasCredito 400 (fuera de rango) invalida y no hace POST', async () => {
+    await montar();
+    altaValidaMinima();
+    comp().form.patchValue({ diasCredito: 400 });
+    expect(comp().form.controls.diasCredito.hasError('max')).toBe(true);
+    comp().guardar();
+    http.expectNone((r) => r.method === 'POST');
+  });
+
+  it('diasCredito -1 invalida y no hace POST', async () => {
+    await montar();
+    altaValidaMinima();
+    comp().form.patchValue({ diasCredito: -1 });
+    expect(comp().form.controls.diasCredito.hasError('min')).toBe(true);
+    comp().guardar();
+    http.expectNone((r) => r.method === 'POST');
+  });
+
+  it('limiteCredito -5 invalida el control', async () => {
+    await montar();
+    altaValidaMinima();
+    comp().form.patchValue({ limiteCredito: -5 });
+    expect(comp().form.controls.limiteCredito.hasError('min')).toBe(true);
+  });
+
+  it('en modo edicion prellena diasCredito y limiteCredito', async () => {
+    await montar({ cliente: clienteDto({ diasCredito: 45, limiteCredito: 12000 }) });
+    const v = comp().form.getRawValue();
+    expect(v['diasCredito']).toBe(45);
+    expect(v['limiteCredito']).toBe(12000);
   });
 
   it('no tiene violaciones de accesibilidad (WCAG 2.1 A/AA)', async () => {

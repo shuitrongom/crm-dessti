@@ -32,46 +32,54 @@ import jakarta.validation.Valid;
  * {@link ClienteDto Clientes} y sus {@link ContactoDto Contactos}
  * (Req 5, 12; tarea 15.2).
  *
- * <p>Rutas (relativas al context-path {@code /api/v1}):</p>
+ * <p>
+ * Rutas (relativas al context-path {@code /api/v1}):
+ * </p>
  * <ul>
- *   <li>{@code POST /clientes} — da de alta un Cliente
- *       ({@code @autorizador.tiene('cliente','crear')}); responde
- *       <strong>201 Created</strong> con el {@link ClienteDto}. 422 si los datos
- *       son invalidos, 409 si el RFC ya existe entre activos (Req 5.1–5.3).</li>
- *   <li>{@code GET /clientes/{id}} — consulta un Cliente
- *       ({@code @autorizador.tiene('cliente','leer')}); <strong>200 OK</strong>.
- *       404 si no existe/otro tenant (Req 4.3, 23.3).</li>
- *   <li>{@code PUT /clientes/{id}} — actualiza un Cliente
- *       ({@code @autorizador.tiene('cliente','actualizar')}); <strong>200 OK</strong>.
- *       404/409/422 segun corresponda (Req 5.4).</li>
- *   <li>{@code DELETE /clientes/{id}} — baja logica del Cliente
- *       ({@code @autorizador.tiene('cliente','eliminar')}); <strong>200 OK</strong>
- *       con el {@link ClienteDto} desactivado (se conserva el historico). 404 si
- *       no existe/ya inactivo/otro tenant (Req 5.9).</li>
- *   <li>{@code GET /clientes?filtro=&page=&size=} — listado paginado
- *       ({@code @autorizador.tiene('cliente','listar')}); <strong>200 OK</strong>
- *       con {@link PaginaResponse}. Tamano por defecto 20, maximo 100; filtro por
- *       nombre o RFC sin distinguir mayusculas (Req 5.7, 5.8, 12.1).</li>
- *   <li>{@code POST /clientes/{id}/contactos} — asocia un Contacto a un Cliente
- *       activo ({@code @autorizador.tiene('contacto','crear')}); responde
- *       <strong>201 Created</strong> con el {@link ContactoDto}. 404 si el Cliente
- *       no existe/otro tenant, 422 si esta inactivo (Req 5.5, 5.6).</li>
+ * <li>{@code POST /clientes} — da de alta un Cliente
+ * ({@code @autorizador.tiene('cliente','crear')}); responde
+ * <strong>201 Created</strong> con el {@link ClienteDto}. 422 si los datos
+ * son invalidos, 409 si el RFC ya existe entre activos (Req 5.1–5.3).</li>
+ * <li>{@code GET /clientes/{id}} — consulta un Cliente
+ * ({@code @autorizador.tiene('cliente','leer')}); <strong>200 OK</strong>.
+ * 404 si no existe/otro tenant (Req 4.3, 23.3).</li>
+ * <li>{@code PUT /clientes/{id}} — actualiza un Cliente
+ * ({@code @autorizador.tiene('cliente','actualizar')}); <strong>200
+ * OK</strong>.
+ * 404/409/422 segun corresponda (Req 5.4).</li>
+ * <li>{@code DELETE /clientes/{id}} — baja logica del Cliente
+ * ({@code @autorizador.tiene('cliente','eliminar')}); <strong>200 OK</strong>
+ * con el {@link ClienteDto} desactivado (se conserva el historico). 404 si
+ * no existe/ya inactivo/otro tenant (Req 5.9).</li>
+ * <li>{@code GET /clientes?filtro=&page=&size=} — listado paginado
+ * ({@code @autorizador.tiene('cliente','listar')}); <strong>200 OK</strong>
+ * con {@link PaginaResponse}. Tamano por defecto 20, maximo 100; filtro por
+ * nombre o RFC sin distinguir mayusculas (Req 5.7, 5.8, 12.1).</li>
+ * <li>{@code POST /clientes/{id}/contactos} — asocia un Contacto a un Cliente
+ * activo ({@code @autorizador.tiene('contacto','crear')}); responde
+ * <strong>201 Created</strong> con el {@link ContactoDto}. 404 si el Cliente
+ * no existe/otro tenant, 422 si esta inactivo (Req 5.5, 5.6).</li>
  * </ul>
  *
  * <h2>Autorizacion (Req 3, 5)</h2>
- * <p>Cada endpoint exige el permiso atomico correspondiente via
+ * <p>
+ * Cada endpoint exige el permiso atomico correspondiente via
  * {@code @autorizador.tiene(recurso, operacion)}. Estos permisos
- * ({@code cliente:{crear,leer,listar,actualizar,eliminar}} y {@code contacto:crear})
+ * ({@code cliente:{crear,leer,listar,actualizar,eliminar}} y
+ * {@code contacto:crear})
  * se sembraron en V5/V11 y se asignaron al rol {@code ventas}. Sin el permiso,
- * Spring Security responde 403 por denegacion por defecto (Req 3.2).</p>
+ * Spring Security responde 403 por denegacion por defecto (Req 3.2).
+ * </p>
  *
  * <h2>Separacion de contrato (Req 12.2, 23.4)</h2>
- * <p>Se reciben y devuelven DTOs distintos de las entidades JPA. Los cuerpos de
+ * <p>
+ * Se reciben y devuelven DTOs distintos de las entidades JPA. Los cuerpos de
  * entrada ({@code *Request}) se traducen a comandos de aplicacion en el
  * controlador; el {@code tenant_id} y el actor se derivan del contexto y nunca
  * se aceptan en la peticion. El manejo de errores lo centraliza
  * {@code ManejadorGlobalErrores}: el controlador se limita a dejar propagar las
- * excepciones de dominio.</p>
+ * excepciones de dominio.
+ * </p>
  */
 @RestController
 @RequestMapping("/clientes")
@@ -106,7 +114,9 @@ public class ClienteController {
                 request.direccionEstado(),
                 request.direccionCp(),
                 request.direccionPais(),
-                request.notas()));
+                request.notas(),
+                request.diasCredito(),
+                request.limiteCredito()));
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
@@ -135,7 +145,7 @@ public class ClienteController {
     @PutMapping("/{id}")
     @PreAuthorize("@autorizador.moduloHabilitado('comercial') and @autorizador.tiene('cliente','actualizar')")
     public ResponseEntity<ClienteDto> actualizar(@PathVariable("id") UUID id,
-                                                  @Valid @RequestBody ActualizarClienteRequest request) {
+            @Valid @RequestBody ActualizarClienteRequest request) {
         ClienteDto dto = servicioClientes.actualizarCliente(id, new ActualizarClienteCommand(
                 request.nombre(),
                 request.rfc(),
@@ -149,7 +159,9 @@ public class ClienteController {
                 request.direccionEstado(),
                 request.direccionCp(),
                 request.direccionPais(),
-                request.notas()));
+                request.notas(),
+                request.diasCredito(),
+                request.limiteCredito()));
         return ResponseEntity.ok(dto);
     }
 
@@ -202,7 +214,7 @@ public class ClienteController {
     @PostMapping("/{id}/contactos")
     @PreAuthorize("@autorizador.moduloHabilitado('comercial') and @autorizador.tiene('contacto','crear')")
     public ResponseEntity<ContactoDto> asociarContacto(@PathVariable("id") UUID id,
-                                                        @Valid @RequestBody CrearContactoRequest request) {
+            @Valid @RequestBody CrearContactoRequest request) {
         ContactoDto dto = servicioClientes.asociarContacto(new CrearContactoCommand(
                 id,
                 request.nombre(),
@@ -224,7 +236,7 @@ public class ClienteController {
     @PutMapping("/{id}/propietario")
     @PreAuthorize("@autorizador.moduloHabilitado('comercial') and @autorizador.tiene('cliente','actualizar')")
     public ResponseEntity<ClienteDto> asignarPropietario(@PathVariable("id") UUID id,
-                                                         @Valid @RequestBody AsignarPropietarioRequest request) {
+            @Valid @RequestBody AsignarPropietarioRequest request) {
         return ResponseEntity.ok(servicioClientes.asignarPropietario(id, request.usuarioId()));
     }
 }

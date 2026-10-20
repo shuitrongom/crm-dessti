@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -36,11 +37,14 @@ import com.dessti.crm.platform.error.ReglaNegocioException;
 import com.dessti.crm.platform.tenant.TenantContext;
 
 /**
- * Pruebas unitarias de {@link ServicioClientes} (Req 5, 4.3, 23). Usan dobles de
- * Mockito; no arrancan contexto de Spring ni base de datos. Cubren: alta exitosa
+ * Pruebas unitarias de {@link ServicioClientes} (Req 5, 4.3, 23). Usan dobles
+ * de
+ * Mockito; no arrancan contexto de Spring ni base de datos. Cubren: alta
+ * exitosa
  * (5.1), rechazo de datos invalidos (5.2 -> 422), RFC duplicado entre activos
  * (5.3 -> 409, pre-check y carrera contra el indice), actualizacion con
- * auditoria (5.4), borrado logico (5.9), asociacion de Contacto a Cliente activo
+ * auditoria (5.4), borrado logico (5.9), asociacion de Contacto a Cliente
+ * activo
  * e inactivo (5.5/5.6), listado con filtro (5.7/5.8) y acceso cruzado -> 404 +
  * auditoria (4.3/23.3).
  */
@@ -78,7 +82,7 @@ class ServicioClientesTest {
 
     private CrearClienteCommand comandoValido() {
         return new CrearClienteCommand("Acme S.A.", RFC, "contacto@acme.com", null,
-                null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null, null, null);
     }
 
     @Test
@@ -111,7 +115,7 @@ class ServicioClientesTest {
                 "Acme S.A.", RFC, "contacto@acme.com", null,
                 "Acme Marca", "moral", "5598765432",
                 "Av. Reforma 100", "Monterrey", "Nuevo Leon", "64000", "Mexico",
-                "Cliente preferente");
+                "Cliente preferente", null, null);
 
         ClienteDto dto = servicio.crearCliente(comando);
 
@@ -127,6 +131,46 @@ class ServicioClientesTest {
     }
 
     @Test
+    @DisplayName("crearCliente propaga diasCredito/limiteCredito a la entidad y al DTO (AC-12, V90)")
+    void crearClienteConCondicionesCredito() {
+        when(clienteRepository.existsByRfcAndActivoTrue(RFC)).thenReturn(false);
+        ArgumentCaptor<Cliente> guardado = ArgumentCaptor.forClass(Cliente.class);
+        when(clienteRepository.saveAndFlush(any(Cliente.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        CrearClienteCommand comando = new CrearClienteCommand(
+                "Acme S.A.", RFC, "contacto@acme.com", null,
+                null, null, null, null, null, null, null, null, null,
+                45, new BigDecimal("50000.00"));
+
+        ClienteDto dto = servicio.crearCliente(comando);
+
+        verify(clienteRepository).saveAndFlush(guardado.capture());
+        assertThat(guardado.getValue().getDiasCredito()).isEqualTo(45);
+        assertThat(guardado.getValue().getLimiteCredito()).isEqualByComparingTo("50000.00");
+        assertThat(dto.diasCredito()).isEqualTo(45);
+        assertThat(dto.limiteCredito()).isEqualByComparingTo("50000.00");
+    }
+
+    @Test
+    @DisplayName("actualizarCliente propaga diasCredito/limiteCredito a la entidad y al DTO (AC-12, V90)")
+    void actualizarClienteConCondicionesCredito() {
+        Cliente existente = Cliente.crear("Acme", RFC, "a@b.com", null, "ventas");
+        when(clienteRepository.findByIdAndActivoTrue(existente.getId())).thenReturn(Optional.of(existente));
+        when(clienteRepository.existsByRfcAndActivoTrue(any())).thenReturn(false);
+        when(clienteRepository.saveAndFlush(any(Cliente.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ClienteDto dto = servicio.actualizarCliente(existente.getId(),
+                new ActualizarClienteCommand("Acme", RFC, "a@b.com", null,
+                        null, null, null, null, null, null, null, null, null,
+                        60, new BigDecimal("12000.00")));
+
+        assertThat(existente.getDiasCredito()).isEqualTo(60);
+        assertThat(existente.getLimiteCredito()).isEqualByComparingTo("12000.00");
+        assertThat(dto.diasCredito()).isEqualTo(60);
+        assertThat(dto.limiteCredito()).isEqualByComparingTo("12000.00");
+    }
+
+    @Test
     @DisplayName("crearCliente acepta telefono de 15 digitos (la cota de 10 la aplica el frontend, Req 5)")
     void crearClienteTelefono15DigitosAceptado() {
         when(clienteRepository.existsByRfcAndActivoTrue(RFC)).thenReturn(false);
@@ -134,7 +178,7 @@ class ServicioClientesTest {
 
         CrearClienteCommand comando = new CrearClienteCommand(
                 "Acme S.A.", RFC, null, "123456789012345",
-                null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null, null, null);
 
         ClienteDto dto = servicio.crearCliente(comando);
 
@@ -153,7 +197,7 @@ class ServicioClientesTest {
         ClienteDto dto = servicio.actualizarCliente(existente.getId(),
                 new ActualizarClienteCommand("Acme", RFC, "a@b.com", null,
                         "Marca Nueva", "fisica", "5512345678",
-                        "Calle 1", "CDMX", "CDMX", "01000", "Mexico", "notas nuevas"));
+                        "Calle 1", "CDMX", "CDMX", "01000", "Mexico", "notas nuevas", null, null));
 
         assertThat(dto.nombreComercial()).isEqualTo("Marca Nueva");
         assertThat(dto.tipoPersona()).isEqualTo("fisica");
@@ -166,7 +210,7 @@ class ServicioClientesTest {
     @DisplayName("crearCliente rechaza datos obligatorios invalidos con 422 y no persiste (Req 5.2)")
     void crearClienteDatosInvalidos() {
         CrearClienteCommand invalido = new CrearClienteCommand("Acme", "RFC-MALO", "a@b.com", null,
-                null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null, null, null);
 
         assertThatThrownBy(() -> servicio.crearCliente(invalido))
                 .isInstanceOf(ReglaNegocioException.class);
@@ -206,7 +250,7 @@ class ServicioClientesTest {
 
         ClienteDto dto = servicio.actualizarCliente(existente.getId(),
                 new ActualizarClienteCommand("Acme Nueva", RFC, "a@b.com", null,
-                        null, null, null, null, null, null, null, null, null));
+                        null, null, null, null, null, null, null, null, null, null, null));
 
         assertThat(dto.nombre()).isEqualTo("Acme Nueva");
         ArgumentCaptor<EventoAuditoria> ev = ArgumentCaptor.forClass(EventoAuditoria.class);
@@ -248,7 +292,8 @@ class ServicioClientesTest {
     void desactivarClienteConCotizacionesAbiertasRechaza() {
         Cliente existente = Cliente.crear("Acme", RFC, "a@b.com", null, "ventas");
         when(clienteRepository.findByIdAndActivoTrue(existente.getId())).thenReturn(Optional.of(existente));
-        // Sin oportunidades abiertas (mock por defecto false), pero con cotizaciones abiertas.
+        // Sin oportunidades abiertas (mock por defecto false), pero con cotizaciones
+        // abiertas.
         when(pipelineCliente.clienteTieneCotizacionesAbiertas(existente.getId())).thenReturn(true);
 
         assertThatThrownBy(() -> servicio.desactivarCliente(existente.getId()))

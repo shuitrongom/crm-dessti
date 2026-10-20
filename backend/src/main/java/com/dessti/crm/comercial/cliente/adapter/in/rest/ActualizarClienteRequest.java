@@ -1,5 +1,11 @@
 package com.dessti.crm.comercial.cliente.adapter.in.rest;
 
+import java.math.BigDecimal;
+
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -7,14 +13,18 @@ import jakarta.validation.constraints.Size;
 /**
  * Cuerpo de la peticion para actualizar un Cliente (Req 5.4).
  *
- * <p>DTO de entrada del contrato REST, distinto de la entidad y del comando
+ * <p>
+ * DTO de entrada del contrato REST, distinto de la entidad y del comando
  * {@link com.dessti.crm.comercial.cliente.application.ActualizarClienteCommand}
- * (Req 12.2). El {@code tenant_id} se deriva del contexto (Req 23.4).</p>
+ * (Req 12.2). El {@code tenant_id} se deriva del contexto (Req 23.4).
+ * </p>
  *
- * <p>Como en el alta, la validacion de campo se limita a presencia/longitud y a
+ * <p>
+ * Como en el alta, la validacion de campo se limita a presencia/longitud y a
  * patrones laxos para los opcionales (400); el formato del RFC/email lo valida
  * el dominio (422). Los patrones opcionales toleran el valor ausente
- * ({@code null}).</p>
+ * ({@code null}).
+ * </p>
  *
  * @param nombre            nuevo nombre; obligatorio (1..200).
  * @param rfc               nuevo identificador fiscal; obligatorio (12..13).
@@ -29,19 +39,25 @@ import jakarta.validation.constraints.Size;
  * @param direccionCp       codigo postal; opcional (max. 10).
  * @param direccionPais     pais; opcional (max. 80).
  * @param notas             notas libres; opcional (max. 1000).
+ * @param diasCredito       dias de credito (0..365); opcional, {@code null} =>
+ *                          contado (0) (V90).
+ * @param limiteCredito     limite de credito en MXN (>= 0, escala 2); opcional
+ *                          (V90).
  */
 public record ActualizarClienteRequest(
-        @NotBlank @Size(max = 200) String nombre,
-        @NotBlank @Size(min = 12, max = 13) String rfc,
-        @Size(max = 254) String email,
-        @Size(max = 20) String telefono,
-        @Size(max = 200) String nombreComercial,
-        @Pattern(regexp = "fisica|moral") String tipoPersona,
-        @Pattern(regexp = "\\d{10,15}") String telefonoAdicional,
-        @Size(max = 200) String direccionCalle,
-        @Size(max = 120) String direccionCiudad,
-        @Size(max = 120) String direccionEstado,
-        @Size(max = 10) String direccionCp,
-        @Size(max = 80) String direccionPais,
-        @Size(max = 1000) String notas) {
+                @NotBlank @Size(max = 200) String nombre,
+                @NotBlank @Size(min = 12, max = 13) String rfc,
+                @Size(max = 254) String email,
+                @Size(max = 20) String telefono,
+                @Size(max = 200) String nombreComercial,
+                @Pattern(regexp = "fisica|moral") String tipoPersona,
+                @Pattern(regexp = "\\d{10,15}") String telefonoAdicional,
+                @Size(max = 200) String direccionCalle,
+                @Size(max = 120) String direccionCiudad,
+                @Size(max = 120) String direccionEstado,
+                @Size(max = 10) String direccionCp,
+                @Size(max = 80) String direccionPais,
+                @Size(max = 1000) String notas,
+                @Min(0) @Max(365) Integer diasCredito,
+                @DecimalMin(value = "0.00") @Digits(integer = 16, fraction = 2) BigDecimal limiteCredito) {
 }

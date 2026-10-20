@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.dessti.crm.comercial.cliente.adapter.out.persistence.ClienteRepository;
 import com.dessti.crm.comercial.cliente.adapter.out.persistence.ContactoRepository;
 import com.dessti.crm.comercial.cliente.domain.Cliente;
+import com.dessti.crm.comercial.cliente.domain.CondicionesCredito;
 import com.dessti.crm.comercial.cliente.domain.Contacto;
 import com.dessti.crm.comercial.cliente.domain.DatosBasicosCliente;
 import com.dessti.crm.platform.audit.AuditoriaPort;
@@ -29,41 +30,45 @@ import com.dessti.crm.platform.tenant.TenantContext;
  *
  * <h2>Operaciones (Req 5)</h2>
  * <ul>
- *   <li><strong>crearCliente (Req 5.1, 5.2, 5.3):</strong> valida los datos
- *       obligatorios, rechaza el RFC duplicado entre Clientes activos (409,
- *       doble defensa: comprobacion previa {@code existsByRfcAndActivoTrue} +
- *       traduccion de la violacion del indice unico parcial ante carreras) y
- *       audita el alta.</li>
- *   <li><strong>actualizarCliente (Req 5.4):</strong> persiste los cambios y
- *       audita; 404 si el Cliente no existe/pertenece a otro tenant.</li>
- *   <li><strong>desactivarCliente (Req 5.9, 5.10):</strong> borrado logico
- *       ({@code activo=false}) conservando el historico; audita. Rechaza con 422 la
- *       baja de un Cliente con actividad comercial abierta (Oportunidad en etapa no
- *       final o Cotizacion en borrador/enviada), verificada via
- *       {@link PipelineClientePort}.</li>
- *   <li><strong>listarClientes (Req 5.7, 5.8):</strong> listado paginado
- *       (20/100) filtrable por nombre o RFC sin distinguir mayusculas.</li>
- *   <li><strong>consultarCliente (Req 4.3, 23.3):</strong> consulta puntual;
- *       404 + auditoria del intento si el Cliente no existe o pertenece a otro
- *       tenant.</li>
- *   <li><strong>asociarContacto (Req 5.5, 5.6):</strong> asocia un Contacto solo
- *       a un Cliente activo; 404 si el Cliente no existe/otro tenant, 422 si esta
- *       inactivo; audita.</li>
+ * <li><strong>crearCliente (Req 5.1, 5.2, 5.3):</strong> valida los datos
+ * obligatorios, rechaza el RFC duplicado entre Clientes activos (409,
+ * doble defensa: comprobacion previa {@code existsByRfcAndActivoTrue} +
+ * traduccion de la violacion del indice unico parcial ante carreras) y
+ * audita el alta.</li>
+ * <li><strong>actualizarCliente (Req 5.4):</strong> persiste los cambios y
+ * audita; 404 si el Cliente no existe/pertenece a otro tenant.</li>
+ * <li><strong>desactivarCliente (Req 5.9, 5.10):</strong> borrado logico
+ * ({@code activo=false}) conservando el historico; audita. Rechaza con 422 la
+ * baja de un Cliente con actividad comercial abierta (Oportunidad en etapa no
+ * final o Cotizacion en borrador/enviada), verificada via
+ * {@link PipelineClientePort}.</li>
+ * <li><strong>listarClientes (Req 5.7, 5.8):</strong> listado paginado
+ * (20/100) filtrable por nombre o RFC sin distinguir mayusculas.</li>
+ * <li><strong>consultarCliente (Req 4.3, 23.3):</strong> consulta puntual;
+ * 404 + auditoria del intento si el Cliente no existe o pertenece a otro
+ * tenant.</li>
+ * <li><strong>asociarContacto (Req 5.5, 5.6):</strong> asocia un Contacto solo
+ * a un Cliente activo; 404 si el Cliente no existe/otro tenant, 422 si esta
+ * inactivo; audita.</li>
  * </ul>
  *
  * <h2>Aislamiento multi-tenant en dos capas (Req 23)</h2>
- * <p>El {@code tenant_id} se deriva del {@link TenantContext} (nunca de la
+ * <p>
+ * El {@code tenant_id} se deriva del {@link TenantContext} (nunca de la
  * peticion, Req 23.4) y {@code TenantScopedEntity} lo asigna al persistir. Las
  * consultas del repositorio quedan acotadas al tenant por el filtro global de
  * Hibernate (Capa 1) y por la Row-Level Security de PostgreSQL (Capa 2, V11).
  * Como consecuencia, una busqueda por {@code id} de un recurso de otro tenant
  * devuelve vacio, que este servicio traduce a 404 y <em>audita como intento de
- * acceso cruzado</em> (Req 4.3, 23.3).</p>
+ * acceso cruzado</em> (Req 4.3, 23.3).
+ * </p>
  *
  * <h2>Auditoria (Req 5.4, 5.9)</h2>
- * <p>Cada operacion se registra via {@link AuditoriaPort} como evento de tenant
+ * <p>
+ * Cada operacion se registra via {@link AuditoriaPort} como evento de tenant
  * ({@link EventoAuditoria#deTenant}) con el actor derivado del contexto de
- * seguridad, sin incluir secretos (Req 10.10).</p>
+ * seguridad, sin incluir secretos (Req 10.10).
+ * </p>
  */
 @Service
 public class ServicioClientes {
@@ -81,10 +86,10 @@ public class ServicioClientes {
     private final AuditoriaPort auditoria;
 
     public ServicioClientes(ClienteRepository clienteRepository,
-                            ContactoRepository contactoRepository,
-                            UsuarioExistentePort usuarioExistente,
-                            PipelineClientePort pipelineCliente,
-                            AuditoriaPort auditoria) {
+            ContactoRepository contactoRepository,
+            UsuarioExistentePort usuarioExistente,
+            PipelineClientePort pipelineCliente,
+            AuditoriaPort auditoria) {
         this.clienteRepository = clienteRepository;
         this.contactoRepository = contactoRepository;
         this.usuarioExistente = usuarioExistente;
@@ -99,9 +104,16 @@ public class ServicioClientes {
      * @param comando datos del Cliente a crear.
      * @return el DTO del Cliente creado.
      * @throws com.dessti.crm.platform.error.ReglaNegocioException si faltan o
-     *         son invalidos los datos obligatorios (422, Req 5.2).
-     * @throws ConflictoUnicidadException si ya existe un Cliente activo con el
-     *         mismo RFC en el tenant (409, Req 5.3).
+     *                                                             son invalidos los
+     *                                                             datos
+     *                                                             obligatorios
+     *                                                             (422, Req 5.2).
+     * @throws ConflictoUnicidadException                          si ya existe un
+     *                                                             Cliente activo
+     *                                                             con el
+     *                                                             mismo RFC en el
+     *                                                             tenant (409, Req
+     *                                                             5.3).
      */
     @Transactional
     public ClienteDto crearCliente(CrearClienteCommand comando) {
@@ -115,7 +127,7 @@ public class ServicioClientes {
         // unicidad, para que un dato invalido produzca 422 y no 409.
         Cliente cliente = Cliente.crear(
                 comando.nombre(), comando.rfc(), comando.email(), comando.telefono(),
-                datosBasicosDeCreacion(comando), actor);
+                datosBasicosDeCreacion(comando), condicionesCreditoDe(comando), actor);
 
         // Pre-comprobacion de unicidad de RFC entre activos del tenant (Req 5.3).
         if (clienteRepository.existsByRfcAndActivoTrue(cliente.getRfc())) {
@@ -137,9 +149,11 @@ public class ServicioClientes {
      * @param comando   nuevos datos.
      * @return el DTO del Cliente actualizado.
      * @throws RecursoNoEncontradoException si el Cliente no existe, esta inactivo
-     *         o pertenece a otro tenant (404, Req 23.3).
-     * @throws ConflictoUnicidadException si el nuevo RFC colisiona con otro
-     *         Cliente activo del tenant (409, Req 5.3).
+     *                                      o pertenece a otro tenant (404, Req
+     *                                      23.3).
+     * @throws ConflictoUnicidadException   si el nuevo RFC colisiona con otro
+     *                                      Cliente activo del tenant (409, Req
+     *                                      5.3).
      */
     @Transactional
     public ClienteDto actualizarCliente(UUID clienteId, ActualizarClienteCommand comando) {
@@ -151,7 +165,7 @@ public class ServicioClientes {
         Cliente cliente = cargarClienteActivo(clienteId, actor);
 
         cliente.actualizar(comando.nombre(), comando.rfc(), comando.email(), comando.telefono(),
-                datosBasicosDeActualizacion(comando), actor);
+                datosBasicosDeActualizacion(comando), condicionesCreditoDe(comando), actor);
 
         // Si cambia el RFC, comprobar que no colisione con OTRO Cliente activo.
         if (clienteRepository.existsByRfcAndActivoTrue(cliente.getRfc())
@@ -170,16 +184,26 @@ public class ServicioClientes {
     /**
      * Realiza el borrado logico de un Cliente activo del tenant (Req 5.9):
      * marca {@code activo=false} conservando el historico y audita. Antes de dar de
-     * baja, verifica que el Cliente no tenga actividad comercial abierta (Req 5.10):
-     * una Oportunidad en etapa no final o una Cotizacion en borrador/enviada impiden
+     * baja, verifica que el Cliente no tenga actividad comercial abierta (Req
+     * 5.10):
+     * una Oportunidad en etapa no final o una Cotizacion en borrador/enviada
+     * impiden
      * la baja (422), conservando el Cliente activo.
      *
      * @param clienteId identificador del Cliente.
      * @return el DTO del Cliente desactivado.
-     * @throws RecursoNoEncontradoException si el Cliente no existe, ya esta
-     *         inactivo o pertenece a otro tenant (404, Req 23.3).
-     * @throws com.dessti.crm.platform.error.ReglaNegocioException si el Cliente tiene
-     *         Oportunidades o Cotizaciones abiertas (422, Req 5.10).
+     * @throws RecursoNoEncontradoException                        si el Cliente no
+     *                                                             existe, ya esta
+     *                                                             inactivo o
+     *                                                             pertenece a otro
+     *                                                             tenant (404, Req
+     *                                                             23.3).
+     * @throws com.dessti.crm.platform.error.ReglaNegocioException si el Cliente
+     *                                                             tiene
+     *                                                             Oportunidades o
+     *                                                             Cotizaciones
+     *                                                             abiertas (422,
+     *                                                             Req 5.10).
      */
     @Transactional
     public ClienteDto desactivarCliente(UUID clienteId) {
@@ -231,7 +255,8 @@ public class ServicioClientes {
      * @param usuarioId Usuario propietario; {@code null} para desasignar.
      * @return el DTO del Cliente con su propietario actualizado.
      * @throws RecursoNoEncontradoException si el Cliente no es accesible, o si el
-     *         Usuario indicado no existe/activo en el tenant (404).
+     *                                      Usuario indicado no existe/activo en el
+     *                                      tenant (404).
      */
     @Transactional
     public ClienteDto asignarPropietario(UUID clienteId, UUID usuarioId) {
@@ -288,10 +313,17 @@ public class ServicioClientes {
      *
      * @param comando datos del Contacto y del Cliente propietario.
      * @return el DTO del Contacto creado.
-     * @throws RecursoNoEncontradoException si el Cliente no existe o pertenece a
-     *         otro tenant (404, Req 5.6, 23.3).
+     * @throws RecursoNoEncontradoException                        si el Cliente no
+     *                                                             existe o
+     *                                                             pertenece a
+     *                                                             otro tenant (404,
+     *                                                             Req 5.6, 23.3).
      * @throws com.dessti.crm.platform.error.ReglaNegocioException si el Cliente
-     *         esta inactivo o los datos del Contacto son invalidos (422, Req 5.6).
+     *                                                             esta inactivo o
+     *                                                             los datos del
+     *                                                             Contacto son
+     *                                                             invalidos (422,
+     *                                                             Req 5.6).
      */
     @Transactional
     public ContactoDto asociarContacto(CrearContactoCommand comando) {
@@ -345,6 +377,24 @@ public class ServicioClientes {
     }
 
     /**
+     * Proyecta las condiciones de credito del comando de alta al value object de
+     * dominio {@link CondicionesCredito} (Req 5, V90); la normalizacion
+     * ({@code diasCredito} nulo -> 0) y la validacion (rango 0..365, limite >= 0)
+     * las aplica la entidad {@link Cliente}.
+     */
+    private static CondicionesCredito condicionesCreditoDe(CrearClienteCommand c) {
+        return new CondicionesCredito(c.diasCredito(), c.limiteCredito());
+    }
+
+    /**
+     * Proyecta las condiciones de credito del comando de actualizacion al value
+     * object de dominio {@link CondicionesCredito} (Req 5, V90).
+     */
+    private static CondicionesCredito condicionesCreditoDe(ActualizarClienteCommand c) {
+        return new CondicionesCredito(c.diasCredito(), c.limiteCredito());
+    }
+
+    /**
      * Carga un Cliente activo por id dentro del tenant vigente; si no es
      * accesible (inexistente, inactivo o de otro tenant) audita el intento y
      * lanza 404 (Req 4.3, 23.3).
@@ -375,7 +425,8 @@ public class ServicioClientes {
         try {
             return clienteRepository.saveAndFlush(cliente);
         } catch (DataIntegrityViolationException ex) {
-            // Carrera concurrente contra el indice parcial uq_cliente_rfc_activo_por_tenant (V11).
+            // Carrera concurrente contra el indice parcial uq_cliente_rfc_activo_por_tenant
+            // (V11).
             throw new ConflictoUnicidadException(
                     "Ya existe un Cliente activo con el identificador fiscal '"
                             + cliente.getRfc() + "'.");

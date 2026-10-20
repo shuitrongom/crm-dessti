@@ -27,11 +27,13 @@ import com.dessti.crm.platform.tenant.TenantContext;
  * Pruebas unitarias enfocadas en la unicidad del RFC entre Clientes activos
  * (Req 5.3) a nivel de {@link ServicioClientes}, con dobles de Mockito.
  *
- * <p>Complementan {@code ServicioClientesTest} sin duplicar sus casos: aqui se
+ * <p>
+ * Complementan {@code ServicioClientesTest} sin duplicar sus casos: aqui se
  * verifica que (1) un RFC de un Cliente dado de baja logica puede reutilizarse,
  * (2) la validacion de formato del RFC (422) precede a la comprobacion de
  * unicidad (409) y (3) la deteccion de duplicado es insensible a mayusculas al
- * normalizarse el RFC antes de la consulta.</p>
+ * normalizarse el RFC antes de la consulta.
+ * </p>
  */
 class ClienteRfcDuplicadoTest {
 
@@ -71,7 +73,7 @@ class ClienteRfcDuplicadoTest {
 
         ClienteDto dto = servicio.crearCliente(
                 new CrearClienteCommand("Acme Renovada", RFC, "acme@example.com", null,
-                        null, null, null, null, null, null, null, null, null));
+                        null, null, null, null, null, null, null, null, null, null, null));
 
         assertThat(dto.rfc()).isEqualTo(RFC);
         assertThat(dto.activo()).isTrue();
@@ -83,7 +85,7 @@ class ClienteRfcDuplicadoTest {
     void formatoInvalidoPrecedeUnicidad() {
         assertThatThrownBy(() -> servicio.crearCliente(
                 new CrearClienteCommand("Acme S.A.", "1234567890AB", "acme@example.com", null,
-                        null, null, null, null, null, null, null, null, null)))
+                        null, null, null, null, null, null, null, null, null, null, null)))
                 .isInstanceOf(ReglaNegocioException.class)
                 .isNotInstanceOf(ConflictoUnicidadException.class);
 
@@ -101,7 +103,7 @@ class ClienteRfcDuplicadoTest {
 
         assertThatThrownBy(() -> servicio.crearCliente(
                 new CrearClienteCommand("Acme S.A.", "abc120101ab1", "acme@example.com", null,
-                        null, null, null, null, null, null, null, null, null)))
+                        null, null, null, null, null, null, null, null, null, null, null)))
                 .isInstanceOf(ConflictoUnicidadException.class);
 
         verify(clienteRepository).existsByRfcAndActivoTrue(RFC);

@@ -27,6 +27,11 @@ export interface Cliente {
   direccionCp: string | null;
   direccionPais: string | null;
   notas: string | null;
+  // Condiciones de crédito (migración V90).
+  /** Días de crédito (0..365); 0 = contado. */
+  diasCredito: number;
+  /** Límite de crédito en MXN; null = sin límite. */
+  limiteCredito: number | null;
   activo: boolean;
   /** Usuario propietario/vendedor asignado; null si no se asignó (V81). */
   propietarioUsuarioId: string | null;
@@ -64,6 +69,9 @@ export interface ClienteRequest {
   direccionCp?: string | null;
   direccionPais?: string | null;
   notas?: string | null;
+  // Condiciones de crédito (migración V90).
+  diasCredito?: number | null;
+  limiteCredito?: number | null;
 }
 
 /** Etiqueta legible del tipo de persona de un Cliente. */
@@ -500,12 +508,12 @@ export const ETIQUETA_ESTADO_COTIZACION: Record<EstadoCotizacion, string> = {
  * aprobada/rechazada son terminales.
  */
 export const TRANSICIONES_ESTADO_COTIZACION: Record<EstadoCotizacion, readonly EstadoCotizacion[]> =
-  {
-    borrador: ['enviada'],
-    enviada: ['aprobada', 'rechazada'],
-    aprobada: [],
-    rechazada: [],
-  };
+{
+  borrador: ['enviada'],
+  enviada: ['aprobada', 'rechazada'],
+  aprobada: [],
+  rechazada: [],
+};
 
 /** Estados destino validos de una Cotizacion desde un estado dado. */
 export function estadosDestinoCotizacion(desde: EstadoCotizacion): readonly EstadoCotizacion[] {
