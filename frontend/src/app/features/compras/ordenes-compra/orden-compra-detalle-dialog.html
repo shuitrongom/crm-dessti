@@ -1,0 +1,52 @@
+<mat-dialog-content class="oc-detalle__content">
+  <header class="oc-detalle__header">
+    <div>
+      <h2 class="oc-detalle__titulo" mat-dialog-title>Orden de compra</h2>
+      <p class="oc-detalle__folio compras-mono">{{ orden.id.slice(0, 8) }}</p>
+    </div>
+    <app-estado-chip [etiqueta]="humanizar(orden.estado)" [tono]="tono(orden.estado)" />
+  </header>
+
+  <dl class="oc-detalle__datos">
+    <div>
+      <dt>Proveedor</dt>
+      <dd>
+        {{ nombreProveedor() }}
+        @if (rfcProveedor()) {
+          <span class="compras-ayuda">{{ rfcProveedor() }}</span>
+        }
+      </dd>
+    </div>
+    <div>
+      <dt>Creada</dt>
+      <dd>{{ orden.createdAt | date: 'dd/MM/yyyy' }}</dd>
+    </div>
+    <div>
+      <dt>Total</dt>
+      <dd class="oc-detalle__total">
+        {{ orden.total | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}
+      </dd>
+    </div>
+  </dl>
+
+  <h3 class="oc-detalle__subtitulo">Partidas</h3>
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="orden.partidas"
+    [total]="orden.partidas.length"
+    [size]="orden.partidas.length || 20"
+    [opcionesTamano]="[orden.partidas.length || 20]"
+  >
+    <ng-template appCelda="material" let-p>{{ nombreMaterial(p) }}</ng-template>
+    <ng-template appCelda="cantidad" let-p>{{ p.cantidad }}</ng-template>
+    <ng-template appCelda="precio" let-p>{{
+      p.precioUnitario | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX'
+    }}</ng-template>
+    <ng-template appCelda="subtotal" let-p>{{
+      p.subtotal | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX'
+    }}</ng-template>
+  </app-data-table>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton="filled" type="button" (click)="cerrar()">Cerrar</button>
+</mat-dialog-actions>

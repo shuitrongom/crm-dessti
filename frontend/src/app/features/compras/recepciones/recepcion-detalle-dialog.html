@@ -1,0 +1,38 @@
+<mat-dialog-content class="rec-detalle__content">
+  <header class="rec-detalle__header">
+    <div>
+      <h2 class="rec-detalle__titulo" mat-dialog-title>Recepción de mercancía</h2>
+      <p class="rec-detalle__folio compras-mono">{{ recepcion.id.slice(0, 8) }}</p>
+    </div>
+  </header>
+
+  <dl class="rec-detalle__datos">
+    <div>
+      <dt>Orden de compra</dt>
+      <dd class="compras-mono">{{ recepcion.ordenCompraId.slice(0, 8) }}</dd>
+    </div>
+    <div>
+      <dt>Recibida</dt>
+      <dd>{{ recepcion.recibidaEn | date: 'dd/MM/yyyy HH:mm' }}</dd>
+    </div>
+    <div>
+      <dt>Renglones</dt>
+      <dd>{{ recepcion.partidas.length }}</dd>
+    </div>
+  </dl>
+
+  <h3 class="rec-detalle__subtitulo">Materiales recibidos</h3>
+  <app-data-table
+    [columnas]="columnas"
+    [filas]="recepcion.partidas"
+    [total]="recepcion.partidas.length"
+    [size]="recepcion.partidas.length || 20"
+    [opcionesTamano]="[recepcion.partidas.length || 20]"
+  >
+    <ng-template appCelda="material" let-p>{{ nombreMaterial(p) }}</ng-template>
+    <ng-template appCelda="cantidad" let-p>{{ p.cantidadRecibida }}</ng-template>
+  </app-data-table>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton="filled" type="button" (click)="cerrar()">Cerrar</button>
+</mat-dialog-actions>

@@ -617,3 +617,17 @@ a {
   font-size: 0.9rem;
   min-height: 2.5rem;
 }
+
+// Acción que requiere un permiso que el usuario no posee (directiva
+// appRequierePermiso): se muestra atenuada y no interactiva, pero visible, con un
+// tooltip que explica qué autorización hace falta. Comunicar la regla es mejor UX
+// que ocultar la acción en silencio.
+.requiere-permiso--bloqueado {
+  opacity: 0.55;
+  cursor: not-allowed;
+
+  // Neutraliza el hover/realce mientras está bloqueada.
+  &:hover {
+    filter: none;
+  }
+}

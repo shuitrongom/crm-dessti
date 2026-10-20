@@ -1,25 +1,29 @@
 // =============================================================================
-// Vista de Recepciones de mercancia (Req 32)
+// Vista de Recepciones de mercancía (Req 32) — premium
 // -----------------------------------------------------------------------------
-// Tercera via del proceso de compra. Listado paginado con filtro por Orden_Compra
-// y registro de recepciones: el usuario indica la Orden_Compra, la vista carga sus
-// partidas y permite capturar la cantidad recibida por renglon. El backend valida
-// que la Orden admita recepciones y que el acumulado no exceda lo ordenado, y
-// deriva el estado de la Orden (recibida_parcial / recibida_total).
+// Tercera vía del proceso de compra. Listado paginado con filtro por Orden_Compra
+// (buscador premium con sugerencias, sin teclear UUID), KPIs clicables, alta
+// mediante MODAL premium (RecepcionFormDialog) y detalle de solo lectura
+// (RecepcionDetalleDialog). El material y el proveedor se muestran por NOMBRE
+// (nunca UUID) resolviendo el catálogo. El backend valida el estado de la orden y
+// que el acumulado no exceda lo ordenado, y deriva el estado de la orden.
 // =============================================================================
 
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DatePipe } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatDialog } from '@angular/material/dialog';
+import { Observable, map } from 'rxjs';
 
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../shared/components/state-container/state-container';
+import { KpiTile } from '../../../shared/components/kpi-tile/kpi-tile';
+import { SearchAutocomplete } from '../../../shared/components/search-autocomplete/search-autocomplete';
 import {
   CambioPagina,
   CeldaTablaDirective,
@@ -27,9 +31,13 @@ import {
   DataTable,
 } from '../../../shared/components/data-table/data-table';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
-import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
+import {
+  IndicadorInfoDialog,
+  type DatosIndicadorInfo,
+} from '../../../shared/indicadores/indicador-info-dialog';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
+import { PaginaResponse } from '../../../core/models/pagina-response';
 import {
   EstadoSolicitud,
   cargando,
@@ -38,20 +46,27 @@ import {
 } from '../../../shared/models/estado-solicitud';
 
 import { ComprasService } from '../services/compras.service';
+import { NombresComprasService } from '../services/nombres-compras.service';
 import { OrdenCompra, RecepcionMercancia } from '../models/compras.models';
+import { RecepcionFormDialog } from './recepcion-form-dialog';
+import {
+  RecepcionDetalleDialog,
+  RecepcionDetalleDialogData,
+} from './recepcion-detalle-dialog';
 
 @Component({
   selector: 'app-compras-recepciones',
   imports: [
-    ReactiveFormsModule,
     DatePipe,
-    MatCardModule,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
     MatIconModule,
+    MatMenuModule,
     PageHeader,
     StateContainer,
+    KpiTile,
+    SearchAutocomplete,
     DataTable,
     CeldaTablaDirective,
   ],
@@ -60,54 +75,77 @@ import { OrdenCompra, RecepcionMercancia } from '../models/compras.models';
   styleUrl: '../compras.scss',
 })
 export class ComprasRecepciones {
-  private readonly fb = inject(FormBuilder);
   private readonly service = inject(ComprasService);
+  private readonly nombres = inject(NombresComprasService);
   private readonly toast = inject(NotificacionesService);
-  private readonly overlay = inject(OperacionOverlayService);
   private readonly auth = inject(AuthService);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly puedeCrear = this.auth.tienePermiso('recepcion_mercancia', 'crear');
+
+  /** Buscador premium de órdenes de compra abiertas para el filtro (sin teclear UUID). */
+  protected readonly buscarOrden = (filtro: string): Observable<PaginaResponse<OrdenCompra>> =>
+    this.service.listarOrdenesCompra(null, null, 0, 10).pipe(
+      map((pagina) => {
+        const texto = (filtro || '').trim().toLowerCase();
+        const content = texto
+          ? pagina.content.filter(
+              (o) =>
+                o.id.toLowerCase().includes(texto) ||
+                this.nombres.nombreProveedor(o.proveedorId).toLowerCase().includes(texto),
+            )
+          : pagina.content;
+        return { ...pagina, content };
+      }),
+    );
+  protected readonly etiquetaOrden = (o: OrdenCompra): string =>
+    `OC ${o.id.slice(0, 8)} · ${this.nombres.nombreProveedor(o.proveedorId)}`;
+  protected readonly detalleOrden = (o: OrdenCompra): string | null =>
+    this.nombres.rfcProveedor(o.proveedorId) || null;
+  protected readonly iconoOrden = (_o: OrdenCompra): string => 'receipt_long';
 
   protected readonly columnas: ColumnaTabla[] = [
     { clave: 'id', encabezado: 'Folio' },
     { clave: 'orden', encabezado: 'Orden de compra' },
     { clave: 'renglones', encabezado: 'Renglones', alineacion: 'centro' },
     { clave: 'fecha', encabezado: 'Recibida' },
+    { clave: 'acciones', encabezado: 'Acciones', alineacion: 'fin' },
   ];
 
   protected readonly estado = signal<EstadoSolicitud<RecepcionMercancia[]>>(cargando());
   protected readonly total = signal(0);
   protected readonly page = signal(0);
   protected readonly size = signal(20);
-  protected readonly filtroOrden = signal('');
-  protected readonly guardando = signal(false);
-  protected readonly ordenSeleccionada = signal<OrdenCompra | null>(null);
-  protected readonly cargandoOrden = signal(false);
+  /** Id de la orden filtrada (se fija al elegir una sugerencia del buscador). */
+  protected readonly filtroOrdenId = signal('');
 
-  /** Formulario de registro: OC + renglones a recibir. */
-  protected readonly formRegistro = this.fb.nonNullable.group({
-    ordenCompraId: ['', [Validators.required]],
-    partidas: this.fb.array<ReturnType<ComprasRecepciones['crearRenglon']>>([]),
-  });
-
-  protected get partidas(): FormArray {
-    return this.formRegistro.get('partidas') as FormArray;
-  }
+  /** KPIs de la página cargada. */
+  private readonly filas = computed(() => this.estado().datos ?? []);
+  protected readonly totalMostrado = computed(() => this.filas().length);
+  protected readonly totalRenglones = computed(() =>
+    this.filas().reduce((acc, r) => acc + r.partidas.length, 0),
+  );
 
   constructor() {
+    // Precarga el catálogo de nombres (proveedores + materiales) para el listado.
+    this.nombres.cargar().subscribe({ next: () => {}, error: () => {} });
     this.cargar();
   }
 
-  private crearRenglon(partidaOrdenCompraId: string) {
-    return this.fb.nonNullable.group({
-      partidaOrdenCompraId: [partidaOrdenCompraId, [Validators.required]],
-      cantidadRecibida: [0, [Validators.required, Validators.min(0)]],
+  /** Abre el diálogo explicativo de un KPI de recepciones. */
+  abrirInfoKpi(clave: string, etiqueta: string, valor: number): void {
+    const datos: DatosIndicadorInfo = { clave, etiqueta, valor, unidad: 'conteo' };
+    this.dialog.open(IndicadorInfoDialog, {
+      data: datos,
+      width: '32rem',
+      maxWidth: '92vw',
+      autoFocus: false,
     });
   }
 
   cargar(): void {
     this.estado.set(cargando());
-    this.service.listarRecepciones(this.filtroOrden() || null, this.page(), this.size()).subscribe({
+    this.service.listarRecepciones(this.filtroOrdenId() || null, this.page(), this.size()).subscribe({
       next: (pagina) => {
         this.total.set(pagina.totalElements);
         this.estado.set(conDatos(pagina.content, pagina.content.length === 0));
@@ -122,82 +160,51 @@ export class ComprasRecepciones {
     this.cargar();
   }
 
-  aplicarFiltro(valor: string): void {
-    this.filtroOrden.set(valor.trim());
+  /** Al elegir una orden en el buscador premium, filtra por su id. */
+  seleccionarOrden(orden: OrdenCompra): void {
+    this.filtroOrdenId.set(orden.id);
     this.page.set(0);
     this.cargar();
   }
 
-  /** Carga la Orden_Compra indicada y genera un renglon por cada partida. */
-  cargarOrden(): void {
-    const id = this.formRegistro.controls.ordenCompraId.value.trim();
-    if (!id) {
-      this.formRegistro.controls.ordenCompraId.markAsTouched();
-      return;
+  /** Al limpiar el buscador (término vacío), quita el filtro por orden. */
+  actualizarBusquedaOrden(termino: string): void {
+    if (!termino && this.filtroOrdenId()) {
+      this.filtroOrdenId.set('');
+      this.page.set(0);
+      this.cargar();
     }
-    this.cargandoOrden.set(true);
-    this.service.consultarOrdenCompra(id).subscribe({
-      next: (orden) => {
-        this.cargandoOrden.set(false);
-        this.ordenSeleccionada.set(orden);
-        const arreglo = this.fb.array(orden.partidas.map((p) => this.crearRenglon(p.id)));
-        this.formRegistro.setControl('partidas', arreglo);
-      },
-      error: (e: HttpErrorResponse) => {
-        this.cargandoOrden.set(false);
-        this.ordenSeleccionada.set(null);
-        this.toast.error(mensajeDeError(e));
-      },
+  }
+
+  /** Abre el modal de registro y recarga si se creó una recepción. */
+  nueva(): void {
+    const ref = this.dialog.open(RecepcionFormDialog, {
+      width: 'min(760px, 96vw)',
+      maxWidth: 'min(760px, 96vw)',
+      maxHeight: '92vh',
+      autoFocus: 'first-tabbable',
+      panelClass: 'ds-dialog-panel',
+    });
+    ref.afterClosed().subscribe((creada?: RecepcionMercancia) => {
+      if (creada) {
+        this.toast.exito('Recepción registrada.');
+        this.filtroOrdenId.set('');
+        this.page.set(0);
+        this.cargar();
+      }
     });
   }
 
-  materialDeRenglon(indice: number): string {
-    const orden = this.ordenSeleccionada();
-    return orden?.partidas[indice]?.materialId ?? '';
-  }
-
-  cantidadOrdenada(indice: number): number {
-    const orden = this.ordenSeleccionada();
-    return orden?.partidas[indice]?.cantidad ?? 0;
-  }
-
-  registrar(): void {
-    if (this.formRegistro.invalid || this.partidas.length === 0) {
-      this.formRegistro.markAllAsTouched();
-      return;
-    }
-    const v = this.formRegistro.getRawValue();
-    const partidas = (
-      v.partidas as { partidaOrdenCompraId: string; cantidadRecibida: number }[]
-    ).filter((p) => p.cantidadRecibida > 0);
-    if (partidas.length === 0) {
-      this.toast.info('Captura al menos una cantidad recibida.');
-      return;
-    }
-    this.guardando.set(true);
-    this.overlay
-      .ejecutar(this.service.registrarRecepcion({ ordenCompraId: v.ordenCompraId, partidas }), {
-        tipo: 'crear',
-        textoProceso: 'Registrando recepción…',
-        textoExito: 'Recepción registrada',
-      })
-      .subscribe({
-        next: () => {
-          this.guardando.set(false);
-          this.toast.exito('Recepcion registrada.');
-          this.ordenSeleccionada.set(null);
-          this.formRegistro.reset({ ordenCompraId: '' });
-          this.formRegistro.setControl(
-            'partidas',
-            this.fb.array<ReturnType<ComprasRecepciones['crearRenglon']>>([]),
-          );
-          this.page.set(0);
-          this.cargar();
-        },
-        error: (e: HttpErrorResponse) => {
-          this.guardando.set(false);
-          this.toast.error(mensajeDeError(e));
-        },
-      });
+  /** Abre el detalle de solo lectura de la recepción (materiales por nombre). */
+  verDetalle(recepcion: RecepcionMercancia): void {
+    const data: RecepcionDetalleDialogData = { recepcion };
+    this.dialog.open(RecepcionDetalleDialog, {
+      width: 'min(640px, 96vw)',
+      maxWidth: 'min(640px, 96vw)',
+      maxHeight: '92vh',
+      autoFocus: false,
+      panelClass: 'ds-dialog-panel',
+      data,
+    });
   }
 }

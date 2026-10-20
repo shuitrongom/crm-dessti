@@ -65,13 +65,23 @@ public enum EstadoRequisicionCompra {
      * Maquina de estados pura de la Requisicion_Compra (Req 30.2). Se construye una
      * sola vez y es inmutable. Los estados finales {@link #APROBADA},
      * {@link #RECHAZADA} y {@link #CANCELADA} no declaran transiciones salientes,
-     * por lo que la maquina los trata como finales automaticamente. Solo se
-     * declaran las tres transiciones del Req 30.2.
+     * por lo que la maquina los trata como finales automaticamente.
+     *
+     * <p>Transiciones permitidas:</p>
+     * <ul>
+     *   <li>{@code borrador -> enviada | cancelada}: la requisicion recien creada
+     *       puede enviarse a revision o cancelarse antes de enviarla.</li>
+     *   <li>{@code enviada -> aprobada | rechazada | cancelada}: una requisicion en
+     *       revision se resuelve (aprobar/rechazar) o el solicitante la cancela.</li>
+     * </ul>
+     *
+     * <p>Una requisicion {@code aprobada} ya no se cancela (deriva en Orden_Compra);
+     * las requisiciones {@code rechazada}/{@code cancelada} son finales.</p>
      */
     private static final MaquinaEstados<EstadoRequisicionCompra> MAQUINA =
             MaquinaEstados.<EstadoRequisicionCompra>builder(EstadoRequisicionCompra.class)
-                    .permitir(BORRADOR, ENVIADA)
-                    .permitir(ENVIADA, APROBADA, RECHAZADA)
+                    .permitir(BORRADOR, ENVIADA, CANCELADA)
+                    .permitir(ENVIADA, APROBADA, RECHAZADA, CANCELADA)
                     .construir();
 
     private final String valorBd;

@@ -437,6 +437,30 @@ const CATALOGO: Record<string, FichaIndicador> = {
   },
 
   // ---- Compras ----
+  requisiciones_pagina: {
+    icono: 'assignment', tono: 'primario', corta: 'Requisiciones',
+    que: 'Requisiciones de compra mostradas en la página actual.',
+    como: 'Se cuentan las requisiciones traídas en la página cargada según el filtro.',
+    porque: 'Son las solicitudes internas de material que inician el abastecimiento.',
+  },
+  requisiciones_borrador: {
+    icono: 'edit_note', tono: 'neutro', corta: 'En borrador',
+    que: 'Requisiciones aún en borrador, sin enviar a revisión.',
+    como: 'Se cuentan las requisiciones en estado borrador dentro de la página cargada.',
+    porque: 'Están a medio capturar: conviene enviarlas o descartarlas para que avancen.',
+  },
+  requisiciones_enviadas: {
+    icono: 'hourglass_top', tono: 'advertencia', corta: 'Enviadas',
+    que: 'Requisiciones enviadas y pendientes de aprobar o rechazar.',
+    como: 'Se cuentan las requisiciones en estado enviada dentro de la página cargada.',
+    porque: 'Esperan resolución del aprobador; un rezago frena las compras.',
+  },
+  requisiciones_aprobadas: {
+    icono: 'task_alt', tono: 'exito', corta: 'Aprobadas',
+    que: 'Requisiciones aprobadas, listas para generar su orden de compra.',
+    como: 'Se cuentan las requisiciones en estado aprobada dentro de la página cargada.',
+    porque: 'Son el siguiente paso del abastecimiento: conviene convertirlas en orden.',
+  },
   proveedores_pagina: {
     icono: 'local_shipping', tono: 'primario', corta: 'Proveedores',
     que: 'Proveedores mostrados en la página actual del listado.',
@@ -455,11 +479,29 @@ const CATALOGO: Record<string, FichaIndicador> = {
     como: 'Se cuentan los proveedores en estado inactivo dentro de la página cargada.',
     porque: 'Puedes reactivarlos cuando vuelvas a comprarles; su RFC queda liberado mientras tanto.',
   },
+  ordenes_compra_pagina: {
+    icono: 'receipt_long', tono: 'primario', corta: 'Órdenes de compra',
+    que: 'Órdenes de compra mostradas en la página actual.',
+    como: 'Se cuentan las órdenes traídas en la página cargada según los filtros.',
+    porque: 'Dan una referencia rápida del volumen de compras que estás gestionando.',
+  },
   ordenes_compra_abiertas: {
     icono: 'shopping_cart', tono: 'info', corta: 'Compras en curso',
     que: 'Órdenes de compra emitidas y aún abiertas.',
     como: 'Se cuentan las órdenes de compra en estado "abierta".',
     porque: 'Es tu gasto comprometido pendiente de recibir.',
+  },
+  ordenes_compra_en_recepcion: {
+    icono: 'local_shipping', tono: 'advertencia', corta: 'En recepción',
+    que: 'Órdenes con mercancía recibida en parte o en su totalidad, aún no cerradas.',
+    como: 'Se cuentan las órdenes en estado "recibida parcial" o "recibida total".',
+    porque: 'Requieren seguimiento hasta completar la recepción y cerrarlas.',
+  },
+  compras_comprometidas: {
+    icono: 'payments', tono: 'neutro', corta: 'Monto comprometido',
+    que: 'Valor total de las órdenes de compra de la página (sin las canceladas).',
+    como: 'Se suma el total de cada orden mostrada, excluyendo las canceladas.',
+    porque: 'Es el gasto comprometido con proveedores por estas órdenes.',
   },
   ordenes_compra_recibidas_parcial: {
     icono: 'inventory', tono: 'advertencia', corta: 'Recibidas parcialmente',
@@ -490,6 +532,36 @@ const CATALOGO: Record<string, FichaIndicador> = {
     que: 'Facturas de proveedor que no cuadran con la orden o recepción.',
     como: 'Se cuentan las facturas de proveedor marcadas con discrepancia.',
     porque: 'Requieren revisión antes de pagar para evitar pagos indebidos.',
+  },
+  facturas_proveedor_registradas: {
+    icono: 'request_quote', tono: 'neutro', corta: 'Por conciliar',
+    que: 'Facturas de proveedor registradas que aún no se han conciliado en tres vías.',
+    como: 'Se cuentan las facturas en estado "registrada" dentro de la página cargada.',
+    porque: 'Son el siguiente paso del cierre de compra: conviene conciliarlas antes de pagar.',
+  },
+  facturas_proveedor_conciliadas: {
+    icono: 'fact_check', tono: 'info', corta: 'Listas para pagar',
+    que: 'Facturas cuya conciliación de tres vías (orden, recepción, factura) fue satisfactoria.',
+    como: 'Se cuentan las facturas en estado "conciliada" dentro de la página cargada.',
+    porque: 'Ya cuadran con la orden y lo recibido; puedes autorizar su pago con confianza.',
+  },
+  facturas_proveedor_pagadas: {
+    icono: 'paid', tono: 'exito', corta: 'Ciclo cerrado',
+    que: 'Facturas de proveedor cuyo pago ya fue autorizado.',
+    como: 'Se cuentan las facturas en estado "pagada" dentro de la página cargada.',
+    porque: 'Cierran el ciclo de compra: orden, recepción, conciliación y pago.',
+  },
+  recepciones_pagina: {
+    icono: 'local_shipping', tono: 'primario', corta: 'Recepciones',
+    que: 'Recepciones de mercancía mostradas en la página actual.',
+    como: 'Se cuentan las recepciones traídas en la página cargada según el filtro.',
+    porque: 'Dan una referencia rápida de la actividad de entrada de materiales.',
+  },
+  recepciones_renglones: {
+    icono: 'inventory_2', tono: 'info', corta: 'Materiales recibidos',
+    que: 'Total de renglones (materiales) recibidos en las recepciones de la página.',
+    como: 'Se suman los renglones de cada recepción mostrada en la página cargada.',
+    porque: 'Refleja el volumen de material que ingresó a inventario por estas recepciones.',
   },
 
   // ---- Facturacion / Finanzas ----

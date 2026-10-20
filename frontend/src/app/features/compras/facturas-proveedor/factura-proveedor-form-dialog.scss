@@ -1,0 +1,34 @@
+.fac-form__content {
+  padding-block: var(--ds-space-2);
+  min-inline-size: min(640px, 92vw);
+}
+
+.fac-form__resumen {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--ds-space-3, 1rem);
+  margin: var(--ds-space-2, 0.5rem) 0 0;
+  padding: var(--ds-space-2, 0.5rem) var(--ds-space-3, 1rem);
+  background: var(--ds-color-surface-subtle, #f9fafb);
+  border-radius: var(--ds-radius-md, 0.5rem);
+
+  dt {
+    font-size: var(--ds-font-size-sm, 0.8125rem);
+    color: var(--ds-color-text-muted, #6b7280);
+  }
+
+  dd {
+    margin: 0;
+    font-weight: var(--ds-font-weight-medium, 500);
+  }
+}
+
+.fac-form__campos {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-space-2, 0.5rem);
+
+  @media (min-width: 40rem) {
+    grid-template-columns: 1fr 1fr;
+  }
+}

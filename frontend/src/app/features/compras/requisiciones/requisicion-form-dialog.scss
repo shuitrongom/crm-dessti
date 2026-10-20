@@ -1,0 +1,25 @@
+.requisicion-form__content {
+  padding-block: var(--ds-space-2);
+}
+
+// Renglón de partida: material (ancho) + cantidad + quitar.
+.partidas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-2, 0.5rem);
+}
+
+.partidas__renglon {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-space-2, 0.5rem);
+  align-items: start;
+
+  @media (min-width: 40rem) {
+    grid-template-columns: 2fr 1fr auto;
+  }
+}
+
+.requisicion-form__agregar {
+  margin-top: var(--ds-space-2, 0.5rem);
+}

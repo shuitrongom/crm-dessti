@@ -1,27 +1,31 @@
 // =============================================================================
-// Vista de Facturas de proveedor / conciliacion 3 vias (Req 33)
+// Vista de Facturas de proveedor / conciliación 3 vías (Req 33) — premium
 // -----------------------------------------------------------------------------
-// Cierra el proceso de compra. Listado paginado con filtros; alta de facturas
-// asociadas a una Orden_Compra; conciliacion de tres vias (orden - recepcion -
-// factura) que marca la factura conciliada o con discrepancia; y autorizacion de
-// pago solo desde el estado conciliada. El indicador de conciliacion se muestra
-// como insignia (conciliada/discrepancia). El backend valida cada transicion.
+// Cierra el proceso de compra. Listado paginado con filtro por estado y por
+// proveedor (buscador premium con sugerencias, sin teclear UUID), KPIs clicables
+// por estado, alta mediante MODAL premium (FacturaProveedorFormDialog) y las
+// acciones de conciliación de tres vías (orden - recepción - factura): conciliar,
+// autorizar pago y reabrir, cada una con confirmación y feedback de discrepancia.
+// El proveedor se muestra por NOMBRE (nunca UUID) resolviendo el catálogo. El
+// backend valida cada transición y la conciliación.
 // =============================================================================
 
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatDialog } from '@angular/material/dialog';
+import { Observable } from 'rxjs';
 
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../shared/components/state-container/state-container';
+import { KpiTile } from '../../../shared/components/kpi-tile/kpi-tile';
+import { SearchAutocomplete } from '../../../shared/components/search-autocomplete/search-autocomplete';
 import {
   CambioPagina,
   CeldaTablaDirective,
@@ -31,8 +35,13 @@ import {
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
 import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
+import {
+  IndicadorInfoDialog,
+  type DatosIndicadorInfo,
+} from '../../../shared/indicadores/indicador-info-dialog';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
+import { PaginaResponse } from '../../../core/models/pagina-response';
 import {
   EstadoSolicitud,
   cargando,
@@ -43,15 +52,15 @@ import {
 import { EstadoChip } from '../../finanzas-comun/estado-chip/estado-chip';
 import { humanizarEstado, tonoDeEstado } from '../../finanzas-comun/tono-estado';
 import { ComprasService } from '../services/compras.service';
-import { FacturaProveedor } from '../models/compras.models';
+import { NombresComprasService } from '../services/nombres-compras.service';
+import { FacturaProveedor, Proveedor } from '../models/compras.models';
+import { FacturaProveedorFormDialog } from './factura-proveedor-form-dialog';
 
 @Component({
   selector: 'app-compras-facturas-proveedor',
   imports: [
-    ReactiveFormsModule,
     CurrencyPipe,
     DatePipe,
-    MatCardModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
@@ -60,6 +69,8 @@ import { FacturaProveedor } from '../models/compras.models';
     MatMenuModule,
     PageHeader,
     StateContainer,
+    KpiTile,
+    SearchAutocomplete,
     DataTable,
     CeldaTablaDirective,
     EstadoChip,
@@ -69,12 +80,13 @@ import { FacturaProveedor } from '../models/compras.models';
   styleUrl: '../compras.scss',
 })
 export class ComprasFacturasProveedor {
-  private readonly fb = inject(FormBuilder);
   private readonly service = inject(ComprasService);
+  private readonly nombres = inject(NombresComprasService);
   private readonly confirm = inject(ConfirmDialogService);
   private readonly toast = inject(NotificacionesService);
   private readonly overlay = inject(OperacionOverlayService);
   private readonly auth = inject(AuthService);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly tono = tonoDeEstado;
   protected readonly humanizar = humanizarEstado;
@@ -85,11 +97,19 @@ export class ComprasFacturasProveedor {
     'cambiar_estado',
   );
 
+  /** Buscador premium de proveedor para el filtro (sin teclear UUID). */
+  protected readonly buscarProveedor = (filtro: string): Observable<PaginaResponse<Proveedor>> =>
+    this.service.listarProveedores(filtro || null, 0, 10, 'activo');
+  protected readonly etiquetaProveedor = (p: Proveedor): string => p.nombre;
+  protected readonly detalleProveedor = (p: Proveedor): string | null => p.rfc;
+  protected readonly iconoProveedor = (_p: Proveedor): string => 'local_shipping';
+
   protected readonly columnas: ColumnaTabla[] = [
     { clave: 'folio', encabezado: 'Folio proveedor' },
+    { clave: 'proveedor', encabezado: 'Proveedor' },
     { clave: 'orden', encabezado: 'Orden de compra' },
     { clave: 'monto', encabezado: 'Monto', alineacion: 'fin' },
-    { clave: 'estado', encabezado: 'Conciliacion' },
+    { clave: 'estado', encabezado: 'Conciliación' },
     { clave: 'fecha', encabezado: 'Registrada' },
     { clave: 'acciones', encabezado: 'Acciones', alineacion: 'fin' },
   ];
@@ -107,23 +127,61 @@ export class ComprasFacturasProveedor {
   protected readonly page = signal(0);
   protected readonly size = signal(20);
   protected readonly filtroEstado = signal('');
-  protected readonly guardando = signal(false);
-  protected readonly mostrarAlta = signal(false);
+  /** Id del proveedor filtrado (se fija al elegir una sugerencia del buscador). */
+  protected readonly filtroProveedorId = signal('');
 
-  protected readonly formAlta = this.fb.nonNullable.group({
-    ordenCompraId: ['', [Validators.required]],
-    folioProveedor: ['', [Validators.required, Validators.maxLength(100)]],
-    monto: [0.01, [Validators.required, Validators.min(0.01)]],
-  });
+  /** KPIs de la página cargada. */
+  private readonly filas = computed(() => this.estado().datos ?? []);
+  protected readonly totalRegistradas = computed(
+    () => this.filas().filter((f) => f.estado === 'registrada').length,
+  );
+  protected readonly totalConciliadas = computed(
+    () => this.filas().filter((f) => f.estado === 'conciliada').length,
+  );
+  protected readonly totalDiscrepancia = computed(
+    () => this.filas().filter((f) => f.estado === 'discrepancia').length,
+  );
+  protected readonly totalPagadas = computed(
+    () => this.filas().filter((f) => f.estado === 'pagada').length,
+  );
 
   constructor() {
+    // Precarga el catálogo de nombres (proveedores + materiales) para el listado.
+    this.nombres.cargar().subscribe({ next: () => {}, error: () => {} });
     this.cargar();
+  }
+
+  /** Nombre del proveedor (nunca el UUID). */
+  nombreProveedor(id: string): string {
+    return this.nombres.nombreProveedor(id);
+  }
+
+  /** RFC del proveedor (subdato de la celda). */
+  rfcProveedor(id: string): string {
+    return this.nombres.rfcProveedor(id);
+  }
+
+  /** Abre el diálogo explicativo de un KPI de facturas. */
+  abrirInfoKpi(clave: string, etiqueta: string, valor: number): void {
+    const datos: DatosIndicadorInfo = { clave, etiqueta, valor, unidad: 'conteo' };
+    this.dialog.open(IndicadorInfoDialog, {
+      data: datos,
+      width: '32rem',
+      maxWidth: '92vw',
+      autoFocus: false,
+    });
   }
 
   cargar(): void {
     this.estado.set(cargando());
     this.service
-      .listarFacturasProveedor(null, null, this.filtroEstado() || null, this.page(), this.size())
+      .listarFacturasProveedor(
+        this.filtroProveedorId() || null,
+        null,
+        this.filtroEstado() || null,
+        this.page(),
+        this.size(),
+      )
       .subscribe({
         next: (pagina) => {
           this.total.set(pagina.totalElements);
@@ -139,14 +197,46 @@ export class ComprasFacturasProveedor {
     this.cargar();
   }
 
-  aplicarFiltro(valor: string): void {
+  aplicarFiltroEstado(valor: string): void {
     this.filtroEstado.set(valor);
     this.page.set(0);
     this.cargar();
   }
 
-  alternarAlta(): void {
-    this.mostrarAlta.update((v) => !v);
+  /** Al elegir un proveedor en el buscador premium, filtra por su id. */
+  seleccionarProveedor(proveedor: Proveedor): void {
+    this.filtroProveedorId.set(proveedor.id);
+    this.page.set(0);
+    this.cargar();
+  }
+
+  /** Al limpiar el buscador (término vacío), quita el filtro por proveedor. */
+  actualizarBusquedaProveedor(termino: string): void {
+    if (!termino && this.filtroProveedorId()) {
+      this.filtroProveedorId.set('');
+      this.page.set(0);
+      this.cargar();
+    }
+  }
+
+  /** Abre el modal de alta y recarga si se registró una factura. */
+  nueva(): void {
+    const ref = this.dialog.open(FacturaProveedorFormDialog, {
+      width: 'min(760px, 96vw)',
+      maxWidth: 'min(760px, 96vw)',
+      maxHeight: '92vh',
+      autoFocus: 'first-tabbable',
+      panelClass: 'ds-dialog-panel',
+    });
+    ref.afterClosed().subscribe((creada?: FacturaProveedor) => {
+      if (creada) {
+        this.toast.exito('Factura de proveedor registrada.');
+        this.filtroEstado.set('');
+        this.filtroProveedorId.set('');
+        this.page.set(0);
+        this.cargar();
+      }
+    });
   }
 
   puedeConciliar(f: FacturaProveedor): boolean {
@@ -161,39 +251,15 @@ export class ComprasFacturasProveedor {
     return this.puedeCambiarEstado && f.estado === 'discrepancia';
   }
 
-  crear(): void {
-    if (this.formAlta.invalid) {
-      this.formAlta.markAllAsTouched();
+  async conciliar(f: FacturaProveedor): Promise<void> {
+    const ok = await this.confirm.confirmar({
+      titulo: 'Conciliar en tres vías',
+      mensaje: `Se contrastará la orden, la recepción y la factura ${f.folioProveedor}. Si algo no cuadra, quedará marcada con discrepancia. ¿Continuar?`,
+      textoConfirmar: 'Conciliar',
+    });
+    if (!ok) {
       return;
     }
-    this.guardando.set(true);
-    const v = this.formAlta.getRawValue();
-    this.overlay
-      .ejecutar(
-        this.service.registrarFacturaProveedor({
-          ordenCompraId: v.ordenCompraId,
-          folioProveedor: v.folioProveedor,
-          monto: v.monto,
-        }),
-        { tipo: 'crear', textoProceso: 'Registrando factura…', textoExito: 'Factura registrada' },
-      )
-      .subscribe({
-        next: () => {
-          this.guardando.set(false);
-          this.toast.exito('Factura de proveedor registrada.');
-          this.formAlta.reset({ ordenCompraId: '', folioProveedor: '', monto: 0.01 });
-          this.mostrarAlta.set(false);
-          this.page.set(0);
-          this.cargar();
-        },
-        error: (e: HttpErrorResponse) => {
-          this.guardando.set(false);
-          this.toast.error(mensajeDeError(e));
-        },
-      });
-  }
-
-  conciliar(f: FacturaProveedor): void {
     this.overlay
       .ejecutar(this.service.conciliarFactura(f.id), {
         tipo: 'procesar',
@@ -203,9 +269,11 @@ export class ComprasFacturasProveedor {
       .subscribe({
         next: (actualizada) => {
           if (actualizada.estado === 'discrepancia') {
-            this.toast.info('Conciliacion con discrepancia: revisa orden, recepcion y factura.');
+            this.toast.info(
+              'Conciliación con discrepancia: revisa la orden, la recepción y el monto de la factura.',
+            );
           } else {
-            this.toast.exito('Factura conciliada.');
+            this.toast.exito('Factura conciliada; ya puedes autorizar el pago.');
           }
           this.cargar();
         },
@@ -238,14 +306,14 @@ export class ComprasFacturasProveedor {
   }
 
   /**
-   * Reabre una factura en discrepancia (vuelve a 'registrada') para re-conciliar
+   * Reabre una factura en discrepancia (vuelve a "registrada") para re-conciliar
    * tras corregir la orden/recepción/folio. Pide confirmación por ser un cambio de
    * estado que reactiva el flujo de conciliación.
    */
   async reabrir(f: FacturaProveedor): Promise<void> {
     const ok = await this.confirm.confirmar({
       titulo: 'Reabrir factura',
-      mensaje: `La factura ${f.folioProveedor} volverá a "registrada" para intentar conciliarla de nuevo. Continuar?`,
+      mensaje: `La factura ${f.folioProveedor} volverá a "registrada" para intentar conciliarla de nuevo. ¿Continuar?`,
       textoConfirmar: 'Reabrir',
     });
     if (!ok) {

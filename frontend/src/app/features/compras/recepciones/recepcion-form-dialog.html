@@ -1,0 +1,92 @@
+<mat-dialog-content class="rec-form__content">
+  <form class="ds-form" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+    <header class="ds-form__header">
+      <h2 class="ds-form__header-title" mat-dialog-title>Registrar recepción</h2>
+      <p class="ds-form__header-subtitle">
+        Elige la orden de compra que estás recibiendo y captura la cantidad recibida por
+        renglón. Solo se listan las órdenes que aún admiten recepción.
+      </p>
+    </header>
+
+    @if (error()) {
+      <p class="ds-form__note ds-form__note--warn" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </p>
+    }
+
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Orden de compra</h3>
+        <p class="ds-form__section-desc">Búscala por folio o por proveedor.</p>
+      </div>
+      <div class="ds-form__section-body">
+        <app-entity-select
+          formControlName="ordenCompraId"
+          etiqueta="Orden de compra"
+          ayuda="Elige la orden de compra que recibes; se listan las abiertas o parciales."
+          placeholder="Busca por folio o proveedor…"
+          [precargar]="true"
+          [obligatorio]="true"
+          [buscador]="buscarOrden"
+          [etiquetaDe]="etiquetaOrden"
+          [detalleDe]="detalleOrden"
+        />
+      </div>
+    </section>
+
+    @if (cargandoOrden()) {
+      <p class="compras-ayuda">Cargando partidas de la orden…</p>
+    }
+
+    @if (orden(); as orden) {
+      <section class="ds-form__section">
+        <div class="ds-form__section-aside">
+          <h3 class="ds-form__section-title">Renglones recibidos</h3>
+          <p class="ds-form__section-desc">
+            Captura lo recibido de cada material. No puede exceder lo ordenado.
+          </p>
+        </div>
+        <div class="ds-form__section-body">
+          <div formArrayName="partidas" class="rec-form__partidas">
+            @for (renglon of partidas.controls; track $index) {
+              <div class="rec-form__renglon" [formGroupName]="$index">
+                <div class="rec-form__material">
+                  <span class="rec-form__material-nombre">{{ nombreMaterial($index) }}</span>
+                  <span class="compras-ayuda">Ordenado: {{ cantidadOrdenada($index) }}</span>
+                </div>
+                <mat-form-field appearance="outline">
+                  <mat-label>Recibida</mat-label>
+                  <input
+                    matInput
+                    type="number"
+                    min="0"
+                    [max]="cantidadOrdenada($index)"
+                    step="0.001"
+                    formControlName="cantidadRecibida"
+                  />
+                  <mat-hint>Máx. {{ cantidadOrdenada($index) }}</mat-hint>
+                </mat-form-field>
+              </div>
+            }
+          </div>
+          <p class="compras-ayuda rec-form__nota">
+            Deja en cero los renglones que no recibes ahora; puedes registrar recepciones
+            parciales sucesivas.
+          </p>
+        </div>
+      </section>
+    }
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancelar()" [disabled]="guardando()">Cancelar</button>
+  <button
+    matButton="filled"
+    type="button"
+    (click)="guardar()"
+    [disabled]="guardando() || form.invalid || !hayCantidad()"
+  >
+    Registrar recepción
+  </button>
+</mat-dialog-actions>

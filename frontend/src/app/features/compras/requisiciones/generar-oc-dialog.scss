@@ -1,0 +1,37 @@
+.generar-oc__content {
+  padding-block: var(--ds-space-2);
+}
+
+.generar-oc__partidas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-2, 0.5rem);
+}
+
+.generar-oc__renglon {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-space-2, 0.5rem);
+  align-items: center;
+
+  @media (min-width: 40rem) {
+    grid-template-columns: 1fr 12rem;
+  }
+}
+
+.generar-oc__material {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.generar-oc__material-nombre {
+  font-weight: var(--ds-font-weight-medium, 500);
+  color: var(--ds-color-text, #1f2937);
+}
+
+.generar-oc__total {
+  margin-top: var(--ds-space-3, 1rem);
+  text-align: end;
+  font-size: var(--ds-font-size-lg, 1.125rem);
+}

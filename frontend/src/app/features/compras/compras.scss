@@ -106,3 +106,22 @@
   gap: var(--ds-space-3, 1rem);
   margin-bottom: var(--ds-space-4, 1.25rem);
 }
+
+// Resumen de materiales de una requisición en la tabla: una línea con elipsis.
+.requisicion-materiales {
+  display: inline-block;
+  max-width: 26rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+// Candado junto a una acción de menú que requiere un permiso que el usuario no tiene.
+.requiere-permiso__candado {
+  margin-inline-start: auto;
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+  opacity: 0.7;
+}

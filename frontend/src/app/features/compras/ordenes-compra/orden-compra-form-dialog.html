@@ -1,0 +1,98 @@
+<mat-dialog-content class="oc-form__content">
+  <form class="ds-form" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+    <header class="ds-form__header">
+      <h2 class="ds-form__header-title" mat-dialog-title>Nueva orden de compra</h2>
+      <p class="ds-form__header-subtitle">
+        Elige el proveedor y captura los materiales con su cantidad y precio. La orden se crea
+        en estado abierta.
+      </p>
+    </header>
+
+    @if (error()) {
+      <p class="ds-form__note ds-form__note--warn" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </p>
+    }
+
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Proveedor</h3>
+        <p class="ds-form__section-desc">Origen del abastecimiento. Búscalo por nombre o RFC.</p>
+      </div>
+      <div class="ds-form__section-body">
+        <app-entity-select
+          formControlName="proveedorId"
+          etiqueta="Proveedor"
+          ayuda="Busca el proveedor por nombre o RFC y elígelo de la lista."
+          placeholder="Busca por nombre o RFC…"
+          [precargar]="true"
+          [obligatorio]="true"
+          [buscador]="buscarProveedor"
+          [etiquetaDe]="etiquetaProveedor"
+          [detalleDe]="detalleProveedor"
+        />
+      </div>
+    </section>
+
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Partidas</h3>
+        <p class="ds-form__section-desc">Material, cantidad y precio unitario. Al menos una.</p>
+      </div>
+      <div class="ds-form__section-body">
+        <div formArrayName="partidas" class="oc-form__partidas">
+          @for (partida of partidas.controls; track $index) {
+            <div class="oc-form__renglon" [formGroupName]="$index">
+              <app-entity-select
+                formControlName="materialId"
+                etiqueta="Material"
+                ayuda="Busca el material por nombre."
+                placeholder="Busca por nombre…"
+                [precargar]="true"
+                [obligatorio]="true"
+                [buscador]="buscarMaterial"
+                [etiquetaDe]="etiquetaMaterial"
+                [detalleDe]="detalleMaterial"
+              />
+              <mat-form-field appearance="outline">
+                <mat-label>Cantidad</mat-label>
+                <input matInput type="number" min="1" max="999999" formControlName="cantidad" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Precio unitario</mat-label>
+                <span matTextPrefix>$&nbsp;</span>
+                <input matInput type="number" min="0.01" step="0.01" formControlName="precioUnitario" />
+              </mat-form-field>
+              <button
+                matIconButton
+                type="button"
+                aria-label="Quitar partida"
+                [disabled]="partidas.length <= 1"
+                (click)="quitarPartida($index)"
+              >
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          }
+        </div>
+
+        <div class="oc-form__pie">
+          <button matButton type="button" (click)="agregarPartida()">
+            <mat-icon>add</mat-icon> Agregar partida
+          </button>
+          <span class="oc-form__total">
+            Total estimado:
+            <strong>{{ totalEstimado() | currency: 'MXN' : 'symbol-narrow' }}</strong>
+          </span>
+        </div>
+      </div>
+    </section>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancelar()" [disabled]="guardando()">Cancelar</button>
+  <button matButton="filled" type="button" (click)="guardar()" [disabled]="guardando() || form.invalid">
+    Crear orden
+  </button>
+</mat-dialog-actions>

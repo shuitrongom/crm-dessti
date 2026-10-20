@@ -1,0 +1,30 @@
+.rec-detalle__content {
+  padding-block: var(--ds-space-2);
+  min-inline-size: min(560px, 90vw);
+}
+
+.rec-detalle__folio {
+  margin: 0;
+  color: var(--ds-color-text-muted, #6b7280);
+}
+
+.rec-detalle__datos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--ds-space-3, 1rem);
+  margin: var(--ds-space-3, 1rem) 0;
+
+  dt {
+    font-size: var(--ds-font-size-sm, 0.8125rem);
+    color: var(--ds-color-text-muted, #6b7280);
+  }
+
+  dd {
+    margin: 0;
+  }
+}
+
+.rec-detalle__subtitulo {
+  margin: var(--ds-space-3, 1rem) 0 var(--ds-space-2, 0.5rem);
+  font-size: var(--ds-font-size-base, 1rem);
+}

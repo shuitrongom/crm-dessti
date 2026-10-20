@@ -314,10 +314,12 @@ class MaquinaEstadosProperty5Test {
 
     private static boolean oraculoRequisicion(EstadoRequisicionCompra a, EstadoRequisicionCompra d) {
         return switch (a) {
-            case BORRADOR -> d == EstadoRequisicionCompra.ENVIADA;
+            case BORRADOR -> d == EstadoRequisicionCompra.ENVIADA
+                    || d == EstadoRequisicionCompra.CANCELADA;
             case ENVIADA -> d == EstadoRequisicionCompra.APROBADA
-                    || d == EstadoRequisicionCompra.RECHAZADA;
-            case APROBADA, RECHAZADA, CANCELADA -> false; // finales (CANCELADA sin transiciones)
+                    || d == EstadoRequisicionCompra.RECHAZADA
+                    || d == EstadoRequisicionCompra.CANCELADA;
+            case APROBADA, RECHAZADA, CANCELADA -> false; // finales
         };
     }
 

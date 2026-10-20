@@ -3,38 +3,12 @@
   subtitulo="Concilia en tres vías la orden de compra, la recepción de materiales y la factura del proveedor antes de pagar."
 >
   @if (puedeCrear) {
-    <button acciones matButton="filled" type="button" (click)="alternarAlta()">
-      <mat-icon>{{ mostrarAlta() ? 'close' : 'add' }}</mat-icon>
-      {{ mostrarAlta() ? 'Cerrar' : 'Registrar factura' }}
+    <button acciones matButton="filled" type="button" (click)="nueva()">
+      <mat-icon>add</mat-icon>
+      Registrar factura
     </button>
   }
 </app-page-header>
-
-@if (mostrarAlta() && puedeCrear) {
-  <mat-card appearance="outlined" class="compras-alta">
-    <mat-card-content>
-      <form class="ds-dialog-form" [formGroup]="formAlta" (ngSubmit)="crear()" novalidate>
-        <h2 class="compras-alta__titulo">Registrar factura de proveedor</h2>
-        <mat-form-field appearance="outline">
-          <mat-label>Orden de compra (identificador)</mat-label>
-          <input matInput formControlName="ordenCompraId" autocomplete="off" />
-          <mat-error>Indica la orden de compra asociada.</mat-error>
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Folio del proveedor</mat-label>
-          <input matInput formControlName="folioProveedor" autocomplete="off" />
-          <mat-error>Captura el folio de la factura del proveedor.</mat-error>
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Monto (MXN)</mat-label>
-          <input matInput type="number" min="0.01" step="0.01" formControlName="monto" />
-          <mat-error>El monto debe ser mayor a cero.</mat-error>
-        </mat-form-field>
-        <button matButton="filled" type="submit" [disabled]="guardando()">Registrar factura</button>
-      </form>
-    </mat-card-content>
-  </mat-card>
-}
 
 <app-state-container
   [fase]="estado().fase"
@@ -42,15 +16,88 @@
   mensajeVacio="No hay facturas de proveedor registradas."
   (reintentar)="cargar()"
 >
+  <!-- KPIs de la página cargada (clicables: abren su descripción) -->
+  <section class="operacion-kpis" aria-label="Indicadores de facturas de proveedor">
+    <button
+      type="button"
+      class="kpi-boton"
+      (click)="abrirInfoKpi('facturas_proveedor_registradas', 'Registradas', totalRegistradas())"
+      aria-label="Ver explicación de Facturas registradas"
+    >
+      <app-kpi-tile
+        icono="request_quote"
+        tono="neutro"
+        etiqueta="Registradas"
+        sublabel="Por conciliar"
+        [valor]="totalRegistradas()"
+      />
+    </button>
+    <button
+      type="button"
+      class="kpi-boton"
+      (click)="abrirInfoKpi('facturas_proveedor_conciliadas', 'Conciliadas', totalConciliadas())"
+      aria-label="Ver explicación de Facturas conciliadas"
+    >
+      <app-kpi-tile
+        icono="fact_check"
+        tono="info"
+        etiqueta="Conciliadas"
+        sublabel="Listas para pagar"
+        [valor]="totalConciliadas()"
+      />
+    </button>
+    <button
+      type="button"
+      class="kpi-boton"
+      (click)="abrirInfoKpi('facturas_proveedor_discrepancia', 'Discrepancia', totalDiscrepancia())"
+      aria-label="Ver explicación de Facturas con discrepancia"
+    >
+      <app-kpi-tile
+        icono="rule"
+        tono="advertencia"
+        etiqueta="Discrepancia"
+        sublabel="Requieren revisión"
+        [valor]="totalDiscrepancia()"
+      />
+    </button>
+    <button
+      type="button"
+      class="kpi-boton"
+      (click)="abrirInfoKpi('facturas_proveedor_pagadas', 'Pagadas', totalPagadas())"
+      aria-label="Ver explicación de Facturas pagadas"
+    >
+      <app-kpi-tile
+        icono="paid"
+        tono="exito"
+        etiqueta="Pagadas"
+        sublabel="Ciclo cerrado"
+        [valor]="totalPagadas()"
+      />
+    </button>
+  </section>
+
   <div class="compras-filtros">
     <mat-form-field appearance="outline">
       <mat-label>Estado</mat-label>
-      <mat-select [value]="filtroEstado()" (valueChange)="aplicarFiltro($event)">
+      <mat-select [value]="filtroEstado()" (valueChange)="aplicarFiltroEstado($event)">
         @for (opcion of estadosFiltro; track opcion.valor) {
           <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>
         }
       </mat-select>
     </mat-form-field>
+
+    <app-search-autocomplete
+      class="compras-buscador"
+      etiqueta="Filtrar por proveedor"
+      placeholder="Escribe el nombre o el RFC…"
+      ayuda="Elige un proveedor de la lista para ver solo sus facturas."
+      [buscador]="buscarProveedor"
+      [etiquetaDe]="etiquetaProveedor"
+      [detalleDe]="detalleProveedor"
+      [iconoDe]="iconoProveedor"
+      (terminoChange)="actualizarBusquedaProveedor($event)"
+      (seleccion)="seleccionarProveedor($event)"
+    />
   </div>
 
   <app-data-table
@@ -62,6 +109,12 @@
     (cambioPagina)="cambiarPagina($event)"
   >
     <ng-template appCelda="folio" let-f>{{ f.folioProveedor }}</ng-template>
+    <ng-template appCelda="proveedor" let-f>
+      <span class="proveedor-nombre">{{ nombreProveedor(f.proveedorId) }}</span>
+      @if (rfcProveedor(f.proveedorId)) {
+        <span class="compras-ayuda proveedor-subdato">{{ rfcProveedor(f.proveedorId) }}</span>
+      }
+    </ng-template>
     <ng-template appCelda="orden" let-f><span class="compras-mono">{{ f.ordenCompraId.slice(0, 8) }}</span></ng-template>
     <ng-template appCelda="monto" let-f>{{ f.monto | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</ng-template>
     <ng-template appCelda="estado" let-f>
@@ -76,22 +129,25 @@
         <mat-menu #menu="matMenu">
           @if (puedeConciliar(f)) {
             <button mat-menu-item type="button" (click)="conciliar(f)">
-              <mat-icon>fact_check</mat-icon> Conciliar (3 vias)
+              <mat-icon>fact_check</mat-icon>
+              <span>Conciliar (3 vías)</span>
             </button>
           }
           @if (puedeAutorizar(f)) {
             <button mat-menu-item type="button" (click)="autorizarPago(f)">
-              <mat-icon>payments</mat-icon> Autorizar pago
+              <mat-icon>payments</mat-icon>
+              <span>Autorizar pago</span>
             </button>
           }
           @if (puedeReabrir(f)) {
             <button mat-menu-item type="button" (click)="reabrir(f)">
-              <mat-icon>restart_alt</mat-icon> Reabrir para reconciliar
+              <mat-icon>restart_alt</mat-icon>
+              <span>Reabrir para reconciliar</span>
             </button>
           }
         </mat-menu>
       } @else {
-        <span class="compras-ayuda">-</span>
+        <span class="compras-ayuda">—</span>
       }
     </ng-template>
   </app-data-table>

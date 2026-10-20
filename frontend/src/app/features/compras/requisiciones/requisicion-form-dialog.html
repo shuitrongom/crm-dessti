@@ -1,0 +1,72 @@
+<mat-dialog-content class="requisicion-form__content">
+  <form class="ds-form" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+    <header class="ds-form__header">
+      <h2 class="ds-form__header-title" mat-dialog-title>Nueva requisición</h2>
+      <p class="ds-form__header-subtitle">
+        Agrega los materiales solicitados. La requisición se crea en estado borrador.
+      </p>
+    </header>
+
+    @if (error()) {
+      <p class="ds-form__note ds-form__note--warn" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </p>
+    }
+
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Materiales solicitados</h3>
+        <p class="ds-form__section-desc">
+          Busca cada material por nombre y captura la cantidad. Al menos una partida.
+        </p>
+      </div>
+
+      <div class="ds-form__section-body">
+        <div formArrayName="partidas" class="partidas">
+          @for (partida of partidas.controls; track $index) {
+            <div class="partidas__renglon" [formGroupName]="$index">
+              <app-entity-select
+                formControlName="materialId"
+                etiqueta="Material"
+                ayuda="Busca el material por nombre y elígelo de la lista."
+                placeholder="Busca por nombre…"
+                [precargar]="true"
+                [obligatorio]="true"
+                [buscador]="buscarMaterial"
+                [etiquetaDe]="etiquetaMaterial"
+                [detalleDe]="detalleMaterial"
+              />
+
+              <mat-form-field appearance="outline">
+                <mat-label>Cantidad</mat-label>
+                <input matInput type="number" min="1" max="999999" formControlName="cantidad" />
+                <mat-error>Cantidad entre 1 y 999,999.</mat-error>
+              </mat-form-field>
+
+              <button
+                matIconButton
+                type="button"
+                aria-label="Quitar partida"
+                [disabled]="partidas.length <= 1"
+                (click)="quitarPartida($index)"
+              >
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          }
+        </div>
+
+        <button matButton type="button" class="requisicion-form__agregar" (click)="agregarPartida()">
+          <mat-icon>add</mat-icon> Agregar partida
+        </button>
+      </div>
+    </section>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancelar()" [disabled]="guardando()">Cancelar</button>
+  <button matButton="filled" type="button" (click)="guardar()" [disabled]="guardando() || form.invalid">
+    Crear requisición
+  </button>
+</mat-dialog-actions>

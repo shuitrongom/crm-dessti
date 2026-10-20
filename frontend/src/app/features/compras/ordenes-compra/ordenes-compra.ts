@@ -1,30 +1,31 @@
 // =============================================================================
-// Vista de Ordenes de compra (Req 31)
+// Vista de Órdenes de compra (Req 31) — premium
 // -----------------------------------------------------------------------------
-// Segunda via del proceso de compra. Listado paginado con filtros por proveedor
-// y estado, alta directa (proveedor + partidas con precio unitario) y acciones de
-// cambio de estado. El total lo calcula y devuelve el servidor (escala 2); la UI
-// solo lo formatea con el pipe currency es-MX. Las recepciones se registran en la
-// vista de Recepciones enlazando la Orden_Compra.
+// Listado paginado con filtro por estado y por proveedor (buscador premium con
+// sugerencias, sin teclear UUID), KPIs clicables, y alta mediante MODAL premium
+// (OrdenCompraFormDialog). El proveedor se muestra por NOMBRE (nunca UUID)
+// resolviendo el catálogo. Las transiciones de estado manuales (cancelar, cerrar)
+// se gobiernan por permiso; las de recepción parcial/total las deriva el flujo de
+// recepciones. Todo con deny-by-default; el backend reimpone autorización y la
+// máquina de estados.
 // =============================================================================
 
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
-
+import { MatDialog } from '@angular/material/dialog';
 import { Observable } from 'rxjs';
 
 import { PageHeader } from '../../../shared/components/page-header/page-header';
 import { StateContainer } from '../../../shared/components/state-container/state-container';
-import { EntitySelect } from '../../../shared/components/entity-select/entity-select';
+import { KpiTile } from '../../../shared/components/kpi-tile/kpi-tile';
+import { SearchAutocomplete } from '../../../shared/components/search-autocomplete/search-autocomplete';
 import {
   CambioPagina,
   CeldaTablaDirective,
@@ -33,6 +34,11 @@ import {
 } from '../../../shared/components/data-table/data-table';
 import { ConfirmDialogService } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { NotificacionesService } from '../../../shared/services/notificaciones.service';
+import { OperacionOverlayService } from '../../../shared/components/operacion-overlay/operacion-overlay';
+import {
+  IndicadorInfoDialog,
+  type DatosIndicadorInfo,
+} from '../../../shared/indicadores/indicador-info-dialog';
 import { AuthService } from '../../../core/auth/auth.service';
 import { mensajeDeError } from '../../../core/services/error-mensajes';
 import { PaginaResponse } from '../../../core/models/pagina-response';
@@ -45,12 +51,16 @@ import {
 
 import { EstadoChip } from '../../finanzas-comun/estado-chip/estado-chip';
 import { humanizarEstado, tonoDeEstado } from '../../finanzas-comun/tono-estado';
-import { MaterialesService } from '../../operacion/services/inventario.service';
-import { Material } from '../../operacion/models/operacion.models';
 import { ComprasService } from '../services/compras.service';
+import { NombresComprasService } from '../services/nombres-compras.service';
 import { OrdenCompra, Proveedor } from '../models/compras.models';
+import { OrdenCompraFormDialog } from './orden-compra-form-dialog';
+import {
+  OrdenCompraDetalleDialog,
+  OrdenCompraDetalleDialogData,
+} from './orden-compra-detalle-dialog';
 
-/** Transiciones ofrecidas por estado actual (el backend valida la maquina). */
+/** Transiciones MANUALES ofrecidas en la UI por estado (parcial/total las deriva la recepción). */
 const TRANSICIONES: Record<string, { estado: string; etiqueta: string; destructiva: boolean }[]> = {
   abierta: [{ estado: 'cancelada', etiqueta: 'Cancelar', destructiva: true }],
   recibida_parcial: [{ estado: 'cancelada', etiqueta: 'Cancelar', destructiva: true }],
@@ -60,10 +70,8 @@ const TRANSICIONES: Record<string, { estado: string; etiqueta: string; destructi
 @Component({
   selector: 'app-compras-ordenes-compra',
   imports: [
-    ReactiveFormsModule,
     CurrencyPipe,
     DatePipe,
-    MatCardModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
@@ -72,7 +80,8 @@ const TRANSICIONES: Record<string, { estado: string; etiqueta: string; destructi
     MatMenuModule,
     PageHeader,
     StateContainer,
-    EntitySelect,
+    KpiTile,
+    SearchAutocomplete,
     DataTable,
     CeldaTablaDirective,
     EstadoChip,
@@ -82,40 +91,26 @@ const TRANSICIONES: Record<string, { estado: string; etiqueta: string; destructi
   styleUrl: '../compras.scss',
 })
 export class ComprasOrdenesCompra {
-  private readonly fb = inject(FormBuilder);
   private readonly service = inject(ComprasService);
-  private readonly materiales = inject(MaterialesService);
+  private readonly nombres = inject(NombresComprasService);
   private readonly confirm = inject(ConfirmDialogService);
   private readonly toast = inject(NotificacionesService);
+  private readonly overlay = inject(OperacionOverlayService);
   private readonly auth = inject(AuthService);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly tono = tonoDeEstado;
   protected readonly humanizar = humanizarEstado;
 
-  /** Busca Proveedores activos por nombre/RFC para el selector (sin UUID). */
-  protected readonly buscarProveedor = (filtro: string): Observable<PaginaResponse<Proveedor>> =>
-    this.service.listarProveedores(filtro, 0, 20, 'activo');
-
-  /** Etiqueta principal de un Proveedor en el selector. */
-  protected readonly etiquetaProveedor = (proveedor: Proveedor): string => proveedor.nombre;
-
-  /** Detalle secundario (RFC) de un Proveedor en el selector. */
-  protected readonly detalleProveedor = (proveedor: Proveedor): string | null =>
-    proveedor.rfc || null;
-
-  /** Busca Materiales activos por nombre para el selector de partida (sin UUID). */
-  protected readonly buscarMaterial = (filtro: string): Observable<PaginaResponse<Material>> =>
-    this.materiales.listar(filtro, 'activo', false, 0, 20);
-
-  /** Etiqueta principal de un Material en el selector. */
-  protected readonly etiquetaMaterial = (material: Material): string => material.nombre;
-
-  /** Detalle secundario (unidad) de un Material en el selector. */
-  protected readonly detalleMaterial = (material: Material): string | null =>
-    material.unidadMedida || null;
-
   protected readonly puedeCrear = this.auth.tienePermiso('orden_compra', 'crear');
   protected readonly puedeCambiarEstado = this.auth.tienePermiso('orden_compra', 'cambiar_estado');
+
+  /** Buscador premium de proveedor para el filtro (sin teclear UUID). */
+  protected readonly buscarProveedor = (filtro: string): Observable<PaginaResponse<Proveedor>> =>
+    this.service.listarProveedores(filtro || null, 0, 10, 'activo');
+  protected readonly etiquetaProveedor = (p: Proveedor): string => p.nombre;
+  protected readonly detalleProveedor = (p: Proveedor): string | null => p.rfc;
+  protected readonly iconoProveedor = (_p: Proveedor): string => 'local_shipping';
 
   protected readonly columnas: ColumnaTabla[] = [
     { clave: 'id', encabezado: 'Folio' },
@@ -140,39 +135,53 @@ export class ComprasOrdenesCompra {
   protected readonly page = signal(0);
   protected readonly size = signal(20);
   protected readonly filtroEstado = signal('');
-  protected readonly filtroProveedor = signal('');
-  protected readonly guardando = signal(false);
-  protected readonly mostrarAlta = signal(false);
+  /** Id del proveedor filtrado (se fija al elegir una sugerencia del buscador). */
+  protected readonly filtroProveedorId = signal('');
 
-  protected readonly formAlta = this.fb.nonNullable.group({
-    proveedorId: ['', [Validators.required]],
-    partidas: this.fb.array([this.crearPartida()]),
-  });
-
-  protected get partidas(): FormArray {
-    return this.formAlta.get('partidas') as FormArray;
-  }
+  /** KPIs de la página cargada. */
+  private readonly filas = computed(() => this.estado().datos ?? []);
+  protected readonly totalMostrado = computed(() => this.filas().length);
+  protected readonly totalAbiertas = computed(
+    () => this.filas().filter((o) => o.estado === 'abierta').length,
+  );
+  protected readonly totalEnRecepcion = computed(
+    () =>
+      this.filas().filter(
+        (o) => o.estado === 'recibida_parcial' || o.estado === 'recibida_total',
+      ).length,
+  );
+  /** Monto total comprometido (Σ total) de las órdenes de la página, excluyendo canceladas. */
+  protected readonly montoComprometido = computed(() =>
+    this.filas()
+      .filter((o) => o.estado !== 'cancelada')
+      .reduce((acc, o) => acc + o.total, 0),
+  );
 
   constructor() {
+    // Precarga el catálogo de nombres (proveedores + materiales) para el listado.
+    this.nombres.cargar().subscribe({ next: () => {}, error: () => {} });
     this.cargar();
   }
 
-  private crearPartida() {
-    return this.fb.nonNullable.group({
-      materialId: ['', [Validators.required]],
-      cantidad: [1, [Validators.required, Validators.min(1), Validators.max(999999)]],
-      precioUnitario: [0.01, [Validators.required, Validators.min(0.01)]],
+  /** Nombre del proveedor (nunca el UUID). */
+  nombreProveedor(id: string): string {
+    return this.nombres.nombreProveedor(id);
+  }
+
+  /** RFC del proveedor (para el subdato de la celda). */
+  rfcProveedor(id: string): string {
+    return this.nombres.rfcProveedor(id);
+  }
+
+  /** Abre el diálogo explicativo de un KPI de órdenes de compra. */
+  abrirInfoKpi(clave: string, etiqueta: string, valor: number, unidad = 'conteo'): void {
+    const datos: DatosIndicadorInfo = { clave, etiqueta, valor, unidad };
+    this.dialog.open(IndicadorInfoDialog, {
+      data: datos,
+      width: '32rem',
+      maxWidth: '92vw',
+      autoFocus: false,
     });
-  }
-
-  agregarPartida(): void {
-    this.partidas.push(this.crearPartida());
-  }
-
-  quitarPartida(indice: number): void {
-    if (this.partidas.length > 1) {
-      this.partidas.removeAt(indice);
-    }
   }
 
   transicionesDe(estado: string): { estado: string; etiqueta: string; destructiva: boolean }[] {
@@ -183,7 +192,7 @@ export class ComprasOrdenesCompra {
     this.estado.set(cargando());
     this.service
       .listarOrdenesCompra(
-        this.filtroProveedor() || null,
+        this.filtroProveedorId() || null,
         this.filtroEstado() || null,
         this.page(),
         this.size(),
@@ -209,43 +218,53 @@ export class ComprasOrdenesCompra {
     this.cargar();
   }
 
-  aplicarFiltroProveedor(valor: string): void {
-    this.filtroProveedor.set(valor.trim());
+  /** Al elegir un proveedor en el buscador premium, filtra por su id. */
+  seleccionarProveedor(proveedor: Proveedor): void {
+    this.filtroProveedorId.set(proveedor.id);
     this.page.set(0);
     this.cargar();
   }
 
-  alternarAlta(): void {
-    this.mostrarAlta.update((v) => !v);
+  /** Al limpiar el buscador (término vacío), quita el filtro por proveedor. */
+  actualizarBusquedaProveedor(termino: string): void {
+    if (!termino && this.filtroProveedorId()) {
+      this.filtroProveedorId.set('');
+      this.page.set(0);
+      this.cargar();
+    }
   }
 
-  crear(): void {
-    if (this.formAlta.invalid) {
-      this.formAlta.markAllAsTouched();
-      return;
-    }
-    this.guardando.set(true);
-    const v = this.formAlta.getRawValue();
-    this.service
-      .crearOrdenCompra({
-        proveedorId: v.proveedorId,
-        partidas: v.partidas as { materialId: string; cantidad: number; precioUnitario: number }[],
-      })
-      .subscribe({
-        next: () => {
-          this.guardando.set(false);
-          this.toast.exito('Orden de compra creada.');
-          this.formAlta.reset({ proveedorId: '' });
-          this.formAlta.setControl('partidas', this.fb.array([this.crearPartida()]));
-          this.mostrarAlta.set(false);
-          this.page.set(0);
-          this.cargar();
-        },
-        error: (e: HttpErrorResponse) => {
-          this.guardando.set(false);
-          this.toast.error(mensajeDeError(e));
-        },
-      });
+  /** Abre el modal de alta y recarga si se creó. */
+  nueva(): void {
+    const ref = this.dialog.open(OrdenCompraFormDialog, {
+      width: 'min(880px, 96vw)',
+      maxWidth: 'min(880px, 96vw)',
+      maxHeight: '92vh',
+      autoFocus: 'first-tabbable',
+      panelClass: 'ds-dialog-panel',
+    });
+    ref.afterClosed().subscribe((creada?: OrdenCompra) => {
+      if (creada) {
+        this.toast.exito('Orden de compra creada.');
+        this.filtroEstado.set('');
+        this.filtroProveedorId.set('');
+        this.page.set(0);
+        this.cargar();
+      }
+    });
+  }
+
+  /** Abre el detalle de solo lectura de la orden (proveedor, partidas, total). */
+  verDetalle(orden: OrdenCompra): void {
+    const data: OrdenCompraDetalleDialogData = { orden };
+    this.dialog.open(OrdenCompraDetalleDialog, {
+      width: 'min(760px, 96vw)',
+      maxWidth: 'min(760px, 96vw)',
+      maxHeight: '92vh',
+      autoFocus: false,
+      panelClass: 'ds-dialog-panel',
+      data,
+    });
   }
 
   async cambiarEstado(
@@ -255,7 +274,7 @@ export class ComprasOrdenesCompra {
     if (transicion.destructiva) {
       const ok = await this.confirm.confirmar({
         titulo: transicion.etiqueta,
-        mensaje: `Confirmas "${transicion.etiqueta.toLowerCase()}" de la orden de compra?`,
+        mensaje: `¿Confirmas "${transicion.etiqueta.toLowerCase()}" de la orden de compra?`,
         textoConfirmar: transicion.etiqueta,
         destructiva: true,
       });
@@ -263,12 +282,18 @@ export class ComprasOrdenesCompra {
         return;
       }
     }
-    this.service.cambiarEstadoOrdenCompra(orden.id, transicion.estado).subscribe({
-      next: () => {
-        this.toast.exito('Estado actualizado.');
-        this.cargar();
-      },
-      error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
-    });
+    this.overlay
+      .ejecutar(this.service.cambiarEstadoOrdenCompra(orden.id, transicion.estado), {
+        tipo: 'procesar',
+        textoProceso: 'Actualizando estado…',
+        textoExito: 'Estado actualizado',
+      })
+      .subscribe({
+        next: () => {
+          this.toast.exito('Estado actualizado.');
+          this.cargar();
+        },
+        error: (e: HttpErrorResponse) => this.toast.error(mensajeDeError(e)),
+      });
   }
 }

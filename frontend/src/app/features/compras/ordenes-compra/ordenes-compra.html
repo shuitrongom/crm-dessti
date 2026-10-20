@@ -3,81 +3,79 @@
   subtitulo="Emite el compromiso formal de compra con tu proveedor; es la segunda vía del proceso de abastecimiento."
 >
   @if (puedeCrear) {
-    <button acciones matButton="filled" type="button" (click)="alternarAlta()">
-      <mat-icon>{{ mostrarAlta() ? 'close' : 'add' }}</mat-icon>
-      {{ mostrarAlta() ? 'Cerrar' : 'Nueva orden' }}
+    <button acciones matButton="filled" type="button" (click)="nueva()">
+      <mat-icon>add</mat-icon>
+      Nueva orden
     </button>
   }
 </app-page-header>
 
-@if (mostrarAlta() && puedeCrear) {
-  <mat-card appearance="outlined" class="compras-alta">
-    <mat-card-content>
-      <form [formGroup]="formAlta" (ngSubmit)="crear()" novalidate>
-        <h2 class="compras-alta__titulo">Nueva orden de compra</h2>
-
-        <app-entity-select
-          formControlName="proveedorId"
-          etiqueta="Proveedor"
-          ayuda="Busca el proveedor por nombre o RFC y elígelo de la lista."
-          placeholder="Busca por nombre o RFC…"
-          [obligatorio]="true"
-          [buscador]="buscarProveedor"
-          [etiquetaDe]="etiquetaProveedor"
-          [detalleDe]="detalleProveedor"
-        />
-
-        <div formArrayName="partidas" class="partidas">
-          @for (partida of partidas.controls; track $index) {
-            <div class="partidas__renglon" [formGroupName]="$index">
-              <app-entity-select
-                formControlName="materialId"
-                etiqueta="Material"
-                ayuda="Busca el material por nombre."
-                placeholder="Busca por nombre…"
-                [obligatorio]="true"
-                [buscador]="buscarMaterial"
-                [etiquetaDe]="etiquetaMaterial"
-                [detalleDe]="detalleMaterial"
-              />
-              <mat-form-field appearance="outline">
-                <mat-label>Cantidad</mat-label>
-                <input matInput type="number" min="1" max="999999" formControlName="cantidad" />
-              </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>Precio unitario (MXN)</mat-label>
-                <input matInput type="number" min="0.01" step="0.01" formControlName="precioUnitario" />
-              </mat-form-field>
-              <button
-                matIconButton
-                type="button"
-                aria-label="Quitar partida"
-                [disabled]="partidas.length <= 1"
-                (click)="quitarPartida($index)"
-              >
-                <mat-icon>delete</mat-icon>
-              </button>
-            </div>
-          }
-        </div>
-
-        <div class="compras-acciones">
-          <button matButton type="button" (click)="agregarPartida()">
-            <mat-icon>add</mat-icon> Agregar partida
-          </button>
-          <button matButton="filled" type="submit" [disabled]="guardando()">Crear orden</button>
-        </div>
-      </form>
-    </mat-card-content>
-  </mat-card>
-}
-
 <app-state-container
   [fase]="estado().fase"
   [mensajeError]="estado().mensajeError"
-  mensajeVacio="No hay ordenes de compra registradas."
+  mensajeVacio="No hay órdenes de compra registradas."
   (reintentar)="cargar()"
 >
+  <!-- KPIs de la página cargada (clicables: abren su descripción) -->
+  <section class="operacion-kpis" aria-label="Indicadores de órdenes de compra">
+    <button
+      type="button"
+      class="kpi-boton"
+      (click)="abrirInfoKpi('ordenes_compra_pagina', 'Órdenes', totalMostrado())"
+      aria-label="Ver explicación de Órdenes de compra"
+    >
+      <app-kpi-tile
+        icono="receipt_long"
+        tono="primario"
+        etiqueta="Órdenes"
+        sublabel="En esta página"
+        [valor]="totalMostrado()"
+      />
+    </button>
+    <button
+      type="button"
+      class="kpi-boton"
+      (click)="abrirInfoKpi('ordenes_compra_abiertas', 'Abiertas', totalAbiertas())"
+      aria-label="Ver explicación de Órdenes abiertas"
+    >
+      <app-kpi-tile
+        icono="shopping_cart"
+        tono="info"
+        etiqueta="Abiertas"
+        sublabel="Pendientes de recibir"
+        [valor]="totalAbiertas()"
+      />
+    </button>
+    <button
+      type="button"
+      class="kpi-boton"
+      (click)="abrirInfoKpi('ordenes_compra_en_recepcion', 'En recepción', totalEnRecepcion())"
+      aria-label="Ver explicación de Órdenes en recepción"
+    >
+      <app-kpi-tile
+        icono="local_shipping"
+        tono="advertencia"
+        etiqueta="En recepción"
+        sublabel="Parcial o total"
+        [valor]="totalEnRecepcion()"
+      />
+    </button>
+    <button
+      type="button"
+      class="kpi-boton"
+      (click)="abrirInfoKpi('compras_comprometidas', 'Comprometido', montoComprometido(), 'MXN')"
+      aria-label="Ver explicación del Monto comprometido"
+    >
+      <app-kpi-tile
+        icono="payments"
+        tono="neutro"
+        etiqueta="Comprometido"
+        sublabel="En esta página"
+        [valor]="montoComprometido() | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX'"
+      />
+    </button>
+  </section>
+
   <div class="compras-filtros">
     <mat-form-field appearance="outline">
       <mat-label>Estado</mat-label>
@@ -87,15 +85,19 @@
         }
       </mat-select>
     </mat-form-field>
-    <mat-form-field appearance="outline">
-      <mat-label>Proveedor (identificador)</mat-label>
-      <input
-        matInput
-        [value]="filtroProveedor()"
-        (change)="aplicarFiltroProveedor($any($event.target).value)"
-        autocomplete="off"
-      />
-    </mat-form-field>
+
+    <app-search-autocomplete
+      class="compras-buscador"
+      etiqueta="Filtrar por proveedor"
+      placeholder="Escribe el nombre o el RFC…"
+      ayuda="Elige un proveedor de la lista para ver solo sus órdenes."
+      [buscador]="buscarProveedor"
+      [etiquetaDe]="etiquetaProveedor"
+      [detalleDe]="detalleProveedor"
+      [iconoDe]="iconoProveedor"
+      (terminoChange)="actualizarBusquedaProveedor($event)"
+      (seleccion)="seleccionarProveedor($event)"
+    />
   </div>
 
   <app-data-table
@@ -107,25 +109,37 @@
     (cambioPagina)="cambiarPagina($event)"
   >
     <ng-template appCelda="id" let-o><span class="compras-mono">{{ o.id.slice(0, 8) }}</span></ng-template>
-    <ng-template appCelda="proveedor" let-o><span class="compras-mono">{{ o.proveedorId.slice(0, 8) }}</span></ng-template>
+    <ng-template appCelda="proveedor" let-o>
+      <span class="proveedor-nombre">{{ nombreProveedor(o.proveedorId) }}</span>
+      @if (rfcProveedor(o.proveedorId)) {
+        <span class="compras-ayuda proveedor-subdato">{{ rfcProveedor(o.proveedorId) }}</span>
+      }
+    </ng-template>
     <ng-template appCelda="estado" let-o>
       <app-estado-chip [etiqueta]="humanizar(o.estado)" [tono]="tono(o.estado)" />
     </ng-template>
-    <ng-template appCelda="total" let-o>{{ o.total | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</ng-template>
+    <ng-template appCelda="total" let-o>{{
+      o.total | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX'
+    }}</ng-template>
     <ng-template appCelda="fecha" let-o>{{ o.createdAt | date: 'dd/MM/yyyy' }}</ng-template>
     <ng-template appCelda="acciones" let-o>
-      @if (puedeCambiarEstado && transicionesDe(o.estado).length > 0) {
-        <button matIconButton [matMenuTriggerFor]="menu" aria-label="Acciones de estado">
-          <mat-icon>more_vert</mat-icon>
+      <button matIconButton [matMenuTriggerFor]="menu" aria-label="Acciones de la orden">
+        <mat-icon>more_vert</mat-icon>
+      </button>
+      <mat-menu #menu="matMenu">
+        <button mat-menu-item type="button" (click)="verDetalle(o)">
+          <mat-icon>visibility</mat-icon>
+          <span>Ver detalle</span>
         </button>
-        <mat-menu #menu="matMenu">
+        @if (puedeCambiarEstado) {
           @for (t of transicionesDe(o.estado); track t.estado) {
-            <button mat-menu-item type="button" (click)="cambiarEstado(o, t)">{{ t.etiqueta }}</button>
+            <button mat-menu-item type="button" (click)="cambiarEstado(o, t)">
+              <mat-icon>{{ t.estado === 'cancelada' ? 'cancel' : 'check_circle' }}</mat-icon>
+              <span>{{ t.etiqueta }}</span>
+            </button>
           }
-        </mat-menu>
-      } @else {
-        <span class="compras-ayuda">-</span>
-      }
+        }
+      </mat-menu>
     </ng-template>
   </app-data-table>
 </app-state-container>

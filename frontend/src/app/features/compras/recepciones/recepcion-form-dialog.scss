@@ -1,0 +1,40 @@
+.rec-form__content {
+  padding-block: var(--ds-space-2);
+  min-inline-size: min(640px, 92vw);
+}
+
+.rec-form__partidas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-2, 0.5rem);
+}
+
+.rec-form__renglon {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ds-space-2, 0.5rem);
+  align-items: center;
+  padding-block: var(--ds-space-1, 0.25rem);
+  border-bottom: 1px solid var(--ds-color-border-subtle, #e5e7eb);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  @media (min-width: 40rem) {
+    grid-template-columns: 1fr 12rem;
+  }
+}
+
+.rec-form__material {
+  display: flex;
+  flex-direction: column;
+}
+
+.rec-form__material-nombre {
+  font-weight: var(--ds-font-weight-medium, 500);
+}
+
+.rec-form__nota {
+  margin-top: var(--ds-space-2, 0.5rem);
+}

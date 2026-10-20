@@ -1,0 +1,82 @@
+<mat-dialog-content class="fac-form__content">
+  <form class="ds-form" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+    <header class="ds-form__header">
+      <h2 class="ds-form__header-title" mat-dialog-title>Registrar factura de proveedor</h2>
+      <p class="ds-form__header-subtitle">
+        Elige la orden de compra facturada y captura el folio y el monto del proveedor. La
+        factura se registra lista para conciliar en tres vías.
+      </p>
+    </header>
+
+    @if (error()) {
+      <p class="ds-form__note ds-form__note--warn" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ error() }}</span>
+      </p>
+    }
+
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Orden de compra</h3>
+        <p class="ds-form__section-desc">Búscala por folio o por proveedor.</p>
+      </div>
+      <div class="ds-form__section-body">
+        <app-entity-select
+          formControlName="ordenCompraId"
+          etiqueta="Orden de compra"
+          ayuda="Elige la orden de compra facturada; el proveedor se deriva de ella."
+          placeholder="Busca por folio o proveedor…"
+          [precargar]="true"
+          [obligatorio]="true"
+          [buscador]="buscarOrden"
+          [etiquetaDe]="etiquetaOrden"
+          [detalleDe]="detalleOrden"
+        />
+
+        @if (orden(); as orden) {
+          <dl class="fac-form__resumen">
+            <div>
+              <dt>Proveedor</dt>
+              <dd>{{ proveedorOrden() }}</dd>
+            </div>
+            <div>
+              <dt>Total de la orden</dt>
+              <dd>{{ orden.total | currency: 'MXN' : 'symbol-narrow' : '1.2-2' : 'es-MX' }}</dd>
+            </div>
+          </dl>
+        }
+      </div>
+    </section>
+
+    <section class="ds-form__section">
+      <div class="ds-form__section-aside">
+        <h3 class="ds-form__section-title">Datos de la factura</h3>
+        <p class="ds-form__section-desc">Folio del proveedor y monto facturado.</p>
+      </div>
+      <div class="ds-form__section-body fac-form__campos">
+        <mat-form-field appearance="outline">
+          <mat-label>Folio del proveedor</mat-label>
+          <input matInput formControlName="folioProveedor" autocomplete="off" />
+          <mat-error>Captura el folio de la factura del proveedor.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Monto</mat-label>
+          <span matTextPrefix>$&nbsp;</span>
+          <input matInput type="number" min="0.01" step="0.01" formControlName="monto" />
+          <mat-error>El monto debe ser mayor a cero.</mat-error>
+        </mat-form-field>
+      </div>
+    </section>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancelar()" [disabled]="guardando()">Cancelar</button>
+  <button
+    matButton="filled"
+    type="button"
+    (click)="guardar()"
+    [disabled]="guardando() || form.invalid"
+  >
+    Registrar factura
+  </button>
+</mat-dialog-actions>
