@@ -33,7 +33,7 @@ const CLIENTE_ID = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
 
 /** AuthService de prueba con permisos configurables. */
 class AuthServiceStub {
-  constructor(private readonly permisos: string[]) {}
+  constructor(private readonly permisos: string[]) { }
   tienePermiso(recurso: string, operacion: string): boolean {
     return this.permisos.includes(`${recurso}:${operacion}`);
   }
@@ -56,6 +56,8 @@ function clienteDto(): Cliente {
     direccionCp: null,
     direccionPais: null,
     notas: null,
+    diasCredito: 0,
+    limiteCredito: null,
     activo: true,
     propietarioUsuarioId: null,
     version: 0,

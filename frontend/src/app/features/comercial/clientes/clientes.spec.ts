@@ -46,7 +46,7 @@ class ToastSpy {
   error(m: string): void {
     this.errores.push(m);
   }
-  info(): void {}
+  info(): void { }
 }
 
 /** Doble de ConfirmDialogService (la baja confirma siempre). */
@@ -107,6 +107,8 @@ function clienteDto(over: Record<string, unknown> = {}) {
     direccionCp: null,
     direccionPais: null,
     notas: null,
+    diasCredito: 0,
+    limiteCredito: null,
     activo: true,
     version: 0,
     createdAt: '2026-01-01T00:00:00Z',
